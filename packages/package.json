@@ -1,0 +1,39 @@
+{
+  "name": "@kirigami/php-wasm",
+  "version": "8.5.7",
+  "description": "PHP-WASM minimal for NodeJS",
+  "keywords": [
+    "php",
+    "php-wasm"
+  ],
+  "homepage": "https://github.com/php-kirigami/php-wasm#readme",
+  "bugs": {
+    "url": "https://github.com/php-kirigami/php-wasm/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/php-kirigami/php-wasm.git"
+  },
+  "license": "GPL-2.0-or-later",
+  "engines": {
+    "node": ">=20.10.0",
+    "npm": ">=10.2.3"
+  },
+  "author": "Maxime Larrivée-Roy",
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "wasm-feature-detect": "1.8.0",
+    "@php-wasm/universal": "3.1.38"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@kirigami/builder",
+  "version": "1.0.0",
+  "description": "Tools to build your website",
+  "license": "MIT",
+  "author": "Maxime Larrivée-Roy",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "chokidar": "^5.0.0",
+    "csso": "^5.0.5",
+    "esbuild": "^0.28.1",
+    "ignore": "^7.0.5",
+    "js-yaml": "^4.2.0",
+    "picomatch": "^4.0.4",
+    "sass": "^1.101.0"
+  }
+}

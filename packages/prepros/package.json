@@ -1,0 +1,20 @@
+{
+  "name": "@kirigami/prepros",
+  "version": "1.0.0",
+  "description": "PHP Preprocessor for Kirigami",
+  "keywords": [
+    "PHP",
+    "Preprocessor"
+  ],
+  "license": "MIT",
+  "author": "Maxime Larrivée-Roy",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@kirigami/php-wasm": "8.5.7",
+    "ignore": "^7.0.5"
+  }
+}
