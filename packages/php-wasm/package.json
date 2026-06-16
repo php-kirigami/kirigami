@@ -1,24 +1,28 @@
 {
   "name": "@kirigami/php-wasm",
   "version": "8.5.7",
-  "description": "PHP-WASM minimal for NodeJS",
+  "description": "A custom PHP-WASM build for Node.js — JSPI only, no browser support. Built for the Kirigami project.",
   "keywords": [
     "php",
-    "php-wasm"
+    "php-wasm",
+    "webassembly",
+    "wasm",
+    "node",
+    "jspi",
+    "kirigami"
   ],
-  "homepage": "https://github.com/php-kirigami/php-wasm#readme",
+  "homepage": "https://github.com/php-kirigami/kirigami#readme",
   "bugs": {
-    "url": "https://github.com/php-kirigami/php-wasm/issues"
+    "url": "https://github.com/php-kirigami/kirigami/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/php-kirigami/php-wasm.git"
+    "url": "git+https://github.com/php-kirigami/kirigami.git"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "license": "GPL-2.0-or-later",
-  "engines": {
-    "node": ">=20.10.0",
-    "npm": ">=10.2.3"
-  },
   "author": "Maxime Larrivée-Roy",
   "type": "module",
   "main": "index.js",
@@ -29,11 +33,21 @@
     },
     "./package.json": "./package.json"
   },
+  "engines": {
+    "node": ">=20.10.0",
+    "npm": ">=10.2.3"
+  },
   "dependencies": {
-    "wasm-feature-detect": "1.8.0",
-    "@php-wasm/universal": "3.1.39"
+    "@php-wasm/universal": "^3.1.39",
+    "wasm-feature-detect": "1.8.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
-  }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "jspi/",
+    "LICENSE"
+  ]
 }

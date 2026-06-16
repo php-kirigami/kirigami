@@ -20,8 +20,6 @@ const php = new PHP(runtime);
 
 php.mkdir('/project');
 php.writeFile('/project/phpinfo.php', '<?php phpinfo();');
-
-
 php.setSpawnHandler((command, args, options) => {
 	return spawn(command, args, options);
 });

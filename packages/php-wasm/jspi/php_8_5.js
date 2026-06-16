@@ -8895,6 +8895,8 @@ Module["lengthBytesUTF8"] = lengthBytesUTF8;
 
 Module["stringToUTF8"] = stringToUTF8;
 
+Module["FS"] = FS;
+
 Module["___assert_fail"] = ___assert_fail;
 
 Module["_exit"] = _exit;
