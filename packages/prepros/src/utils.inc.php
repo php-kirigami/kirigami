@@ -7,14 +7,20 @@ const R = "\r";
 const N = "\n";
 
 
+function _print_r(mixed $obj) {
+    echo '<pre>' . print_r($obj, true) . '</pre>';
+}
+
+
 spl_autoload_register(function ($class) {
     static $catalog = [
         'CACHE'           => 'cache.class.php',
-        'DATE'            => 'date.class.php',
 		'FS'              => 'fs.class.php',
+        'HTML'            => 'html.class.php',
         'IMG'             => 'img.class.php',
+        'MD'              => 'md.class.php',
         'OBF'             => 'obf.class.php',
-		'PXPROS'          => 'pxpros.class.php',
+		'PREPROS'         => 'prepros.class.php',
 		'STD'             => 'std.class.php',
         'STR'             => 'str.class.php',
         'SYS'             => 'sys.class.php',

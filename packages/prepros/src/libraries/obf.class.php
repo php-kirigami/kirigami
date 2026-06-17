@@ -3,7 +3,7 @@
 class OBF {
 	
 
-	public static function encode($obj) {
+	public static function encode(mixed $obj): string {
 		$json = json_encode($obj);
 		$base64 = base64_encode($json);
 		$rot13 = str_rot13($base64);
@@ -12,7 +12,7 @@ class OBF {
 	}
 
 
-	public static function decode($str) {
+	public static function decode(string $str): mixed {
 		$inflate = gzdecode("\x1f\x8b" . $str);
 		$base64 = str_rot13($inflate);
 		$json = base64_decode($base64);

@@ -3,7 +3,7 @@
 class STD {
 
 
-	public static function succeed($props = [])
+	public static function succeed($props = []): void
 	{
 		$return = new stdClass;
 		$return->success = true;
@@ -14,7 +14,7 @@ class STD {
 	}
 
 
-	public static function error($props = [])
+	public static function error($props = []): void
 	{
 		$return = new stdClass;
 		$return->success = false;

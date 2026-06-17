@@ -8,7 +8,7 @@ class CACHE
     const DB_TIMEOUT = 10000;
 
 
-    private static function db()
+    private static function db(): SQLite3
     {
         static $db = null;
 		if($db !== null) return $db;
@@ -21,14 +21,14 @@ class CACHE
     }
 
 
-    public static function get(string $key)
+    public static function get(string $key): mixed
     {
         if(!$data = self::db()->querySingle("SELECT val FROM data WHERE key = '" . self::db()->escapeString($key) . "'")) return null;
         else return unserialize($data);
     }
 
 
-    public static function set(string $key, $val)
+    public static function set(string $key, mixed $val): bool
     {
         static $query = null;
         if(!$query) $query = self::db()->prepare("INSERT OR REPLACE INTO data(key, val) VALUES(?, ?);");

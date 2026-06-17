@@ -1,10 +1,11 @@
 import fs from 'fs';
-import path from "path";
+import path, { dirname } from "path";
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { PHP, loadPHPRuntime } from '@php-wasm/universal';
 import { getPHPLoaderModule } from '@kirigami/php-wasm';
-import ignore from 'ignore';
+import isBinary from './utils/isbinary.js';
+import joinWith from './utils/joinwith.js'
 import yaml from "js-yaml";
 
 
@@ -13,58 +14,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const __configpath = path.join(__project, 'kirigami.yaml');
 
 
-if (!fs.existsSync(__configpath)) throw `Config file not found: ${__configpath}`;
-const configContents = fs.readFileSync(__configpath, 'utf8');
-const config = yaml.load(configContents);
-
-console.log(config);
-
-if(config?.prepros?.root === undefined) throw `Missing prepros:root property in config file: ${__configpath}`;
-const __root = path.join(__project, config.prepros.root);
-if (!fs.existsSync(__root)) throw `Invalid prepros:root path: ${__root}`;
-
-
-console.log(__root);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-process.exit(0);
-
-
-
-
-const runtime = await loadPHPRuntime(await getPHPLoaderModule());
-const php = new PHP(runtime);
-
-
-
-
-
-mountPath(php, __dirname, '/pxpros');
-findAndMountPxprosConfigs(php, __project);
-
-
-function mountPath(php, localPath, virtualDir) {
-    const binaryExtensions = ['.webm', '.webp', '.png', '.jpg', '.jpeg', '.gif', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.pdf', '.svg'];
-	const includeExtensions = ['.php', '.json', '.yaml'];
+const mountPath = (php, localPath, virtualDir) => {
+    const includeExtensions = new Set(['.php', '.json', '.yaml', '.db', ...(config?.prepros?.mountext || [])]);
     const stat = fs.statSync(localPath);
-
     if (stat.isDirectory()) {
         php.mkdir(virtualDir);
         for (const entry of fs.readdirSync(localPath, { withFileTypes: true })) {
@@ -72,51 +24,23 @@ function mountPath(php, localPath, virtualDir) {
         }
     } else {
         const ext = path.extname(localPath).toLowerCase();
-		if(includeExtensions.includes(ext)) {
-			if (binaryExtensions.includes(ext)) {
-				php.writeFile(virtualDir, fs.readFileSync(localPath));
-			} else {
-				php.writeFile(virtualDir, fs.readFileSync(localPath, 'utf8'));
-			}
-		}
-    }
-}
-
-
-function findAndMountPxprosConfigs(php, projectDir) {
-    const ig = ignore();
-    const gitignorePath = path.join(projectDir, '.gitignore');
-    if (fs.existsSync(gitignorePath)) {
-        ig.add(fs.readFileSync(gitignorePath, 'utf8'));
-    }
-    const walk = (dir) => {
-        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-            const localPath = path.join(dir, entry.name);
-            const relPath = path.relative(projectDir, localPath).replace(/\\/g, '/');
-            if (ig.ignores(relPath)) continue;
-            if (entry.isDirectory()) {
-                walk(localPath);
-            } else if (entry.name === '_pxpros.json') {
-                const localDir = path.dirname(localPath);
-                const relDir = path.dirname(relPath);
-                mountPath(php, localDir, '/project/' + relDir);
-            }
+        if (includeExtensions.has(ext)) {
+            const buf = fs.readFileSync(localPath);
+            php.writeFile(virtualDir, isBinary(buf) ? buf : buf.toString('utf8'));
         }
-    };
-    walk(projectDir);
+    }
 }
 
 
 const run = async (args) => {
-    php.setSpawnHandler((command, args, options) => {
-        return spawn(command, args, options);
-    });
+    php.setSpawnHandler((command, args, options) => spawn(command, args, options));
     const output = await php.runStream({
-        scriptPath: '/pxpros/pxpros.php',
-        env: { PXPROS_ARGS: JSON.stringify(args) }
+        scriptPath: '/prepros/prepros.php',
+        env: { PREPROS_ARGS: JSON.stringify(args), PREPROS_CONFIG: JSON.stringify(preprosConfig) }
     });
     const stdout = await output.stdoutText;
     const stderr = await output.stderrText;
+    console.log(stdout);
     let retobj;
     try {
         retobj = JSON.parse(stdout);
@@ -130,7 +54,11 @@ const run = async (args) => {
         retobj = { success: false, error: 'Response parsing error.', response: stdout };
     }
     if (stderr) {
-        retobj = { success: false, error: stderr };
+        try {
+            retobj = JSON.parse(stderr);
+        } catch(e) { 
+            retobj = { success: false, error: stderr };
+        }
     }
     return retobj;
 }
@@ -145,8 +73,40 @@ const render = async (file) => {
 
 
 const sitemap = async (dir) => {
-    return run(['sitemap', '/project/' + dir]);
+    mountPath(php, __root, '/project/' + config?.kirigami?.root);
+    return run(['sitemap']);
 }
+
+
+if (!fs.existsSync(__configpath)) throw `Config file not found: ${__configpath}`;
+const configContents = fs.readFileSync(__configpath, 'utf8');
+const config = yaml.load(configContents);
+if(!config) throw `Invalid config file: ${__configpath}`;
+
+
+if(config?.kirigami?.root === undefined) throw `Missing prepros:root property in config file: ${__configpath}`;
+const __root = path.join(__project, config.kirigami.root);
+if (!fs.existsSync(__root)) throw `Invalid prepros:root path: ${__root}`;
+
+
+const preprosConfig = config.prepros;
+preprosConfig.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+preprosConfig.root = joinWith('/project/', config?.kirigami?.root);
+preprosConfig.data = config.kirigami || {};
+
+
+const runtime = await loadPHPRuntime(await getPHPLoaderModule());
+const php = new PHP(runtime);
+
+
+const mountPaths = [];
+mountPath(php, __dirname, '/prepros');
+if(preprosConfig.before) mountPaths.push(dirname(preprosConfig.before)); 
+if(preprosConfig.after) mountPaths.push(dirname(preprosConfig.after)); 
+(preprosConfig?.includes || []).forEach(path => mountPaths.push(dirname(path)));
+mountPaths.filter((v, i, a) => a.indexOf(v) === i).forEach(path => {
+    mountPath(php, __root + '/' + path, '/project/' + config?.kirigami?.root + '/' + path);
+});
 
 
 export { render, sitemap };

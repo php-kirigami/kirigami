@@ -6,8 +6,8 @@ SYS::requireExtension('gd');
 class IMG
 {
 
-	private $im = null;
-	private $info = null;
+	private GdImage|null $im = null;
+	private array|null $info = null;
 
 
 	public function __construct(string $file)
@@ -30,7 +30,7 @@ class IMG
 	}
 
 
-	public function __get($name)
+	public function __get(string $name)
 	{
 		switch (strtolower($name)) {
 			case "w":
@@ -43,7 +43,7 @@ class IMG
 	}
 
 
-	private function setNew($im) {
+	private function setNew(GdImage $im) {
 		$this->im = $im;
 		return $this;
 	}
@@ -106,7 +106,7 @@ class IMG
 	}
 
 
-	public function save($dest): self
+	public function save(string $dest): self
 	{
 		$ext = strtolower(pathinfo($dest, PATHINFO_EXTENSION));
 		$dir = pathinfo($dest, PATHINFO_DIRNAME);

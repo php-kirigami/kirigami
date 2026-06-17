@@ -20,7 +20,7 @@ class FS {
 	}
 
 
-	public static function getRelativePath(string $from, string $to)
+	public static function getRelativePath(string $from, string $to): string
 	{
 		$from     = is_dir($from) ? rtrim($from, '\/') . '/' : $from;
 		$to       = is_dir($to)   ? rtrim($to, '\/') . '/'   : $to;
@@ -48,7 +48,7 @@ class FS {
 	}
 
 
-	public static function phpFileInfo(string $file)
+	public static function phpFileInfo(string $file): object|bool
 	{
 		static $files = [];
 		if (!$file = realpath($file)) return false;
