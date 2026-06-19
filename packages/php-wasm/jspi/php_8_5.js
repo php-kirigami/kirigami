@@ -4821,7 +4821,7 @@ url = SOCKFS.websocketArgs["url"](...arguments);
       }
       var WebSocketServer = require("ws").Server;
       var host = sock.saddr;
-      sock.server = new WebSocketServer({
+      if (Module['websocket']['serverDecorator']) {WebSocketServer = Module['websocket']['serverDecorator'](WebSocketServer);}sock.server = new WebSocketServer({
         host,
         port: sock.sport
       });
@@ -4942,7 +4942,7 @@ url = SOCKFS.websocketArgs["url"](...arguments);
         throw new FS.ErrnoError(28);
       }
     },
-    recvmsg(sock, length) {
+    recvmsg(sock, length, flags) {
       // http://pubs.opengroup.org/onlinepubs/7908799/xns/recvmsg.html
       if (sock.type === 1 && sock.server) {
         // tcp servers should not be recv()'ing on the listen socket
@@ -4977,7 +4977,7 @@ url = SOCKFS.websocketArgs["url"](...arguments);
         port: queued.port
       };
       // push back any unread data for TCP connections
-      if (sock.type === 1 && bytesRead < queuedLength) {
+      if (flags&2) {bytesRead = 0;} if (sock.type === 1 && bytesRead < queuedLength) {
         var bytesRemaining = queuedLength - bytesRead;
         queued.data = new Uint8Array(queuedBuffer, queuedOffset + bytesRead, bytesRemaining);
         sock.recv_queue.unshift(queued);
@@ -6843,7 +6843,7 @@ ___syscall_readlinkat.sig = "iippp";
 function ___syscall_recvfrom(fd, buf, len, flags, addr, addrlen) {
   try {
     var sock = getSocketFromFD(fd);
-    var msg = sock.sock_ops.recvmsg(sock, len);
+    var msg = sock.sock_ops.recvmsg(sock, len, typeof flags !== "undefined" ? flags : 0);
     if (!msg) return 0;
     // socket is closed
     if (addr) {

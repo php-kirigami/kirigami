@@ -129,7 +129,7 @@ class MD {
                 }
 
                 $output      = (self::$plugins[$name])($args, $body);
-                $placeholder = "\x02PLUGIN_" . count($pluginBlocks) . "\x03";
+                $placeholder = "\x02PLG" . count($pluginBlocks) . "\x03";
                 $pluginBlocks[$placeholder] = $output;
                 return $placeholder;
             },
@@ -144,7 +144,7 @@ class MD {
         $html = preg_replace_callback('/^```([a-zA-Z0-9_+-]*)\n([\s\S]*?)\n^```/m', function ($matches) use (&$codeBlocks) {
             $lang        = !empty($matches[1]) ? ' class="language-' . htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8') . '"' : '';
             $code        = htmlspecialchars($matches[2], ENT_QUOTES, 'UTF-8');
-            $placeholder = "\x02CODEBLOCK_" . count($codeBlocks) . "\x03";
+            $placeholder = "\x02CB" . count($codeBlocks) . "\x03";
             $codeBlocks[$placeholder] = "<pre><code{$lang}>{$code}</code></pre>";
             return $placeholder;
         }, $html);
@@ -153,7 +153,7 @@ class MD {
         $inlineCodes = [];
         $html = preg_replace_callback('/`([^`\n]+)`/', function ($matches) use (&$inlineCodes) {
             $code        = htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8');
-            $placeholder = "\x02INLINECODE_" . count($inlineCodes) . "\x03";
+            $placeholder = "\x02IC" . count($inlineCodes) . "\x03";
             $inlineCodes[$placeholder] = "<code>{$code}</code>";
             return $placeholder;
         }, $html);
@@ -167,9 +167,10 @@ class MD {
 
         // ====================================================================
         // ÉTAPE 5 : TABLEAUX GFM
+        // Supporte les lignes avec ou sans pipe final (| col | ou | col)
         // ====================================================================
         $html = preg_replace_callback(
-            '/^(\|[^\n]+\|\n)([ \t]*\|[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?\n)((?:\|[^\n]+\|\n?)+)/m',
+            '/^(\|[^\n]+\|?\n)([ \t]*\|[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)*\|?\n)((?:\|[^\n]+\|?\n?)+)/m',
             function ($matches) {
                 $parseRow = function (string $line): array {
                     return array_values(array_filter(
@@ -231,10 +232,12 @@ class MD {
             $html
         );
 
-        // Blockquotes standards
+        // Blockquotes standards — fusionne les lignes consécutives en un seul bloc
         $html = preg_replace_callback('/^((?:>[ \t]?[^\n]*\n?)+)/m', function ($matches) {
             $content = preg_replace('/^>[ \t]?/m', '', trim($matches[1]));
-            return "<blockquote><p>{$content}</p></blockquote>";
+            // Deux espaces en fin de ligne → <br> à l'intérieur du blockquote
+            $content = preg_replace('/  $/m', '<br>', $content);
+            return "<blockquote><p>" . nl2br(trim($content)) . "</p></blockquote>";
         }, $html);
 
 
@@ -304,8 +307,10 @@ class MD {
         $html = preg_replace('/___(.+?)___/s',        '<strong><em>$1</em></strong>', $html);
         $html = preg_replace('/\*\*(.+?)\*\*/s',      '<strong>$1</strong>',          $html);
         $html = preg_replace('/__(.+?)__/s',           '<strong>$1</strong>',          $html);
-        $html = preg_replace('/\*(.+?)\*/s',           '<em>$1</em>',                  $html);
-        $html = preg_replace('/_([^_\s][^_]*[^_\s]|[^_\s])_/', '<em>$1</em>',         $html);
+        $html = preg_replace('/\*(.+?)\*/s',                          '<em>$1</em>',                  $html);
+        // Le _ italique ne doit matcher qu'aux frontières de mots pour ne pas
+        // capturer les snake_case, noms de packages (@php-wasm/node), etc.
+        $html = preg_replace('/(?<!\w)_([^_\n]+)_(?!\w)/',           '<em>$1</em>',                  $html);
         $html = preg_replace('/~~(.+?)~~/s',           '<del>$1</del>',                $html);
 
 
@@ -366,7 +371,7 @@ class MD {
         $blockStartTags = ['<h', '<pre', '<ul', '<ol', '<li', '<table', '<thead', '<tbody',
                            '<tr', '<td', '<th', '<blockquote', '<div', '<hr', '<img',
                            '</ul>', '</ol>', '</table>', '</blockquote>', '</div>',
-                           "\x02CODEBLOCK_", "\x02INLINECODE_", "\x02PLUGIN_"];
+                           "\x02CB", "\x02IC", "\x02PLG"];
 
         $isBlockLine = static function (string $line) use ($blockStartTags): bool {
             $t = ltrim($line);
@@ -384,8 +389,9 @@ class MD {
         $flushBuffer = static function () use (&$textBuffer, &$output): void {
             if (empty($textBuffer)) return;
             $content = implode("\n", $textBuffer);
-            // Un buffer qui ne contient que des espaces/vides : on ignore
             if (trim($content) !== '') {
+                // Deux espaces en fin de ligne → <br> (convention markdown standard)
+                $content = preg_replace('/  $/m', '<br>', $content);
                 $output[] = '<p>' . nl2br(trim($content)) . '</p>';
             }
             $textBuffer = [];
@@ -417,6 +423,8 @@ class MD {
         return $html;
     }
 }
+
+
 
 
 

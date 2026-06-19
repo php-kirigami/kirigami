@@ -2,8 +2,7 @@ import fs from 'fs';
 import path, { dirname } from "path";
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
-import { PHP, loadPHPRuntime } from '@php-wasm/universal';
-import { getPHPLoaderModule } from '@kirigami/php-wasm';
+import { getPHPRuntime, getPHPRuntimeWithNetwork } from "@kirigami/php-wasm";
 import isBinary from './utils/isbinary.js';
 import joinWith from './utils/joinwith.js'
 import yaml from "js-yaml";
@@ -15,7 +14,7 @@ const __configpath = path.join(__project, 'kirigami.yaml');
 
 
 const mountPath = (php, localPath, virtualDir) => {
-    const includeExtensions = new Set(['.php', '.json', '.yaml', '.db', ...(config?.prepros?.mountext || [])]);
+    const includeExtensions = new Set(['.php', '.json', '.yaml', '.md', '.db', ...(config?.prepros?.mountext || [])]);
     const stat = fs.statSync(localPath);
     if (stat.isDirectory()) {
         php.mkdir(virtualDir);
@@ -95,8 +94,8 @@ preprosConfig.root = joinWith('/project/', config?.kirigami?.root);
 preprosConfig.data = config.kirigami || {};
 
 
-const runtime = await loadPHPRuntime(await getPHPLoaderModule());
-const php = new PHP(runtime);
+// const php = await getPHPRuntime();
+const php = await getPHPRuntimeWithNetwork();
 
 
 const mountPaths = [];

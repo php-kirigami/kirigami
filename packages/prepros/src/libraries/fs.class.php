@@ -1,7 +1,8 @@
 <?php
 
 
-class FS {
+class FS
+{
 
 
 	public static function dig(string $path): iterable
@@ -76,28 +77,57 @@ class FS {
 	public static function rmdir(string $dir, bool $removeSelf = true): bool
 	{
 		if (!file_exists($dir)) return true;
-
-		// Si c'est un fichier ou un lien, on unlink (et removeSelf n'a pas vraiment de sens ici)
-		if (is_file($dir) || is_link($dir)) {
-			return @unlink($dir);
-		}
-
+		if (is_file($dir) || is_link($dir)) return @unlink($dir);
 		$items = @scandir($dir);
 		if ($items === false) return false;
-
 		foreach ($items as $item) {
 			if ($item === '.' || $item === '..') continue;
-
 			$path = $dir . DIRECTORY_SEPARATOR . $item;
-
-			// Important: si c'est un symlink, on le traite comme un fichier (on ne descend pas dedans)
 			if (is_dir($path) && !is_link($path)) {
-				if (!call_user_func(__METHOD__, $path, true)) return false; // on supprime toujours les sous-dossiers eux-mêmes
+				if (!call_user_func(__METHOD__, $path, true)) return false;
 			} else {
 				if (!@unlink($path)) return false;
 			}
 		}
-
 		return $removeSelf ? @rmdir($dir) : true;
+	}
+
+
+	public static function pathJoin(string ...$parts): string
+	{
+		if (empty($parts)) return '';
+		$isAbsolute = str_starts_with($parts[0], '/');
+		$hasTrailingSlash = str_ends_with(end($parts), '/');
+
+		$prefix = '';
+		$isUrl = (bool) preg_match('#^[a-zA-Z][a-zA-Z0-9+\-.]*://#', $parts[0]);
+		if ($isUrl) {
+			preg_match('#^([a-zA-Z][a-zA-Z0-9+\-.]*://[^/]*)(.*)$#', $parts[0], $m);
+			$prefix   = $m[1];
+			$parts[0] = $m[2] ?? '';
+		}
+
+		$merged = implode('/', $parts);
+		$merged = preg_replace('#/+#', '/', $merged);
+
+		$segments = explode('/', $merged);
+		$resolved = [];
+		foreach ($segments as $seg) {
+			if ($seg === '' || $seg === '.') {
+				continue;
+			}
+			if ($seg === '..') {
+				if (!empty($resolved)) {
+					array_pop($resolved);
+				}
+			} else {
+				$resolved[] = $seg;
+			}
+		}
+
+		$path = implode('/', $resolved);
+		if ($isAbsolute || $isUrl) $path = '/' . $path;
+		if ($hasTrailingSlash && !str_ends_with($path, '/')) $path .= '/';
+		return $prefix . $path;
 	}
 }

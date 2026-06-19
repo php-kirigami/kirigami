@@ -11,31 +11,85 @@ class CACHE
     private static function db(): SQLite3
     {
         static $db = null;
-		if($db !== null) return $db;
-		if(!empty($_SERVER['NODE_PROJECT'])) $root = $_SERVER['NODE_PROJECT'] . '/';
-        elseif(!$root = PXPros::findRoot(__FILE__, true)) throw new Exception("Can't find project root.");
+        if($db !== null) return $db;
+        if(!empty($_SERVER['NODE_PROJECT'])) $root = $_SERVER['NODE_PROJECT'] . '/';
+        elseif(!empty(PREPROS::$config->root)) $root = rtrim(PREPROS::$config->root, '/') . '/';
+        else throw new Exception("Can't find project root.");
         if(!is_file(($dbfile = $root . '.cache.db'))) $create = true;
         if(!$db = new SQLite3($dbfile)) throw new Exception("Can't open .cache.db.");
-        if(!empty($create) && !$db->exec('CREATE TABLE "data" ("key" TEXT(128) NOT NULL, "val" TEXT DEFAULT NULL, PRIMARY KEY ("key")); CREATE UNIQUE INDEX "key" ON "data" ("key");')) throw new Exception("Can't create .cache.db.");
+        // busyTimeout est une config de connexion, on la set une seule fois ici
+        $db->busyTimeout(static::DB_TIMEOUT);
+        if(!empty($create) && !$db->exec('
+            CREATE TABLE "data" (
+                "key"        TEXT(128) NOT NULL,
+                "val"        TEXT      DEFAULT NULL,
+                "inserted_at" INTEGER  NOT NULL DEFAULT 0,
+                "ttl"        INTEGER  NOT NULL DEFAULT 0,
+                PRIMARY KEY ("key")
+            );
+            CREATE UNIQUE INDEX "key" ON "data" ("key");
+        ')) throw new Exception("Can't create .cache.db.");
         return $db;
     }
 
 
     public static function get(string $key): mixed
     {
-        if(!$data = self::db()->querySingle("SELECT val FROM data WHERE key = '" . self::db()->escapeString($key) . "'")) return null;
-        else return unserialize($data);
+        static $query = null;
+        if(!$query) $query = self::db()->prepare(
+            "SELECT val FROM data
+             WHERE key = ?
+               AND (ttl = 0 OR inserted_at + ttl >= :now)"
+        );
+        $query->bindValue(1, $key, SQLITE3_TEXT);
+        $query->bindValue(':now', time(), SQLITE3_INTEGER);
+        $result = $query->execute();
+        $query->reset();
+        if(!$result) return null;
+        $row = $result->fetchArray(SQLITE3_ASSOC);
+        $result->finalize();
+        if($row === false) return null;
+        return unserialize($row['val']);
     }
 
 
-    public static function set(string $key, mixed $val): bool
+    public static function set(string $key, mixed $val, int $ttl = 0): bool
     {
         static $query = null;
-        if(!$query) $query = self::db()->prepare("INSERT OR REPLACE INTO data(key, val) VALUES(?, ?);");
-        $query->bindValue(1, $key, SQLITE3_TEXT);
+        if(!$query) $query = self::db()->prepare(
+            "INSERT OR REPLACE INTO data(key, val, inserted_at, ttl)
+             VALUES(?, ?, ?, ?)"
+        );
+        $query->bindValue(1, $key,           SQLITE3_TEXT);
         $query->bindValue(2, serialize($val), SQLITE3_TEXT);
-        if(!self::db()->busyTimeout(static::DB_TIMEOUT)) return false;
-        return @$query->execute() ? true : false;
+        $query->bindValue(3, time(),          SQLITE3_INTEGER);
+        $query->bindValue(4, $ttl,            SQLITE3_INTEGER);
+        $success = (bool)@$query->execute();
+        $query->reset();
+        return $success;
+    }
+
+
+    /**
+     * Supprime les entrées expirées (TTL dépassé).
+     * À appeler périodiquement (cron, ou probabilistement dans get/set).
+     */
+    public static function purge(): bool
+    {
+        return (bool)self::db()->exec(
+            "DELETE FROM data WHERE ttl > 0 AND inserted_at + ttl < " . time()
+        );
+    }
+
+
+    public static function delete(string $key): bool
+    {
+        static $query = null;
+        if(!$query) $query = self::db()->prepare("DELETE FROM data WHERE key = ?");
+        $query->bindValue(1, $key, SQLITE3_TEXT);
+        $success = (bool)@$query->execute();
+        $query->reset();
+        return $success;
     }
 
 }

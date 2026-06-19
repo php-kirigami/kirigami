@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/php-wasm",
-  "version": "8.5.7",
+  "version": "8.5.7-1",
   "description": "A custom PHP-WASM build for Node.js — JSPI only, no browser support. Built for the Kirigami project.",
   "keywords": [
     "php",
@@ -39,7 +39,8 @@
   },
   "dependencies": {
     "@php-wasm/universal": "^3.1.39",
-    "wasm-feature-detect": "1.8.0"
+    "wasm-feature-detect": "1.8.0",
+    "ws": "^8.21.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -47,7 +48,8 @@
   "files": [
     "index.js",
     "index.d.ts",
-    "jspi/",
+    "jspi",
+    "runtime",
     "LICENSE"
   ]
 }

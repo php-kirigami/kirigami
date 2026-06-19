@@ -4,11 +4,11 @@
 final class PREPROS
 {
 
+    public  static mixed  $config;    
     private static string $root;
-    private static mixed $config;
-    private static array $files = [];
-    private static array $hooks = [];
-    private static array $tags = [];
+    private static array  $files = [];
+    private static array  $hooks = [];
+    private static array  $tags  = [];
 
 
     public static function loadConfig(object $config)
@@ -26,26 +26,11 @@ final class PREPROS
     {
         $dir = pathinfo($file, PATHINFO_DIRNAME) . S;
         $target = $dir . ltrim(pathinfo($file, PATHINFO_FILENAME), '_') . '.html';
-
-        $page = FS::phpFileInfo($file);
         $file = realpath($file);
         $absurl = str_replace('//', '/', str_replace('\\', '/', pathinfo(str_replace(realpath(self::$root), '', $file), PATHINFO_DIRNAME)) . '/');
         $relroot = FS::getRelativePath($dir, self::$root);
-        foreach($page as $k => $v) {
-            $ext = strtolower(pathinfo($v, PATHINFO_EXTENSION));
-            if(in_array($ext, ['yaml', 'yml', 'json', 'md']) ) {
-                $filename = pathinfo(realpath($file), PATHINFO_DIRNAME) . '/' . $v;
-                if(is_file($filename)) {
-                    $page->{$k} = match ($ext) {
-                        'yml', 'yaml' => YAML::parseFile($filename),
-                        'md'          => MD::toHtml(file_get_contents($filename)),
-                        'json'        => json_decode(file_get_contents($filename)),
-                        default       => $filename,
-                    };    
-                
-                }
-            }
-        }
+        $page = self::processHook('page_info', [$file, FS::phpFileInfo($file)]);
+
         extract((array)self::$config->data);
         extract((array)$page);
 
@@ -55,9 +40,12 @@ final class PREPROS
         if (self::$config->before) include(realpath(self::$root . self::$config->before));
         $header = ob_get_clean();
 
-        ob_start();
-        include($file);
-        $body = ob_get_clean();
+        if(empty($content)) {
+            ob_start();
+            include($file);
+            $body = ob_get_clean();
+        } else $body = $content;
+
         if (!empty($indent)) {
             $body = join(PHP_EOL, array_map(function ($line) use ($indent) {
                 return str_repeat(' ', $indent) . $line;
@@ -126,11 +114,13 @@ final class PREPROS
 
     public static function getExportedFiles(): array
     {
-        return array_unique(self::$files);
+        $files = array_unique(self::$files);
+        sort($files);
+        return $files;
     }
 
 
-    public function registerHook(string $hook, callable $clb)
+    public static function registerHook(string $hook, callable $clb)
     {
         self::$hooks[$hook][] = $clb;
     }

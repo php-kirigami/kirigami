@@ -1,1 +1,1 @@
-- Système de plugins MD avec la variable contentmd
+- Faire fonctionner la cache SqLite

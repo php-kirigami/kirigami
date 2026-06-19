@@ -22,7 +22,7 @@ node packages/php-wasm/compile/build.js \
   --WITH_LIBZIP=yes \
   --WITH_FILEINFO=no \
   --WITH_MYSQL=no \
-  --WITH_WS_NETWORKING_PROXY=no \
+  --WITH_WS_NETWORKING_PROXY=yes \
   --WITH_DEBUG=no \
   --WITH_SOURCEMAPS=no \
   --STACK_SIZE=512kb \

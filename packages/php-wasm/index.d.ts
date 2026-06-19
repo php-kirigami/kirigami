@@ -7,6 +7,8 @@
  * @see https://github.com/WordPress/wordpress-playground
  */
 
+import type { PHP } from '@php-wasm/universal';
+
 /**
  * The PHP loader module interface, compatible with `@php-wasm/universal`.
  *
@@ -31,10 +33,10 @@ export interface PHPLoaderModule {
    * Initialises the Emscripten runtime and returns the PHP module instance.
    *
    * @param RuntimeName - Must be `"NODE"` for this build. `"WORKER"` is also
-   *                      accepted but has not been tested in this distribution.
+   * accepted but has not been tested in this distribution.
    * @param PHPLoader   - The loader object provided by `@php-wasm/universal`.
-   *                      Pass the object you receive inside the `onPhpLoader`
-   *                      callback — do not construct it manually.
+   * Pass the object you receive inside the `onPhpLoader`
+   * callback — do not construct it manually.
    * @returns A promise that resolves to the initialised Emscripten module.
    */
   init(RuntimeName: "NODE" | "WORKER", PHPLoader: object): Promise<unknown>;
@@ -77,10 +79,31 @@ export declare function getPHPLoaderModule(): Promise<PHPLoaderModule>;
  * import { jspi } from '@kirigami/php-wasm';
  *
  * if (!(await jspi())) {
- *   throw new Error('This runtime does not support WASM JSPI.');
+ * throw new Error('This runtime does not support WASM JSPI.');
  * }
  * ```
  *
  * @returns A promise that resolves to `true` if JSPI is available.
  */
 export declare function jspi(): Promise<boolean>;
+
+/**
+ * Instantiates and returns a standard, isolated PHP runtime instance.
+ *
+ * A higher-level abstraction helper that automates the loader fetching
+ * and initialization process using `@php-wasm/universal`.
+ *
+ * @returns A promise that resolves to an initialized PHP instance.
+ */
+export declare function getPHPRuntime(): Promise<PHP>;
+
+/**
+ * Instantiates and returns a PHP runtime instance configured with full outbound networking.
+ *
+ * Automatically provisions a zero-dependency local WebSocket-to-TCP proxy on a free port,
+ * injects the host's root certificates into the virtual filesystem (for native HTTPS/cURL/OpenSSL),
+ * and hooks into Emscripten's SOCKFS layer.
+ *
+ * @returns A promise that resolves to a network-enabled PHP instance.
+ */
+export declare function getPHPRuntimeWithNetwork(): Promise<PHP>;

@@ -32,29 +32,16 @@ The WASM binary (`jspi/8_5_7/php_8_5.wasm`) and the Emscripten-generated loader 
 
 ---
 
-## Compatibility with `@php-wasm/universal`
+## Compatibility & Runtime Helpers
 
-This package is a **drop-in replacement** for the loader module consumed by [`@php-wasm/universal`](https://www.npmjs.com/package/@php-wasm/universal). It exposes the same `PHPLoaderModule` interface:
+This package is a **drop-in replacement** for the loader module consumed by [`@php-wasm/universal`](https://www.npmjs.com/package/@php-wasm/universal). It exposes the raw `PHPLoaderModule` interface along with high-level runtime instantiators that include out-of-the-box **networking capabilities**.
 
 | Export | Description |
 |---|---|
-| `getPHPLoaderModule()` | Returns the JSPI PHP 8.5 loader module |
+| `getPHPLoaderModule()` | Returns the raw JSPI PHP 8.5 loader module |
 | `jspi()` | Detects JSPI support in the current runtime (re-exported from `wasm-feature-detect`) |
-
-You use it exactly the same way you would use any other `@php-wasm` loader — just pass the result of `getPHPLoaderModule()` to `PHP.load()`:
-
-```ts
-import { getPHPLoaderModule } from '@kirigami/php-wasm';
-import { PHP } from '@php-wasm/universal';
-
-const loaderModule = await getPHPLoaderModule();
-const php = await PHP.load('8.5', { phpLoaderModule: loaderModule });
-
-const result = await php.run({ code: '<?php echo "Hello, Kirigami!";' });
-console.log(result.text); // Hello, Kirigami!
-```
-
-The only difference from the upstream packages is that **this build only works in Node.js with JSPI enabled**. Attempting to use it in a browser or in a Node.js version that doesn't support JSPI will fail.
+| `getPHPRuntime()` | Instantiates and returns a clean, standard PHP instance |
+| `getPHPRuntimeWithNetwork()` | Instantiates a PHP instance bound to a native, zero-dependency TCP outbound proxy with SSL root certificates injected |
 
 ---
 
@@ -80,41 +67,71 @@ npm install @kirigami/php-wasm
 
 ## Usage
 
-### Basic execution
+### 1. High-level execution with Outbound Networking
+
+The package provides a built-in proxy architecture (`node:http` & `node:net`) that routes Emscripten `SOCKFS` actions into genuine outbound TCP traffic. It also automatically binds your Node environment's root certificates (`node:tls`) to the PHP layer so `cURL` and `OpenSSL` HTTPS requests work immediately.
 
 ```ts
-import { getPHPLoaderModule, jspi } from '@kirigami/php-wasm';
-import { PHP } from '@php-wasm/universal';
+import { getPHPRuntimeWithNetwork, jspi } from '@kirigami/php-wasm';
 
-// Guard: verify JSPI is available before loading the binary
+// Guard: verify JSPI is available before proceeding
 if (!(await jspi())) {
-  throw new Error(
-    'WASM JSPI is not available in this runtime. ' +
-    'Use Node.js 22+ or pass --experimental-wasm-stack-switching on Node.js 20.'
-  );
+  throw new Error('WASM JSPI is not available in this runtime.');
 }
 
-const loaderModule = await getPHPLoaderModule();
-const php = await PHP.load('8.5', { phpLoaderModule: loaderModule });
+// Spins up the runtime and its companion local proxy on a random free port
+const php = await getPHPRuntimeWithNetwork();
 
 const result = await php.run({
   code: `<?php
-    $data = ['project' => 'Kirigami', 'php' => PHP_VERSION];
-    echo json_encode($data);
+    // Native HTTPS request inside WASM using cURL!
+    $ch = curl_init("https://api.github.com/zen");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_USERAGENT, "Kirigami-PHP-WASM");
+    
+    $response = curl_exec($ch);
+    curl_close($ch);
+    
+    echo "GitHub says: " . $response;
   `,
 });
 
 console.log(result.text);
-// {"project":"Kirigami","php":"8.5.7"}
+
+// Clean up the proxy server when done if necessary
+if (php._networkProxyServer) {
+  php._networkProxyServer.close();
+}
+
 ```
 
-### Checking JSPI support
+### 2. Standard isolated runtime
+
+If you do not require internet access/sockets inside the PHP code, use the lightweight isolated helper:
 
 ```ts
-import { jspi } from '@kirigami/php-wasm';
+import { getPHPRuntime } from '@kirigami/php-wasm';
 
-const supported = await jspi();
-console.log('JSPI available:', supported);
+const php = await getPHPRuntime();
+const result = await php.run({ code: '<?php echo PHP_VERSION;' });
+console.log(result.text); // "8.5.7"
+
+```
+
+### 3. Low-level configuration (Manual)
+
+If you prefer to configure the `@php-wasm/universal` instance manually, pass the result of `getPHPLoaderModule()` to `PHP.load()`:
+
+```ts
+import { getPHPLoaderModule } from '@kirigami/php-wasm';
+import { PHP } from '@php-wasm/universal';
+
+const loaderModule = await getPHPLoaderModule();
+const php = await PHP.load('8.5', { phpLoaderModule: loaderModule });
+
+const result = await php.run({ code: '<?php echo "Hello, Kirigami!";' });
+console.log(result.text); // Hello, Kirigami!
+
 ```
 
 ---
@@ -123,13 +140,16 @@ console.log('JSPI available:', supported);
 
 ```
 @kirigami/php-wasm
-├── index.js              # ESM entry point
+├── index.js              # ESM entry point (re-exports runtime + loaders)
 ├── index.d.ts            # TypeScript declarations
+├── runtime/
+│   └── runtime.js        # Networking proxy and runtime helpers
 ├── jspi/
 │   ├── php_8_5.js        # Emscripten-generated Node.js loader (JSPI build)
 │   └── 8_5_7/
 │       └── php_8_5.wasm  # Compiled PHP 8.5.7 WebAssembly binary (~17 MB)
 └── LICENSE
+
 ```
 
 ---
@@ -144,13 +164,15 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 
 ## License
 
-`GPL-2.0-or-later` — same as the upstream WordPress Playground project.  
-See [LICENSE](./LICENSE) for the full text.
+`GPL-2.0-or-later` — same as the upstream WordPress Playground project.
+
+See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 
 ---
 
 ## Related
 
-- [WordPress Playground](https://github.com/WordPress/wordpress-playground) — upstream project
-- [`@php-wasm/universal`](https://www.npmjs.com/package/@php-wasm/universal) — the runtime this loader integrates with
-- [`wasm-feature-detect`](https://www.npmjs.com/package/wasm-feature-detect) — used for JSPI detection
+* [WordPress Playground](https://github.com/WordPress/wordpress-playground) — upstream project
+* [`@php-wasm/universal`](https://www.npmjs.com/package/@php-wasm/universal) — the runtime this loader integrates with
+* [`wasm-feature-detect`](https://www.npmjs.com/package/wasm-feature-detect) — used for JSPI detection
+
