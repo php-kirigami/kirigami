@@ -1,20 +1,58 @@
 {
   "name": "@kirigami/php-prepros",
   "version": "1.0.0",
-  "description": "PHP Preprocessor for Kirigami",
+  "description": "PHP preprocessor for the Kirigami static site generator. Compile PHP page templates to clean, deployable HTML — with zero server dependency.",
   "keywords": [
-    "PHP",
-    "Preprocessor"
+    "kirigami",
+    "php",
+    "preprocessor",
+    "static-site-generator",
+    "ssg",
+    "wasm",
+    "php-wasm",
+    "markdown",
+    "yaml",
+    "github-pages",
+    "pages"
   ],
   "license": "MIT",
   "author": "Maxime Larrivée-Roy",
   "type": "module",
   "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "src/",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20.10.0",
+    "npm": ">=10.2.3"
+  },
+  "exports": {
+    ".": {
+      "import": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "@kirigami/php-wasm": "8.5.7-1",
     "js-yaml": "^4.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/php-kirigami/kirigami"
+  },
+  "homepage": "https://github.com/php-kirigami/kirigami/#readme",
+  "bugs": {
+    "url": "https://github.com/php-kirigami/kirigami/issues"
   }
 }
