@@ -18,7 +18,6 @@ try {
     if (!isset($argv[1])) STD::error("Invalid argument.");
     include(__DIR__ . '/utils.inc.php');
     PREPROS::loadConfig($config);
-
     if($argv[1] == 'sitemap') {
         if(!PREPROS::sitemap()) STD::error("Can't produce the sitemap.");
         STD::succeed(['files' => PREPROS::getExportedFiles()]);
@@ -41,5 +40,6 @@ try {
 } catch(Exception $e) {
     STD::error($e->getMessage());
 }
+
 
 STD::succeed(['files' => PREPROS::getExportedFiles()]);

@@ -160,6 +160,42 @@ class MD {
 
 
         // ====================================================================
+        // ÉTAPE 3b : ALERTES GFM ET BLOCKQUOTES
+        // Traités avant l'encodage XSS car le caractère > serait encodé en &gt;
+        // et les regex ne matcheraient plus.
+        // ====================================================================
+        $blockquotes = [];
+
+        // Alertes GFM (> [!NOTE], etc.) — plus spécifique, traité en premier
+        $html = preg_replace_callback(
+            '/^(>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\n(?:>[ \t]?[^\n]*\n?)*)/m',
+            function ($matches) use (&$blockquotes): string {
+                $type    = strtolower($matches[2]);
+                $label   = htmlspecialchars($matches[2], ENT_QUOTES, 'UTF-8');
+                $content = preg_replace('/^>\s?\[!(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\n?/m', '', $matches[1]);
+                $content = preg_replace('/^>[ \t]?/m', '', $content);
+                $content = htmlspecialchars(trim($content), ENT_QUOTES, 'UTF-8');
+                $placeholder = "\x02BQ" . count($blockquotes) . "\x03";
+                $blockquotes[$placeholder] = "<div class=\"markdown-alert markdown-alert-{$type}\">"
+                    . "<p class=\"markdown-alert-title\">{$label}</p>"
+                    . "<p>{$content}</p></div>";
+                return $placeholder;
+            },
+            $html
+        );
+
+        // Blockquotes standards
+        $html = preg_replace_callback('/^((?:>[ \t]?[^\n]*\n?)+)/m', function ($matches) use (&$blockquotes): string {
+            $content = preg_replace('/^>[ \t]?/m', '', $matches[1]);
+            // Les deux espaces trailing sont laissés tels quels : toHtml() les gère lui-même
+            $inner   = self::toHtml(trim($content));
+            $placeholder = "\x02BQ" . count($blockquotes) . "\x03";
+            $blockquotes[$placeholder] = "<blockquote>{$inner}</blockquote>";
+            return $placeholder;
+        }, $html);
+
+
+        // ====================================================================
         // ÉTAPE 4 : Encodage XSS global
         // ====================================================================
         $html = htmlspecialchars($html, ENT_NOQUOTES, 'UTF-8');
@@ -215,30 +251,8 @@ class MD {
 
 
         // ====================================================================
-        // ÉTAPE 6 : ALERTES GFM (> [!NOTE], > [!WARNING], etc.)
+        // ÉTAPE 6 : (Alertes GFM et blockquotes traités à l'étape 3b)
         // ====================================================================
-        $html = preg_replace_callback(
-            '/^(>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\n(?:>[ \t]?[^\n]*\n?)*)/m',
-            function ($matches) {
-                $type    = strtolower($matches[2]);
-                $label   = $matches[2];
-                $content = preg_replace('/^>\s?\[!(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\n?/m', '', $matches[1]);
-                $content = preg_replace('/^>[ \t]?/m', '', $content);
-                $content = trim($content);
-                return "<div class=\"markdown-alert markdown-alert-{$type}\">"
-                     . "<p class=\"markdown-alert-title\">{$label}</p>"
-                     . "<p>{$content}</p></div>";
-            },
-            $html
-        );
-
-        // Blockquotes standards — fusionne les lignes consécutives en un seul bloc
-        $html = preg_replace_callback('/^((?:>[ \t]?[^\n]*\n?)+)/m', function ($matches) {
-            $content = preg_replace('/^>[ \t]?/m', '', trim($matches[1]));
-            // Deux espaces en fin de ligne → <br> à l'intérieur du blockquote
-            $content = preg_replace('/  $/m', '<br>', $content);
-            return "<blockquote><p>" . nl2br(trim($content)) . "</p></blockquote>";
-        }, $html);
 
 
         // ====================================================================
@@ -371,7 +385,7 @@ class MD {
         $blockStartTags = ['<h', '<pre', '<ul', '<ol', '<li', '<table', '<thead', '<tbody',
                            '<tr', '<td', '<th', '<blockquote', '<div', '<hr', '<img',
                            '</ul>', '</ol>', '</table>', '</blockquote>', '</div>',
-                           "\x02CB", "\x02IC", "\x02PLG"];
+                           "\x02CB", "\x02IC", "\x02PLG", "\x02BQ"];
 
         $isBlockLine = static function (string $line) use ($blockStartTags): bool {
             $t = ltrim($line);
@@ -392,7 +406,10 @@ class MD {
             if (trim($content) !== '') {
                 // Deux espaces en fin de ligne → <br> (convention markdown standard)
                 $content = preg_replace('/  $/m', '<br>', $content);
-                $output[] = '<p>' . nl2br(trim($content)) . '</p>';
+                // Saut de ligne simple → espace (comportement GitHub)
+                // Sauf si déjà converti en <br> ci-dessus
+                $content = preg_replace('/(?<!r>)\n/', ' ', $content);
+                $output[] = '<p>' . trim($content) . '</p>';
             }
             $textBuffer = [];
         };
@@ -417,6 +434,7 @@ class MD {
         // ÉTAPE 14 : Réinjecter les placeholders
         // ====================================================================
         $html = strtr($html, $pluginBlocks);
+        $html = strtr($html, $blockquotes);
         $html = strtr($html, $codeBlocks);
         $html = strtr($html, $inlineCodes);
 
@@ -424,8 +442,3 @@ class MD {
     }
 }
 
-
-
-
-
-include_once(__DIR__ . '/md.plugins.php');

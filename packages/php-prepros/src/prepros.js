@@ -63,11 +63,11 @@ const run = async (args) => {
 }
 
 
-const render = async (file) => {
-	const stats = fs.statSync(file);
-	if (stats.isFile()) mountPath(php, path.join(process.cwd(), path.dirname(file)), '/project/' + path.dirname(file));
-	else mountPath(php, path.join(process.cwd(), file), '/project/' + file);
-    return run(['/project/' + file]);
+const render = async (file = '.') => {
+    const target = path.resolve(__project, config?.kirigami?.root, file);
+    const fsvm = path.join('/project', config?.kirigami?.root, file).replace(/\\/g, '/');
+    mountPath(php, target, fsvm);
+    return run([fsvm]);
 }
 
 
@@ -94,18 +94,14 @@ preprosConfig.root = joinWith('/project/', config?.kirigami?.root);
 preprosConfig.data = config.kirigami || {};
 
 
-// const php = await getPHPRuntime();
-const php = await getPHPRuntimeWithNetwork();
+const php = await (preprosConfig.network ? getPHPRuntimeWithNetwork() : getPHPRuntime());
 
 
 const mountPaths = [];
+const __cache = path.join(__project, '.cache.db');
 mountPath(php, __dirname, '/prepros');
-if(preprosConfig.before) mountPaths.push(dirname(preprosConfig.before)); 
-if(preprosConfig.after) mountPaths.push(dirname(preprosConfig.after)); 
-(preprosConfig?.includes || []).forEach(path => mountPaths.push(dirname(path)));
-mountPaths.filter((v, i, a) => a.indexOf(v) === i).forEach(path => {
-    mountPath(php, __root + '/' + path, '/project/' + config?.kirigami?.root + '/' + path);
-});
+mountPath(php, joinWith(__project, config?.kirigami?.root), joinWith('/project', config?.kirigami?.root));
+if (fs.existsSync(__cache)) mountPath(php, __cache, '/project/.cache.db');
 
 
 export { render, sitemap };

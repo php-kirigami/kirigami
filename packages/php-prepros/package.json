@@ -1,5 +1,5 @@
 {
-  "name": "@kirigami/prepros",
+  "name": "@kirigami/php-prepros",
   "version": "1.0.0",
   "description": "PHP Preprocessor for Kirigami",
   "keywords": [

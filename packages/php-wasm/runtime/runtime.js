@@ -12,12 +12,12 @@
  *                     └─ TCP vers la vraie destination
  */
 
-import { PHP, loadPHPRuntime } from '@php-wasm/universal';
-import { createServer }        from 'node:http';
+import { PHP, loadPHPRuntime }    from '@php-wasm/universal';
+import { createServer }           from 'node:http';
 import { createConnection, isIP } from 'node:net';
-import { lookup }              from 'node:dns';
-import { createHash }          from 'node:crypto';
-import { rootCertificates }    from 'node:tls';
+import { lookup }                 from 'node:dns';
+import { createHash }             from 'node:crypto';
+import { rootCertificates }       from 'node:tls';
 
 // ─── CA bundle ───────────────────────────────────────────────────────────────
 

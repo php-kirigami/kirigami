@@ -1,6 +1,6 @@
 <?php
 
-SYS::requireExtension('sqlite3');
+// SYS::requireExtension('sqlite3');
 
 
 class CACHE
@@ -12,12 +12,14 @@ class CACHE
     {
         static $db = null;
         if($db !== null) return $db;
+
         if(!empty($_SERVER['NODE_PROJECT'])) $root = $_SERVER['NODE_PROJECT'] . '/';
         elseif(!empty(PREPROS::$config->root)) $root = rtrim(PREPROS::$config->root, '/') . '/';
         else throw new Exception("Can't find project root.");
-        if(!is_file(($dbfile = $root . '.cache.db'))) $create = true;
+        
+        if(!is_file(($dbfile = self::getPath()))) $create = true;
         if(!$db = new SQLite3($dbfile)) throw new Exception("Can't open .cache.db.");
-        // busyTimeout est une config de connexion, on la set une seule fois ici
+        
         $db->busyTimeout(static::DB_TIMEOUT);
         if(!empty($create) && !$db->exec('
             CREATE TABLE "data" (
@@ -30,6 +32,11 @@ class CACHE
             CREATE UNIQUE INDEX "key" ON "data" ("key");
         ')) throw new Exception("Can't create .cache.db.");
         return $db;
+    }
+
+
+    private static function getPath() {
+        return '/project/.cache.db';
     }
 
 
@@ -66,16 +73,14 @@ class CACHE
         $query->bindValue(4, $ttl,            SQLITE3_INTEGER);
         $success = (bool)@$query->execute();
         $query->reset();
+        PREPROS::exportFile(self::getPath());
         return $success;
     }
 
 
-    /**
-     * Supprime les entrées expirées (TTL dépassé).
-     * À appeler périodiquement (cron, ou probabilistement dans get/set).
-     */
     public static function purge(): bool
     {
+        PREPROS::exportFile(self::getPath());
         return (bool)self::db()->exec(
             "DELETE FROM data WHERE ttl > 0 AND inserted_at + ttl < " . time()
         );
@@ -89,6 +94,7 @@ class CACHE
         $query->bindValue(1, $key, SQLITE3_TEXT);
         $success = (bool)@$query->execute();
         $query->reset();
+        PREPROS::exportFile(self::getPath());
         return $success;
     }
 
