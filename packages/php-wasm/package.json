@@ -11,7 +11,7 @@
     "jspi",
     "kirigami"
   ],
-  "homepage": "https://github.com/php-kirigami/kirigami#readme",
+  "homepage": "https://github.com/php-kirigami/kirigami/tree/main/packages/php-wasm#readme",
   "bugs": {
     "url": "https://github.com/php-kirigami/kirigami/issues"
   },

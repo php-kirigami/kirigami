@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/php-prepros",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "PHP preprocessor for the Kirigami static site generator. Compile PHP page templates to clean, deployable HTML — with zero server dependency.",
   "keywords": [
     "kirigami",
@@ -49,9 +49,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/php-kirigami/kirigami"
+    "url": "git+https://github.com/php-kirigami/kirigami.git"
   },
-  "homepage": "https://github.com/php-kirigami/kirigami/#readme",
+  "homepage": "https://github.com/php-kirigami/kirigami/tree/main/packages/php-prepros#readme",
   "bugs": {
     "url": "https://github.com/php-kirigami/kirigami/issues"
   }

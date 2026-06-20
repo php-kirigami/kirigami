@@ -1,11 +1,11 @@
 import fs from 'fs';
 import path, { dirname } from "path";
-import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-import { getPHPRuntime, getPHPRuntimeWithNetwork } from "@kirigami/php-wasm";
 import isBinary from './utils/isbinary.js';
 import joinWith from './utils/joinwith.js'
 import yaml from "js-yaml";
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import { getPHPRuntime, getPHPRuntimeWithNetwork } from "@kirigami/php-wasm";
 
 
 const __project = process.cwd();
@@ -35,11 +35,13 @@ const run = async (args) => {
     php.setSpawnHandler((command, args, options) => spawn(command, args, options));
     const output = await php.runStream({
         scriptPath: '/prepros/prepros.php',
-        env: { PREPROS_ARGS: JSON.stringify(args), PREPROS_CONFIG: JSON.stringify(preprosConfig) }
+        env: {
+            PREPROS_ARGS:   JSON.stringify(args),
+            PREPROS_CONFIG: JSON.stringify(preprosConfig)
+        }
     });
     const stdout = await output.stdoutText;
     const stderr = await output.stderrText;
-    console.log(stdout);
     let retobj;
     try {
         retobj = JSON.parse(stdout);

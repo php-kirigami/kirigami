@@ -4,6 +4,8 @@
 
 Build full static websites in PHP — with zero server, zero runtime dependency, zero compromise on expressiveness. Write your pages as regular PHP files, annotate them with a PHPDOC header, and let `php-prepros` compile everything to clean, deployable HTML.
 
+It is the perfect solution for **GitHub Pages**. Since it runs entirely in Node.js, it is fully compatible with **GitHub Actions**, allowing you to automate your deployment pipeline effortlessly.
+
 Part of the **Kirigami** project ecosystem. Other packages are coming soon.
 
 [![npm version](https://img.shields.io/npm/v/@kirigami/php-prepros)](https://www.npmjs.com/package/@kirigami/php-wasm)
@@ -50,6 +52,7 @@ Part of the **Kirigami** project ecosystem. Other packages are coming soon.
 	- [License](#license)
 
 ---
+
 
 ## How it works
 
@@ -112,6 +115,9 @@ Source pages live in the directory pointed to by `kirigami.root`. The naming con
 
 ```
 src/
+├── _layout/
+├── _lib/
+├── about/
 ├── _index.php          →  src/index.html
 ├── about/
 │   └── _index.php      →  src/about/index.html
