@@ -2,7 +2,7 @@ import fs from 'fs';
 import path, { dirname } from "path";
 import isBinary from './utils/isbinary.js';
 import joinWith from './utils/joinwith.js'
-import yaml from "js-yaml";
+import { load as YAMLload} from "js-yaml";
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { getPHPRuntime, getPHPRuntimeWithNetwork } from "@kirigami/php-wasm";
@@ -81,7 +81,7 @@ const sitemap = async (dir) => {
 
 if (!fs.existsSync(__configpath)) throw `Config file not found: ${__configpath}`;
 const configContents = fs.readFileSync(__configpath, 'utf8');
-const config = yaml.load(configContents);
+const config = YAMLload(configContents);
 if(!config) throw `Invalid config file: ${__configpath}`;
 
 

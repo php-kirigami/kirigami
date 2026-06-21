@@ -54,6 +54,137 @@ class YAML
         return self::parse(file_get_contents($path), $assoc);
     }
 
+    /**
+     * Charge un fichier YAML ou JSON, puis parcourt récursivement le résultat
+     * et remplace toute valeur string qui correspond à un chemin relatif vers
+     * un fichier YAML/JSON existant par le contenu désérialisé de ce fichier.
+     *
+     * Chaque fichier inclus est lui-même résolu relativement à son propre
+     * répertoire, et ainsi de suite (récursif).
+     *
+     * Si la chaîne ne se termine pas par .yml/.yaml/.json, ou si le fichier
+     * résolu n'existe pas, la valeur est conservée telle quelle.
+     *
+     * Les références circulaires (ex. A → B → A) lèvent une RuntimeException.
+     *
+     * Utilisation :
+     *   $data = YAML::loadFile('/chemin/vers/config.yaml');
+     *   $data = YAML::loadFile('/chemin/vers/config.yaml', true); // arrays assoc
+     *
+     * @param string   $path   Chemin vers le fichier racine (YAML ou JSON).
+     * @param bool     $assoc  true → mappings en array, false → stdClass.
+     * @return mixed
+     */
+    public static function loadFile(string $path, bool $assoc = false): mixed
+    {
+        $absolute = realpath($path);
+        if ($absolute === false || !is_readable($absolute)) {
+            throw new \RuntimeException("Impossible de lire le fichier : $path");
+        }
+
+        return self::loadFileRecursive($absolute, $assoc, []);
+    }
+
+    // -------------------------------------------------------------------------
+    // Méthodes privées pour loadFile
+    // -------------------------------------------------------------------------
+
+    /**
+     * Charge et résout un fichier, en propageant la liste des ancêtres pour
+     * détecter les cycles.
+     *
+     * @param string   $absolute Chemin absolu canonique du fichier à charger.
+     * @param bool     $assoc
+     * @param string[] $ancestors Chemins absolus des fichiers en cours de traitement.
+     * @return mixed
+     */
+    private static function loadFileRecursive(string $absolute, bool $assoc, array $ancestors): mixed
+    {
+        if (in_array($absolute, $ancestors, true)) {
+            throw new \RuntimeException(
+                "Référence circulaire détectée : " . implode(' → ', $ancestors) . " → $absolute"
+            );
+        }
+
+        $ext  = strtolower(pathinfo($absolute, PATHINFO_EXTENSION));
+        $raw  = file_get_contents($absolute);
+        $dir  = dirname($absolute);
+
+        if ($ext === 'json') {
+            $data = json_decode($raw, $assoc, 512, JSON_THROW_ON_ERROR);
+        } else {
+            // .yml, .yaml ou autre extension traitée comme YAML
+            $data = self::parse($raw, $assoc);
+        }
+
+        return self::resolveNode($data, $dir, $assoc, [...$ancestors, $absolute]);
+    }
+
+    /**
+     * Parcourt récursivement une valeur PHP (objet stdClass, array, string,
+     * scalaire) et résout les références vers des fichiers externes.
+     *
+     * @param mixed    $node
+     * @param string   $dir      Répertoire du fichier qui contient ce nœud.
+     * @param bool     $assoc
+     * @param string[] $ancestors
+     * @return mixed
+     */
+    private static function resolveNode(mixed $node, string $dir, bool $assoc, array $ancestors): mixed
+    {
+        if (is_string($node)) {
+            return self::resolveString($node, $dir, $assoc, $ancestors);
+        }
+
+        if (is_array($node)) {
+            foreach ($node as $key => $value) {
+                $node[$key] = self::resolveNode($value, $dir, $assoc, $ancestors);
+            }
+            return $node;
+        }
+
+        if ($node instanceof \stdClass) {
+            foreach ($node as $key => $value) {
+                $node->$key = self::resolveNode($value, $dir, $assoc, $ancestors);
+            }
+            return $node;
+        }
+
+        // int, float, bool, null → retourné tel quel
+        return $node;
+    }
+
+    /**
+     * Si la chaîne pointe vers un fichier YAML/JSON existant (chemin relatif
+     * au répertoire $dir), charge ce fichier récursivement. Sinon retourne la
+     * chaîne d'origine.
+     *
+     * @param string   $str
+     * @param string   $dir
+     * @param bool     $assoc
+     * @param string[] $ancestors
+     * @return mixed
+     */
+    private static function resolveString(string $str, string $dir, bool $assoc, array $ancestors): mixed
+    {
+        $trimmed = trim($str);
+
+        // Filtre rapide sur l'extension
+        if (!preg_match('/\.(ya?ml|json)$/i', $trimmed)) {
+            return $str;
+        }
+
+        // Résolution du chemin relatif au répertoire du fichier parent
+        $candidate = $dir . DIRECTORY_SEPARATOR . $trimmed;
+        $absolute  = realpath($candidate);
+
+        if ($absolute === false || !is_readable($absolute)) {
+            return $str; // Fichier introuvable → string ordinaire
+        }
+
+        return self::loadFileRecursive($absolute, $assoc, $ancestors);
+    }
+
     // -------------------------------------------------------------------------
     // Parsing récursif
     // -------------------------------------------------------------------------

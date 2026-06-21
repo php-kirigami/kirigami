@@ -1,0 +1,22 @@
+{
+  "name": "@kirigami/kirigami",
+  "version": "0.1.0",
+  "description": "Kirigami CLI — point d'entrée du projet",
+  "type": "module",
+  "bin": {
+    "kiri": "./bin/kiri.js"
+  },
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "dev": "node bin/kiri.js"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

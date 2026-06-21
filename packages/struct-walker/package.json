@@ -1,0 +1,30 @@
+{
+  "name": "@kirigami/struct-walker",
+  "version": "1.0.0",
+  "description": "Walk a file structure recursivfly bla bla bla",
+  "license": "MIT",
+  "author": "Maxime Larrivée-Roy",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "exports": {
+    ".": {
+      "import": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=20.10.0",
+    "npm": ">=10.2.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "js-yaml": "5.0.0",
+    "mime-types": "3.0.2",
+    "file-type": "22.0.1"
+  }
+}
