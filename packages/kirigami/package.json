@@ -11,12 +11,11 @@
   },
   "dependencies": {
     "@kirigami/php-prepros": "1.0.1",
+    "@kirigami/struct-walker": "1.0.0",
     "chokidar": "^5.0.0",
     "csso": "^5.0.5",
     "esbuild": "^0.28.1",
     "ignore": "^7.0.5",
-    "js-yaml": "^5.0.0",
-    "npm-check-updates": "^22.2.7",
     "picomatch": "^4.0.4",
     "sass": "^1.101.0"
   }

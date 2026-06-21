@@ -1,17 +1,36 @@
 {
   "name": "@kirigami/struct-walker",
   "version": "1.0.0",
-  "description": "Walk a file structure recursivfly bla bla bla",
+  "description": "Recursively walks YAML/JSON file structures, resolving relative file references into parsed objects and assets into data URIs.",
   "license": "MIT",
   "author": "Maxime Larrivée-Roy",
   "type": "module",
   "main": "index.js",
+  "types": "index.d.ts",
+  "keywords": [
+    "yaml",
+    "json",
+    "walker",
+    "data-uri",
+    "assets",
+    "resolver",
+    "struct",
+    "kirigami"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "src/",
+    "LICENSE",
+    "README.md"
+  ],
   "exports": {
     ".": {
-      "import": "./index.js"
+      "import": "./index.js",
+      "types": "./index.d.ts"
     },
     "./package.json": "./package.json"
   },
