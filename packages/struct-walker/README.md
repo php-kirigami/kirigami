@@ -1,8 +1,10 @@
 # @kirigami/struct-walker
 
 [![npm version](https://img.shields.io/npm/v/@kirigami/struct-walker.svg)](https://www.npmjs.com/package/@kirigami/struct-walker)
-[![license](https://img.shields.io/npm/l/@kirigami/struct-walker.svg)](./LICENSE)
-[![node version](https://img.shields.io/node/v/@kirigami/struct-walker.svg)](https://nodejs.org)
+[![License: MIT](https://img.shields.io/badge/MIT-blue)](./LICENSE)
+[![Node.js >=20.10.0](https://img.shields.io/badge/node-%3E%3D20.10.0-brightgreen)](https://nodejs.org)
+
+
 
 Recursively walks a YAML or JSON file, resolving string values that reference other files relative to their parent. Nested YAML/JSON files are deserialized and inlined. Assets (images, fonts, audio, video…) are optionally converted to data URIs — either percent-encoded for text formats like SVG and CSS, or base64 for binary formats.
 

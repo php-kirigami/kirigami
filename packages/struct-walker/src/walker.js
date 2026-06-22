@@ -211,7 +211,7 @@ async function resolveString(str, dir, resolveAssets, visited) {
 
 	if (YAML_JSON_EXTS.has(ext)) {
 		// Clone visited so sibling references don't falsely trip the cycle guard
-		return walkFile(candidate, new Set(visited));
+		return walkFile(candidate, resolveAssets, new Set(visited));
 	}
 
 	if (ASSET_EXTS.has(ext) && resolveAssets) {

@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/struct-walker",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Recursively walks YAML/JSON file structures, resolving relative file references into parsed objects and assets into data URIs.",
   "license": "MIT",
   "author": "Maxime Larrivée-Roy",
@@ -45,5 +45,13 @@
     "js-yaml": "5.0.0",
     "mime-types": "3.0.2",
     "file-type": "22.0.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/php-kirigami/kirigami.git"
+  },
+  "homepage": "https://github.com/php-kirigami/kirigami/tree/main/packages/php-prepros#readme",
+  "bugs": {
+    "url": "https://github.com/php-kirigami/kirigami/issues"
   }
 }

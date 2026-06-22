@@ -7,11 +7,14 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "node bin/kiri.js"
+  },
+  "bin": {
+    "kiri": "./bin/kiri.js"
   },
   "dependencies": {
     "@kirigami/php-prepros": "1.0.1",
-    "@kirigami/struct-walker": "1.0.0",
+    "@kirigami/struct-walker": "1.0.2",
     "chokidar": "^5.0.0",
     "csso": "^5.0.5",
     "esbuild": "^0.28.1",
