@@ -4,8 +4,13 @@
  * Compile le projet Kirigami pour la production.
  */
 
+import path from "path";
+import { fileURLToPath, pathToFileURL } from 'url';
 import { c, log, parseArgs, printCommandHelp } from "../utils.js";
-import { getConfig } from "../../src/config.js";
+import { getConfig } from "../config.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 
 const HELP = {
 	name: "build",
@@ -33,8 +38,26 @@ export default async function build(args) {
 		return;
 	}
 
+	
 	const config = await getConfig();
-	// console.log(config);
+	console.log(config);
+
+
+	const modules = [];
+	for (const task of config.tasks) {
+		console.log(task);
+		// console.log(path.resolve(__dirname, "../tasks", `${task.type}.js`));
+
+		if(!modules[task.type]) {
+			const taskPath = path.resolve(__dirname, "../tasks", `${task.type}.js`);
+			modules[task.type] = await import(pathToFileURL(taskPath).href);
+		}
+		const results = await modules[task.type].default(config.root, task);
+		console.log(results);
+
+
+
+	}
 
 
 

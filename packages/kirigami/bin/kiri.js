@@ -90,8 +90,10 @@ async function main() {
 		const cmdModule = await import(pathToFileURL(cmdPath).href);
 		await cmdModule.default(rest);
 	} catch (err) {
-		console.error(`\n${c.red("✖")} Erreur dans ${c.bold(subcommand)} :\n  ${typeof err == 'string' ? err : err.message}\n`);
-		if (process.env.KIRI_DEBUG) console.error(err);
+		// console.log("patate2");
+		console.error(`\n${c.red("✖")} Error: ${c.bold(subcommand)} failed:\n  ${typeof err == 'string' ? err : err.message}\n`);
+		// if (process.env.KIRI_DEBUG) console.error(err);
+		console.log(err);
 		process.exit(1);
 	}
 }

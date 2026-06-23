@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "@kirigami/php-wasm": "8.5.7-1",
-    "js-yaml": "^5.0.0"
+    "js-yaml": "^5.1.0"
   },
   "repository": {
     "type": "git",
