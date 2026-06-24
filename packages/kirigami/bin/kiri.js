@@ -17,11 +17,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ─── Sous-commandes disponibles ─────────────────────────────────────────────
 const COMMANDS = {
-	create: "Créer un nouveau projet Kirigami",
-	install: "Installer les dépendances d'un projet",
-	build: "Compiler le projet pour la production",
-	watch: "Démarrer le mode développement avec hot-reload",
-	export: "Exporter le projet (zip, static, etc.)",
+	build: "Compile project for developement",
+	export: "Compile and export project for production",
+	watch: "Start dev-mode with hot-reload",
 };
 
 // ─── Aide globale ────────────────────────────────────────────────────────────
@@ -30,16 +28,16 @@ function printHelp() {
 ${c.bold(c.cyan("kiri"))} ${c.dim("— Kirigami CLI")}
 
 ${c.bold("USAGE")}
-  ${c.cyan("kiri")} ${c.green("<commande>")} [options]
+  ${c.cyan("kiri")} ${c.green("<command>")} [options]
 
-${c.bold("COMMANDES")}
+${c.bold("COMMANDS")}
 ${Object.entries(COMMANDS)
 			.map(([cmd, desc]) => `  ${c.green(cmd.padEnd(12))}${c.dim(desc)}`)
 			.join("\n")}
 
-${c.bold("OPTIONS GLOBALES")}
-  ${c.gray("--help, -h")}    Afficher cette aide
-  ${c.gray("--version, -v")} Afficher la version
+${c.bold("GLOBAL OPTIONS")}
+  ${c.gray("--help, -h")}    Show help
+  ${c.gray("--version, -v")} Show version
 
 ${c.bold("EXEMPLES")}
   ${c.dim("kiri create mon-projet")}
@@ -62,6 +60,15 @@ async function printVersion() {
 async function main() {
 	const args = process.argv.slice(2);
 	const [subcommand, ...rest] = args;
+
+console.log(`
+██╗  ██╗██╗██████╗ ██╗ ██████╗  █████╗ ███╗   ███╗██╗
+██║ ██╔╝██║██╔══██╗██║██╔════╝ ██╔══██╗████╗ ████║██║
+█████╔╝ ██║██████╔╝██║██║  ███╗███████║██╔████╔██║██║
+██╔═██╗ ██║██╔══██╗██║██║   ██║██╔══██║██║╚██╔╝██║██║
+██║  ██╗██║██║  ██║██║╚██████╔╝██║  ██║██║ ╚═╝ ██║██║
+╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝`);
+
 
 	// Flags globaux
 	if (!subcommand || subcommand === "--help" || subcommand === "-h") {

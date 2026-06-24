@@ -42,7 +42,7 @@ export default async function exportDist(args) {
 		return;
 	}
 
-	console.log(`\n${c.bold(c.cyan("Kirigami"))} — Export Project\n`);
+	console.log(`\n${c.bold(c.cyan("kiri"))} — Export Project\n`);
 	const config = await getConfig();
 
 	if(!config.export?.path) {
@@ -88,7 +88,7 @@ export default async function exportDist(args) {
 			process.stdout.write(` ${c.green("✔")}\n`);
 			results.files.forEach(file => console.log(`    ${c.gray(file)}`));
 		} else {
-			process.stdout.write(` ${c.red("✖")}\n`);
+			process.stdout.write(` ${c.red("❌")}\n`);
 			console.log(c.red("\n› Error:"));
 			console.log(results.error);
 			process.exit(1);
@@ -99,26 +99,4 @@ export default async function exportDist(args) {
 	log.success(c.bold(c.green(` Export finished!`)));
 	console.log();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

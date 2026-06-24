@@ -39,7 +39,7 @@ export default async function build(args) {
 		return;
 	}
 
-	console.log(`\n${c.bold(c.cyan("Kirigami"))} — Build Project\n`);
+	console.log(`\n${c.bold(c.cyan("kiri"))} — Build Project\n`);
 	const config = await getConfig();
 
 	log.step(`Project   : ${c.dim(config.kirigami.project)}`);
@@ -69,7 +69,7 @@ export default async function build(args) {
 			process.stdout.write(` ${c.green("✔")}\n`);
 			results.files.forEach(file => console.log(`    ${c.gray(file)}`));
 		} else {
-			process.stdout.write(` ${c.red("✖")}\n`);
+			process.stdout.write(` ${c.red("❌")}\n`);
 			console.log(c.red("\n› Error:"));
 			console.log(results.error);
 			process.exit(1);

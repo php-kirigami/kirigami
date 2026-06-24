@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from "path";
 import util from "util";
 import esbuild from "esbuild";
-import { replaceRoot } from '../utils.js';
+import { replaceRoot, joinWith, c, log } from '../utils.js';
 
 
 export const taskname = 'Javascript';
@@ -10,7 +10,7 @@ export const taskname = 'Javascript';
 export default async function build(__root, task, exportPath = null) {
 
 	const entry = path.join(__root, task.entry);
-	const outfile = path.join(exportPath || __root, task.entry).replace(/\.jsx?$/, '.min.js');
+	const outfile = path.join(exportPath || __root, task.entry).replace(/\.(?:tsx?|jsx?)$/, '.min.js');
 	const dir = path.dirname(outfile);
 
 	if(!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -21,7 +21,7 @@ export default async function build(__root, task, exportPath = null) {
 			outfile,
 			bundle: true,
 			platform: "browser",
-			logLevel: "error",
+			logLevel: "silent",
 			treeShaking: true,
 			minify: true,
 			supported: { "template-literal": false },
@@ -66,3 +66,23 @@ export async function validate(__root, task) {
 }
 
 
+export function getWatcher(__root, task) {
+	const root = __root.replace(process.cwd(), '').replace(/\\/g, '/').replace(/^\//, '');
+	const dir = joinWith(root, path.dirname(task.entry));
+	const patterns = [joinWith(dir, '**/*.js'), joinWith(dir, '**/*.jsx'), joinWith(dir, '**/*.ts'), joinWith(dir, '**/*.tsx')]
+	return {
+		name: task.name,
+		patterns: patterns,
+		ignored: [joinWith(dir, '**/*.min.js')],
+		callback: async (events) => {
+			console.log(`[${task.name}] batch`, events.length, events.map(e => e.file));
+			const results = await build(__root, task);
+			if(results.success) {
+				results.files.forEach(f => log.step(f));
+			} else {
+				console.log(results.error);
+			}
+			console.log("");
+		}
+	};
+}

@@ -30,8 +30,6 @@ const HELP = {
 };
 
 
-
-
 export default async function watch(args) {
 	const { flags } = parseArgs(args);
 
@@ -40,7 +38,7 @@ export default async function watch(args) {
 		return;
 	}
 
-	console.log(`\n${c.bold(c.cyan("Kirigami"))} — Watch Project\n`);
+	console.log(`\n${c.bold(c.cyan("kiri"))} — Dev-mode with hot-reload\n`);
 	const config = await getConfig();
 
 	if(!config.export?.path) {
@@ -52,6 +50,7 @@ export default async function watch(args) {
 	log.step(`Base URL  : ${c.dim(config.kirigami.baseurl)}`);
 	log.step(`Root      : ${c.dim(config.root)}`);
 	console.log("\n");
+	log.info('Waiting for file change...\n');
 
 	if(config.prepros) {
 		const task = {
@@ -62,8 +61,6 @@ export default async function watch(args) {
 		config.tasks = [ task, ...config.tasks];
 	}
 
-	
-	
 	const modules = [];
 	const watchers = [];
 	for (const task of config.tasks) {
@@ -73,8 +70,6 @@ export default async function watch(args) {
 		}
 		watchers.push(modules[task.type].getWatcher(config.root, task));
 	}
-	
-	// console.log(watchers);
 	const { close } = createWatchers(watchers);
 	__close = close;
 }
@@ -85,16 +80,6 @@ process.on("SIGINT", async () => {
 		await __close();
 	}
 });
-
-
-
-
-
-
-
-
-
-
 
 
 

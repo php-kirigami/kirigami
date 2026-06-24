@@ -6,9 +6,6 @@
   "author": "Maxime Larrivée-Roy",
   "type": "module",
   "main": "index.js",
-  "scripts": {
-    "dev": "node bin/kiri.js"
-  },
   "bin": {
     "kiri": "./bin/kiri.js"
   },

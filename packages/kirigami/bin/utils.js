@@ -16,7 +16,7 @@ export const c = {
 
 // ─── Logger ──────────────────────────────────────────────────────────────────
 export const log = {
-	info: (...a) => console.log(c.cyan("ℹ"), ...a),
+	info: (...a) => console.log(c.cyan("ℹ "), ...a),
 	success: (...a) => console.log(c.green("✔"), ...a),
 	warn: (...a) => console.warn(c.yellow("⚠"), ...a),
 	error: (...a) => console.error(c.red("❌"), ...a),

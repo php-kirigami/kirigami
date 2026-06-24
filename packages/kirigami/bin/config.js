@@ -12,6 +12,7 @@ const __configpath = path.join(__project, 'kirigami.yaml');
 
 let config = null;
 
+
 export async function getConfig() {
 	if(!config) {
 		if (!fs.existsSync(__configpath)) throw `Config file not found: ${__configpath}`;
@@ -73,10 +74,6 @@ async function validateConfig(config) {
 }
 
 
-
-
 function throwConfigError(__configpath, msg) {
 	throw `Invalid config file: ${__configpath}\n  ${msg}`;
-
-
 }
