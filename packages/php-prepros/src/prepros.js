@@ -2,15 +2,47 @@ import fs from 'fs';
 import path, { dirname } from "path";
 import isBinary from './utils/isbinary.js';
 import joinWith from './utils/joinwith.js'
-import { load as YAMLload} from "js-yaml";
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
+import { walkFile } from '@kirigami/struct-walker';
 import { getPHPRuntime, getPHPRuntimeWithNetwork } from "@kirigami/php-wasm";
 
 
 const __project = process.cwd();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const __configpath = path.join(__project, 'kirigami.yaml');
+let   __root = null;
+let   __php  = null;
+
+
+if (!fs.existsSync(__configpath)) throw `Config file not found: ${__configpath}`;
+const config = await walkFile(__configpath);
+if(!config) throw `Invalid config file: ${__configpath}`;
+
+
+const getPHPInstance = async () => {
+    if(!__php) {
+        if(config?.kirigami?.root === undefined) throw `Missing prepros:root property in config file: ${__configpath}`;
+        __root = path.join(__project, config.kirigami.root);
+        if (!fs.existsSync(__root)) throw `Invalid prepros:root path: ${__root}`;
+
+        const preprosConfig = config.prepros;
+        preprosConfig.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        preprosConfig.root = joinWith('/project/', config?.kirigami?.root);
+        preprosConfig.data = config.kirigami || {};
+
+        __php = await (preprosConfig.network ? getPHPRuntimeWithNetwork() : getPHPRuntime());
+        __php.setSpawnHandler((command, args, options) => spawn(command, args, options));
+        __php.preprosConfig = preprosConfig;
+
+        const mountPaths = [];
+        const __cache = path.join(__project, '.cache.db');
+        mountPath(__php, __dirname, '/prepros');
+        mountPath(__php, joinWith(__project, config?.kirigami?.root), joinWith('/project', config?.kirigami?.root));
+        if (fs.existsSync(__cache)) mountPath(__php, __cache, '/project/.cache.db');
+    }
+    return __php;
+}
 
 
 const mountPath = (php, localPath, virtualDir) => {
@@ -32,12 +64,12 @@ const mountPath = (php, localPath, virtualDir) => {
 
 
 const run = async (args) => {
-    php.setSpawnHandler((command, args, options) => spawn(command, args, options));
+    const php = await getPHPInstance();
     const output = await php.runStream({
         scriptPath: '/prepros/prepros.php',
         env: {
             PREPROS_ARGS:   JSON.stringify(args),
-            PREPROS_CONFIG: JSON.stringify(preprosConfig)
+            PREPROS_CONFIG: JSON.stringify(php.preprosConfig)
         }
     });
     const stdout = await output.stdoutText;
@@ -66,6 +98,7 @@ const run = async (args) => {
 
 
 const render = async (file = '.') => {
+    const php = await getPHPInstance();
     const target = path.resolve(__project, config?.kirigami?.root, file);
     const fsvm = path.join('/project', config?.kirigami?.root, file).replace(/\\/g, '/');
     mountPath(php, target, fsvm);
@@ -74,36 +107,10 @@ const render = async (file = '.') => {
 
 
 const sitemap = async (dir) => {
+    const php = await getPHPInstance();
     mountPath(php, __root, '/project/' + config?.kirigami?.root);
     return run(['sitemap']);
 }
-
-
-if (!fs.existsSync(__configpath)) throw `Config file not found: ${__configpath}`;
-const configContents = fs.readFileSync(__configpath, 'utf8');
-const config = YAMLload(configContents);
-if(!config) throw `Invalid config file: ${__configpath}`;
-
-
-if(config?.kirigami?.root === undefined) throw `Missing prepros:root property in config file: ${__configpath}`;
-const __root = path.join(__project, config.kirigami.root);
-if (!fs.existsSync(__root)) throw `Invalid prepros:root path: ${__root}`;
-
-
-const preprosConfig = config.prepros;
-preprosConfig.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-preprosConfig.root = joinWith('/project/', config?.kirigami?.root);
-preprosConfig.data = config.kirigami || {};
-
-
-const php = await (preprosConfig.network ? getPHPRuntimeWithNetwork() : getPHPRuntime());
-
-
-const mountPaths = [];
-const __cache = path.join(__project, '.cache.db');
-mountPath(php, __dirname, '/prepros');
-mountPath(php, joinWith(__project, config?.kirigami?.root), joinWith('/project', config?.kirigami?.root));
-if (fs.existsSync(__cache)) mountPath(php, __cache, '/project/.cache.db');
 
 
 export { render, sitemap };

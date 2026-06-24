@@ -3,8 +3,10 @@ import path from "path";
 import util from "util";
 import * as sass from 'sass'
 import { minify } from 'csso';
+import { replaceRoot } from '../utils.js';
 
 
+export const taskname = 'SCSS';
 
 export default async function build(__root, task, exportPath = null) {
 
@@ -21,12 +23,14 @@ export default async function build(__root, task, exportPath = null) {
 			sourceMap: !exportPath,
 			sourceMapIncludeSources: !exportPath,
 		});
+		
 		if(exportPath) {
 			const minified = minify(compiled.css, { restructure: false });
-			fs.writeFileSync(outfile, minified);
+			fs.writeFileSync(outfile, `/*!\n\n${task.banner}\n\n*/\n${minified.css}`, "utf8");
+			
 			return {
 				success: true,
-				files: [outfile],
+				files: [replaceRoot(outfile)],
 			};
 		} else {
 			const mapfile = outfile.replace(/\.css$/, '.css.map');
@@ -36,7 +40,7 @@ export default async function build(__root, task, exportPath = null) {
 			fs.writeFileSync(mapfile, JSON.stringify(compiled.sourceMap));
 			return {
 				success: true,
-				files: [outfile, mapfile],
+				files: [replaceRoot(outfile), replaceRoot(mapfile)],
 			};
 		}
 	} catch (err) {

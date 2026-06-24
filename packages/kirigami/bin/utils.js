@@ -19,7 +19,7 @@ export const log = {
 	info: (...a) => console.log(c.cyan("ℹ"), ...a),
 	success: (...a) => console.log(c.green("✔"), ...a),
 	warn: (...a) => console.warn(c.yellow("⚠"), ...a),
-	error: (...a) => console.error(c.red("✖"), ...a),
+	error: (...a) => console.error(c.red("❌"), ...a),
 	step: (...a) => console.log(c.gray("›"), ...a),
 };
 
@@ -80,4 +80,45 @@ ${c.bold("USAGE")}
 		examples.forEach((ex) => console.log(`  ${c.dim(ex)}`));
 		console.log();
 	}
+}
+
+
+export const replaceRoot = (path) => {
+	const __root = process.cwd();
+	return path
+		.replace(__root, '')
+		.replace(/\\/g, '/')
+		.replace(/\//, '')
+	;
+}
+
+
+
+export function joinWith(part1, part2, separator = '/', prefix = '') {
+	let join = '';
+	let separatorsFound = 0;
+	if (part1.endsWith(separator)) { separatorsFound += 1; }
+	if (part2.startsWith(separator)) { separatorsFound += 1; }
+	if (separatorsFound === 0) { join = separator; }
+	else if (separatorsFound === 2) { part1 = part1.substr(0, part1.length - separator.length); }
+	if (part1.startsWith(prefix)) { prefix = ''; }
+	return prefix + part1 + join + part2;
+}
+
+
+export function formatFrDate(dateInput = new Date()) {
+	const d = (dateInput instanceof Date) ? dateInput : new Date(dateInput);
+	const fmt = new Intl.DateTimeFormat('fr-CA', {
+		weekday: 'long',
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric',
+		hour: 'numeric',
+		minute: '2-digit',
+		hour12: false,
+		timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+	});
+	const parts = Object.fromEntries(fmt.formatToParts(d).map(p => [p.type, p.value]));
+	const weekday = parts.weekday.charAt(0).toUpperCase() + parts.weekday.slice(1);
+	return `${weekday} le ${parts.day} ${parts.month} ${parts.year} à ${parts.hour} h ${parts.minute}`;
 }

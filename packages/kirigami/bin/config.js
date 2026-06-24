@@ -3,6 +3,7 @@ import path from "path";
 import util from "util";
 import { fileURLToPath, pathToFileURL } from 'url';
 import { walkFile } from "@kirigami/struct-walker";
+import { formatFrDate } from "./utils.js";
 
 
 const __project = process.cwd();
@@ -32,6 +33,18 @@ async function validateConfig(config) {
 	const __root = path.resolve(__project, config.kirigami.root);
 	if (!fs.existsSync(__root)) throwConfigError(__configpath, `Invalid "kirigami:root" property.`);
 	config.root = __root;
+
+
+	// verify kirigami.project, kirigami.baseurl
+
+	if(config.kirigami.banner) {
+		const bannerFile = path.join(__project, config.kirigami.banner);
+		if (!fs.existsSync(bannerFile)) throwConfigError(__configpath, `Invalid "kirigami:banner" property.`);
+		config.kirigami.banner = fs.readFileSync(config.kirigami.banner, 'utf8').replace(/###DATE###/, formatFrDate());
+	} else {
+		config.kirigami.banner = `Exported by Kirigami: ${formatFrDate()}`;
+	}
+
 
 	// Verify export
 

@@ -2,7 +2,10 @@ import fs from 'fs';
 import path from "path";
 import util from "util";
 import esbuild from "esbuild";
+import { replaceRoot } from '../utils.js';
 
+
+export const taskname = 'Javascript';
 
 export default async function build(__root, task, exportPath = null) {
 
@@ -13,7 +16,7 @@ export default async function build(__root, task, exportPath = null) {
 	if(!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
 	try {
-		esbuild.build({
+		await esbuild.build({
 			entryPoints: [entry],
 			outfile,
 			bundle: true,
@@ -27,9 +30,17 @@ export default async function build(__root, task, exportPath = null) {
 			loader: { '.json': 'json' },
 			sourcemap: !exportPath,
 		});
+		if(exportPath) {
+			fs.writeFileSync(
+				outfile,
+				"/*!\n\n" + task.banner + "\n\n*/\n" +
+				fs.readFileSync(outfile, 'utf8'),
+				"utf8"
+			);
+		}
 		return {
 			success: true,
-			files: exportPath ? [outfile] : [outfile, `${outfile}.map`],
+			files: exportPath ? [replaceRoot(outfile)] : [replaceRoot(outfile), `${replaceRoot(outfile)}.map`],
 		};
 	} catch (err) {
 		let msg = err;
@@ -46,16 +57,12 @@ export default async function build(__root, task, exportPath = null) {
 			error: msg,
 		};
 	}
-
-
 }
-
-
-
-
 
 
 export async function validate(__root, task) {
 	if(!task.entry) throw `Missing entry property for task: ${util.inspect(task)}`;
 	if(!fs.existsSync(path.join(__root, task.entry))) throw `Invalid entry property for task: ${util.inspect(task)}`;
 }
+
+

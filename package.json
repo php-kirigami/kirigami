@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "kirigami",
-  "private": true,
+  "private": false,
   "workspaces": [
     "packages/*"
   ],
