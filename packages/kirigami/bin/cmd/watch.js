@@ -10,22 +10,15 @@ const __root = process.cwd();
 let __close = null;
 
 
-const FORMATS = ["zip", "static", "docker", "gh-pages"];
-
 const HELP = {
-	name: "export",
-	description: "Exporter le projet",
+	name: "watch",
+	description: "Start dev-mode with hot-reload",
 	usage: "[options]",
 	options: [
-		{ flag: `--format, -f <fmt>`, desc: `Format de sortie : ${FORMATS.join(", ")} (défaut: static)` },
-		{ flag: "--outdir <path>", desc: "Dossier de sortie (défaut: ./export)" },
-		{ flag: "--no-build", desc: "Ignorer l'étape de build (utilise ./dist existant)" },
-		{ flag: "--help, -h", desc: "Afficher cette aide" },
+		{ flag: "--help, -h", desc: "Show this help section" },
 	],
 	examples: [
-		"kiri export",
-		"kiri export --format zip",
-		"kiri export --format gh-pages --no-build",
+		"kiri watch",
 	],
 };
 

@@ -38,7 +38,7 @@
     "npm": ">=10.2.3"
   },
   "dependencies": {
-    "@php-wasm/universal": "^3.1.41",
+    "@php-wasm/universal": "^3.1.42",
     "wasm-feature-detect": "1.8.0",
     "ws": "^8.21.0"
   },

@@ -14,19 +14,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const HELP = {
 	name: "build",
-	description: "Compiler le projet pour la production",
+	description: "Compile project for developement",
 	usage: "[options]",
 	options: [
-		{ flag: "--minify", desc: "Minifier la sortie (activé par défaut en prod)" },
-		{ flag: "--sourcemap", desc: "Générer les source maps" },
-		{ flag: "--outdir <path>", desc: "Dossier de sortie (défaut: ./dist)" },
-		{ flag: "--config <path>", desc: "Chemin vers kirigami.config.js" },
-		{ flag: "--help, -h", desc: "Afficher cette aide" },
+		{ flag: "--help, -h", desc: "Show this help section" },
 	],
 	examples: [
 		"kiri build",
-		"kiri build --minify --sourcemap",
-		"kiri build --outdir ./out",
 	],
 };
 

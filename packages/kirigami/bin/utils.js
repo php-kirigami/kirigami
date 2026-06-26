@@ -31,6 +31,8 @@ export const log = {
 export function parseArgs(args = []) {
 	const flags = {};
 	const positional = [];
+	let command = null;
+	let subcommand = null;
 	let i = 0;
 
 	while (i < args.length) {
@@ -49,13 +51,19 @@ export function parseArgs(args = []) {
 		} else if (arg.startsWith("-") && arg.length === 2) {
 			flags[arg.slice(1)] = true;
 			i++;
+		} else if (command === null) {
+			command = arg;
+			i++;
+		} else if (subcommand === null) {
+			subcommand = arg;
+			i++;
 		} else {
 			positional.push(arg);
 			i++;
 		}
 	}
 
-	return { flags, positional };
+	return { command, subcommand, flags, positional };
 }
 
 // ─── Aide par commande ───────────────────────────────────────────────────────

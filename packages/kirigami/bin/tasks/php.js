@@ -28,7 +28,7 @@ export async function validate(__root, task) { }
 
 export function getWatcher(__root, task) {
 	const root = __root.replace(process.cwd(), '').replace(/\\/g, '/').replace(/^\//, '');
-	const patterns = [joinWith(root, '**/_*.php'), joinWith(root, '**/*.yaml')]
+	const patterns = [joinWith(root, '**/_*.php'), joinWith(root, '**/*.yaml'), joinWith(root, '**/*.yml'), joinWith(root, '**/*.md'), joinWith(root, '**/*.json')]
 	return {
 		name: task.name,
 		patterns: patterns,

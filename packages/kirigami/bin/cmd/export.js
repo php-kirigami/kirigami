@@ -1,9 +1,3 @@
-/**
- * kiri export [--format <fmt>] [--outdir <path>]
- *
- * Exporte le projet compilé dans différents formats.
- */
-
 import path from "path";
 import { fileURLToPath, pathToFileURL } from 'url';
 import { c, log, parseArgs, printCommandHelp } from "../utils.js";
@@ -13,23 +7,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const __root = process.cwd();
 
 
-
-const FORMATS = ["zip", "static", "docker", "gh-pages"];
-
 const HELP = {
 	name: "export",
-	description: "Exporter le projet",
+	description: "Compile and export project for production",
 	usage: "[options]",
 	options: [
-		{ flag: `--format, -f <fmt>`, desc: `Format de sortie : ${FORMATS.join(", ")} (défaut: static)` },
-		{ flag: "--outdir <path>", desc: "Dossier de sortie (défaut: ./export)" },
-		{ flag: "--no-build", desc: "Ignorer l'étape de build (utilise ./dist existant)" },
-		{ flag: "--help, -h", desc: "Afficher cette aide" },
+		{ flag: "--help, -h", desc: "Show this help section" },
 	],
 	examples: [
 		"kiri export",
-		"kiri export --format zip",
-		"kiri export --format gh-pages --no-build",
 	],
 };
 

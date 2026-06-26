@@ -39,12 +39,10 @@ ${c.bold("GLOBAL OPTIONS")}
   ${c.gray("--help, -h")}    Show help
   ${c.gray("--version, -v")} Show version
 
-${c.bold("EXEMPLES")}
-  ${c.dim("kiri create mon-projet")}
-  ${c.dim("kiri install")}
-  ${c.dim("kiri build --minify")}
-  ${c.dim("kiri watch --port 3000")}
-  ${c.dim("kiri export --format zip")}
+${c.bold("EXAMPLES")}
+  ${c.dim("kiri build")}
+  ${c.dim("kiri export")}
+  ${c.dim("kiri watch")}
 `);
 }
 
@@ -68,7 +66,6 @@ console.log(`
 ██╔═██╗ ██║██╔══██╗██║██║   ██║██╔══██║██║╚██╔╝██║██║
 ██║  ██╗██║██║  ██║██║╚██████╔╝██║  ██║██║ ╚═╝ ██║██║
 ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚═╝`);
-
 
 	// Flags globaux
 	if (!subcommand || subcommand === "--help" || subcommand === "-h") {
@@ -97,10 +94,8 @@ console.log(`
 		const cmdModule = await import(pathToFileURL(cmdPath).href);
 		await cmdModule.default(rest);
 	} catch (err) {
-		// console.log("patate2");
 		console.error(`\n${c.red("✖")} Error: ${c.bold(subcommand)} failed:\n  ${typeof err == 'string' ? err : err.message}\n`);
-		// if (process.env.KIRI_DEBUG) console.error(err);
-		console.log(err);
+		// console.log(err);
 		process.exit(1);
 	}
 }

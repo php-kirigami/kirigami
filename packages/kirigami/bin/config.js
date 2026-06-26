@@ -27,17 +27,21 @@ export async function getConfig() {
 
 async function validateConfig(config) {
 	const modules = [];
-	
-	// Verify root
+
+	// Verify kirigami section
 	if(!config.kirigami) throwConfigError(__configpath, `Missing "kirigami" configuration section.`);
+
+	// verify kirigami.project, kirigami.baseurl
+	if(!config.kirigami.project) throwConfigError(__configpath, `Missing "kirigami:project" property.`);
+	if(!config.kirigami.baseurl) throwConfigError(__configpath, `Missing "kirigami:baseurl" property.`);
+
+	// Verify root
 	if(!config.kirigami.root) throwConfigError(__configpath, `Missing "kirigami:root" property.`);
 	const __root = path.resolve(__project, config.kirigami.root);
 	if (!fs.existsSync(__root)) throwConfigError(__configpath, `Invalid "kirigami:root" property.`);
 	config.root = __root;
 
-
-	// verify kirigami.project, kirigami.baseurl
-
+	// Verify banner
 	if(config.kirigami.banner) {
 		const bannerFile = path.join(__project, config.kirigami.banner);
 		if (!fs.existsSync(bannerFile)) throwConfigError(__configpath, `Invalid "kirigami:banner" property.`);
@@ -45,12 +49,6 @@ async function validateConfig(config) {
 	} else {
 		config.kirigami.banner = `Exported by Kirigami: ${formatFrDate()}`;
 	}
-
-
-	// Verify export
-
-	// Verify prepros
-
 
 	// Verify tasks
 	if(config.tasks) {

@@ -12,6 +12,7 @@
   "dependencies": {
     "@kirigami/php-prepros": "1.0.1",
     "@kirigami/struct-walker": "1.0.2",
+    "@octokit/rest": "^22.0.1",
     "chokidar": "^5.0.0",
     "csso": "^5.0.5",
     "esbuild": "^0.28.1",
