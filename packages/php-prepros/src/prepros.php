@@ -1,10 +1,10 @@
 <?php
 
-ini_set('display_errors', 1);
 ini_set('log_errors', 1);
-ini_set('error_log', 'php://stderr');
 ini_set('html_errors', 0);
+ini_set('display_errors', 1);
 ini_set('error_reporting', 32767);
+ini_set('error_log', 'php://stderr');
 error_reporting(E_ALL);
 
 

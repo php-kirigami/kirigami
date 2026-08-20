@@ -26,18 +26,10 @@ async function listRepos(owner, pattern = "*", type = "org") {
 	const octokit = new Octokit();
 	const isMatch = picomatch(pattern);
 	const repos = [];
-
 	const iterator =
 		type === "org"
-			? octokit.paginate.iterator(octokit.rest.repos.listForOrg, {
-				org: owner,
-				per_page: 100,
-			})
-			: octokit.paginate.iterator(octokit.rest.repos.listForUser, {
-				username: owner,
-				per_page: 100,
-			});
-
+			? octokit.paginate.iterator(octokit.rest.repos.listForOrg, { org: owner, per_page: 100 })
+			: octokit.paginate.iterator(octokit.rest.repos.listForUser, { username: owner, per_page: 100 });
 	for await (const { data } of iterator) {
 		for (const repo of data) {
 			if (isMatch(repo.name)) {
@@ -54,7 +46,6 @@ async function listRepos(owner, pattern = "*", type = "org") {
 			}
 		}
 	}
-
 	return repos;
 }
 
@@ -106,7 +97,7 @@ export default async function create(args) {
 	console.log(flags);
 	console.log(command);
 	console.log(subcommand);
-
+ 
 	// const config = await getConfig();
 
 	// console.log(`\n`);

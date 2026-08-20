@@ -102,6 +102,16 @@ const render = async (file = '.') => {
     const target = path.resolve(__project, config?.kirigami?.root, file);
     const fsvm = path.join('/project', config?.kirigami?.root, file).replace(/\\/g, '/');
     mountPath(php, target, fsvm);
+    if(config?.prepros?.before) {
+        const include = path.resolve(__project, config?.kirigami?.root, config?.prepros?.before);
+        const dest = path.join('/project', config?.kirigami?.root, config?.prepros?.before).replace(/\\/g, '/');
+        mountPath(php, include, dest);
+    }
+    if(config?.prepros?.after) {
+        const include = path.resolve(__project, config?.kirigami?.root, config?.prepros?.after);
+        const dest = path.join('/project', config?.kirigami?.root, config?.prepros?.after).replace(/\\/g, '/');
+        mountPath(php, include, dest);
+    }
     return run([fsvm]);
 }
 
