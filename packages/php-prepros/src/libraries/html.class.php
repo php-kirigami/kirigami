@@ -101,9 +101,13 @@ class HTML
             return "{$pad}<{$tag}{$attrs}></{$tag}>\n";
         }
 
-        // Si tous les enfants sont inline, on utilise innerHTML tel quel — pas de reconstruction
-        if (static::hasOnlyInlineChildren($node)) {
-            $inner = trim($node->innerHTML);
+        // Si tous les enfants sont inline ET que ça ressemble à un flux de texte
+        // (du vrai texte, ou un seul élément enfant), on re-sérialise en une seule ligne.
+        // Sans looksLikeTextFlow, un <section> qui contient plusieurs gros <a> côte à côte
+        // (ex: une grille de logos) se retrouverait aussi collé sur une seule ligne,
+        // puisque <a> est dans INLINE — ce n'est pas ce qu'on veut.
+        if (static::hasOnlyInlineChildren($node) && static::looksLikeTextFlow($node)) {
+            $inner = trim(static::renderInline($node));
             return "{$pad}<{$tag}{$attrs}>{$inner}</{$tag}>\n";
         }
 
@@ -113,6 +117,53 @@ class HTML
         }
 
         return "{$pad}<{$tag}{$attrs}>\n{$inner}{$pad}</{$tag}>\n";
+    }
+
+    // Sérialise le contenu inline d'un nœud sur une seule ligne, en réduisant
+    // tout groupe d'espaces/tabs/retours à la ligne du texte source à une seule espace
+    // (équivalent au comportement de collapse des espaces en HTML).
+    private static function renderInline(Dom\Node $node): string
+    {
+        $out = '';
+        foreach ($node->childNodes as $child) {
+            if ($child->nodeType === XML_TEXT_NODE) {
+                $text = preg_replace('/\s+/', ' ', $child->nodeValue);
+                $out .= htmlspecialchars($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                continue;
+            }
+            if ($child->nodeType === XML_COMMENT_NODE) {
+                $out .= '<!--' . $child->nodeValue . '-->';
+                continue;
+            }
+            if ($child->nodeType !== XML_ELEMENT_NODE) {
+                continue;
+            }
+            $tag   = strtolower($child->nodeName);
+            $attrs = static::renderAttrs($child);
+            if (in_array($tag, self::VOID, true)) {
+                $out .= "<{$tag}{$attrs}>";
+            } else {
+                $out .= "<{$tag}{$attrs}>" . static::renderInline($child) . "</{$tag}>";
+            }
+        }
+        return $out;
+    }
+
+    // Distingue "du texte qui contient un peu d'inline" (Cliquez <a>ici</a>.) d'un
+    // conteneur qui aligne simplement plusieurs blocs inline côte à côte (grille de <a><img></a>).
+    // Vrai si : il y a du texte significatif parmi les enfants, OU un seul enfant élément.
+    private static function looksLikeTextFlow(Dom\Node $node): bool
+    {
+        $elementCount = 0;
+        foreach ($node->childNodes as $child) {
+            if ($child->nodeType === XML_TEXT_NODE && trim($child->nodeValue) !== '') {
+                return true;
+            }
+            if ($child->nodeType === XML_ELEMENT_NODE) {
+                $elementCount++;
+            }
+        }
+        return $elementCount <= 1;
     }
 
     // Vérifie que tous les descendants directs sont inline (texte, void inline, éléments inline)
@@ -165,10 +216,11 @@ class HTML
             return $out;
         }
         foreach ($node->attributes as $attr) {
-            if (in_array($attr->name, self::BOOLEAN_ATTRS, true)) {
-                $out .= ' ' . $attr->name;
+            $name = strtolower(trim((string) $attr->name));
+            if (in_array($name, self::BOOLEAN_ATTRS, true)) {
+                $out .= ' ' . $name;
             } else {
-                $out .= ' ' . $attr->name . '="' . htmlspecialchars($attr->value, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '"';
+                $out .= ' ' . $name . '="' . htmlspecialchars((string) $attr->value, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '"';
             }
         }
         return $out;

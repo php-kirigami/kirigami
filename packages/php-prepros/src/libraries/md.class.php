@@ -65,6 +65,49 @@ class MD {
     }
 
     // ========================================================================
+    // Génère un id de type "slug" pour les ancres de titres (ATX et Setext).
+    // ========================================================================
+    private static function slugify(string $text): string {
+        $id = strtolower(preg_replace('/[^\w\- ]/u', '', $text));
+        return preg_replace('/\s+/', '-', trim($id));
+    }
+
+    // ========================================================================
+    // Convertit une largeur d'indentation (espaces/tabs) en nombre de colonnes,
+    // une tabulation comptant pour 4 espaces.
+    // ========================================================================
+    private static function indentWidth(string $whitespace): int {
+        return strlen(str_replace("\t", '    ', $whitespace));
+    }
+
+    /**
+     * Construit récursivement une liste (imbriquée) <ol>/<ul> à partir d'un
+     * tableau plat d'items { indent, type, text }. $i est avancé au fur et à
+     * mesure de la consommation des items.
+     *
+     * @param array<int, array{indent:int, type:string, text:string}> $items
+     */
+    private static function buildListTree(array $items, int &$i, int $count): string {
+        $type       = $items[$i]['type'];
+        $baseIndent = $items[$i]['indent'];
+        $out        = "<{$type}>\n";
+
+        while ($i < $count && $items[$i]['indent'] === $baseIndent && $items[$i]['type'] === $type) {
+            $text = $items[$i]['text'];
+            $i++;
+
+            $nested = '';
+            if ($i < $count && $items[$i]['indent'] > $baseIndent) {
+                $nested = "\n" . self::buildListTree($items, $i, $count);
+            }
+
+            $out .= "  <li>{$text}{$nested}</li>\n";
+        }
+
+        return $out . "</{$type}>";
+    }
+
+    // ========================================================================
 
     public static function toHtml(string $markdown): string {
 
@@ -138,6 +181,27 @@ class MD {
 
 
         // ====================================================================
+        // ÉTAPE 2b : DÉFINITIONS DE LIENS PAR RÉFÉRENCE
+        //   [label]: https://example.com "Titre optionnel"
+        //   [label]: <https://example.com> 'Titre optionnel'
+        //   [label]: https://example.com (Titre optionnel)
+        // Extraites (et retirées du texte) avant tout le reste ; utilisées
+        // plus loin par les liens [texte][label] / [texte][].
+        // ====================================================================
+        $refDefs = [];
+        $html = preg_replace_callback(
+            '/^[ \t]{0,3}\[([^\]]+)\]:[ \t]*<?([^\s>]+)>?(?:[ \t]+(?:"([^"]*)"|\'([^\']*)\'|\(([^)]*)\)))?[ \t]*$/m',
+            function ($m) use (&$refDefs): string {
+                $label = strtolower(trim($m[1]));
+                $title = $m[3] !== '' ? $m[3] : ($m[4] !== '' ? $m[4] : ($m[5] ?? ''));
+                $refDefs[$label] = ['url' => $m[2], 'title' => $title];
+                return '';
+            },
+            $html
+        );
+
+
+        // ====================================================================
         // ÉTAPE 3 : BLOCS DE CODE (```lang ... ```)
         // ====================================================================
         $codeBlocks = [];
@@ -149,8 +213,44 @@ class MD {
             return $placeholder;
         }, $html);
 
-        // Code inline (`...`)
+        // ====================================================================
+        // ÉTAPE 3a : BLOCS DE CODE INDENTÉS (4 espaces ou 1 tabulation)
+        // Reconnu seulement quand précédé d'une ligne vide (ou du début du
+        // document) et suivi d'une ligne vide (ou de la fin du document), afin
+        // d'éviter les conflits avec l'indentation des listes imbriquées.
+        // ====================================================================
+        $html = preg_replace_callback(
+            '/(?<=\n\n|^)((?:[ ]{4}|\t)[^\n]*(?:\n(?:[ ]{4}|\t)[^\n]*)*)(?=\n\n|\n*$)/',
+            function ($matches) use (&$codeBlocks) {
+                $lines    = explode("\n", $matches[1]);
+                $stripped = array_map(static function (string $l): string {
+                    return preg_replace('/^(?:[ ]{4}|\t)/', '', $l);
+                }, $lines);
+                $code        = htmlspecialchars(implode("\n", $stripped), ENT_QUOTES, 'UTF-8');
+                $placeholder = "\x02CB" . count($codeBlocks) . "\x03";
+                $codeBlocks[$placeholder] = "<pre><code>{$code}</code></pre>";
+                return $placeholder;
+            },
+            $html
+        );
+
+        // Code inline avec double backticks (permet d'inclure un backtick littéral)
         $inlineCodes = [];
+        $html = preg_replace_callback('/``(.+?)``/s', function ($matches) use (&$inlineCodes) {
+            $content = $matches[1];
+            // Convention standard : si le contenu commence et finit par un
+            // espace (et n'est pas uniquement des espaces), on retire un
+            // espace de chaque côté — utile pour englober un ` en bordure.
+            if (preg_match('/^ (.*[^ ]) $/s', $content, $trim)) {
+                $content = $trim[1];
+            }
+            $code        = htmlspecialchars($content, ENT_QUOTES, 'UTF-8');
+            $placeholder = "\x02IC" . count($inlineCodes) . "\x03";
+            $inlineCodes[$placeholder] = "<code>{$code}</code>";
+            return $placeholder;
+        }, $html);
+
+        // Code inline (`...`)
         $html = preg_replace_callback('/`([^`\n]+)`/', function ($matches) use (&$inlineCodes) {
             $code        = htmlspecialchars($matches[1], ENT_QUOTES, 'UTF-8');
             $placeholder = "\x02IC" . count($inlineCodes) . "\x03";
@@ -160,7 +260,45 @@ class MD {
 
 
         // ====================================================================
-        // ÉTAPE 3b : ALERTES GFM ET BLOCKQUOTES
+        // ÉTAPE 3b : ÉCHAPPEMENT DES CARACTÈRES (\* \_ \# etc.)
+        // Traité après l'extraction du code (le code reste littéral) et avant
+        // tout le reste, pour que \* n'ouvre pas une emphase, \# ne crée pas
+        // un titre, \- ne crée pas de liste, etc.
+        // ====================================================================
+        $escapes = [];
+        $html = preg_replace_callback(
+            '/\\\\([\\\\`*_{}\[\]<>()#+\-.!|])/',
+            function ($m) use (&$escapes): string {
+                $placeholder = "\x02ESC" . count($escapes) . "\x03";
+                $escapes[$placeholder] = htmlspecialchars($m[1], ENT_QUOTES, 'UTF-8');
+                return $placeholder;
+            },
+            $html
+        );
+
+
+        // ====================================================================
+        // ÉTAPE 3d : LIENS AUTOMATIQUES <https://...> et <email@example.com>
+        // Traités avant l'encodage XSS car les caractères < > seraient encodés
+        // en &lt; &gt; et la regex ne matcherait plus.
+        // ====================================================================
+        $autolinks = [];
+        $html = preg_replace_callback('/<(https?:\/\/[^\s<>]+)>/', function ($m) use (&$autolinks): string {
+            $url         = htmlspecialchars($m[1], ENT_QUOTES, 'UTF-8');
+            $placeholder = "\x02AL" . count($autolinks) . "\x03";
+            $autolinks[$placeholder] = "<a href=\"{$url}\" target=\"_blank\" rel=\"noopener noreferrer\">{$url}</a>";
+            return $placeholder;
+        }, $html);
+        $html = preg_replace_callback('/<([^\s<>]+@[^\s<>]+\.[^\s<>]+)>/', function ($m) use (&$autolinks): string {
+            $email       = htmlspecialchars($m[1], ENT_QUOTES, 'UTF-8');
+            $placeholder = "\x02AL" . count($autolinks) . "\x03";
+            $autolinks[$placeholder] = "<a href=\"mailto:{$email}\">{$email}</a>";
+            return $placeholder;
+        }, $html);
+
+
+        // ====================================================================
+        // ÉTAPE 3e : ALERTES GFM ET BLOCKQUOTES
         // Traités avant l'encodage XSS car le caractère > serait encodé en &gt;
         // et les regex ne matcheraient plus.
         // ====================================================================
@@ -179,19 +317,26 @@ class MD {
                 $blockquotes[$placeholder] = "<div class=\"markdown-alert markdown-alert-{$type}\">"
                     . "<p class=\"markdown-alert-title\">{$label}</p>"
                     . "<p>{$content}</p></div>";
-                return $placeholder;
+                // Le \n final consommé par la regex est réinjecté après le
+                // placeholder pour ne pas fusionner la ligne vide suivante
+                // avec celle du placeholder (ce qui fausserait par exemple
+                // la détection d'un titre Setext juste après).
+                return $placeholder . (str_ends_with($matches[1], "\n") ? "\n" : '');
             },
             $html
         );
 
-        // Blockquotes standards
+        // Blockquotes standards (imbrication gérée par récursion sur toHtml,
+        // qui ré-applique cette même règle sur le contenu déjà dé-préfixé
+        // d'un niveau de ">")
         $html = preg_replace_callback('/^((?:>[ \t]?[^\n]*\n?)+)/m', function ($matches) use (&$blockquotes): string {
             $content = preg_replace('/^>[ \t]?/m', '', $matches[1]);
             // Les deux espaces trailing sont laissés tels quels : toHtml() les gère lui-même
             $inner   = self::toHtml(trim($content));
             $placeholder = "\x02BQ" . count($blockquotes) . "\x03";
             $blockquotes[$placeholder] = "<blockquote>{$inner}</blockquote>";
-            return $placeholder;
+            // Voir commentaire ci-dessus : on préserve le \n final consommé.
+            return $placeholder . (str_ends_with($matches[1], "\n") ? "\n" : '');
         }, $html);
 
 
@@ -251,7 +396,7 @@ class MD {
 
 
         // ====================================================================
-        // ÉTAPE 6 : (Alertes GFM et blockquotes traités à l'étape 3b)
+        // ÉTAPE 6 : (Alertes GFM et blockquotes traités à l'étape 3e)
         // ====================================================================
 
 
@@ -263,44 +408,75 @@ class MD {
 
 
         // ====================================================================
+        // ÉTAPE 7b : TITRES SETEXT (syntaxe alternative == / --)
+        //   Titre
+        //   =====   → <h1>
+        //
+        //   Titre
+        //   -----   → <h2>
+        // Traité avant les titres ATX et avant les lignes séparatrices (une
+        // ligne de tirets juste après une ligne de texte est un titre, pas un <hr>).
+        // ====================================================================
+        $html = preg_replace_callback(
+            '/^(?![ \t]*(?:#{1,6}[ \t]|>|```|\||[-*+][ \t]|\d+\.[ \t]))[ \t]*(\S.*?)[ \t]*\n[ \t]*=+[ \t]*$/m',
+            function ($matches) {
+                $text = trim($matches[1]);
+                $id   = self::slugify($text);
+                return "<h1 id=\"{$id}\">{$text}</h1>";
+            },
+            $html
+        );
+        $html = preg_replace_callback(
+            '/^(?![ \t]*(?:#{1,6}[ \t]|>|```|\||[-*+][ \t]|\d+\.[ \t]))[ \t]*(\S.*?)[ \t]*\n[ \t]*-+[ \t]*$/m',
+            function ($matches) {
+                $text = trim($matches[1]);
+                $id   = self::slugify($text);
+                return "<h2 id=\"{$id}\">{$text}</h2>";
+            },
+            $html
+        );
+
+
+        // ====================================================================
         // ÉTAPE 8 : TITRES (ATX : # à ######)
         // ====================================================================
         $html = preg_replace_callback('/^(#{1,6})[ \t]+(.+?)(?:[ \t]+#+)?$/m', function ($matches) {
             $level = strlen($matches[1]);
             $text  = trim($matches[2]);
-            $id    = strtolower(preg_replace('/[^\w\- ]/u', '', $text));
-            $id    = preg_replace('/\s+/', '-', trim($id));
+            $id    = self::slugify($text);
             return "<h{$level} id=\"{$id}\">{$text}</h{$level}>";
         }, $html);
 
 
         // ====================================================================
-        // ÉTAPE 9 : LISTES (puces et ordonnées)
+        // ÉTAPE 9 : LISTES (puces et ordonnées, avec imbrication)
+        // Une seule passe détecte un bloc contigu de lignes qui sont soit une
+        // puce (-,*,+) soit un item numéroté, quel que soit leur niveau
+        // d'indentation ; le bloc est ensuite reconstruit récursivement en
+        // <ol>/<ul> imbriqués selon la profondeur d'indentation relative.
+        // Les items de tâches (déjà convertis en <li class="task-item">) ne
+        // matchent plus ce motif et ne sont donc pas ré-englobés ici.
         // ====================================================================
         $html = preg_replace_callback(
-            '/^([ \t]*\d+\. .+(?:\n[ \t]*\d+\. .+)*)/m',
+            '/^([ \t]*(?:\d+\.|[-*+])[ \t]+.+(?:\n[ \t]*(?:\d+\.|[-*+])[ \t]+.+)*)/m',
             function ($matches) {
-                $items = preg_split('/\n/', trim($matches[1]));
-                $out   = "<ol>\n";
-                foreach ($items as $item) {
-                    $text = preg_replace('/^[ \t]*\d+\. /', '', $item);
-                    $out .= "  <li>{$text}</li>\n";
+                $lines = explode("\n", $matches[1]);
+                $items = [];
+                foreach ($lines as $line) {
+                    if (preg_match('/^([ \t]*)(\d+)\.[ \t]+(.*)$/', $line, $m)) {
+                        $items[] = ['indent' => self::indentWidth($m[1]), 'type' => 'ol', 'text' => $m[3]];
+                    } elseif (preg_match('/^([ \t]*)[-*+][ \t]+(.*)$/', $line, $m)) {
+                        $items[] = ['indent' => self::indentWidth($m[1]), 'type' => 'ul', 'text' => $m[2]];
+                    }
                 }
-                return $out . "</ol>";
-            },
-            $html
-        );
+                if (empty($items)) return $matches[1];
+                // Normalise le niveau d'indentation le plus bas à 0
+                $minIndent = min(array_column($items, 'indent'));
+                foreach ($items as &$it) $it['indent'] -= $minIndent;
+                unset($it);
 
-        $html = preg_replace_callback(
-            '/^([ \t]*[-*+] (?!\[[ xX]\] ).+(?:\n[ \t]*[-*+] (?!\[[ xX]\] ).+)*)/m',
-            function ($matches) {
-                $items = preg_split('/\n/', trim($matches[1]));
-                $out   = "<ul>\n";
-                foreach ($items as $item) {
-                    $text = preg_replace('/^[ \t]*[-*+] /', '', $item);
-                    $out .= "  <li>{$text}</li>\n";
-                }
-                return $out . "</ul>";
+                $i = 0;
+                return self::buildListTree($items, $i, count($items));
             },
             $html
         );
@@ -339,32 +515,33 @@ class MD {
             $html
         );
 
-        // Liens markdown [texte](url "titre optionnel")
+        $buildLink = static function (string $text, string $href, string $title): string {
+            $titleAttr = $title !== '' ? ' title="' . $title . '"' : '';
+            $extern    = preg_match('/^https?:\/\//i', $href)
+                ? ' target="_blank" rel="noopener noreferrer"'
+                : '';
+            return "<a href=\"{$href}\"{$titleAttr}{$extern}>{$text}</a>";
+        };
+
+        // Liens par référence [texte][label] et [texte][] (raccourci = label = texte)
         $html = preg_replace_callback(
-            '/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/',
-            function ($m): string {
-                $text   = $m[1];
-                $href   = $m[2];
-                $title  = isset($m[3]) && $m[3] !== '' ? ' title="' . $m[3] . '"' : '';
-                $extern = preg_match('/^https?:\/\//i', $href)
-                    ? ' target="_blank" rel="noopener noreferrer"'
-                    : '';
-                return "<a href=\"{$href}\"{$title}{$extern}>{$text}</a>";
+            '/\[([^\]]+)\]\[([^\]]*)\]/',
+            function ($m) use (&$refDefs, $buildLink): string {
+                $text  = $m[1];
+                $label = strtolower(trim($m[2] !== '' ? $m[2] : $m[1]));
+                if (!isset($refDefs[$label])) return $m[0];
+                $def = $refDefs[$label];
+                return $buildLink($text, $def['url'], $def['title']);
             },
             $html
         );
 
-        // Liens automatiques <https://...>
-        $html = preg_replace(
-            '/<(https?:\/\/[^>]+)>/',
-            '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>',
-            $html
-        );
-
-        // URL nues https://...
-        $html = preg_replace(
-            '/(?<!["\'=>])\b(https?:\/\/[^\s<>"\')\]]+)/',
-            '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>',
+        // Liens markdown [texte](url "titre optionnel")
+        $html = preg_replace_callback(
+            '/\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)/',
+            function ($m) use ($buildLink): string {
+                return $buildLink($m[1], $m[2], $m[3] ?? '');
+            },
             $html
         );
 
@@ -384,12 +561,15 @@ class MD {
         // ====================================================================
         $blockStartTags = ['<h', '<pre', '<ul', '<ol', '<li', '<table', '<thead', '<tbody',
                            '<tr', '<td', '<th', '<blockquote', '<div', '<hr', '<img',
-                           '</ul>', '</ol>', '</table>', '</blockquote>', '</div>',
-                           "\x02CB", "\x02IC", "\x02PLG", "\x02BQ"];
+                           "\x02CB", "\x02PLG", "\x02BQ"];
 
         $isBlockLine = static function (string $line) use ($blockStartTags): bool {
             $t = ltrim($line);
             if ($t === '') return false;
+            // Toute balise fermante (</...>) est toujours considérée comme une
+            // ligne "bloc" : ça évite qu'une fermeture de <table>, <thead>,
+            // <tr>, etc. finisse absorbée dans un <p> environnant.
+            if (str_starts_with($t, '</')) return true;
             foreach ($blockStartTags as $tag) {
                 if (str_starts_with($t, $tag)) return true;
             }
@@ -437,8 +617,11 @@ class MD {
         $html = strtr($html, $blockquotes);
         $html = strtr($html, $codeBlocks);
         $html = strtr($html, $inlineCodes);
+        $html = strtr($html, $autolinks);
+        // Les échappements sont réinjectés en tout dernier, une fois que plus
+        // aucune regex Markdown ne peut les interpréter.
+        $html = strtr($html, $escapes);
 
         return $html;
     }
 }
-
