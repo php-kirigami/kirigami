@@ -11,7 +11,7 @@
 
 ## Overview
 
-`@kirigami/php-wasm` is a **custom fork** of the PHP-WASM package from the [WordPress Playground](https://github.com/WordPress/wordpress-playground) project. It ships a pre-compiled PHP 8.5.8 WebAssembly binary and its Node.js loader, stripped down to exactly what the Kirigami project needs:
+`@kirigami/php-wasm` is a **custom fork** of the PHP-WASM package from the [WordPress Playground](https://github.com/WordPress/wordpress-playground) project. It ships a pre-compiled PHP 8.5.9 WebAssembly binary and its Node.js loader, stripped down to exactly what the Kirigami project needs:
 
 - ✅ **JSPI** (JavaScript Promise Integration) target only
 - ✅ **Node.js** runtime only
@@ -114,7 +114,7 @@ import { getPHPRuntime } from '@kirigami/php-wasm';
 
 const php = await getPHPRuntime();
 const result = await php.run({ code: '<?php echo PHP_VERSION;' });
-console.log(result.text); // "8.5.8"
+console.log(result.text); // "8.5.9"
 
 ```
 
@@ -146,8 +146,8 @@ console.log(result.text); // Hello, Kirigami!
 │   └── runtime.js        # Networking proxy and runtime helpers
 ├── jspi/
 │   ├── php_8_5.js        # Emscripten-generated Node.js loader (JSPI build)
-│   └── 8_5_7/
-│       └── php_8_5.wasm  # Compiled PHP 8.5.8 WebAssembly binary (~17 MB)
+│   └── 8_5_9/
+│       └── php_8_5.wasm  # Compiled PHP 8.5.9 WebAssembly binary (~17 MB)
 └── LICENSE
 
 ```
@@ -156,9 +156,9 @@ console.log(result.text); // Hello, Kirigami!
 
 ## PHP version
 
-This package ships **PHP 8.5.8**.
+This package ships **PHP 8.5.9**.
 
-The version is encoded in the package version number (`major.minor.patch` → `8.5.8`) so that the installed PHP version is always immediately visible from `package.json`.
+The version is encoded in the package version number (`major.minor.patch` → `8.5.9`) so that the installed PHP version is always immediately visible from `package.json`.
 
 ---
 

@@ -108,6 +108,174 @@ class MD {
     }
 
     // ========================================================================
+    // ÉMOJIS (syntaxe étendue) : :shortcode: → caractère unicode.
+    // Table non exhaustive mais couvrant les raccourcis les plus courants ;
+    // extensible via registerEmoji().
+    // ========================================================================
+    /** @var array<string, string> */
+    private static array $extraEmoji = [];
+
+    private static array $emojiMap = [
+        'smile' => '😄', 'smiley' => '😃', 'grin' => '😁', 'joy' => '😂', 'rofl' => '🤣',
+        'blush' => '😊', 'wink' => '😉', 'relaxed' => '☺️', 'slight_smile' => '🙂',
+        'upside_down_face' => '🙃', 'innocent' => '😇', 'heart_eyes' => '😍', 'kissing_heart' => '😘',
+        'thinking' => '🤔', 'neutral_face' => '😐', 'expressionless' => '😑', 'no_mouth' => '😶',
+        'roll_eyes' => '🙄', 'smirk' => '😏', 'unamused' => '😒', 'grimacing' => '😬',
+        'lying_face' => '🤥', 'relieved' => '😌', 'pensive' => '😔', 'sleepy' => '😪',
+        'drooling_face' => '🤤', 'sleeping' => '😴', 'mask' => '😷', 'sunglasses' => '😎',
+        'star_struck' => '🤩', 'partying_face' => '🥳', 'worried' => '😟', 'frowning' => '☹️',
+        'confused' => '😕', 'slightly_frowning_face' => '🙁', 'cry' => '😢', 'sob' => '😭',
+        'scream' => '😱', 'confounded' => '😖', 'persevere' => '😣', 'disappointed' => '😞',
+        'sweat' => '😓', 'weary' => '😩', 'tired_face' => '😫', 'yawning_face' => '🥱',
+        'triumph' => '😤', 'rage' => '😡', 'angry' => '😠', 'cursing_face' => '🤬',
+        'exploding_head' => '🤯', 'flushed' => '😳', 'hot_face' => '🥵', 'cold_face' => '🥶',
+        'scream_cat' => '🙀', 'nerd_face' => '🤓', 'monocle_face' => '🧐', 'zany_face' => '🤪',
+        'raised_eyebrow' => '🤨', 'shushing_face' => '🤫', 'zipper_mouth_face' => '🤐',
+        'heart' => '❤️', 'orange_heart' => '🧡', 'yellow_heart' => '💛', 'green_heart' => '💚',
+        'blue_heart' => '💙', 'purple_heart' => '💜', 'black_heart' => '🖤', 'white_heart' => '🤍',
+        'broken_heart' => '💔', 'two_hearts' => '💕', 'sparkling_heart' => '💖', 'heartbeat' => '💓',
+        'thumbsup' => '👍', '+1' => '👍', 'thumbsdown' => '👎', '-1' => '👎',
+        'clap' => '👏', 'raised_hands' => '🙌', 'pray' => '🙏', 'wave' => '👋',
+        'ok_hand' => '👌', 'v' => '✌️', 'crossed_fingers' => '🤞', 'muscle' => '💪',
+        'point_up' => '☝️', 'point_down' => '👇', 'point_left' => '👈', 'point_right' => '👉',
+        'handshake' => '🤝', 'writing_hand' => '✍️', 'fire' => '🔥', 'star' => '⭐',
+        'star2' => '🌟', 'sparkles' => '✨', 'zap' => '⚡', 'boom' => '💥', 'collision' => '💥',
+        'rocket' => '🚀', 'tada' => '🎉', 'confetti_ball' => '🎊', 'gift' => '🎁',
+        'balloon' => '🎈', 'trophy' => '🏆', 'medal' => '🏅', 'crown' => '👑',
+        'gem' => '💎', 'moneybag' => '💰', 'dollar' => '💵', '100' => '💯',
+        'warning' => '⚠️', 'no_entry' => '⛔', 'stop_sign' => '🛑', 'checkered_flag' => '🏁',
+        'white_check_mark' => '✅', 'heavy_check_mark' => '✔️', 'x' => '❌', 'negative_squared_cross_mark' => '❎',
+        'question' => '❓', 'grey_question' => '❔', 'exclamation' => '❗', 'bangbang' => '‼️',
+        'interrobang' => '⁉️', 'bulb' => '💡', 'bell' => '🔔', 'no_bell' => '🔕',
+        'lock' => '🔒', 'unlock' => '🔓', 'key' => '🔑', 'mag' => '🔍', 'link' => '🔗',
+        'pushpin' => '📌', 'paperclip' => '📎', 'calendar' => '📅', 'clock' => '🕐',
+        'hourglass' => '⌛', 'alarm_clock' => '⏰', 'memo' => '📝', 'pencil2' => '✏️',
+        'book' => '📖', 'books' => '📚', 'newspaper' => '📰', 'email' => '📧',
+        'envelope' => '✉️', 'inbox_tray' => '📥', 'outbox_tray' => '📤', 'package' => '📦',
+        'file_folder' => '📁', 'open_file_folder' => '📂', 'clipboard' => '📋',
+        'chart_with_upwards_trend' => '📈', 'chart_with_downwards_trend' => '📉', 'bar_chart' => '📊',
+        'computer' => '💻', 'desktop_computer' => '🖥️', 'keyboard' => '⌨️', 'printer' => '🖨️',
+        'phone' => '📱', 'iphone' => '📱', 'camera' => '📷', 'video_camera' => '📹',
+        'tv' => '📺', 'radio' => '📻', 'battery' => '🔋', 'electric_plug' => '🔌',
+        'bug' => '🐛', 'beetle' => '🪲', 'gear' => '⚙️', 'wrench' => '🔧', 'hammer' => '🔨',
+        'nut_and_bolt' => '🔩', 'toolbox' => '🧰', 'test_tube' => '🧪', 'microscope' => '🔬',
+        'satellite' => '🛰️', 'globe_with_meridians' => '🌐', 'earth_americas' => '🌎',
+        'sun' => '☀️', 'sunny' => '☀️', 'partly_sunny' => '⛅', 'cloud' => '☁️',
+        'rainbow' => '🌈', 'umbrella' => '☂️', 'snowflake' => '❄️', 'droplet' => '💧',
+        'ocean' => '🌊', 'tent' => '⛺', 'camping' => '🏕️', 'mountain' => '⛰️',
+        'evergreen_tree' => '🌲', 'deciduous_tree' => '🌳', 'palm_tree' => '🌴',
+        'cactus' => '🌵', 'seedling' => '🌱', 'four_leaf_clover' => '🍀', 'maple_leaf' => '🍁',
+        'dog' => '🐶', 'cat' => '🐱', 'mouse' => '🐭', 'rabbit' => '🐰', 'fox_face' => '🦊',
+        'bear' => '🐻', 'panda_face' => '🐼', 'koala' => '🐨', 'tiger' => '🐯', 'lion' => '🦁',
+        'cow' => '🐮', 'pig' => '🐷', 'frog' => '🐸', 'monkey_face' => '🐵', 'chicken' => '🐔',
+        'penguin' => '🐧', 'bird' => '🐦', 'baby_chick' => '🐤', 'owl' => '🦉',
+        'horse' => '🐴', 'unicorn' => '🦄', 'bee' => '🐝', 'butterfly' => '🦋', 'snail' => '🐌',
+        'octopus' => '🐙', 'fish' => '🐟', 'dolphin' => '🐬', 'whale' => '🐳',
+        'pizza' => '🍕', 'hamburger' => '🍔', 'fries' => '🍟', 'hotdog' => '🌭',
+        'taco' => '🌮', 'sushi' => '🍣', 'ramen' => '🍜', 'spaghetti' => '🍝',
+        'bread' => '🍞', 'cheese' => '🧀', 'egg' => '🥚', 'popcorn' => '🍿',
+        'cookie' => '🍪', 'doughnut' => '🍩', 'cake' => '🍰', 'birthday' => '🎂',
+        'candy' => '🍬', 'chocolate_bar' => '🍫', 'icecream' => '🍦', 'apple' => '🍎',
+        'banana' => '🍌', 'grapes' => '🍇', 'watermelon' => '🍉', 'strawberry' => '🍓',
+        'lemon' => '🍋', 'peach' => '🍑', 'coffee' => '☕', 'tea' => '🍵', 'beer' => '🍺',
+        'beers' => '🍻', 'wine_glass' => '🍷', 'cocktail' => '🍸', 'tropical_drink' => '🍹',
+        'champagne' => '🍾', 'soccer' => '⚽', 'basketball' => '🏀', 'football' => '🏈',
+        'baseball' => '⚾', 'tennis' => '🎾', 'volleyball' => '🏐', 'rugby_football' => '🏉',
+        '8ball' => '🎱', 'golf' => '⛳', 'dart' => '🎯', 'video_game' => '🎮',
+        'game_die' => '🎲', 'jigsaw' => '🧩', 'car' => '🚗', 'taxi' => '🚕', 'bus' => '🚌',
+        'ambulance' => '🚑', 'fire_engine' => '🚒', 'police_car' => '🚓', 'bike' => '🚲',
+        'airplane' => '✈️', 'helicopter' => '🚁', 'train' => '🚆', 'ship' => '🚢',
+        'house' => '🏠', 'office' => '🏢', 'hospital' => '🏥', 'school' => '🏫',
+        'church' => '⛪', 'castle' => '🏰', 'world_map' => '🗺️', 'flag_white' => '🏳️',
+        'flag_black' => '🏴', 'checkered_flag2' => '🏁', 'eyes' => '👀', 'eye' => '👁️',
+        'speech_balloon' => '💬', 'thought_balloon' => '💭', 'zzz' => '💤', 'boom2' => '💥',
+        'sos' => '🆘', 'new' => '🆕', 'ok' => '🆗', 'up' => '🆙', 'cool' => '🆒',
+        'free' => '🆓', 'id' => '🆔', 'ng' => '🆖',
+    ];
+
+    /**
+     * Enregistre (ou remplace) un raccourci emoji personnalisé.
+     */
+    public static function registerEmoji(string $shortcode, string $char): void {
+        self::$extraEmoji[strtolower(trim($shortcode, ':'))] = $char;
+    }
+
+    private static function emojiFor(string $shortcode): ?string {
+        $key = strtolower($shortcode);
+        return self::$extraEmoji[$key] ?? self::$emojiMap[$key] ?? null;
+    }
+
+    // ========================================================================
+    // LISTES DE DÉFINITION (syntaxe étendue)
+    //   Terme
+    //   : Définition
+    // Analyse procédurale ligne par ligne (plus sûre qu'une seule grosse
+    // regex pour regrouper plusieurs paires terme/définitions dans un même
+    // <dl>, séparées ou non par une ligne vide).
+    // ========================================================================
+    private static function isDefinitionColonLine(string $line): bool {
+        return (bool) preg_match('/^[ \t]*:[ \t]+.+$/', $line);
+    }
+
+    private static function looksLikeOtherBlock(string $line): bool {
+        $t = ltrim($line);
+        if ($t === '') return true;
+        if (str_starts_with($t, '<')) return true;
+        return (bool) preg_match('/^(?:#{1,6}[ \t]|>|```|\||[-*+][ \t]|\d+\.[ \t])/', $t);
+    }
+
+    private static function extractDefinitionLists(string $html): string {
+        $lines = explode("\n", $html);
+        $n     = count($lines);
+        $out   = [];
+        $i     = 0;
+
+        while ($i < $n) {
+            $isTermStart = $i + 1 < $n
+                && !self::looksLikeOtherBlock($lines[$i])
+                && !self::isDefinitionColonLine($lines[$i])
+                && self::isDefinitionColonLine($lines[$i + 1]);
+
+            if (!$isTermStart) {
+                $out[] = $lines[$i];
+                $i++;
+                continue;
+            }
+
+            $dl = "<dl>\n";
+            while (true) {
+                $term = trim($lines[$i]);
+                $dl  .= "  <dt>{$term}</dt>\n";
+                $i++;
+                while ($i < $n && preg_match('/^[ \t]*:[ \t]+(.*)$/', $lines[$i], $m)) {
+                    $dl .= "  <dd>{$m[1]}</dd>\n";
+                    $i++;
+                }
+
+                // Une seule ligne vide entre deux groupes reste dans le même <dl>
+                // si le groupe suivant est bien un nouveau terme.
+                if ($i < $n && trim($lines[$i]) === '') {
+                    $j = $i;
+                    while ($j < $n && trim($lines[$j]) === '') $j++;
+                    if ($j + 1 < $n
+                        && !self::looksLikeOtherBlock($lines[$j])
+                        && !self::isDefinitionColonLine($lines[$j])
+                        && self::isDefinitionColonLine($lines[$j + 1])
+                    ) {
+                        $i = $j;
+                        continue;
+                    }
+                }
+                break;
+            }
+            $dl   .= "</dl>";
+            $out[] = $dl;
+        }
+
+        return implode("\n", $out);
+    }
+
+    // ========================================================================
 
     public static function toHtml(string $markdown): string {
 
@@ -175,6 +343,38 @@ class MD {
                 $placeholder = "\x02PLG" . count($pluginBlocks) . "\x03";
                 $pluginBlocks[$placeholder] = $output;
                 return $placeholder;
+            },
+            $html
+        );
+
+
+        // ====================================================================
+        // ÉTAPE 2a : DÉFINITIONS DE NOTES DE BAS DE PAGE (footnotes)
+        //   [^1]: Texte de la note.
+        //   [^bignote]: Première ligne.
+        //
+        //       Paragraphe suivant, indenté de 4 espaces ou 1 tabulation.
+        //
+        //       `{ du code }`
+        // Extraites (et retirées du texte) AVANT les définitions de liens par
+        // référence, car [^label]: matcherait aussi leur regex sinon.
+        // Le contenu de chaque note est rendu via un appel récursif à
+        // toHtml() pour supporter plusieurs paragraphes, du code, etc.
+        // ====================================================================
+        $footnoteDefs = [];
+        $html = preg_replace_callback(
+            '/^\[\^([^\]\s]+)\]:[ \t]?([^\n]*)((?:\n(?:[ \t]{4}[^\n]*|[ \t]*))*)/m',
+            function ($m) use (&$footnoteDefs): string {
+                $label = strtolower(trim($m[1]));
+                $first = $m[2];
+                $rest  = $m[3] ?? '';
+                $restLines = $rest !== '' ? explode("\n", $rest) : [];
+                $restLines = array_map(static function (string $l): string {
+                    return preg_replace('/^(?:[ ]{4}|\t)/', '', $l);
+                }, $restLines);
+                $content = trim($first . "\n" . implode("\n", $restLines));
+                $footnoteDefs[$label] = self::toHtml($content);
+                return '';
             },
             $html
         );
@@ -271,6 +471,18 @@ class MD {
             function ($m) use (&$escapes): string {
                 $placeholder = "\x02ESC" . count($escapes) . "\x03";
                 $escapes[$placeholder] = htmlspecialchars($m[1], ENT_QUOTES, 'UTF-8');
+                return $placeholder;
+            },
+            $html
+        );
+        // &#124; est la convention documentée (Markdown Extra / PHP Markdown)
+        // pour afficher un pipe littéral dans une cellule de tableau sans
+        // qu'il soit interprété comme séparateur de colonnes.
+        $html = preg_replace_callback(
+            '/&#124;/i',
+            function () use (&$escapes): string {
+                $placeholder = "\x02ESC" . count($escapes) . "\x03";
+                $escapes[$placeholder] = '|';
                 return $placeholder;
             },
             $html
@@ -418,19 +630,19 @@ class MD {
         // ligne de tirets juste après une ligne de texte est un titre, pas un <hr>).
         // ====================================================================
         $html = preg_replace_callback(
-            '/^(?![ \t]*(?:#{1,6}[ \t]|>|```|\||[-*+][ \t]|\d+\.[ \t]))[ \t]*(\S.*?)[ \t]*\n[ \t]*=+[ \t]*$/m',
+            '/^(?![ \t]*(?:#{1,6}[ \t]|>|```|\||[-*+][ \t]|\d+\.[ \t]))[ \t]*(\S.*?)[ \t]*(?:\{#([a-zA-Z0-9_\-:.]+)\}[ \t]*)?\n[ \t]*=+[ \t]*$/m',
             function ($matches) {
                 $text = trim($matches[1]);
-                $id   = self::slugify($text);
+                $id   = !empty($matches[2]) ? $matches[2] : self::slugify($text);
                 return "<h1 id=\"{$id}\">{$text}</h1>";
             },
             $html
         );
         $html = preg_replace_callback(
-            '/^(?![ \t]*(?:#{1,6}[ \t]|>|```|\||[-*+][ \t]|\d+\.[ \t]))[ \t]*(\S.*?)[ \t]*\n[ \t]*-+[ \t]*$/m',
+            '/^(?![ \t]*(?:#{1,6}[ \t]|>|```|\||[-*+][ \t]|\d+\.[ \t]))[ \t]*(\S.*?)[ \t]*(?:\{#([a-zA-Z0-9_\-:.]+)\}[ \t]*)?\n[ \t]*-+[ \t]*$/m',
             function ($matches) {
                 $text = trim($matches[1]);
-                $id   = self::slugify($text);
+                $id   = !empty($matches[2]) ? $matches[2] : self::slugify($text);
                 return "<h2 id=\"{$id}\">{$text}</h2>";
             },
             $html
@@ -440,12 +652,16 @@ class MD {
         // ====================================================================
         // ÉTAPE 8 : TITRES (ATX : # à ######)
         // ====================================================================
-        $html = preg_replace_callback('/^(#{1,6})[ \t]+(.+?)(?:[ \t]+#+)?$/m', function ($matches) {
-            $level = strlen($matches[1]);
-            $text  = trim($matches[2]);
-            $id    = self::slugify($text);
-            return "<h{$level} id=\"{$id}\">{$text}</h{$level}>";
-        }, $html);
+        $html = preg_replace_callback(
+            '/^(#{1,6})[ \t]+(.+?)[ \t]*(?:\{#([a-zA-Z0-9_\-:.]+)\}[ \t]*)?(?:[ \t]+#+)?$/m',
+            function ($matches) {
+                $level = strlen($matches[1]);
+                $text  = trim($matches[2]);
+                $id    = !empty($matches[3]) ? $matches[3] : self::slugify($text);
+                return "<h{$level} id=\"{$id}\">{$text}</h{$level}>";
+            },
+            $html
+        );
 
 
         // ====================================================================
@@ -491,7 +707,39 @@ class MD {
 
 
         // ====================================================================
-        // ÉTAPE 10 : TEXTE EN LIGNE (Gras, Italique, Barré)
+        // ÉTAPE 9b : LISTES DE DÉFINITION (syntaxe étendue)
+        //   Terme
+        //   : Définition
+        // ====================================================================
+        $html = self::extractDefinitionLists($html);
+
+
+        // ====================================================================
+        // ÉTAPE 9c : RÉFÉRENCES DE NOTES DE BAS DE PAGE [^label]
+        // Converties AVANT l'emphase pour ne pas entrer en collision avec le
+        // nouvel exposant ^texte^ (un [^1] suivi plus loin d'un [^2] sur la
+        // même ligne pourrait sinon être interprété comme ^1] ... [^2^).
+        // La numérotation est séquentielle, dans l'ordre de première
+        // apparition dans le texte (comme documenté).
+        // ====================================================================
+        $footnoteOrder = [];
+        $html = preg_replace_callback('/\[\^([^\]\s]+)\]/', function ($m) use (&$footnoteOrder, &$footnoteDefs): string {
+            $label = strtolower(trim($m[1]));
+            if (!isset($footnoteDefs[$label])) {
+                // Référence vers une note non définie : laissée telle quelle.
+                return $m[0];
+            }
+            if (!isset($footnoteOrder[$label])) {
+                $footnoteOrder[$label] = count($footnoteOrder) + 1;
+            }
+            $num = $footnoteOrder[$label];
+            return "<sup id=\"fnref:{$label}\"><a href=\"#fn:{$label}\">{$num}</a></sup>";
+        }, $html);
+
+
+        // ====================================================================
+        // ÉTAPE 10 : TEXTE EN LIGNE (Gras, Italique, Barré, Surlignage,
+        // Indice/Exposant, Emoji)
         // ====================================================================
         $html = preg_replace('/\*\*\*(.+?)\*\*\*/s', '<strong><em>$1</em></strong>', $html);
         $html = preg_replace('/___(.+?)___/s',        '<strong><em>$1</em></strong>', $html);
@@ -501,7 +749,25 @@ class MD {
         // Le _ italique ne doit matcher qu'aux frontières de mots pour ne pas
         // capturer les snake_case, noms de packages (@php-wasm/node), etc.
         $html = preg_replace('/(?<!\w)_([^_\n]+)_(?!\w)/',           '<em>$1</em>',                  $html);
+        // Surlignage ==texte== (syntaxe étendue)
+        $html = preg_replace('/==(.+?)==/s',           '<mark>$1</mark>',              $html);
+        // Barré ~~texte~~ — traité AVANT le sous-script (simple ~) pour que
+        // celui-ci ne matche pas la moitié d'une paire de tildes doubles.
         $html = preg_replace('/~~(.+?)~~/s',           '<del>$1</del>',                $html);
+        // Exposant ^texte^ (syntaxe étendue) — placé avant l'échappement des
+        // références de notes ([^label]) n'est pas un souci : celles-ci sont
+        // encadrées de crochets et ne forment donc pas de paire ^...^ isolée.
+        $html = preg_replace('/\^([^\^\n]+)\^/',       '<sup>$1</sup>',                $html);
+        // Sous-script ~texte~ (un seul tilde ; les ~~ ont déjà été consommés
+        // juste au-dessus par le barré).
+        $html = preg_replace('/~([^~\n]+)~/',          '<sub>$1</sub>',                $html);
+
+        // Émojis :shortcode: (syntaxe étendue) — les raccourcis inconnus sont
+        // laissés tels quels plutôt que silencieusement supprimés.
+        $html = preg_replace_callback('/:([a-zA-Z0-9_+\-]+):/', function ($m): string {
+            $emoji = self::emojiFor($m[1]);
+            return $emoji ?? $m[0];
+        }, $html);
 
 
         // ====================================================================
@@ -545,6 +811,15 @@ class MD {
             $html
         );
 
+        // URL nues https://... (syntaxe étendue : auto-link sans crochets).
+        // Exclut celles déjà entre guillemets/attributs (href="...") ou déjà
+        // transformées en lien pour ne pas les doubler.
+        $html = preg_replace(
+            '/(?<!["\'=>])\b(https?:\/\/[^\s<>"\')\]]+)/',
+            '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>',
+            $html
+        );
+
 
         // ====================================================================
         // ÉTAPE 12 : LIGNES SÉPARATRICES
@@ -561,6 +836,7 @@ class MD {
         // ====================================================================
         $blockStartTags = ['<h', '<pre', '<ul', '<ol', '<li', '<table', '<thead', '<tbody',
                            '<tr', '<td', '<th', '<blockquote', '<div', '<hr', '<img',
+                           '<dl', '<dt', '<dd',
                            "\x02CB", "\x02PLG", "\x02BQ"];
 
         $isBlockLine = static function (string $line) use ($blockStartTags): bool {
@@ -621,6 +897,22 @@ class MD {
         // Les échappements sont réinjectés en tout dernier, une fois que plus
         // aucune regex Markdown ne peut les interpréter.
         $html = strtr($html, $escapes);
+
+
+        // ====================================================================
+        // ÉTAPE 15 : BLOC DES NOTES DE BAS DE PAGE
+        // Ajouté en fin de document, uniquement si au moins une note a été
+        // référencée (les notes définies mais jamais référencées sont
+        // silencieusement ignorées).
+        // ====================================================================
+        if (!empty($footnoteOrder)) {
+            $html .= "\n<div class=\"footnotes\">\n<ol>\n";
+            foreach ($footnoteOrder as $label => $num) {
+                $content = $footnoteDefs[$label];
+                $html   .= "  <li id=\"fn:{$label}\">{$content} <a href=\"#fnref:{$label}\" class=\"footnote-backref\">↩</a></li>\n";
+            }
+            $html .= "</ol>\n</div>";
+        }
 
         return $html;
     }
