@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/php-prepros",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "PHP preprocessor for the Kirigami static site generator. Compile PHP page templates to clean, deployable HTML — with zero server dependency.",
   "keywords": [
     "kirigami",
@@ -44,8 +44,8 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@kirigami/php-wasm": "8.5.9",
-    "@kirigami/struct-walker": "1.0.2"
+    "@kirigami/php-wasm": "8.5.9-1",
+    "@kirigami/struct-walker": "1.0.3"
   },
   "repository": {
     "type": "git",

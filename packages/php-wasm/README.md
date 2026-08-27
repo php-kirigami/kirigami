@@ -28,7 +28,7 @@ This package is derived from the [`@php-wasm/node`](https://github.com/WordPress
 
 > **Upstream:** https://github.com/WordPress/wordpress-playground
 
-The WASM binary (`jspi/8_5_8/php_8_5.wasm`) and the Emscripten-generated loader (`jspi/php_8_5.js`) are built from that upstream source with a custom Dockerfile that enables JSPI and targets the Node.js environment only. No browser polyfills, no `TextEncoder`/`TextDecoder` shims, no DOM stubs.
+The WASM binary (`jspi/8_5_9/php_8_5.wasm`) and the Emscripten-generated loader (`jspi/php_8_5.js`) are built from that upstream source with a custom Dockerfile that enables JSPI and targets the Node.js environment only. No browser polyfills, no `TextEncoder`/`TextDecoder` shims, no DOM stubs.
 
 ---
 

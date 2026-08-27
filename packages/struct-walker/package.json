@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/struct-walker",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Recursively walks YAML/JSON file structures, resolving relative file references into parsed objects and assets into data URIs.",
   "license": "MIT",
   "author": "Maxime Larrivée-Roy",
@@ -42,7 +42,7 @@
     "access": "public"
   },
   "dependencies": {
-    "js-yaml": "5.3.0",
+    "js-yaml": "5.4.1",
     "mime-types": "3.0.2",
     "file-type": "22.0.2"
   },
