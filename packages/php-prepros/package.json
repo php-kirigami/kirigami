@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/php-prepros",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "PHP preprocessor for the Kirigami static site generator. Compile PHP page templates to clean, deployable HTML — with zero server dependency.",
   "keywords": [
     "kirigami",

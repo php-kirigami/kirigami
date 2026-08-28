@@ -4,20 +4,18 @@
 class FS
 {
 
-
-	public static function dig(string $path): iterable
+	public static function dig(string $path, bool $reverse = false): \Iterator
 	{
 		$patt = pathinfo($path, PATHINFO_BASENAME);
-		$path = pathinfo($path, PATHINFO_DIRNAME);
-		if ($path = realpath($path)) {
-			$path .= '/';
-			foreach (glob($path . $patt) as $file) {
-				if (!is_dir($file)) yield $file;
-			}
-			foreach (glob($path . '*', GLOB_ONLYDIR) as $dir) {
-				foreach (call_user_func(__METHOD__, $dir . '/' . $patt) as $file) yield $file;
-			}
-		}
+		$dir  = pathinfo($path, PATHINFO_DIRNAME);
+
+		if (!($dir = realpath($dir))) return new \EmptyIterator();
+		$rdi = new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::UNIX_PATHS);
+		$filtered = new \RecursiveCallbackFilterIterator($rdi, fn(\SplFileInfo $current) => $current->isDir() || fnmatch($patt, $current->getFilename()));
+		$iterator = new \RecursiveIteratorIterator($filtered);
+		if (!$reverse) return $iterator;
+
+		return new \ArrayIterator(array_reverse(iterator_to_array($iterator, false)));
 	}
 
 

@@ -25,7 +25,7 @@ try {
     elseif (!$target = realpath($argv[1])) STD::error("Invalid target.");
     else if (is_dir($target)) {
         $prj = new PREPROS($config);
-        foreach (FS::dig($target . '/*.php') as $file) {
+        foreach (FS::dig($target . '/*.php', true) as $file) {
             $parent = pathinfo(pathinfo($file, PATHINFO_DIRNAME), PATHINFO_BASENAME);
             if (strpos($parent, '_') === 0) continue;
             if (strpos(pathinfo($file, PATHINFO_FILENAME), '_') !== 0) continue;
