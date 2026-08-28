@@ -2,7 +2,7 @@
 import path from "path";
 import picomatch from "picomatch";
 import { Octokit } from "@octokit/rest";
-import { fileURLToPath, pathToFileURL } from 'url';
+import { fileURLToPath } from 'url';
 import { storeGet, storeSet } from "../store.js";
 import { c, log, parseArgs, printCommandHelp } from "../utils.js";
 

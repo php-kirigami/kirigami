@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/php-wasm",
-  "version": "8.5.9-1",
+  "version": "8.5.10",
   "description": "A custom PHP-WASM build for Node.js — JSPI only, no browser support. Built for the Kirigami project.",
   "keywords": [
     "php",
@@ -51,6 +51,7 @@
     "jspi",
     "runtime",
     "LICENSE",
-    "README.md"
+    "README.md",
+    "phpinfo.html"
   ]
 }

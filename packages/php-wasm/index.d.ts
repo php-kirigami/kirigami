@@ -107,3 +107,22 @@ export declare function getPHPRuntime(): Promise<PHP>;
  * @returns A promise that resolves to a network-enabled PHP instance.
  */
 export declare function getPHPRuntimeWithNetwork(): Promise<PHP>;
+
+/**
+ * Runs PHP's built-in `phpinfo()` and returns the rendered output as a string.
+ *
+ * Spins up a standard PHP runtime (via {@link getPHPRuntime}), writes a
+ * temporary `/phpinfo.php` script invoking `phpinfo()`, executes it, and
+ * returns the captured stdout.
+ *
+ * @example
+ * ```ts
+ * import { phpinfo } from '@kirigami/php-wasm';
+ *
+ * const output = await phpinfo();
+ * console.log(output);
+ * ```
+ *
+ * @returns A promise that resolves to the phpinfo() output as a string.
+ */
+export declare function phpinfo(): Promise<string>;
