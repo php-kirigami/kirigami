@@ -1,191 +1,8 @@
-# @kirigami/php-wasm
-
-> A custom PHP 8.5 WebAssembly build for Node.js — JSPI-only, no browser target.  
-> Built for the [Kirigami](https://github.com/php-kirigami) project.
-
-[![npm version](https://img.shields.io/npm/v/@kirigami/php-wasm)](https://www.npmjs.com/package/@kirigami/php-wasm)
-[![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)](./LICENSE)
-[![Node.js >=20.10.0](https://img.shields.io/badge/node-%3E%3D20.10.0-brightgreen)](https://nodejs.org)
-
----
-
-## Overview
-
-`@kirigami/php-wasm` is a **custom fork** of the PHP-WASM package from the [WordPress Playground](https://github.com/WordPress/wordpress-playground) project. It ships a pre-compiled PHP 8.5.10 WebAssembly binary and its Node.js loader, stripped down to exactly what the Kirigami project needs:
-
-- ✅ **JSPI** (JavaScript Promise Integration) target only
-- ✅ **Node.js** runtime only
-- ❌ No browser build
-- ❌ No `WORKER` / `IFRAME` targets
-
-This intentional reduction keeps the package lean and avoids shipping browser-specific glue code that would never be used inside Kirigami's server-side execution environment.
-
----
-
-## Fork origin
-
-This package is derived from the [`@php-wasm/node`](https://github.com/WordPress/wordpress-playground/tree/trunk/packages/php-wasm/node) package inside the WordPress Playground monorepo:
-
-> **Upstream:** https://github.com/WordPress/wordpress-playground
-
-The WASM binary (`jspi/8_5_10/php_8_5.wasm`) and the Emscripten-generated loader (`jspi/php_8_5.js`) are built from that upstream source with a custom Dockerfile that enables JSPI and targets the Node.js environment only. No browser polyfills, no `TextEncoder`/`TextDecoder` shims, no DOM stubs.
-
----
-
-## Compatibility & Runtime Helpers
-
-This package is a **drop-in replacement** for the loader module consumed by [`@php-wasm/universal`](https://www.npmjs.com/package/@php-wasm/universal). It exposes the raw `PHPLoaderModule` interface along with high-level runtime instantiators that include out-of-the-box **networking capabilities**.
-
-| Export | Description |
-|---|---|
-| `getPHPLoaderModule()` | Returns the raw JSPI PHP 8.5 loader module |
-| `jspi()` | Detects JSPI support in the current runtime (re-exported from `wasm-feature-detect`) |
-| `getPHPRuntime()` | Instantiates and returns a clean, standard PHP instance |
-| `getPHPRuntimeWithNetwork()` | Instantiates a PHP instance bound to a native, zero-dependency TCP outbound proxy with SSL root certificates injected |
-| `phpinfo()` | Returns the HTML result of phpinfo(). |
-
----
-
-## Requirements
-
-| Requirement | Minimum version |
-|---|---|
-| Node.js | `>=20.10.0` |
-| npm | `>=10.2.3` |
-| Node.js JSPI flag | See note below |
-
-> **JSPI in Node.js**: JSPI (WebAssembly JavaScript Promise Integration) landed behind a V8 flag in Node.js 20 and became available without flags in Node.js 22+. If you are on Node.js 20, start your process with `--experimental-wasm-stack-switching`. On Node.js 22 and above, no flag is needed.
-
----
-
-## Installation
-
-```bash
-npm install @kirigami/php-wasm
-```
-
----
-
-## Usage
-
-### 1. High-level execution with Outbound Networking
-
-The package provides a built-in proxy architecture (`node:http` & `node:net`) that routes Emscripten `SOCKFS` actions into genuine outbound TCP traffic. It also automatically binds your Node environment's root certificates (`node:tls`) to the PHP layer so `cURL` and `OpenSSL` HTTPS requests work immediately.
-
-```ts
-import { getPHPRuntimeWithNetwork, jspi } from '@kirigami/php-wasm';
-
-// Guard: verify JSPI is available before proceeding
-if (!(await jspi())) {
-  throw new Error('WASM JSPI is not available in this runtime.');
-}
-
-// Spins up the runtime and its companion local proxy on a random free port
-const php = await getPHPRuntimeWithNetwork();
-
-const result = await php.run({
-  code: `<?php
-    // Native HTTPS request inside WASM using cURL!
-    $ch = curl_init("https://api.github.com/zen");
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_USERAGENT, "Kirigami-PHP-WASM");
-    
-    $response = curl_exec($ch);
-    curl_close($ch);
-    
-    echo "GitHub says: " . $response;
-  `,
-});
-
-console.log(result.text);
-
-// Clean up the proxy server when done if necessary
-if (php._networkProxyServer) {
-  php._networkProxyServer.close();
-}
-
-```
-
-### 2. Standard isolated runtime
-
-If you do not require internet access/sockets inside the PHP code, use the lightweight isolated helper:
-
-```ts
-import { getPHPRuntime } from '@kirigami/php-wasm';
-
-const php = await getPHPRuntime();
-const result = await php.run({ code: '<?php echo PHP_VERSION;' });
-console.log(result.text); // "8.5.10"
-
-```
-
-### 3. Low-level configuration (Manual)
-
-If you prefer to configure the `@php-wasm/universal` instance manually, pass the result of `getPHPLoaderModule()` to `PHP.load()`:
-
-```ts
-import { getPHPLoaderModule } from '@kirigami/php-wasm';
-import { PHP } from '@php-wasm/universal';
-
-const loaderModule = await getPHPLoaderModule();
-const php = await PHP.load('8.5', { phpLoaderModule: loaderModule });
-
-const result = await php.run({ code: '<?php echo "Hello, Kirigami!";' });
-console.log(result.text); // Hello, Kirigami!
-
-```
-
----
-
-## Package contents
-
-```
-@kirigami/php-wasm
-├── index.js              # ESM entry point (re-exports runtime + loaders)
-├── index.d.ts            # TypeScript declarations
-├── runtime/
-│   └── runtime.js        # Networking proxy and runtime helpers
-├── jspi/
-│   ├── php_8_5.js        # Emscripten-generated Node.js loader (JSPI build)
-│   └── 8_5_10/
-│       └── php_8_5.wasm  # Compiled PHP 8.5.10 WebAssembly binary (~17 MB)
-└── LICENSE
-
-```
-
----
-
-## PHP version
-
-This package ships **PHP 8.5.10**.
-
-The version is encoded in the package version number (`major.minor.patch` → `8.5.10`) so that the installed PHP version is always immediately visible from `package.json`.
-
----
-
-## License
-
-`GPL-2.0-or-later` — same as the upstream WordPress Playground project.
-
-See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
-
----
-
-## Related
-
-* [WordPress Playground](https://github.com/WordPress/wordpress-playground) — upstream project
-* [`@php-wasm/universal`](https://www.npmjs.com/package/@php-wasm/universal) — the runtime this loader integrates with
-* [`wasm-feature-detect`](https://www.npmjs.com/package/wasm-feature-detect) — used for JSPI detection
-
-
----
-
-
-## PHP 8.5.10 - phpinfo()
+# PHP 8.5.10 - phpinfo()
 
 **Version PHP :** 8.5.10
 
-### General
+## General
 
 **PHP Version 8.5.10**
 
@@ -225,7 +42,7 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | --- | --- |
 | This program makes use of the Zend Scripting Language Engine:<br>Zend Engine v4.5.10, Copyright (c) Zend Technologies<br>with Zend OPcache v8.5.10, Copyright (c), by Zend Technologies | _no value_ |
 
-### bcmath
+## bcmath
 
 | Key | Value |
 | --- | --- |
@@ -235,13 +52,13 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | --- | --- | --- |
 | bcmath.scale | 0 | 0 |
 
-### calendar
+## calendar
 
 | Key | Value |
 | --- | --- |
 | Calendar support | enabled |
 
-### Core
+## Core
 
 | Key | Value |
 | --- | --- |
@@ -345,13 +162,13 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | zend.script_encoding | _no value_ | _no value_ |
 | zend.signal_check | Off | Off |
 
-### ctype
+## ctype
 
 | Key | Value |
 | --- | --- |
 | ctype functions | enabled |
 
-### curl
+## curl
 
 | Key | Value |
 | --- | --- |
@@ -393,7 +210,7 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | --- | --- | --- |
 | curl.cainfo | _no value_ | _no value_ |
 
-### date
+## date
 
 | Key | Value |
 | --- | --- |
@@ -411,13 +228,13 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | date.sunset_zenith | 90.833333 | 90.833333 |
 | date.timezone | UTC | UTC |
 
-### dns_polyfill
+## dns_polyfill
 
 | Key | Value |
 | --- | --- |
 | dns_polyfill support | enabled |
 
-### dom
+## dom
 
 | Key | Value |
 | --- | --- |
@@ -430,7 +247,7 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | Schema Support | enabled |
 | RelaxNG Support | enabled |
 
-### exif
+## exif
 
 | Key | Value |
 | --- | --- |
@@ -449,7 +266,7 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | exif.encode_jis | _no value_ | _no value_ |
 | exif.encode_unicode | ISO-8859-15 | ISO-8859-15 |
 
-### filter
+## filter
 
 | Key | Value |
 | --- | --- |
@@ -460,7 +277,7 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | filter.default | unsafe_raw | unsafe_raw |
 | filter.default_flags | _no value_ | _no value_ |
 
-### gd
+## gd
 
 | Key | Value |
 | --- | --- |
@@ -484,27 +301,27 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | --- | --- | --- |
 | gd.jpeg_ignore_warning | On | On |
 
-### hash
+## hash
 
 | Key | Value |
 | --- | --- |
 | hash support | enabled |
 | Hashing Engines | md2 md4 md5 sha1 sha224 sha256 sha384 sha512/224 sha512/256 sha512 sha3-224 sha3-256 sha3-384 sha3-512 ripemd128 ripemd160 ripemd256 ripemd320 whirlpool tiger128,3 tiger160,3 tiger192,3 tiger128,4 tiger160,4 tiger192,4 snefru snefru256 gost gost-crypto adler32 crc32 crc32b crc32c fnv132 fnv1a32 fnv164 fnv1a64 joaat murmur3a murmur3c murmur3f xxh32 xxh64 xxh3 xxh128 haval128,3 haval160,3 haval192,3 haval224,3 haval256,3 haval128,4 haval160,4 haval192,4 haval224,4 haval256,4 haval128,5 haval160,5 haval192,5 haval224,5 haval256,5 |
 
-### json
+## json
 
 | Key | Value |
 | --- | --- |
 | json support | enabled |
 
-### lexbor
+## lexbor
 
 | Key | Value |
 | --- | --- |
 | Lexbor support | active |
 | Lexbor version | 2.7.0 |
 
-### libxml
+## libxml
 
 | Key | Value |
 | --- | --- |
@@ -513,7 +330,7 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | libXML Loaded Version | 20910-GITv2.9.10 |
 | libXML streams | enabled |
 
-### mbstring
+## mbstring
 
 | Key | Value |
 | --- | --- |
@@ -538,7 +355,7 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | mbstring.strict_detection | Off | Off |
 | mbstring.substitute_character | _no value_ | _no value_ |
 
-### openssl
+## openssl
 
 | Key | Value |
 | --- | --- |
@@ -553,7 +370,7 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | openssl.capath | _no value_ | _no value_ |
 | openssl.libctx | custom | custom |
 
-### pcre
+## pcre
 
 | Key | Value |
 | --- | --- |
@@ -567,46 +384,46 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | pcre.backtrack_limit | 1000000 | 1000000 |
 | pcre.recursion_limit | 100000 | 100000 |
 
-### PDO
+## PDO
 
 | Key | Value |
 | --- | --- |
 | PDO support | enabled |
 | PDO drivers | sqlite |
 
-### pdo_sqlite
+## pdo_sqlite
 
 | Key | Value |
 | --- | --- |
 | PDO Driver for SQLite 3.x | enabled |
 | SQLite Library | 3.51.0 |
 
-### post_message_to_js
+## post_message_to_js
 
 | Key | Value |
 | --- | --- |
 | post_message_to_js support | enabled |
 
-### random
+## random
 
 | Key | Value |
 | --- | --- |
 | Version | 8.5.10 |
 
-### Reflection
+## Reflection
 
 | Key | Value |
 | --- | --- |
 | Reflection | enabled |
 
-### SimpleXML
+## SimpleXML
 
 | Key | Value |
 | --- | --- |
 | SimpleXML support | enabled |
 | Schema support | enabled |
 
-### SPL
+## SPL
 
 | Key | Value |
 | --- | --- |
@@ -614,7 +431,7 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | Interfaces | OuterIterator, RecursiveIterator, SeekableIterator, SplObserver, SplSubject |
 | Classes | AppendIterator, ArrayIterator, ArrayObject, BadFunctionCallException, BadMethodCallException, CachingIterator, CallbackFilterIterator, DirectoryIterator, DomainException, EmptyIterator, FilesystemIterator, FilterIterator, GlobIterator, InfiniteIterator, InvalidArgumentException, IteratorIterator, LengthException, LimitIterator, LogicException, MultipleIterator, NoRewindIterator, OutOfBoundsException, OutOfRangeException, OverflowException, ParentIterator, RangeException, RecursiveArrayIterator, RecursiveCachingIterator, RecursiveCallbackFilterIterator, RecursiveDirectoryIterator, RecursiveFilterIterator, RecursiveIteratorIterator, RecursiveRegexIterator, RecursiveTreeIterator, RegexIterator, RuntimeException, SplDoublyLinkedList, SplFileInfo, SplFileObject, SplFixedArray, SplHeap, SplMinHeap, SplMaxHeap, SplObjectStorage, SplPriorityQueue, SplQueue, SplStack, SplTempFileObject, UnderflowException, UnexpectedValueException |
 
-### sqlite3
+## sqlite3
 
 | Key | Value |
 | --- | --- |
@@ -626,7 +443,7 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | sqlite3.defensive | On | On |
 | sqlite3.extension_dir | _no value_ | _no value_ |
 
-### standard
+## standard
 
 | Key | Value |
 | --- | --- |
@@ -650,26 +467,26 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | url_rewriter.tags | form= | form= |
 | user_agent | _no value_ | _no value_ |
 
-### tokenizer
+## tokenizer
 
 | Key | Value |
 | --- | --- |
 | Tokenizer Support | enabled |
 
-### uri
+## uri
 
 | Key | Value |
 | --- | --- |
 | URI support | active |
 | uriparser bundled version | 1.0.2 |
 
-### wasm_memory_storage
+## wasm_memory_storage
 
 | Key | Value |
 | --- | --- |
 | wasm_memory_storage support | enabled |
 
-### xml
+## xml
 
 | Key | Value |
 | --- | --- |
@@ -677,19 +494,19 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | XML Namespace Support | active |
 | libxml2 Version | 2.9.10 |
 
-### xmlreader
+## xmlreader
 
 | Key | Value |
 | --- | --- |
 | XMLReader | enabled |
 
-### xmlwriter
+## xmlwriter
 
 | Key | Value |
 | --- | --- |
 | XMLWriter | enabled |
 
-### Zend OPcache
+## Zend OPcache
 
 | Key | Value |
 | --- | --- |
@@ -757,7 +574,7 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | opcache.validate_root | Off | Off |
 | opcache.validate_timestamps | On | On |
 
-### zip
+## zip
 
 | Key | Value |
 | --- | --- |
@@ -771,7 +588,7 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | AES-192 encryption | No |
 | AES-256 encryption | No |
 
-### zlib
+## zlib
 
 | Key | Value |
 | --- | --- |
@@ -787,13 +604,13 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | zlib.output_compression_level | -1 | -1 |
 | zlib.output_handler | _no value_ | _no value_ |
 
-### Additional Modules
+## Additional Modules
 
 **Module Name**
 
 > Module Name
 
-### Environment
+## Environment
 
 | Variable | Value |
 | --- | --- |
@@ -806,7 +623,7 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | _ | C:/Program Files/nodejs/node_modules/@kirigami/kirigami/bin/kiri.js |
 | USE_ZEND_ALLOC | 0 |
 
-### PHP Variables
+## PHP Variables
 
 | Variable | Value |
 | --- | --- |
@@ -841,7 +658,7 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | $_ENV['_'] | C:/Program Files/nodejs/node_modules/@kirigami/kirigami/bin/kiri.js |
 | $_ENV['USE_ZEND_ALLOC'] | 0 |
 
-### PHP Credits
+## PHP Credits
 
 **PHP Group**
 
@@ -976,7 +793,7 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | Network Infrastructure | Daniel P. Brown |
 | Windows Infrastructure | Alex Schoenmaker |
 
-### PHP License
+## PHP License
 
 | Key | Value |
 | --- | --- |

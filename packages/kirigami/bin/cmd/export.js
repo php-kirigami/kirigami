@@ -32,8 +32,8 @@ export default async function exportDist(args) {
 	const config = await getConfig();
 
 	if(!config.export?.path) {
-		log.error(` Missing export.path configuration in config file.`);
-		process.exit(1);
+		if(!config.export) config.export = {}; 
+		config.export.path = 'dist';
 	}
 
 	const __dist = path.join(__root, config.export.path);
