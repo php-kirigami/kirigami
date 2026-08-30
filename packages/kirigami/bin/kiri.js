@@ -10,7 +10,8 @@
 import { resolve, dirname } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { existsSync } from "fs";
-import { c } from "./utils.js"
+import { c } from "./utils.js";
+import { phpversion } from "@kirigami/php-wasm";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -51,7 +52,11 @@ async function printVersion() {
 	const { createRequire } = await import("module");
 	const require = createRequire(import.meta.url);
 	const pkg = require("../package.json");
-	console.log(`${c.cyan("kiri")} v${pkg.version}`);
+	const php_version = await phpversion();
+
+	console.log("");
+	console.log(`${c.cyan("kiri:")} v${pkg.version}`);
+	console.log(`${c.cyan("php: ")} v${php_version}`);
 }
 
 // ─── Dispatcher ──────────────────────────────────────────────────────────────

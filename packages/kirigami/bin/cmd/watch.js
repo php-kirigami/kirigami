@@ -35,8 +35,8 @@ export default async function watch(args) {
 	const config = await getConfig();
 
 	if(!config.export?.path) {
-		log.error(` Missing export.path configuration in config file.`);
-		process.exit(1);
+		if(!config.export) config.export = {}; 
+		config.export.path = 'dist';
 	}
 
 	log.step(`Project   : ${c.dim(config.kirigami.project)}`);

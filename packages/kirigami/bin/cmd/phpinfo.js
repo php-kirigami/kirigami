@@ -9,7 +9,7 @@ import PHPInfoParser from "../libs/phpinfoparser.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export default async function test(args) {
+export default async function phpinfo_(args) {
 	const { flags, command, subcommand } = parseArgs(args);
 	const dest_html = path.resolve(__dirname, '../../phpinfo.html');
 	const dest_md = path.resolve(__dirname, '../../phpinfo.md');

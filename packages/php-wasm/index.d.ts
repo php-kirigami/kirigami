@@ -93,7 +93,11 @@ export declare function jspi(): Promise<boolean>;
  * A higher-level abstraction helper that automates the loader fetching
  * and initialization process using `@php-wasm/universal`.
  *
- * @returns A promise that resolves to an initialized PHP instance.
+ * The instance is a **memoized singleton**: the first call creates it,
+ * every subsequent call returns the same instance (state persists across
+ * calls, e.g. files written to the virtual filesystem stay in place).
+ *
+ * @returns A promise that resolves to the shared PHP instance.
  */
 export declare function getPHPRuntime(): Promise<PHP>;
 
@@ -104,16 +108,73 @@ export declare function getPHPRuntime(): Promise<PHP>;
  * injects the host's root certificates into the virtual filesystem (for native HTTPS/cURL/OpenSSL),
  * and hooks into Emscripten's SOCKFS layer.
  *
- * @returns A promise that resolves to a network-enabled PHP instance.
+ * The instance is a **memoized singleton**, separate from the one returned by
+ * {@link getPHPRuntime}: the first call creates it, every subsequent call
+ * returns the same network-enabled instance.
+ *
+ * @returns A promise that resolves to the shared, network-enabled PHP instance.
  */
 export declare function getPHPRuntimeWithNetwork(): Promise<PHP>;
 
 /**
+ * Result of {@link exec}.
+ */
+export interface PHPExecResult {
+  /** Exit code of the PHP script. `0` means success. */
+  returnCode: number;
+  /** Captured stdout. */
+  stdout: string;
+  /** Captured stderr. */
+  stderr: string;
+}
+
+/**
+ * Executes a PHP code snippet and returns its result.
+ *
+ * The code is written to a temporary file in the virtual filesystem and
+ * executed via `runStream()` (`php.run()` being deprecated). The opening
+ * `<?php` tag is added automatically if missing. The temporary file is
+ * removed once execution completes, even if it throws.
+ *
+ * @example
+ * ```ts
+ * import { exec } from '@kirigami/php-wasm';
+ *
+ * const { returnCode, stdout, stderr } = await exec('echo "Hello!";');
+ *
+ * // With outbound networking (proxy + CA bundle)
+ * const net = await exec('echo file_get_contents("https://example.com");', true);
+ * ```
+ *
+ * @param code - PHP code to execute (with or without the `<?php` tag).
+ * @param network - When `true`, runs against the shared network-enabled
+ * instance (see {@link getPHPRuntimeWithNetwork}) instead of the standard
+ * one (see {@link getPHPRuntime}). Default: `false`.
+ * @returns A promise that resolves to `{ returnCode, stdout, stderr }`.
+ */
+export declare function exec(code: string, network?: boolean): Promise<PHPExecResult>;
+
+/**
+ * Returns the running PHP interpreter's version string.
+ *
+ * Shorthand for {@link exec} running `echo phpversion();` and trimming
+ * the result.
+ *
+ * @example
+ * ```ts
+ * import { phpversion } from '@kirigami/php-wasm';
+ *
+ * console.log(await phpversion()); // "8.5.10"
+ * ```
+ *
+ * @returns A promise that resolves to the PHP version string.
+ */
+export declare function phpversion(): Promise<string>;
+
+/**
  * Runs PHP's built-in `phpinfo()` and returns the rendered output as a string.
  *
- * Spins up a standard PHP runtime (via {@link getPHPRuntime}), writes a
- * temporary `/phpinfo.php` script invoking `phpinfo()`, executes it, and
- * returns the captured stdout.
+ * Shorthand for {@link exec} running `phpinfo();`.
  *
  * @example
  * ```ts

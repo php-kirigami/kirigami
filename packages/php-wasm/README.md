@@ -40,9 +40,11 @@ This package is a **drop-in replacement** for the loader module consumed by [`@p
 |---|---|
 | `getPHPLoaderModule()` | Returns the raw JSPI PHP 8.5 loader module |
 | `jspi()` | Detects JSPI support in the current runtime (re-exported from `wasm-feature-detect`) |
-| `getPHPRuntime()` | Instantiates and returns a clean, standard PHP instance |
-| `getPHPRuntimeWithNetwork()` | Instantiates a PHP instance bound to a native, zero-dependency TCP outbound proxy with SSL root certificates injected |
-| `phpinfo()` | Returns the HTML result of phpinfo(). |
+| `getPHPRuntime()` | Returns a standard PHP instance. **Memoized singleton** — the first call creates it, subsequent calls return the same instance |
+| `getPHPRuntimeWithNetwork()` | Returns a PHP instance bound to a native, zero-dependency TCP outbound proxy with SSL root certificates injected. **Memoized singleton**, separate from `getPHPRuntime()` |
+| `exec(code, network?)` | Executes a PHP code snippet against the standard runtime, or the network-enabled one if `network` is `true`. Returns `{ returnCode, stdout, stderr }` |
+| `phpversion()` | Returns the running PHP interpreter's version string, e.g. `"8.5.10"` |
+| `phpinfo()` | Returns the HTML result of `phpinfo()` |
 
 ---
 
@@ -83,21 +85,20 @@ if (!(await jspi())) {
 // Spins up the runtime and its companion local proxy on a random free port
 const php = await getPHPRuntimeWithNetwork();
 
-const result = await php.run({
-  code: `<?php
-    // Native HTTPS request inside WASM using cURL!
-    $ch = curl_init("https://api.github.com/zen");
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_USERAGENT, "Kirigami-PHP-WASM");
-    
-    $response = curl_exec($ch);
-    curl_close($ch);
-    
-    echo "GitHub says: " . $response;
-  `,
-});
+php.writeFile('/network-demo.php', `<?php
+  // Native HTTPS request inside WASM using cURL!
+  $ch = curl_init("https://api.github.com/zen");
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+  curl_setopt($ch, CURLOPT_USERAGENT, "Kirigami-PHP-WASM");
 
-console.log(result.text);
+  $response = curl_exec($ch);
+
+  echo "GitHub says: " . $response;
+`);
+
+const streamedResponse = await php.runStream({ scriptPath: '/network-demo.php' });
+
+console.log(await streamedResponse.stdoutText);
 
 // Clean up the proxy server when done if necessary
 if (php._networkProxyServer) {
@@ -106,20 +107,54 @@ if (php._networkProxyServer) {
 
 ```
 
-### 2. Standard isolated runtime
+### 2. Quick execution with `exec()`
 
-If you do not require internet access/sockets inside the PHP code, use the lightweight isolated helper:
+For one-off PHP snippets, `exec()` skips the manual `writeFile`/`runStream` dance: it writes your code to a temporary file, runs it, cleans up, and gives you back a plain result object.
+
+```ts
+import { exec } from '@kirigami/php-wasm';
+
+// Standard runtime (no networking)
+const { returnCode, stdout, stderr } = await exec('echo "Hello, Kirigami!";');
+console.log(returnCode, stdout, stderr); // 0 "Hello, Kirigami!" ""
+
+// Pass `true` as the second argument to run against the network-enabled runtime
+const net = await exec(`
+  $ch = curl_init("https://api.github.com/zen");
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+  echo curl_exec($ch);
+`, true);
+console.log(net.stdout);
+```
+
+The `<?php` opening tag is added automatically if you don't include it.
+
+Two small helpers are built on top of `exec()`:
+
+```ts
+import { phpversion, phpinfo } from '@kirigami/php-wasm';
+
+console.log(await phpversion()); // "8.5.10"
+console.log(await phpinfo());    // full phpinfo() HTML output
+```
+
+### 3. Standard isolated runtime
+
+If you need the raw PHP instance instead of the `exec()` shorthand — for example to keep writing files to its virtual filesystem across multiple calls — use the lightweight isolated helper:
 
 ```ts
 import { getPHPRuntime } from '@kirigami/php-wasm';
 
 const php = await getPHPRuntime();
-const result = await php.run({ code: '<?php echo PHP_VERSION;' });
-console.log(result.text); // "8.5.10"
+php.writeFile('/version.php', '<?php echo PHP_VERSION;');
+const streamedResponse = await php.runStream({ scriptPath: '/version.php' });
+console.log(await streamedResponse.stdoutText); // "8.5.10"
 
 ```
 
-### 3. Low-level configuration (Manual)
+> `getPHPRuntime()` and `getPHPRuntimeWithNetwork()` are memoized: every call within the same process returns the same shared instance, so state (files, defined constants, etc.) persists between calls.
+
+### 4. Low-level configuration (Manual)
 
 If you prefer to configure the `@php-wasm/universal` instance manually, pass the result of `getPHPLoaderModule()` to `PHP.load()`:
 
@@ -130,8 +165,9 @@ import { PHP } from '@php-wasm/universal';
 const loaderModule = await getPHPLoaderModule();
 const php = await PHP.load('8.5', { phpLoaderModule: loaderModule });
 
-const result = await php.run({ code: '<?php echo "Hello, Kirigami!";' });
-console.log(result.text); // Hello, Kirigami!
+php.writeFile('/hello.php', '<?php echo "Hello, Kirigami!";');
+const streamedResponse = await php.runStream({ scriptPath: '/hello.php' });
+console.log(await streamedResponse.stdoutText); // Hello, Kirigami!
 
 ```
 
@@ -830,8 +866,8 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | $_SERVER['REQUEST_METHOD'] | GET |
 | $_SERVER['QUERY_STRING'] | _no value_ |
 | $_SERVER['HTTPS'] | off |
-| $_SERVER['REQUEST_TIME_FLOAT'] | 1787997657.049 |
-| $_SERVER['REQUEST_TIME'] | 1787997657 |
+| $_SERVER['REQUEST_TIME_FLOAT'] | 1788120774.369 |
+| $_SERVER['REQUEST_TIME'] | 1788120774 |
 | $_ENV['USER'] | web_user |
 | $_ENV['LOGNAME'] | web_user |
 | $_ENV['PATH'] | /internal/shared/bin |
