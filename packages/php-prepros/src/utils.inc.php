@@ -41,6 +41,7 @@ spl_autoload_register(function ($class) {
 $argv = array_merge(['prepros.php'], json_decode(getenv('PREPROS_ARGS'), true));
 $config = json_decode(getenv('PREPROS_CONFIG'));
 date_default_timezone_set($config->timezone);
+chdir('/project');
 
 
 PREPROS::loadConfig($config);

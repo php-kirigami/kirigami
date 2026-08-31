@@ -99,7 +99,7 @@ console.log(`
 		const cmdModule = await import(pathToFileURL(cmdPath).href);
 		await cmdModule.default(rest);
 	} catch (err) {
-		console.error(`\n${c.red("✖")} Error: ${c.bold(subcommand)} failed:\n  ${typeof err == 'string' ? err : err.message}\n`);
+		console.error(`\n${c.red("❌")} Error: ${c.bold(subcommand)} failed:\n  ${typeof err == 'string' ? err : err.message}\n`);
 		// console.log(err);
 		process.exit(1);
 	}

@@ -25,7 +25,7 @@ try {
     }
 
 } catch(Exception $e) {
-    STD::error($e->getMessage());
+    STD::error(['message' => $e->getMessage()]);
 }
 
 

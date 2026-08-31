@@ -75,7 +75,7 @@ const run = async (args = [], script = null, mountPaths = []) => {
         const file = path.resolve(item);
         if(!fs.existsSync(file)) return;
         if(!path.relative(__project, file)) return;
-        const dest = file.replace(__project, '').replaceAll('\\', '/');
+        const dest = path.join('/project', file.replace(__project, '')).replaceAll('\\', '/');
         mountPath(php, file, dest);
     });
 
@@ -99,7 +99,7 @@ const run = async (args = [], script = null, mountPaths = []) => {
             retobj = JSON.parse(Buffer.from(buffer).toString('utf8'));
             retobj.debug = stdout;
 
-            await Promise.all(retobj.files.map(async (file, i) => {
+            if(retobj.files) await Promise.all(retobj.files.map(async (file, i) => {
                 const fbuffer = php.readFileAsBuffer(file);
                 const dest = file.replace(/^\/project\//i, '');
                 const dir = dirname(path.join(__project, dest));
@@ -111,7 +111,7 @@ const run = async (args = [], script = null, mountPaths = []) => {
             retobj = { success: true, files: [], debug: stdout };
         }
     } catch (e) {
-        retobj = { success: false, error: 'Response parsing error.', debug: stdout, stderr };
+        retobj = { success: false, error: 'Response parsing error.' + e, debug: stdout, stderr };
     } finally {
         if (await php.fileExists(resultPath)) {
             await php.unlink(resultPath);
@@ -130,7 +130,7 @@ const runenv = async (script, ...args) => {
     const file = path.resolve(script);
     if(!path.relative(__project, file)) throw "PHP file outside project";
     if(!fs.existsSync(file)) throw "Can't find PHP file";
-    const dest = file.replace(__project, '').replaceAll('\\', '/');
+    const dest = path.join('/project', file.replace(__project, '')).replaceAll('\\', '/');
     return run([dest, ...args], '/prepros/runenv.php', [file]);
 }
 
