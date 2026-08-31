@@ -1,23 +1,10 @@
 <?php
 
-ini_set('log_errors', 1);
-ini_set('html_errors', 0);
-ini_set('display_errors', 1);
-ini_set('error_reporting', 32767);
-ini_set('error_log', 'php://stderr');
-error_reporting(E_ALL);
-
-
-$argv = array_merge(['prepros.php'], json_decode(getenv('PREPROS_ARGS'), true));
-$config = json_decode(getenv('PREPROS_CONFIG'));
-
+include(__DIR__ . '/utils.inc.php');
 
 try {
-
-    date_default_timezone_set($config->timezone);
     if (!isset($argv[1])) STD::error("Invalid argument.");
-    include(__DIR__ . '/utils.inc.php');
-    PREPROS::loadConfig($config);
+    
     if($argv[1] == 'sitemap') {
         if(!PREPROS::sitemap()) STD::error("Can't produce the sitemap.");
         STD::succeed(['files' => PREPROS::getExportedFiles()]);

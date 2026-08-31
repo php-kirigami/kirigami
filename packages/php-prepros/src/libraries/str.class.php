@@ -44,4 +44,29 @@ class STR
 		}
 		return implode("\n", $lines);
 	}
+
+
+	public static function is_url(string $str): bool
+	{
+		if (!$sheme = strtolower(@parse_url($str, PHP_URL_SCHEME))) return false;
+		return in_array($sheme, ['http', 'https', 'itunes', 'ftp', 'ftps', 'ssh', 'ssl', 'sftp']);
+	}
+
+
+	public static function html_entities_decode(string $str): string
+	{
+		// $str = html_entity_decode(trim($str), ENT_QUOTES, 'UTF-8');
+		// $str = htmlentities($str, ENT_QUOTES, 'UTF-8');
+		// $str = mb_convert_encoding($str, 'HTML-ENTITIES', 'UTF-8');
+		$str = html_entity_decode(trim($str), ENT_QUOTES, 'UTF-8');
+		// $str = htmlentities($str, ENT_QUOTES, 'UTF-8');
+		return $str;
+	}
+
+
+	public static function shorthash(string$str): string
+	{
+		return substr(hash('sha256', $str), 0, 12);
+	}
+
 }
