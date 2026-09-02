@@ -29,4 +29,4 @@ try {
 }
 
 
-STD::succeed(['files' => PREPROS::getExportedFiles()]);
+STD::succeed();

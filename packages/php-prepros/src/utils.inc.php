@@ -23,6 +23,7 @@ spl_autoload_register(function ($class) {
     static $catalog = [
         'ARR'             => 'arr.class.php',    
         'CACHE'           => 'cache.class.php',
+        'CURL'            => 'curl.class.php',
 		'FS'              => 'fs.class.php',
         'HTML'            => 'html.class.php',
         'IMG'             => 'img.class.php',

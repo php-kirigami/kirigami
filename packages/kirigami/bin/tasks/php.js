@@ -1,6 +1,6 @@
-import fs from 'fs';
+// import fs from 'fs';
 import path from "path";
-import util from "util";
+// import util from "util";
 import { joinWith, replaceRoot, log, c } from '../utils.js';
 import { render, sitemap } from "@kirigami/php-prepros";
 

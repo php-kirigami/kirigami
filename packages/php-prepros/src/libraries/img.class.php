@@ -116,7 +116,7 @@ class IMG
 			'webp'        => (function_exists('imagewebp') ? imagewebp($this->im, $dest, 85) : false),
 			default       => throw new Exception("Invalid output file type.")
 		};
-		PREPROS::exportFile(realpath($dest));
+		// PREPROS::exportFile(realpath($dest));
 		return $this;
 	}
 }

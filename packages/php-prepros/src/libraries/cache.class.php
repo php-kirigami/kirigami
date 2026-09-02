@@ -13,10 +13,7 @@ class CACHE
         static $db = null;
         if($db !== null) return $db;
 
-        if(!empty($_SERVER['NODE_PROJECT'])) $root = $_SERVER['NODE_PROJECT'] . '/';
-        elseif(!empty(PREPROS::$config->root)) $root = rtrim(PREPROS::$config->root, '/') . '/';
-        else throw new Exception("Can't find project root.");
-        
+
         if(!is_file(($dbfile = self::getPath()))) $create = true;
         if(!$db = new SQLite3($dbfile)) throw new Exception("Can't open .cache.db.");
         
@@ -36,6 +33,10 @@ class CACHE
 
 
     private static function getPath() {
+        // if(!empty($_SERVER['NODE_PROJECT'])) $root = $_SERVER['NODE_PROJECT'] . '/';
+        // elseif(!empty(PREPROS::$config->root)) $root = rtrim(PREPROS::$config->root, '/') . '/';
+        // else throw new Exception("Can't find project root.");
+        // return $root . '.cache.db';
         return '/project/.cache.db';
     }
 

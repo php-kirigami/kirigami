@@ -230,9 +230,9 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | Key | Value |
 | --- | --- |
 | System | Emscripten emscripten 4.0.19 #1 wasm32 |
-| Build Date | Aug 28 2026 04:16:09 |
+| Build Date | Sep 1 2026 02:57:39 |
 | Build System | Linux buildkitsandbox 6.18.33.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux |
-| Configure Command | './configure' 'PKG_CONFIG_PATH=/root/lib/lib/pkgconfig' '--disable-fiber-asm' '--disable-phar' '--enable-json' '--enable-embed=static' '--with-layout=GNU' '--disable-cgi' '--disable-posix' '--enable-hash' '--enable-static' '--enable-shared' '--disable-session' '--enable-filter' '--enable-calendar' '--disable-rpath' '--disable-phpdbg' '--without-pear' '--with-valgrind=no' '--without-pcre-jit' '--enable-bcmath' '--enable-ctype' '--enable-tokenizer' '--enable-wasm_memory_storage' '--enable-dns_polyfill' '--enable-post_message_to_js' '--disable-opcache' '--with-zlib' '--with-zlib-dir=/root/lib' '--with-zip' '--enable-libxml' '--with-libxml' '--with-libxml-dir=/root/lib' '--enable-dom' '--enable-xml' '--enable-simplexml' '--enable-xmlreader' '--enable-xmlwriter' '--disable-soap' '--with-sqlite3' '--enable-pdo' '--with-pdo-sqlite=/root/lib' '--with-external-gd=/root/lib' '--enable-gd' '--with-avif' '--with-png-dir=/root/lib' '--with-jpeg' '--with-webp' '--with-openssl' '--with-openssl-dir=/root/lib' '--disable-fileinfo' '--without-iconv' '--with-curl=/root/lib' '--enable-mbstring' '--enable-exif' '--disable-mbregex' 'PKG_CONFIG_LIBDIR=/root/emsdk/upstream/emscripten/cache/sysroot/local/lib/pkgconfig:/root/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig' 'CURL_CFLAGS=-I/root/lib/include' 'CURL_LIBS=-I/root/lib/lib -L/root/lib/lib' 'PNG_CFLAGS=-I/root/lib/include' 'PNG_LIBS=-L/root/lib/lib -lpng16 -lz' 'AVIF_CFLAGS=-I/root/lib/include' 'AVIF_LIBS=-L/root/lib/lib -lavif' 'WEBP_CFLAGS=-I/root/lib/include' 'WEBP_LIBS=-L/root/lib/lib -lwebp -lsharpyuv' 'JPEG_CFLAGS=-I/root/lib/include' 'JPEG_LIBS=-L/root/lib/lib -ljpeg' 'GDLIB_CFLAGS=-I/root/lib/include' 'GDLIB_LIBS=-L/root/lib/lib -lgd -lpng16 -lz -ljpeg -lwebp -lsharpyuv -lavif' |
+| Configure Command | './configure' 'PKG_CONFIG_PATH=/root/lib/lib/pkgconfig' '--disable-fiber-asm' '--disable-phar' '--enable-json' '--enable-embed=static' '--with-layout=GNU' '--disable-cgi' '--disable-posix' '--enable-hash' '--enable-static' '--enable-shared' '--disable-session' '--enable-filter' '--enable-calendar' '--disable-rpath' '--disable-phpdbg' '--without-pear' '--with-valgrind=no' '--without-pcre-jit' '--enable-bcmath' '--enable-ctype' '--enable-tokenizer' '--enable-wasm_memory_storage' '--enable-dns_polyfill' '--enable-post_message_to_js' '--disable-opcache' '--with-zlib' '--with-zlib-dir=/root/lib' '--with-zip' '--enable-libxml' '--with-libxml' '--with-libxml-dir=/root/lib' '--enable-dom' '--enable-xml' '--enable-simplexml' '--enable-xmlreader' '--enable-xmlwriter' '--disable-soap' '--with-sqlite3' '--enable-pdo' '--with-pdo-sqlite=/root/lib' '--with-external-gd=/root/lib' '--enable-gd' '--with-avif' '--with-png-dir=/root/lib' '--with-jpeg' '--with-webp' '--with-openssl' '--with-openssl-dir=/root/lib' '--disable-fileinfo' '--with-iconv=/root/lib' '--with-curl=/root/lib' '--enable-mbstring' '--enable-exif' '--disable-mbregex' 'PKG_CONFIG_LIBDIR=/root/emsdk/upstream/emscripten/cache/sysroot/local/lib/pkgconfig:/root/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig' 'CURL_CFLAGS=-I/root/lib/include' 'CURL_LIBS=-I/root/lib/lib -L/root/lib/lib' 'PNG_CFLAGS=-I/root/lib/include' 'PNG_LIBS=-L/root/lib/lib -lpng16 -lz' 'AVIF_CFLAGS=-I/root/lib/include' 'AVIF_LIBS=-L/root/lib/lib -lavif' 'WEBP_CFLAGS=-I/root/lib/include' 'WEBP_LIBS=-L/root/lib/lib -lwebp -lsharpyuv' 'JPEG_CFLAGS=-I/root/lib/include' 'JPEG_LIBS=-L/root/lib/lib -ljpeg' 'GDLIB_CFLAGS=-I/root/lib/include' 'GDLIB_LIBS=-L/root/lib/lib -lgd -lpng16 -lz -ljpeg -lwebp -lsharpyuv -lavif' |
 | Server API | PHP WASM SAPI (JSPI) |
 | Virtual Directory Support | disabled |
 | Configuration File (php.ini) Path | /usr/local/etc |
@@ -255,7 +255,7 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | DTrace Support | disabled |
 | Registered PHP Streams | https, ftps, compress.zlib, php, file, glob, data, http, ftp, zip |
 | Registered Stream Socket Transports | tcp, udp, unix, udg, ssl, tls, tlsv1.0, tlsv1.1, tlsv1.2, tlsv1.3 |
-| Registered Stream Filters | zlib.*, string.rot13, string.toupper, string.tolower, convert.*, consumed, dechunk |
+| Registered Stream Filters | zlib.*, string.rot13, string.toupper, string.tolower, convert.*, consumed, dechunk, convert.iconv.* |
 
 | Key | Value |
 | --- | --- |
@@ -526,6 +526,20 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | --- | --- |
 | hash support | enabled |
 | Hashing Engines | md2 md4 md5 sha1 sha224 sha256 sha384 sha512/224 sha512/256 sha512 sha3-224 sha3-256 sha3-384 sha3-512 ripemd128 ripemd160 ripemd256 ripemd320 whirlpool tiger128,3 tiger160,3 tiger192,3 tiger128,4 tiger160,4 tiger192,4 snefru snefru256 gost gost-crypto adler32 crc32 crc32b crc32c fnv132 fnv1a32 fnv164 fnv1a64 joaat murmur3a murmur3c murmur3f xxh32 xxh64 xxh3 xxh128 haval128,3 haval160,3 haval192,3 haval224,3 haval256,3 haval128,4 haval160,4 haval192,4 haval224,4 haval256,4 haval128,5 haval160,5 haval192,5 haval224,5 haval256,5 |
+
+### iconv
+
+| Key | Value |
+| --- | --- |
+| iconv support | enabled |
+| iconv implementation | libiconv |
+| iconv library version | 1.17 |
+
+| Directive | Local Value | Master Value |
+| --- | --- | --- |
+| iconv.input_encoding | _no value_ | _no value_ |
+| iconv.internal_encoding | _no value_ | _no value_ |
+| iconv.output_encoding | _no value_ | _no value_ |
 
 ### json
 
@@ -866,8 +880,8 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | $_SERVER['REQUEST_METHOD'] | GET |
 | $_SERVER['QUERY_STRING'] | _no value_ |
 | $_SERVER['HTTPS'] | off |
-| $_SERVER['REQUEST_TIME_FLOAT'] | 1788120774.369 |
-| $_SERVER['REQUEST_TIME'] | 1788120774 |
+| $_SERVER['REQUEST_TIME_FLOAT'] | 1788281833.099 |
+| $_SERVER['REQUEST_TIME'] | 1788281833 |
 | $_ENV['USER'] | web_user |
 | $_ENV['LOGNAME'] | web_user |
 | $_ENV['PATH'] | /internal/shared/bin |

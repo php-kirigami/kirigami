@@ -105,10 +105,13 @@ final class PREPROS
     }
 
 
-    public static function exportFile(string $file): void
+    public static function exportFile(string|array $file): void
     {
-        if (!$path = realpath($file)) return;
-        self::$files[] = $path;
+        if(is_string($file)) $file = [$file];
+        foreach($file as $value) {
+            if (!$path = realpath($value)) continue;
+            self::$files[] = $path;
+        }
     }
 
 
@@ -117,6 +120,22 @@ final class PREPROS
         $files = array_unique(self::$files);
         sort($files);
         return $files;
+    }
+
+
+    private static function callJS(string $cmd, array $params=[]): object
+    {
+        $args = ['command' => $cmd] + $params;
+        /** @disregard [1010] Optional explanation */
+        $results = json_decode(post_message_to_js(json_encode($args)));
+        return $results;
+    }
+
+
+    public static function mount(string|array $patterns) {
+        $results = self::callJS('mount', ['patterns' => $patterns]);
+        if(!$results->success) return false;
+        return $results->results;
     }
 
 

@@ -69,4 +69,13 @@ class STR
 		return substr(hash('sha256', $str), 0, 12);
 	}
 
+
+	public static function slug(string $str): string
+	{
+		$str = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $str);
+		$str = strtolower($str);
+		$str = preg_replace('/[^a-z0-9]/', '', $str);
+		return $str;
+	}
+
 }

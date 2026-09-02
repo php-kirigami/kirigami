@@ -70,6 +70,7 @@ class HTML
         }
 
         if ($isRaw) {
+            /** @var DOMElement $node */
             $inner = trim($node->innerHTML, "\n\r");
             if (trim($inner) === '') {
                 return "{$pad}<{$tag}{$attrs}></{$tag}>\n";
@@ -212,6 +213,7 @@ class HTML
     private static function renderAttrs(Dom\Node $node): string
     {
         $out = '';
+        /** @var DOMElement $node */
         if (!$node->hasAttributes()) {
             return $out;
         }

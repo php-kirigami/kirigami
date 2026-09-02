@@ -1,9 +1,4 @@
 <?php
-/**
- * mbstring
- * curl
- * dom
- */
 
 
 class SCRAPER
@@ -13,8 +8,6 @@ class SCRAPER
         if(!STR::is_url($url)) throw new Exception("Url is not valid.");
         if(!$contents = self::getContents($url)) throw new Exception("Url crawling seems to have been block.");
         if(!$xpath = self::loadHTML($contents)) throw new Exception("Can't parse server response.");
-
-        // echo $contents.RN;
 
         $metas = new stdClass;
         $metas->url = $url;
@@ -31,32 +24,26 @@ class SCRAPER
                     else foreach($ld->{'@graph'} as $item) $graphs[] = $item;
                 }
             }
-            // print_r($graphs);
-
             foreach($graphs as $graph) {
                 if(empty($graph->{'@type'})) continue;
                 if(is_array($graph->{'@type'}) || strtolower($graph->{'@type'}) != 'imageobject') continue;
                 if(!empty($graph->url)) $metas->image = STR::html_entities_decode($graph->url);
             }
-
             foreach($graphs as $graph) {
                 if(empty($graph->{'@type'})) continue;
                 if(is_array($graph->{'@type'}) || strtolower($graph->{'@type'}) != 'website') continue;
                 if(!empty($graph->name)) $metas->label = STR::html_entities_decode($graph->name);
             }
-
             foreach($graphs as $graph) {
                 if(empty($graph->{'@type'})) continue;
                 if(is_array($graph->{'@type'}) || strtolower($graph->{'@type'}) != 'organization') continue;
                 if(!empty($graph->name)) $metas->label = STR::html_entities_decode($graph->name);
             }
-
             foreach($graphs as $graph) {
                 if(empty($graph->{'@type'})) continue;
                 if(is_array($graph->{'@type'}) || strtolower($graph->{'@type'}) != 'newsmediaorganization') continue;
                 if(!empty($graph->name)) $metas->label = STR::html_entities_decode($graph->name);
             }
-
             foreach($graphs as $graph) {
                 if(empty($graph->{'@type'})) continue;
                 if(is_array($graph->{'@type'}) || strtolower($graph->{'@type'}) != 'webpage') continue;
@@ -68,7 +55,6 @@ class SCRAPER
                 if(!empty($graph->mainEntity->name)) $metas->title = STR::html_entities_decode($graph->mainEntity->name);
                 if(!empty($graph->mainEntity->image->url)) $metas->image = STR::html_entities_decode($graph->mainEntity->image->url);
             }
-
             foreach($graphs as $graph) {
                 if(empty($graph->{'@type'})) continue;
                 if(is_array($graph->{'@type'}) || strtolower($graph->{'@type'}) != 'article') continue;
@@ -76,7 +62,6 @@ class SCRAPER
                 if(!empty($graph->description)) $metas->description = STR::html_entities_decode($graph->description);
                 if(!empty($graph->publisher->name)) $metas->label = STR::html_entities_decode($graph->publisher->name);
             }
-            
             foreach($graphs as $graph) {
                 if(empty($graph->{'@type'})) continue;
                 if(is_array($graph->{'@type'}) || strtolower($graph->{'@type'}) != 'newsarticle') continue;
@@ -86,7 +71,6 @@ class SCRAPER
                 if(!empty($graph->thumbnailUrl)) $metas->image = STR::html_entities_decode($graph->thumbnailUrl);
                 if(!empty($graph->image->url)) $metas->image = STR::html_entities_decode($graph->image->url);
             }
-
             foreach($graphs as $graph) {
                 if(empty($graph->{'@type'})) continue;
                 if(is_array($graph->{'@type'}) || strtolower($graph->{'@type'}) != 'opinionnewsarticle') continue;
@@ -96,7 +80,6 @@ class SCRAPER
                 if(!empty($graph->thumbnailUrl)) $metas->image = STR::html_entities_decode($graph->thumbnailUrl);
                 if(!empty($graph->image->url)) $metas->image = STR::html_entities_decode($graph->image->url);
             }
-
             foreach($graphs as $graph) {
                 if(empty($graph->{'@type'})) continue;
                 if(is_array($graph->{'@type'}) || strtolower($graph->{'@type'}) != 'radioepisode') continue;
@@ -106,66 +89,54 @@ class SCRAPER
                 if(!empty($graph->thumbnailUrl)) $metas->image = STR::html_entities_decode($graph->thumbnailUrl);
                 if(!empty($graph->image->url)) $metas->image = STR::html_entities_decode($graph->image->url);
             }
-
             foreach($graphs as $graph) {
                 if(empty($graph->{'@type'})) continue;
                 if(is_array($graph->{'@type'}) || strtolower($graph->{'@type'}) != 'videogame') continue;
                 if(!empty($graph->name)) $metas->title = STR::html_entities_decode($graph->name);
                 if(!empty($graph->description)) $metas->description = STR::html_entities_decode($graph->description);
                 if(!empty($graph->image)) $metas->image = STR::html_entities_decode($graph->image);
-
             }
-
         }
-// print_r($metas);
-        if(($results = $xpath->query('//meta[@name="dc.title"]')) && $results->length) $metas->title = $results->item(0)->getAttribute('content');
-        if(($results = $xpath->query('//meta[@name="dcterms.title"]')) && $results->length) $metas->title = $results->item(0)->getAttribute('content');
-        if(($results = $xpath->query('//meta[@name="twitter:title"]')) && $results->length) $metas->title = $results->item(0)->getAttribute('content');
-        if(($results = $xpath->query('//meta[@property="og:title"]')) && $results->length) $metas->title = $results->item(0)->getAttribute('content');
-        if(($results = $xpath->query('//shreddit-title')) && $results->length) $metas->title = $results->item(0)->getAttribute('title');
-        
-        if(($results = $xpath->query('//meta[@name="dc.description"]')) && $results->length) $metas->description = $results->item(0)->getAttribute('content');
-        if(($results = $xpath->query('//meta[@name="dcterms.description"]')) && $results->length) $metas->description = $results->item(0)->getAttribute('content');
-        if(($results = $xpath->query('//meta[@name="twitter:description"]')) && $results->length) $metas->description = $results->item(0)->getAttribute('content');
-        if(($results = $xpath->query('//meta[@property="og:description"]')) && $results->length) $metas->description = $results->item(0)->getAttribute('content');
-        if(($results = $xpath->query('//meta[@name="description"]')) && $results->length) $metas->description = $results->item(0)->getAttribute('content');
-        
-        if(($results = $xpath->query('//meta[@name="twitter:image"]')) && $results->length) $metas->image = $results->item(0)->getAttribute('content');
-        if(($results = $xpath->query('//meta[@property="og:image"]')) && $results->length) $metas->image = $results->item(0)->getAttribute('content');
-        if(($results = $xpath->query('//meta[@name="og:image"]')) && $results->length) $metas->image = $results->item(0)->getAttribute('content');
-        if(($results = $xpath->query('//img[@rel="og:image rdfs:seeAlso"]')) && $results->length) $metas->image = $results->item(0)->getAttribute('src');
-        
-        if(($results = $xpath->query('//link[@rel="canonical"]')) && $results->length) $metas->url = $results->item(0)->getAttribute('href');
-        if(($results = $xpath->query('//meta[@name="twitter:url"]')) && $results->length) $metas->url = $results->item(0)->getAttribute('content');
-        if(($results = $xpath->query('//meta[@property="og:url"]')) && $results->length) $metas->url = $results->item(0)->getAttribute('content');
-        
-        
 
-        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="twitter:app:name:iphone"]')) && $results->length) $metas->label = $results->item(0)->getAttribute('content');
-        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="twitter:app:name:googleplay"]')) && $results->length) $metas->label = $results->item(0)->getAttribute('content');
-        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="og:site_name"]')) && $results->length) $metas->label = $results->item(0)->getAttribute('content');
-        if(empty($metas->label) && ($results = $xpath->query('//meta[@property="og:site_name"]')) && $results->length) $metas->label = $results->item(0)->getAttribute('content');
-        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="dc.publisher"]')) && $results->length) $metas->label = $results->item(0)->getAttribute('content');
-        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="DC.Publisher"]')) && $results->length) $metas->label = $results->item(0)->getAttribute('content');
-        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="publisher"]')) && $results->length) $metas->label = $results->item(0)->getAttribute('content');
+        if(($results = $xpath->query('//meta[@name="dc.title"]')) && $results->length) $metas->title = getFirstItemAttr($results, 'content');
+        if(($results = $xpath->query('//meta[@name="dcterms.title"]')) && $results->length) $metas->title = getFirstItemAttr($results, 'content');
+        if(($results = $xpath->query('//meta[@name="twitter:title"]')) && $results->length) $metas->title = getFirstItemAttr($results, 'content');
+        if(($results = $xpath->query('//meta[@property="og:title"]')) && $results->length) $metas->title = getFirstItemAttr($results, 'content');
+        if(($results = $xpath->query('//shreddit-title')) && $results->length) $metas->title = getFirstItemAttr($results, 'title');
+        if(($results = $xpath->query('//meta[@name="dc.description"]')) && $results->length) $metas->description = getFirstItemAttr($results, 'content');
+        if(($results = $xpath->query('//meta[@name="dcterms.description"]')) && $results->length) $metas->description = getFirstItemAttr($results, 'content');
+        if(($results = $xpath->query('//meta[@name="twitter:description"]')) && $results->length) $metas->description = getFirstItemAttr($results, 'content');
+        if(($results = $xpath->query('//meta[@property="og:description"]')) && $results->length) $metas->description = getFirstItemAttr($results, 'content');
+        if(($results = $xpath->query('//meta[@name="description"]')) && $results->length) $metas->description = getFirstItemAttr($results, 'content');
+        if(($results = $xpath->query('//meta[@name="twitter:image"]')) && $results->length) $metas->image = getFirstItemAttr($results, 'content');
+        if(($results = $xpath->query('//meta[@property="og:image"]')) && $results->length) $metas->image = getFirstItemAttr($results, 'content');
+        if(($results = $xpath->query('//meta[@name="og:image"]')) && $results->length) $metas->image = getFirstItemAttr($results, 'content');
+        if(($results = $xpath->query('//img[@rel="og:image rdfs:seeAlso"]')) && $results->length) $metas->image = getFirstItemAttr($results, 'src');
+        if(($results = $xpath->query('//link[@rel="canonical"]')) && $results->length) $metas->url = getFirstItemAttr($results, 'href');
+        if(($results = $xpath->query('//meta[@name="twitter:url"]')) && $results->length) $metas->url = getFirstItemAttr($results, 'content');
+        if(($results = $xpath->query('//meta[@property="og:url"]')) && $results->length) $metas->url = getFirstItemAttr($results, 'content');
 
-        if(empty($metas->label) && ($results = $xpath->query('//meta[@property="article:author"]')) && $results->length) $metas->label = $results->item(0)->getAttribute('content');
-        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="author"]')) && $results->length) $metas->label = $results->item(0)->getAttribute('content');
-        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="twitter:creator"]')) && $results->length) $metas->label = $results->item(0)->getAttribute('content');
-        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="dcterms.creator"]')) && $results->length) $metas->label = $results->item(0)->getAttribute('content');
-        if(empty($metas->label) && ($results = $xpath->query('//meta[@property="al:ios:app_name"]')) && $results->length) $metas->label = $results->item(0)->getAttribute('content');
-        if(empty($metas->label) && ($results = $xpath->query('//meta[@property="al:android:app_name"]')) && $results->length) $metas->label = $results->item(0)->getAttribute('content');
-        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="DC.publisher"]')) && $results->length) $metas->label = $results->item(0)->getAttribute('content');
+        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="twitter:app:name:iphone"]')) && $results->length) $metas->label = getFirstItemAttr($results, 'content');
+        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="twitter:app:name:googleplay"]')) && $results->length) $metas->label = getFirstItemAttr($results, 'content');
+        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="og:site_name"]')) && $results->length) $metas->label = getFirstItemAttr($results, 'content');
+        if(empty($metas->label) && ($results = $xpath->query('//meta[@property="og:site_name"]')) && $results->length) $metas->label = getFirstItemAttr($results, 'content');
+        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="dc.publisher"]')) && $results->length) $metas->label = getFirstItemAttr($results, 'content');
+        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="DC.Publisher"]')) && $results->length) $metas->label = getFirstItemAttr($results, 'content');
+        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="publisher"]')) && $results->length) $metas->label = getFirstItemAttr($results, 'content');
+        if(empty($metas->label) && ($results = $xpath->query('//meta[@property="article:author"]')) && $results->length) $metas->label = getFirstItemAttr($results, 'content');
+        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="author"]')) && $results->length) $metas->label = getFirstItemAttr($results, 'content');
+        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="twitter:creator"]')) && $results->length) $metas->label = getFirstItemAttr($results, 'content');
+        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="dcterms.creator"]')) && $results->length) $metas->label = getFirstItemAttr($results, 'content');
+        if(empty($metas->label) && ($results = $xpath->query('//meta[@property="al:ios:app_name"]')) && $results->length) $metas->label = getFirstItemAttr($results, 'content');
+        if(empty($metas->label) && ($results = $xpath->query('//meta[@property="al:android:app_name"]')) && $results->length) $metas->label = getFirstItemAttr($results, 'content');
+        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="DC.publisher"]')) && $results->length) $metas->label = getFirstItemAttr($results, 'content');
         if(empty($metas->label) && ($results = $xpath->query('//span[@class="footer__signature"]')) && $results->length) $metas->label = $results->item(0)->textContent;
         if(empty($metas->label) && ($results = $xpath->query('//p[@class="site-title"]')) && $results->length) $metas->label = trim($results->item(0)->textContent);
-        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="copyright"]')) && $results->length) $metas->label = trim($results->item(0)->getAttribute('content'), '© ');
+        if(empty($metas->label) && ($results = $xpath->query('//meta[@name="copyright"]')) && $results->length) $metas->label = trim(getFirstItemAttr($results, 'content'), '© ');
         if(empty($metas->label) && preg_match("#\{'blogId': '[0-9]+', 'title': '([^']+)'#i", $contents, $m)) $metas->label = $m[1];
 
-        // print_r($metas);
-
-        
         if(($results = $xpath->query('//link[@rel="alternate" and @type="application/json+oembed" and @href]')) && $results->length) {
-            if(STR::is_url(($oembedurl = $results->item(0)->getAttribute('href')))) {
+            if(STR::is_url(($oembedurl = getFirstItemAttr($results, 'href')))) {
                 if($json = self::getContents($oembedurl)) {
                     if($oem = json_decode($json)) {
                         if(empty($metas->title) && !empty($oem->title)) $metas->title = $oem->title;
@@ -177,7 +148,6 @@ class SCRAPER
                 }
             }
         }
-        // print_r($metas);
         if(($results = $xpath->query('//script[@id="__UNIVERSAL_DATA_FOR_REHYDRATION__" and @type="application/json"]')) && $results->length) {
             if($data = json_decode($results->item(0)->textContent)) {
                 if(!empty($data->{'__DEFAULT_SCOPE__'}->{'webapp.video-detail'}->itemInfo->itemStruct)) {
@@ -188,9 +158,6 @@ class SCRAPER
                 }
             }
         }
-
-        // print_r($metas);
-
         if(($results = $xpath->query('//script[@type="application/json" and @data-sjs]')) && $results->length) {
             foreach($results as $item) {
                 if(!$data = @json_decode($item->textContent)) continue;
@@ -202,10 +169,9 @@ class SCRAPER
                 }
             }
         }
-        // print_r($metas);
         if(empty($metas->label)) {
             if(($results = $xpath->query('//link[@rel="manifest" and @href]')) && $results->length) {
-                if($manifesturl = get_absolute_url($url, $results->item(0)->getAttribute('href'))) {
+                if($manifesturl = get_absolute_url($url, getFirstItemAttr($results, 'href'))) {
                     if($json = self::getContents($manifesturl)) {
                         if($manifest = json_decode($json)) {
                             if(!empty($manifest->name)) $metas->label = $manifest->name;
@@ -214,39 +180,30 @@ class SCRAPER
                 }
             }
         }
-        // print_r($metas);
         if(empty($metas->label) && (($results = $xpath->query('//meta[@property="fb:page_id"]')) && $results->length)) {
-            // echo "patate".RN;
-            if($_contents = self::getContents('https://facebook.com/' . $results->item(0)->getAttribute('content'))) {
-                // echo $contents.RN;
+            if($_contents = self::getContents('https://facebook.com/' . getFirstItemAttr($results, 'content'))) {
                 if($xp = self::loadHTML($_contents)) {
                     if(($results = $xp->query('//meta[@property="og:title"]')) && $results->length) {
-                        $metas->label = $results->item(0)->getAttribute('content');
+                        $metas->label = getFirstItemAttr($results, 'content');
                     }
                 }
             }
         }
-        
         if(empty($metas->label) && preg_match('#Drupal\.settings,(\{.*?\})\);#i', $contents, $m))
             if($data = json_decode($m[1]))
                 if(!empty($data->jquery_ajax_load->site_name))
                     $metas->label = $data->jquery_ajax_load->site_name;
-        
-        
-        // print_r($metas);
 
-        // if(strtolower(pathinfo(parse_url($metas->image, PHP_URL_PATH), PATHINFO_EXTENSION)) == 'svg') $metas->image = '';
 
         if(empty($metas->image) && ($results = $xpath->query('//span[@class="background-image not-mobile"]')) && $results->length)
-            if(preg_match('#url\(\'(.*?)\'\)#i', $results->item(0)->getAttribute('style'), $m))
+            if(preg_match('#url\(\'(.*?)\'\)#i', getFirstItemAttr($results, 'style'), $m))
                 $metas->image = $m[1];
 
-        if(empty($metas->image) && ($results = $xpath->query('//link[@rel="icon" and @type="image/jpeg"]')) && $results->length) $metas->image = $results->item(0)->getAttribute('href');
-        if(empty($metas->image) && ($results = $xpath->query('//link[@rel="icon" and @type="image/png"]')) && $results->length) $metas->image = $results->item(0)->getAttribute('href');
-        if(empty($metas->image) && ($results = $xpath->query('//article//img')) && $results->length) $metas->image = $results->item(0)->getAttribute('src');
-        if(empty($metas->image) && ($results = $xpath->query('//div[@id="image_box"]//img')) && $results->length) $metas->image = $results->item(0)->getAttribute('src');
-        if(empty($metas->image) && ($results = $xpath->query('//link[@rel="shortcut icon" and @type="image/jpeg" and @href]')) && $results->length) $metas->image = $results->item(0)->getAttribute('href');
-
+        if(empty($metas->image) && ($results = $xpath->query('//link[@rel="icon" and @type="image/jpeg"]')) && $results->length) $metas->image = getFirstItemAttr($results, 'href');
+        if(empty($metas->image) && ($results = $xpath->query('//link[@rel="icon" and @type="image/png"]')) && $results->length) $metas->image = getFirstItemAttr($results, 'href');
+        if(empty($metas->image) && ($results = $xpath->query('//article//img')) && $results->length) $metas->image = getFirstItemAttr($results, 'src');
+        if(empty($metas->image) && ($results = $xpath->query('//div[@id="image_box"]//img')) && $results->length) $metas->image = getFirstItemAttr($results, 'src');
+        if(empty($metas->image) && ($results = $xpath->query('//link[@rel="shortcut icon" and @type="image/jpeg" and @href]')) && $results->length) $metas->image = getFirstItemAttr($results, 'href');
         if(empty($metas->image) && ($results = $xpath->query('//link[@rel="apple-touch-icon" and @sizes]')) && $results->length) {
             $size = 0;
             foreach($results as $item) {
@@ -258,19 +215,14 @@ class SCRAPER
                 }
             }
         }
-        if(empty($metas->image) && ($results = $xpath->query('//link[@rel="apple-touch-icon"]')) && $results->length) $metas->image = $results->item(0)->getAttribute('href');
+        if(empty($metas->image) && ($results = $xpath->query('//link[@rel="apple-touch-icon"]')) && $results->length) $metas->image = getFirstItemAttr($results, 'href');
         if(empty($metas->title) && ($results = $xpath->query('//title')) && $results->length) $metas->title = $results->item(0)->textContent;
-
-
-        // print_r($metas);
-
-
         if(empty($metas->label)) { $parts = explode('|', $metas->title); if(count($parts) > 1) $metas->label = trim(array_pop($parts)); }
         if(empty($metas->label)) { $parts = explode(' - ', $metas->title); if(count($parts) > 1) $metas->label = trim(array_pop($parts)); }
         if(strpos($metas->label, '@') === 0) $metas->label = ucwords(preg_replace('#^@#i', '', $metas->label));
 
         if(empty($metas->label) && ($results = $xpath->query('//div[@id="elevate-global" and @data-elevate-global]')) && $results->length)
-            if($data = json_decode($results->item(0)->getAttribute('data-elevate-global')))
+            if($data = json_decode(getFirstItemAttr($results, 'data-elevate-global')))
                 if(!empty($data->content_organization))
                     $metas->label = $data->content_organization;
 
@@ -278,8 +230,6 @@ class SCRAPER
             if($data = json_decode($m[1]))
                 if(!empty($data->webTitle))
                     $metas->label = $data->webTitle;
-
-        
 
         if(empty($metas->description) && ($results = $xpath->query('//p')) && $results->length){
             foreach($results as $item) {
@@ -289,26 +239,20 @@ class SCRAPER
                 break;
             }
         }
-        
-        
-        // print_r($metas);
-        
-        
+
         if(strpos($metas->image, '//') === 0) $metas->image = 'https:' . $metas->image;
         if(!empty($metas->image) && !parse_url($metas->image, PHP_URL_SCHEME)) $metas->image = get_absolute_url($url, $metas->image);
-        
         if(parse_url($metas->image, PHP_URL_HOST) == 'lookaside.fbsbx.com')
             if($_contents = self::getContents($metas->image))
                 if(preg_match('#location\.href = "(.*?)";#i', $_contents, $m))
                     if($_contents = self::getContents(str_replace('\\/', '/', $m[1])))
                         if($xp = self::loadHTML($_contents))
                             if(($results = $xp->query('//link[@rel="preload" and @as="image" and contains(@href, ".jpg")]')) && $results->length)
-                                $metas->image = $results->item(0)->getAttribute('href');
+                                $metas->image = getFirstItemAttr($results, 'href');
 
-        // $metas->image = trim($metas->image);
-                                // print_r($metas);
         if(!url_exists($metas->image, '^image/') && ($results = $xpath->query('//img[@src]')) && $results->length) {
             foreach($results as $item) {
+                /** @var DOMElement $item */
                 if(in_array(pathinfo(parse_url($item->getAttribute('src'), PHP_URL_PATH), PATHINFO_EXTENSION), ['jpg', 'jpeg', 'png', 'webp'])) {
                     $metas->image = $item->getAttribute('src');
                     if(strpos($metas->image, '//') === 0) $metas->image = 'https:' . $metas->image;
@@ -317,46 +261,60 @@ class SCRAPER
                 }
             }
         }
-        
-        // print_r($metas);
-        // print_r(curl_get_info($metas->image));
-
-        // if(empty($metas->label)) $metas->label = parse_url($url, PHP_URL_HOST);
 
         $metas->url = urldecode($metas->url);
-        $metas->title = trim(current(explode(' | ', $metas->title)));
+        if($metas->label) {
+            $parts = preg_split('/\s*\|\s*/', $metas->title);
+            foreach($parts as $k => $v) if(STR::slug($v) == STR::slug($metas->label)) unset($parts[$k]);
+            $metas->title = join(' | ', $parts);
+            $parts = preg_split('/\s+\-\s+/', $metas->title);
+            foreach($parts as $k => $v) if(STR::slug($v) == STR::slug($metas->label)) unset($parts[$k]);
+            $metas->title = join(' - ', $parts);
+        }
+
         $metas->label = preg_replace('#^www\.#i', '', trim(current(explode(', ', current(explode(' — ', current(explode(' - ', current(explode(' | ', $metas->label))))))))));
         $metas->description = trim(strip_tags($metas->description));
         return $metas;
-        return empty($metas->title) ? false : $metas;
     }
 
 
     private static function getContents($url) {
-        if(($contents = Cache::get(($key = 'scraper_' . STR::shorthash($url)))) !== null) return $contents;
-        $contents = curl_get_contents($url);
-        Cache::set($key, $contents);
+        if(($contents = CACHE::get(($key = 'scraper_' . STR::shorthash($url)))) !== null) return $contents;
+        $contents = CURL::getContents($url);
+        CACHE::set($key, $contents);
         return $contents;
     }
 
 
-	private static function loadHTML($contents) {
-		$contents = mb_convert_encoding($contents, 'HTML-ENTITIES', 'UTF-8');
-		$dom = new DomDocument('1.0', 'UTF-8');
-		$dom->preserveWhiteSpace = false;
-		@$dom->loadHTML($contents);
-		return new DOMXpath($dom);
+	private static function loadHTML(string $contents) {
+        $dom = Dom\HTMLDocument::createFromString($contents, LIBXML_NOERROR | Dom\HTML_NO_DEFAULT_NS);
+		return new DOM\Xpath($dom);
 	}
 
 
-    public static function get($url) {
-        // if(($metas = Cache::get(($key = 'metas_' . STR::shorthash($url)))) !== null) return $metas;
+    public static function get(string $url) {
+        if(($metas = CACHE::get(($key = 'metas_' . STR::shorthash($url)))) !== null) return $metas;
         if(!$metas = self::scrape($url)) throw new Exception("Can't crawl Url.");
-        $key = 'metas_' . STR::shorthash($url);
-        Cache::set($key, $metas);
-        // print_r($metas);
-        // phpinfo();
+        if(!trim($metas->title)) return false;
+        $metas->key = $key;
+        CACHE::set($key, $metas);
         return $metas;
     }
 
+}
+
+
+function getFirstItemAttr(\Dom\Node|\Dom\NodeList $results, string $attr) {
+    /** @var DOM\Element $item */
+    $item = $results->item(0);
+    return $item->getAttribute($attr);
+}
+
+
+function url_exists(string $url, string|null $mimereg = null) {
+    if(($exists = CACHE::get(($key = 'urlexists_' . STR::shorthash($url)))) !== null) return $exists->response;
+    $exists = new stdClass;
+    $exists->response = CURL::urlExists($url, $mimereg);
+    CACHE::set($key, $exists);
+    return $exists->response;
 }

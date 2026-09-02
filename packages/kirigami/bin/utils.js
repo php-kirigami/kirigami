@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from "path";
+import picomatch from "picomatch";
 /**
  * bin/utils.js — Utilitaires partagés entre toutes les sous-commandes
  */
@@ -129,4 +132,28 @@ export function formatFrDate(dateInput = new Date()) {
 	const parts = Object.fromEntries(fmt.formatToParts(d).map(p => [p.type, p.value]));
 	const weekday = parts.weekday.charAt(0).toUpperCase() + parts.weekday.slice(1);
 	return `${weekday} le ${parts.day} ${parts.month} ${parts.year} à ${parts.hour} h ${parts.minute}`;
+}
+
+
+
+export function findFiles(pattern, cwd = process.cwd()) {
+	const isMatch = picomatch(pattern);
+	const results = [];
+	function walk(dir) {
+		const entries = fs.readdirSync(dir, { withFileTypes: true });
+		for (const entry of entries) {
+			const fullPath = path.join(dir, entry.name);
+			const relativePath = path.relative(cwd, fullPath);
+			if (entry.isDirectory()) {
+				if (entry.name === 'node_modules' || entry.name === '.git') continue;
+				walk(fullPath);
+			} else if (entry.isFile()) {
+				if (isMatch(relativePath.split(path.sep).join('/'))) {
+					results.push(relativePath.replaceAll('\\', '/'));
+				}
+			}
+		}
+	}
+	walk(cwd);
+	return results;
 }

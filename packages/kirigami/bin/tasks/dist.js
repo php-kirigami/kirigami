@@ -1,6 +1,6 @@
 import fs from 'fs'; 	
 import path from "path";
-import util from "util";
+// import util from "util";
 import ignore from 'ignore';
 import { replaceRoot, joinWith } from '../utils.js';
 
@@ -10,7 +10,7 @@ const ROOT = process.cwd();
 export const taskname = 'Copy Files';
 
 
-export default async function build(__root, task, exportPath = null) {
+export default async function dist(__root, task, exportPath = null) {
 	const __dist = `${replaceRoot(task.path).replace(/\/+$/, '')}/`
 	task.ignore = task.ignore || [];
 	try {
@@ -58,6 +58,7 @@ function norm(p) {
 function shouldExcludeFile(relFromSrc, absPath) {
 	const lower = absPath.toLowerCase();
 	if (path.basename(lower).startsWith('_')) return true;
+	if (path.basename(lower).startsWith('.')) return true;
 	if (lower.endsWith('.scss')) return true;
 	if (lower.endsWith('.map')) return true;
 	if (lower.endsWith('.js') && !lower.endsWith('.min.js')) return true;

@@ -3,7 +3,7 @@ import isBinary from './utils/isbinary.js';
 import joinWith from './utils/joinwith.js'
 import path, { dirname } from "path";
 import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from "url";
 import { walkFile } from '@kirigami/struct-walker';
 import { getPHPRuntime, getPHPRuntimeWithNetwork } from "@kirigami/php-wasm";
 
@@ -18,6 +18,7 @@ let   __php  = null;
 if (!fs.existsSync(__configpath)) throw `Config file not found: ${__configpath}`;
 const config = await walkFile(__configpath);
 if(!config) throw `Invalid config file: ${__configpath}`;
+
 
 
 const getPHPInstance = async () => {
@@ -39,8 +40,35 @@ const getPHPInstance = async () => {
         const __cookie = path.join(__project, '.cookie.txt');
         mountPath(__php, __dirname, '/prepros');
         mountPath(__php, joinWith(__project, config?.kirigami?.root), joinWith('/project', config?.kirigami?.root));
+
         if (fs.existsSync(__cache)) mountPath(__php, __cache, '/project/.cache.db');
         if (fs.existsSync(__cookie)) mountPath(__php, __cookie, '/project/.cookie.txt');
+
+        __php.onMessage(async (data) => {
+            const msg = JSON.parse(data);
+            if(!msg.command) return { success: false, error: "Invalid command."};
+            const file = path.join(__dirname, 'phpjs', `${msg.command}.js`);
+            if(!fs.existsSync(file)) return { success: false, error: "Invalid command."};
+
+            try {
+                const cmdModule = await import(pathToFileURL(file).href);
+                const results = await cmdModule.default(__php, msg);
+                return JSON.stringify({
+                    success: true,
+                    results: results
+                });
+            } catch(e) {
+                return {
+                    success: false,
+                    error: typeof e == 'string' ? e : e.message
+                }
+            }
+
+
+            // console.log(msg);
+            // console.log(__dirname);
+
+        });
     }
     return __php;
 }
@@ -68,16 +96,19 @@ const mountPath = (php, localPath, virtualDir) => {
 }
 
 
-const run = async (args = [], script = null, mountPaths = []) => {
+const run = async (args = [], script = null, mountfiles = []) => {
     const php = await getPHPInstance();
 
-    mountPaths.forEach(item => {
+    await Promise.all(mountfiles.map(async item => {
         const file = path.resolve(item);
         if(!fs.existsSync(file)) return;
         if(!path.relative(__project, file)) return;
         const dest = path.join('/project', file.replace(__project, '')).replaceAll('\\', '/');
-        mountPath(php, file, dest);
-    });
+        const buf = fs.readFileSync(file);
+        const parentDir = dest.substring(0, dest.lastIndexOf('/'));
+        if (parentDir) php.mkdirTree(parentDir);
+        php.writeFile(dest, isBinary(buf) ? buf : buf.toString('utf8'));
+    }));
 
     const output = await php.runStream({
         scriptPath: script || '/prepros/prepros.php',
@@ -125,13 +156,13 @@ const run = async (args = [], script = null, mountPaths = []) => {
 }
 
 
-const runenv = async (script, ...args) => {
+const runenv = async (script, paths = [], ...args) => {
     if(!script) throw "Missing PHP file.";
     const file = path.resolve(script);
     if(!path.relative(__project, file)) throw "PHP file outside project";
     if(!fs.existsSync(file)) throw "Can't find PHP file";
     const dest = path.join('/project', file.replace(__project, '')).replaceAll('\\', '/');
-    return run([dest, ...args], '/prepros/runenv.php', [file]);
+    return run([dest, ...args], '/prepros/runenv.php', [file, ...paths]);
 }
 
 

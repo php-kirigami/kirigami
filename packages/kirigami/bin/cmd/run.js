@@ -1,20 +1,15 @@
 import fs from 'fs';
 import path from "path";
-// import chokidar from "chokidar";
-// import picomatch from "picomatch";
-// import { fileURLToPath, pathToFileURL } from 'url';
-import { c, log, parseArgs, printCommandHelp } from "../utils.js";
+import { c, log, parseArgs, printCommandHelp, findFiles } from "../utils.js";
 import { getConfig } from "../config.js";
 import { runenv } from '@kirigami/php-prepros';
 
-// const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const __root = process.cwd();
-// let __close = null;
 
+const __root = process.cwd();
 
 const HELP = {
 	name: "run",
-	description: "Run PHP command script",
+	description: "Run PHP command script. PHP files needs to be in scripts/ folder.",
 	usage: "[options]",
 	options: [
 		{ flag: "--help, -h", desc: "Show this help section" },
@@ -47,7 +42,8 @@ export default async function run(args) {
 	log.step(`Command    : ${c.dim(command)}`);
 	if(argv.length) log.step(`Parameters : ${c.dim(argv)}`);
 
-	const result = await runenv(file, ...argv);
+	const result = await runscript(command, argv);
+
 	if(result.success) log.step(`Execution  : ${c.dim('Success ✔')}`);
 	else {
 		log.step(`Execution  : ${c.dim('Error ❌')}`);
@@ -56,7 +52,7 @@ export default async function run(args) {
 
 	if(result.files?.length) {
 		console.log("");
-		log.step(`Files:`);
+		log.step(`Exported files:`);
 		result.files.forEach(file => console.log(`    ${c.gray(file)}`));
 	}
 
@@ -65,5 +61,29 @@ export default async function run(args) {
 		log.step(`Output debug:`);
 		result.debug.split('\n').forEach(line => console.log(`    ${c.gray(line)}`));
 	}
+
+	if(!result.success) process.exit(1);
 	
+}
+
+
+
+export async function runscript(command, argv = []) {
+	const config = await getConfig();
+	
+	const file = path.join(__root, 'scripts', `${command}.php`);
+	if(!fs.existsSync(file)) throw `Command "${command}" not found.`
+
+	const mountpaths = [];
+	if(config.scripts?.length) {
+		config.scripts.forEach(job => {
+			if(job.name == command && job.mount?.length) {
+				job.mount.forEach(pattern => findFiles(pattern).forEach(file => mountpaths.push(path.resolve(__root, file))));
+			}
+		});
+	}
+
+	const results = await runenv(file, mountpaths, ...argv);
+	if(!results.files) results.files = [];
+	return results;
 }

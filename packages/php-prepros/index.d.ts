@@ -9,7 +9,7 @@
  *
  * @example
  * ```js
- * import { render, sitemap } from '@kirigami/php-prepros';
+ * import { render, sitemap, runenv } from '@kirigami/php-prepros';
  *
  * // Compile a single page
  * const result = await render('src/index.php');
@@ -19,6 +19,9 @@
  *
  * // Generate sitemap.xml
  * const sitemap = await sitemap();
+ *
+ * // Run an arbitrary PHP script in the same sandboxed environment
+ * const result = await runenv('scripts/purge-cache.php');
  * ```
  */
 
@@ -107,3 +110,40 @@ export function render(file?: string): Promise<PreprosResult>;
  *          generated `sitemap.xml`.
  */
 export function sitemap(dir?: string): Promise<PreprosResult>;
+
+
+/**
+ * Run an arbitrary PHP script — not a page template — inside the same
+ * sandboxed WASM environment used by {@link render}, with the full
+ * `php-prepros` class library autoloaded and `kirigami.yaml`'s `kirigami`
+ * block available as `PREPROS::$config->data`.
+ *
+ * Useful for one-off maintenance scripts, data migrations, or CLI-style
+ * tooling that needs `CACHE`, `SCRAPER`, `IMG`, etc. without going through
+ * the page-rendering pipeline.
+ *
+ * ```js
+ * // Run a standalone PHP script
+ * const result = await runenv('scripts/purge-cache.php');
+ *
+ * // Also mount extra local paths/files into the sandbox before running
+ * const result = await runenv('scripts/build-og-images.php', ['assets/photos']);
+ *
+ * // Extra arguments are appended and available as $argv[2], $argv[3], … in the script
+ * const result = await runenv('scripts/import.php', [], '--force');
+ * ```
+ *
+ * @param script Path to a PHP file inside the project, executed with
+ *               `require_once`.
+ * @param paths  Extra local paths (files or directories) to mount into the
+ *               sandbox before the script runs.
+ * @param args   Extra string arguments appended to the script's `$argv`.
+ *
+ * @returns A {@link PreprosResult} describing what was written. Call
+ *          `PREPROS::exportFile()` inside the script for any file you want
+ *          listed in `result.files`.
+ *
+ * @throws When no `script` path is given.
+ * @throws When `script` resolves outside the project root, or doesn't exist.
+ */
+export function runenv(script: string, paths?: string[], ...args: string[]): Promise<PreprosResult>;

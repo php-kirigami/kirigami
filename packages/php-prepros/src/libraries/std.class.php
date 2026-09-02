@@ -8,9 +8,9 @@ class STD {
 	{
 		$return = new stdClass;
 		$return->success = true;
+		$return->files = PREPROS::getExportedFiles();
 		if(is_string($props)) $return->message = $props;
 		else foreach($props as $k => $v) $return->{$k} = $v;
-		
 		if(!is_dir(pathinfo(self::RESULT_PATH, PATHINFO_DIRNAME))) mkdir(pathinfo(self::RESULT_PATH, PATHINFO_DIRNAME), true, 0777);
 		file_put_contents(self::RESULT_PATH, json_encode($return, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), FILE_APPEND);
 		exit(0);
@@ -21,6 +21,7 @@ class STD {
 	{
 		$return = new stdClass;
 		$return->success = false;
+		$return->files = PREPROS::getExportedFiles();
 		if(is_string($props)) $return->error = $props;
 		else foreach($props as $k => $v) $return->{$k} = $v;
 		file_put_contents(self::RESULT_PATH, json_encode($return, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), FILE_APPEND);

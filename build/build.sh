@@ -16,7 +16,7 @@ node packages/php-wasm/compile/build.js \
   --WITH_LIBXML=yes \
   --WITH_SOAP=no \
   --WITH_CURL=yes \
-  --WITH_ICONV=no \
+  --WITH_ICONV=yes \
   --WITH_EXIF=yes \
   --WITH_MBREGEX=no \
   --WITH_LIBZIP=yes \

@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/php-wasm",
-  "version": "8.5.10-2",
+  "version": "8.5.10-3",
   "description": "A custom PHP-WASM build for Node.js — JSPI only, no browser support. Built for the Kirigami project.",
   "keywords": [
     "php",
@@ -38,7 +38,7 @@
     "npm": ">=10.2.3"
   },
   "dependencies": {
-    "@php-wasm/universal": "^3.1.51",
+    "@php-wasm/universal": "^3.1.52",
     "wasm-feature-detect": "^1.9.0",
     "ws": "^8.21.3"
   },
