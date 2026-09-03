@@ -3,6 +3,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { c, log, parseArgs, printCommandHelp } from "../utils.js";
 import { getConfig } from "../config.js";
 import { runscript } from "./run.js";
+import { trigger } from "../libs/triggers.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const __root = process.cwd();
@@ -37,15 +38,6 @@ export default async function exportDist(args) {
 		config.export.path = 'dist';
 	}
 
-	const before = [];
-	const after = [];
-	if(config.scripts?.length) {
-		config.scripts.forEach(s => {
-			if(s.trigger == 'before') before.push(s);
-			else if(s.trigger == 'after') after.push(s);
-		});
-	}
-
 	const __dist = path.join(__root, config.export.path);
 
 	log.step(`Project   : ${c.dim(config.kirigami.project)}`);
@@ -53,25 +45,11 @@ export default async function exportDist(args) {
 	log.step(`Root      : ${c.dim(config.root)}`);
 	log.step(`Export    : ${c.dim(__dist)}`);
 
-	if(before.length) {
-		console.log(`\n\n${c.bold('Before export:')}`);
-		for (const s of before) {
-			process.stdout.write(`\n${c.gray("›")} Script: ${s.name}`);
-			const results = await runscript(s.name);
-			if(results.success) {
-				process.stdout.write(` ${c.green("✔")}\n`);
-				results.files.forEach(file => console.log(`    ${c.gray(file)}`));
-			} else {
-				process.stdout.write(` ${c.red("❌")}\n`);
-				console.log(c.red("\n› Error:"));
-				console.log(results.error);
-				process.exit(1);
-			}
-		}
-	}
-
-
 	console.log(`\n\n${c.bold('Tasks:')}`);
+
+	await trigger('before-export');
+	await trigger('before-build');
+
 	config.tasks = [{
 		name: "copy-files",
 		type: "dist",
@@ -80,8 +58,8 @@ export default async function exportDist(args) {
 	}, ...config.tasks];
 	if(config.prepros) {
 		const task = {
-			name: "prepros",
-			type: "php",
+			name: "render-all",
+			type: "prepros",
 			config: config.prepros,
 		};
 		config.tasks = [ task, ...config.tasks];
@@ -93,6 +71,7 @@ export default async function exportDist(args) {
 			const taskPath = path.resolve(__dirname, "../tasks", `${task.type}.js`);
 			modules[task.type] = await import(pathToFileURL(taskPath).href);
 		}
+		if(!modules[task.type].canbuild) continue;
 		task.banner = config.kirigami.banner;
 		process.stdout.write(`\n${c.gray("›")} ${modules[task.type].taskname}: ${task.name}`);
 		const results = await modules[task.type].default(config.root, task, __dist);
@@ -107,24 +86,9 @@ export default async function exportDist(args) {
 			process.exit(1);
 		}
 	}
-
-	if(after.length) {
-		console.log(`\n\n${c.bold('After export:')}`);
-		for (const s of after) {
-			process.stdout.write(`\n${c.gray("›")} Script: ${s.name}`);
-			const results = await runscript(s.name);
-			if(results.success) {
-				process.stdout.write(` ${c.green("✔")}\n`);
-				results.files.forEach(file => console.log(`    ${c.gray(file)}`));
-			} else {
-				process.stdout.write(` ${c.red("❌")}\n`);
-				console.log(c.red("\n› Error:"));
-				console.log(results.error);
-				process.exit(1);
-			}
-		}
-	}
-
+	
+	await trigger('after-export');
+	
 	console.log(`\n`);
 	log.success(c.bold(c.green(` Export finished!`)));
 	console.log();

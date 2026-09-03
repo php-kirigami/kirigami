@@ -34,7 +34,7 @@ export default async function test(args) {
 //     echo "GitHub says: " . $response;
 //   `, true));
 
-	console.log(await runenv('scripts/test.php', 'patate', 'poil', 'mauditcave'));
+	// console.log(await runenv('scripts/test.php', 'patate', 'poil', 'mauditcave'));
 
 
 }

@@ -1,10 +1,10 @@
-// import fs from 'fs';
 import path from "path";
-// import util from "util";
 import { joinWith, replaceRoot, log, c } from '../utils.js';
 import { render, sitemap } from "@kirigami/php-prepros";
 
-export const taskname = 'PHP';
+export const taskname = 'PREPROS';
+export const canwatch = true;
+export const canbuild = true;
 
 
 export default async function build(__root, task, exportPath = null) {
@@ -33,11 +33,13 @@ export function getWatcher(__root, task) {
 		name: task.name,
 		patterns: patterns,
 		callback: async (events) => {
+			if(!events.filter(e => e.type != 'add').length) return;
 			console.log(`[${task.name}] batch`, events.length, events.map(e => e.file));
 			const paths = events.map(e => {
 				const dir = path.dirname(e.file.replace(root, '')).replace(/^\//, '');
 				return task.deep ? path.dirname(dir) : dir;
 			});
+			
 			await Promise.all(paths.filter((v, i, a) => a.indexOf(v) === i).map(async p => {
 				const results = await build(__root, { target: p, ...task });
 				if(results.success) {

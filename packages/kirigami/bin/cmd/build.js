@@ -1,13 +1,8 @@
-/**
- * kiri build [--minify] [--sourcemap] [--outdir <path>]
- *
- * Compile le projet Kirigami pour la production.
- */
-
 import path from "path";
 import { fileURLToPath, pathToFileURL } from 'url';
 import { c, log, parseArgs, printCommandHelp } from "../utils.js";
 import { getConfig } from "../config.js";
+import { trigger } from "../libs/triggers.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -41,10 +36,12 @@ export default async function build(args) {
 	log.step(`Root      : ${c.dim(config.root)}`);
 	console.log(`\n\n${c.bold('Tasks:')}`);
 
+	await trigger('before-build');
+
 	if(config.prepros) {
 		const task = {
-			name: "prepros",
-			type: "php",
+			name: "render-all",
+			type: "prepros",
 			config: config.prepros,
 		};
 		config.tasks = [ task, ...config.tasks];
@@ -56,6 +53,7 @@ export default async function build(args) {
 			const taskPath = path.resolve(__dirname, "../tasks", `${task.type}.js`);
 			modules[task.type] = await import(pathToFileURL(taskPath).href);
 		}
+		if(!modules[task.type].canbuild) continue;
 		process.stdout.write(`\n${c.gray("›")} ${modules[task.type].taskname}: ${task.name}`);
 		const results = await modules[task.type].default(config.root, task);
 		

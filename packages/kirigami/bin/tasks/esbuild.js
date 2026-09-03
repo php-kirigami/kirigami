@@ -5,7 +5,9 @@ import esbuild from "esbuild";
 import { replaceRoot, joinWith, c, log } from '../utils.js';
 
 
-export const taskname = 'Javascript';
+export const taskname = 'ESBUILD';
+export const canwatch = true;
+export const canbuild = true;
 
 export default async function build(__root, task, exportPath = null) {
 
@@ -75,6 +77,7 @@ export function getWatcher(__root, task) {
 		patterns: patterns,
 		ignored: [joinWith(dir, '**/*.min.js')],
 		callback: async (events) => {
+			if(!events.filter(e => e.type != 'add').length) return;
 			console.log(`[${task.name}] batch`, events.length, events.map(e => e.file));
 			const results = await build(__root, task);
 			if(results.success) {

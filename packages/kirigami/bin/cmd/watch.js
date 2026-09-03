@@ -48,7 +48,7 @@ export default async function watch(args) {
 	if(config.prepros) {
 		const task = {
 			name: "prepros",
-			type: "php",
+			type: "prepros",
 			config: config.prepros,
 		};
 		config.tasks = [ task, ...config.tasks];
@@ -61,7 +61,7 @@ export default async function watch(args) {
 			const taskPath = path.resolve(__dirname, "../tasks", `${task.type}.js`);
 			modules[task.type] = await import(pathToFileURL(taskPath).href);
 		}
-		watchers.push(modules[task.type].getWatcher(config.root, task));
+		if(modules[task.type].canwatch) watchers.push(modules[task.type].getWatcher(config.root, task));
 	}
 	const { close } = createWatchers(watchers);
 	__close = close;
@@ -222,9 +222,8 @@ function createWatchers(rules, options = {}) {
 			binaryInterval: opt.binaryInterval,
 		});
 
-		// watcher.on("add",    (p) => queue("add",    p));
+		watcher.on("add",    (p) => queue("add",    p));
 		watcher.on("change", (p) => queue("change", p));
-		// watcher.on("unlink", (p) => queue("unlink", p));
 		watcher.on("error",  (err) => console.error(`[${name}] watch error:`, err));
 
 		handles.push({
@@ -241,4 +240,4 @@ function createWatchers(rules, options = {}) {
 	};
 }
 
-export { createWatchers };
+// export { createWatchers };

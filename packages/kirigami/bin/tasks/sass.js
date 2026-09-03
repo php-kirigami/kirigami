@@ -6,7 +6,9 @@ import { minify } from 'csso';
 import { replaceRoot, joinWith, log, c } from '../utils.js';
 
 
-export const taskname = 'SCSS';
+export const taskname = 'SASS';
+export const canwatch = true;
+export const canbuild = true;
 
 export default async function build(__root, task, exportPath = null) {
 
@@ -67,6 +69,7 @@ export function getWatcher(__root, task) {
 		name: task.name,
 		patterns: patterns,
 		callback: async (events) => {
+			if(!events.filter(e => e.type != 'add').length) return;
 			console.log(`[${task.name}] batch`, events.length, events.map(e => e.file));
 			const results = await build(__root, task);
 			if(results.success) {

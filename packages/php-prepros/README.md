@@ -9,8 +9,10 @@ It is the perfect solution for **GitHub Pages**. Since it runs entirely in Node.
 Part of the **Kirigami** project ecosystem. Other packages are coming soon.
 
 [![npm version](https://img.shields.io/npm/v/@kirigami/php-prepros)](https://www.npmjs.com/package/@kirigami/php-wasm)
-[![License: MIT](https://img.shields.io/badge/MIT-blue)](./LICENSE)
+[![PHP Version](https://img.shields.io/npm/v/%40kirigami%2Fphp-wasm?label=php&color=%23777BB3)](https://www.npmjs.com/package/@kirigami/php-wasm)
 [![Node.js >=20.10.0](https://img.shields.io/badge/node-%3E%3D20.10.0-brightgreen)](https://nodejs.org)
+[![License: MIT](https://img.shields.io/badge/MIT-yellow)](./LICENSE)
+
 
 ---
 
@@ -183,7 +185,6 @@ Source pages live in the directory pointed to by `kirigami.root`. The naming con
 src/
 ├── _layout/
 ├── _lib/
-├── about/
 ├── _index.php          →  src/index.html
 ├── about/
 │   └── _index.php      →  src/about/index.html
@@ -655,8 +656,6 @@ if ($metas) {
 ```
 
 Returns `false` if the page can't be reached, can't be parsed, or has no discoverable title. Throws an `Exception` on invalid URLs. Uses `CURL::getContents()` under the hood, so it benefits from the same shared cookie jar and browser-like headers.
-
-A free `url_exists(string $url, ?string $mimereg = null): bool` function is also available globally (not namespaced under a class), cached the same way as `SCRAPER::get()`.
 
 ---
 

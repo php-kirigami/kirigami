@@ -3,7 +3,7 @@ import path from "path";
 import picomatch from "picomatch";
 import { Octokit } from "@octokit/rest";
 import { fileURLToPath } from 'url';
-import { storeGet, storeSet } from "../store.js";
+import { storeGet, storeSet } from "../libs/store.js"
 import { c, log, parseArgs, printCommandHelp } from "../utils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -65,7 +65,7 @@ async function getTemplates() {
 async function printList() {
 	const templates = await getTemplates();
 	const colWidth = Math.max(...templates.map(t => t.template.length)) + 4;
-	console.log(`\n${c.bold(c.cyan("kiri"))} — List of avaiable templates\n\n`);
+	console.log(`\n${c.bold(c.cyan("kiri"))} — List of avaiable templates\n`);
 	console.log(c.dim(`${"TEMPLATE".padEnd(colWidth)}DESCRIPTION`));
 	console.log(`${"-".repeat(colWidth + 30)}`);
 	for (const t of templates) {
@@ -86,7 +86,7 @@ export default async function create(args) {
 		return;
 	}
 
-	if (flags.list || flags.l) {
+	if (flags.list || flags.l || command == 'list') {
 		await printList();
 		return;
 	}

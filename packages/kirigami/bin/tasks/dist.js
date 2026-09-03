@@ -7,7 +7,9 @@ import { replaceRoot, joinWith } from '../utils.js';
 const ROOT = process.cwd();
 
 
-export const taskname = 'Copy Files';
+export const taskname = 'DIST';
+export const canwatch = false;
+export const canbuild = true;
 
 
 export default async function dist(__root, task, exportPath = null) {
