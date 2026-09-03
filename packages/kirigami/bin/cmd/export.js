@@ -2,7 +2,6 @@ import path from "path";
 import { fileURLToPath, pathToFileURL } from 'url';
 import { c, log, parseArgs, printCommandHelp } from "../utils.js";
 import { getConfig } from "../config.js";
-import { runscript } from "./run.js";
 import { trigger } from "../libs/triggers.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

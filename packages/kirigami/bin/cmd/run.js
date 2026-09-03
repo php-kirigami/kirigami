@@ -75,7 +75,6 @@ export default async function run(args) {
 }
 
 
-
 export async function runscript(command, argv = []) {
 	const config = await getConfig();
 	

@@ -3,6 +3,7 @@ import path from "path";
 import util from "util";
 import esbuild from "esbuild";
 import { replaceRoot, joinWith, c, log } from '../utils.js';
+import { getConfig } from '../config.js';
 
 
 export const taskname = 'ESBUILD';
@@ -10,7 +11,8 @@ export const canwatch = true;
 export const canbuild = true;
 
 export default async function build(__root, task, exportPath = null) {
-
+	const config = await getConfig();
+	const params = config.esbuild || {};
 	const entry = path.join(__root, task.entry);
 	const outfile = path.join(exportPath || __root, task.entry).replace(/\.(?:tsx?|jsx?)$/i, '.min.js');
 	const dir = path.dirname(outfile);
@@ -31,6 +33,7 @@ export default async function build(__root, task, exportPath = null) {
 			legalComments: "none",
 			loader: { '.json': 'json' },
 			sourcemap: !exportPath,
+			...params
 		});
 		if(exportPath) {
 			fs.writeFileSync(

@@ -3,6 +3,7 @@ import path from "path";
 import util from "util";
 import * as sass from 'sass'
 import { minify } from 'csso';
+import { getConfig } from '../config.js';
 import { replaceRoot, joinWith, log, c } from '../utils.js';
 
 
@@ -10,8 +11,10 @@ export const taskname = 'SASS';
 export const canwatch = true;
 export const canbuild = true;
 
-export default async function build(__root, task, exportPath = null) {
 
+export default async function build(__root, task, exportPath = null) {
+	const config = await getConfig();
+	const params = config.sass || {};
 	const entry = path.join(__root, task.entry);
 	const outfile = path.join(exportPath || __root, task.entry).replace(/\.s?css?$/, '.min.css');
 	const dir = path.dirname(outfile);
@@ -24,6 +27,7 @@ export default async function build(__root, task, exportPath = null) {
 			style: "compressed",
 			sourceMap: !exportPath,
 			sourceMapIncludeSources: !exportPath,
+			...params
 		});
 		
 		if(exportPath) {

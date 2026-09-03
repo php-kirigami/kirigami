@@ -81,10 +81,10 @@ process.on("SIGINT", async () => {
 });
 
 
-
 function toPosix(p) {
 	return p.replace(/\\/g, "/");
 }
+
 
 function normalizePatterns(patterns) {
 	return Array.isArray(patterns) ? patterns : [patterns];
@@ -206,6 +206,7 @@ function createWatchers(rules, options = {}) {
 		};
 
 		const queue = (type, absPath) => {
+			// console.log(type);
 			const rel = toPosix(path.relative(opt.cwd, absPath));
 
 			if (isIgnored(rel)) return;

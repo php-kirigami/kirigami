@@ -12,7 +12,6 @@ export async function is_trigger(name) {
 export async function trigger(name) {
 	const config = await getConfig();
 	if(!await is_trigger(name)) return;
-	// console.log(`\n\n${c.bold(`${label}:`)}`);
 	for (const s of config.scripts || []) {
 		if(s.trigger != name) continue;
 		process.stdout.write(`\n${c.gray("›")} SCRIPT: ${s.name}`);
@@ -27,5 +26,4 @@ export async function trigger(name) {
 			process.exit(1);
 		}
 	}
-
 }

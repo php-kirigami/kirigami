@@ -1,6 +1,6 @@
+import { parseArgs, printCommandHelp } from "../utils.js";
 import { phpinfo as phpinfo_ } from "@kirigami/php-wasm";
 import PHPInfoParser from "../libs/phpinfoparser.js";
-import { parseArgs, printCommandHelp } from "../utils.js";
 
 
 const HELP = {
@@ -8,7 +8,8 @@ const HELP = {
 	description: "Print phpinfo() from the embedded PHP-WASM runtime used by Kirigami.",
 	usage: "[options]",
 	options: [
-		{ flag: "--json", desc: "Output as JSON instead of Markdown" },
+		{ flag: "--md, -h", desc: "Output as Markdown instead of HTML" },
+		{ flag: "--json, -j", desc: "Output as JSON instead of HTML" },
 		{ flag: "--help, -h", desc: "Show this help section" },
 	],
 	notes: [
@@ -31,13 +32,19 @@ export default async function phpinfo(args) {
 	}
 
 	const info = await phpinfo_();
-	const parser = PHPInfoParser.fromString(info);
 
-	if (flags.json) {
-		process.stdout.write(JSON.stringify(parser.toObject(), null, 2) + "\n");
+	if (flags.json || flags.j) {
+		const parser = PHPInfoParser.fromString(info);
+		process.stdout.write(JSON.stringify(parser.toKeyValue(), null, 2) + "\n");
 		return;
 	}
 
-	const md = parser.toMarkdown();
-	process.stdout.write(md);
+	if (flags.md || flags.m) {
+		const parser = PHPInfoParser.fromString(info);
+		const md = parser.toMarkdown();
+		process.stdout.write(md);
+		return;
+	}
+
+	process.stdout.write(info);
 }

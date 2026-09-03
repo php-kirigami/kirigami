@@ -54,7 +54,7 @@ ${c.bold("EXAMPLES")}
   ${c.dim("kiri build")}
   ${c.dim("kiri export")}
   ${c.dim("kiri watch")}
-  ${c.dim("kiri run before-export")}
+  ${c.dim("kiri run convert-images")}
   ${c.dim("kiri create --list")}
 
 ${c.dim("Type `kiri <command> --help` for detailed help on a command.")}
@@ -94,8 +94,8 @@ async function main() {
 
 	if (!existsSync(cmdPath)) {
 		console.error(
-			`\n${c.red("✖")} Commande inconnue : ${c.bold(subcommand)}\n` +
-			`  Tape ${c.cyan("kiri --help")} pour voir les commandes disponibles.\n`
+			`\n${c.red("❌")} Unknown command : ${c.bold(subcommand)}\n` +
+			`  Type ${c.cyan("kiri --help")} to see avaiable commands.\n`
 		);
 		process.exit(1);
 	}
@@ -104,6 +104,7 @@ async function main() {
 	try {
 		const cmdModule = await import(pathToFileURL(cmdPath).href);
 		await cmdModule.default(rest);
+		// process.exit(0);
 	} catch (err) {
 		console.error(`\n${c.red("❌")} Error: ${c.bold(subcommand)} failed:\n  ${typeof err == 'string' ? err : err.message}\n`);
 		// console.log(err);
