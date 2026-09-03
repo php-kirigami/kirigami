@@ -9,13 +9,21 @@ const __root = process.cwd();
 
 const HELP = {
 	name: "run",
-	description: "Run PHP command script. PHP files needs to be in scripts/ folder.",
-	usage: "[options]",
+	description: "Run a PHP command script from the scripts/ folder, inside the Kirigami PHP runtime.",
+	usage: "<script> [subcommand] [params...] [options]",
 	options: [
 		{ flag: "--help, -h", desc: "Show this help section" },
 	],
+	notes: [
+		"The script file must exist at scripts/<script>.php relative to the project root.",
+		"Any extra words after <script> are forwarded as positional arguments ($argv) to the PHP script.",
+		"Declare a \"scripts\" entry in kirigami.yaml with a matching \"mount\" list to expose extra files/globs to the PHP runtime.",
+		"A script can also run automatically by declaring \"trigger: before-build\" (or before-export / after-export) in kirigami.yaml.",
+	],
 	examples: [
+		"kiri run before-export",
 		"kiri run before-export param1 param2",
+		"kiri run deploy production --force",
 	],
 };
 

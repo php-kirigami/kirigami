@@ -21,6 +21,9 @@ const COMMANDS = {
 	build: "Compile project for developement",
 	export: "Compile and export project for production",
 	watch: "Start dev-mode with hot-reload",
+	run: "Run a PHP command script from the scripts/ folder",
+	create: "Create a new project from an official template",
+	phpinfo: "Print phpinfo() from the embedded PHP-WASM runtime",
 };
 
 // ─── Aide globale ────────────────────────────────────────────────────────────
@@ -51,6 +54,10 @@ ${c.bold("EXAMPLES")}
   ${c.dim("kiri build")}
   ${c.dim("kiri export")}
   ${c.dim("kiri watch")}
+  ${c.dim("kiri run before-export")}
+  ${c.dim("kiri create --list")}
+
+${c.dim("Type `kiri <command> --help` for detailed help on a command.")}
 `);
 }
 

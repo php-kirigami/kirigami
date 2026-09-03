@@ -36,20 +36,19 @@ const getPHPInstance = async () => {
         __php.setSpawnHandler((command, args, options) => spawn(command, args, options));
         __php.preprosConfig = preprosConfig;
 
+        await mountPath(__dirname, '/prepros', __php);
+        await mountPath(joinWith(__project, config?.kirigami?.root), joinWith('/project', config?.kirigami?.root), __php);
+
         const __cache = path.join(__project, '.cache.db');
         const __cookie = path.join(__project, '.cookie.txt');
-        mountPath(__php, __dirname, '/prepros');
-        mountPath(__php, joinWith(__project, config?.kirigami?.root), joinWith('/project', config?.kirigami?.root));
-
-        if (fs.existsSync(__cache)) mountPath(__php, __cache, '/project/.cache.db');
-        if (fs.existsSync(__cookie)) mountPath(__php, __cookie, '/project/.cookie.txt');
+        if (fs.existsSync(__cache)) await mountPath(__cache, '/project/.cache.db', __php);
+        if (fs.existsSync(__cookie)) await mountPath(__cookie, '/project/.cookie.txt', __php);
 
         __php.onMessage(async (data) => {
             const msg = JSON.parse(data);
             if(!msg.command) return { success: false, error: "Invalid command."};
             const file = path.join(__dirname, 'phpjs', `${msg.command}.js`);
             if(!fs.existsSync(file)) return { success: false, error: "Invalid command."};
-
             try {
                 const cmdModule = await import(pathToFileURL(file).href);
                 const results = await cmdModule.default(__php, msg);
@@ -63,35 +62,36 @@ const getPHPInstance = async () => {
                     error: typeof e == 'string' ? e : e.message
                 }
             }
-
-
-            // console.log(msg);
-            // console.log(__dirname);
-
         });
     }
     return __php;
 }
 
 
-const mountPath = (php, localPath, virtualDir) => {
+const mountPath = async (localPath, virtualDir, php) => {
+    php = php || await getPHPInstance();
+    if(!path.isAbsolute(localPath)) localPath = path.join(__project, localPath);
+    virtualDir = virtualDir || path.posix.join('/project', localPath.replace(__project + path.sep, ''));
     const includeExtensions = new Set(['.php', '.json', '.yaml', '.yml', '.md', '.db', '.txt', ...(config?.prepros?.mountext || [])]);
     const stat = fs.statSync(localPath);
     if (stat.isDirectory()) {
         php.mkdirTree(virtualDir);
         for (const entry of fs.readdirSync(localPath, { withFileTypes: true })) {
-            mountPath(php, path.join(localPath, entry.name), virtualDir + '/' + entry.name);
+            const target = path.join(localPath, entry.name);
+            if(!fs.statSync(target).isDirectory()) {
+                const ext = path.extname(target).toLowerCase();
+                if (includeExtensions.has(ext)) {
+                    await mountPath(target, virtualDir + '/' + entry.name, php);
+                }
+            } else {
+                await mountPath(target, virtualDir + '/' + entry.name, php);
+            }
         }
     } else {
-        const ext = path.extname(localPath).toLowerCase();
-        if (includeExtensions.has(ext)) {
-            const buf = fs.readFileSync(localPath);
-            const parentDir = virtualDir.substring(0, virtualDir.lastIndexOf('/'));
-            if (parentDir) {
-                php.mkdirTree(parentDir);
-            }
-            php.writeFile(virtualDir, isBinary(buf) ? buf : buf.toString('utf8'));
-        }
+        const buf = fs.readFileSync(localPath);
+        const parentDir = virtualDir.substring(0, virtualDir.lastIndexOf('/'));
+        if (parentDir) php.mkdirTree(parentDir);
+        php.writeFile(virtualDir, isBinary(buf) ? buf : buf.toString('utf8'));
     }
 }
 
@@ -129,7 +129,6 @@ const run = async (args = [], script = null, mountfiles = []) => {
             const buffer = php.readFileAsBuffer(resultPath);
             retobj = JSON.parse(Buffer.from(buffer).toString('utf8'));
             retobj.debug = stdout;
-
             if(retobj.files) await Promise.all(retobj.files.map(async (file, i) => {
                 const fbuffer = php.readFileAsBuffer(file);
                 const dest = file.replace(/^\/project\//i, '');
@@ -167,29 +166,23 @@ const runenv = async (script, paths = [], ...args) => {
 
 
 const render = async (file = '.') => {
-    const php = await getPHPInstance();
-    const target = path.resolve(__project, config?.kirigami?.root, file);
+    const target = path.resolve(config?.kirigami?.root, file);
     const fsvm = path.join('/project', config?.kirigami?.root, file).replace(/\\/g, '/');
-    mountPath(php, target, fsvm);
+    await mountPath(target);
     if(config?.prepros?.before) {
-        const include = path.resolve(__project, config?.kirigami?.root, config?.prepros?.before);
-        const dest = path.join('/project', config?.kirigami?.root, config?.prepros?.before).replace(/\\/g, '/');
-        mountPath(php, include, dest);
+        await mountPath(path.resolve(config?.kirigami?.root, config?.prepros?.before));
     }
     if(config?.prepros?.after) {
-        const include = path.resolve(__project, config?.kirigami?.root, config?.prepros?.after);
-        const dest = path.join('/project', config?.kirigami?.root, config?.prepros?.after).replace(/\\/g, '/');
-        mountPath(php, include, dest);
+        await mountPath(path.resolve(config?.kirigami?.root, config?.prepros?.after));
     }
     return run([fsvm]);
 }
 
 
-const sitemap = async (dir) => {
-    const php = await getPHPInstance();
-    mountPath(php, __root, '/project/' + config?.kirigami?.root);
+const sitemap = async () => {
+    await mountPath(config?.kirigami?.root);
     return run(['sitemap']);
 }
 
 
-export { runenv, render, sitemap };
+export { runenv, render, sitemap, mountPath };

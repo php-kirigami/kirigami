@@ -9,10 +9,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const HELP = {
 	name: "build",
-	description: "Compile project for developement",
+	description: "Compile the project for development (runs all configured tasks once, no minification/export step).",
 	usage: "[options]",
 	options: [
 		{ flag: "--help, -h", desc: "Show this help section" },
+	],
+	notes: [
+		"Reads kirigami.yaml and runs every task declared under \"tasks\" (esbuild, sass, etc.) once, in order.",
+		"If a \"prepros\" section is set, PHP templates are also rendered first (added as a forced task).",
+		"Fires the \"before-build\" script trigger (see kiri run --help) before running the tasks.",
+		"Only tasks whose type supports \"build\" run, unless the task sets \"force: true\".",
+		"Output files are written relative to \"kirigami:root\"; use \"kiri export\" to bundle for production instead.",
 	],
 	examples: [
 		"kiri build",
@@ -42,6 +49,7 @@ export default async function build(args) {
 		const task = {
 			name: "render-all",
 			type: "prepros",
+			force: true,
 			config: config.prepros,
 		};
 		config.tasks = [ task, ...config.tasks];
@@ -53,10 +61,9 @@ export default async function build(args) {
 			const taskPath = path.resolve(__dirname, "../tasks", `${task.type}.js`);
 			modules[task.type] = await import(pathToFileURL(taskPath).href);
 		}
-		if(!modules[task.type].canbuild) continue;
+		if(!task.force && !modules[task.type].canbuild) continue;
 		process.stdout.write(`\n${c.gray("›")} ${modules[task.type].taskname}: ${task.name}`);
 		const results = await modules[task.type].default(config.root, task);
-		
 		if(results.success) {
 			process.stdout.write(` ${c.green("✔")}\n`);
 			results.files.forEach(file => console.log(`    ${c.gray(file)}`));

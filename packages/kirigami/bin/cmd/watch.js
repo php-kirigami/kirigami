@@ -12,10 +12,16 @@ let __close = null;
 
 const HELP = {
 	name: "watch",
-	description: "Start dev-mode with hot-reload",
+	description: "Start dev-mode: watch project files and rebuild automatically on change.",
 	usage: "[options]",
 	options: [
 		{ flag: "--help, -h", desc: "Show this help section" },
+	],
+	notes: [
+		"Only tasks whose type supports watching (esbuild, sass, prepros, etc.) get a file watcher attached.",
+		"Changes are debounced (150ms default) and batched per task before rebuilding.",
+		"node_modules/, .git/ and dist/ are ignored globally in addition to any task-specific ignore rules.",
+		"Press Ctrl+C (SIGINT) to stop watching and close all watchers cleanly.",
 	],
 	examples: [
 		"kiri watch",

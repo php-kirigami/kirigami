@@ -1,1 +1,1 @@
-export { render, sitemap, runenv } from "./src/prepros.js";
+export { render, sitemap, runenv, mountPath } from "./src/prepros.js";

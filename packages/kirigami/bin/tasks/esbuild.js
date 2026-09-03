@@ -12,7 +12,7 @@ export const canbuild = true;
 export default async function build(__root, task, exportPath = null) {
 
 	const entry = path.join(__root, task.entry);
-	const outfile = path.join(exportPath || __root, task.entry).replace(/\.(?:tsx?|jsx?)$/, '.min.js');
+	const outfile = path.join(exportPath || __root, task.entry).replace(/\.(?:tsx?|jsx?)$/i, '.min.js');
 	const dir = path.dirname(outfile);
 
 	if(!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });

@@ -70,7 +70,7 @@ export function parseArgs(args = []) {
 }
 
 // ─── Aide par commande ───────────────────────────────────────────────────────
-export function printCommandHelp({ name, description, usage, options = [], examples = [] }) {
+export function printCommandHelp({ name, description, usage, options = [], notes = [], examples = [] }) {
 	console.log(`
 ${c.bold(c.cyan(`kiri ${name}`))} — ${c.dim(description)}
 
@@ -83,6 +83,12 @@ ${c.bold("USAGE")}
 		options.forEach(({ flag, desc }) =>
 			console.log(`  ${c.gray(flag.padEnd(22))}${desc}`)
 		);
+		console.log();
+	}
+
+	if (notes.length) {
+		console.log(c.bold("NOTES"));
+		notes.forEach((note) => console.log(`  ${c.dim("•")} ${note}`));
 		console.log();
 	}
 
@@ -99,7 +105,7 @@ export const replaceRoot = (path) => {
 	return path
 		.replace(__root, '')
 		.replace(/\\/g, '/')
-		.replace(/\//, '')
+		.replace(/^\//, '')
 	;
 }
 

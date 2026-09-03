@@ -11,10 +11,17 @@ const __root = process.cwd();
 
 const HELP = {
 	name: "export",
-	description: "Compile and export project for production",
+	description: "Compile and export the project for production (forces all tasks + copies static files).",
 	usage: "[options]",
 	options: [
 		{ flag: "--help, -h", desc: "Show this help section" },
+	],
+	notes: [
+		"Writes output to \"export:path\" in kirigami.yaml (defaults to \"dist\").",
+		"Runs every task with \"force: true\", so build-only tasks (like \"dist\") also execute.",
+		"If a \"prepros\" section is set, PHP templates are rendered first (added as a forced task).",
+		"Fires the \"before-export\" then \"before-build\" script triggers before the tasks, and \"after-export\" once done (see kiri run --help).",
+		"The banner defined in \"kirigami:banner\" (or an auto-generated one) is stamped on exported files.",
 	],
 	examples: [
 		"kiri export",
@@ -53,6 +60,7 @@ export default async function exportDist(args) {
 	config.tasks = [{
 		name: "copy-files",
 		type: "dist",
+		force: true,
 		path: __dist,
 		...config.export,
 	}, ...config.tasks];
@@ -60,6 +68,7 @@ export default async function exportDist(args) {
 		const task = {
 			name: "render-all",
 			type: "prepros",
+			force: true,
 			config: config.prepros,
 		};
 		config.tasks = [ task, ...config.tasks];
@@ -71,7 +80,7 @@ export default async function exportDist(args) {
 			const taskPath = path.resolve(__dirname, "../tasks", `${task.type}.js`);
 			modules[task.type] = await import(pathToFileURL(taskPath).href);
 		}
-		if(!modules[task.type].canbuild) continue;
+		if(!task.force && !modules[task.type].canbuild) continue;
 		task.banner = config.kirigami.banner;
 		process.stdout.write(`\n${c.gray("›")} ${modules[task.type].taskname}: ${task.name}`);
 		const results = await modules[task.type].default(config.root, task, __dist);

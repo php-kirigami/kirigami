@@ -4,7 +4,7 @@ import { render, sitemap } from "@kirigami/php-prepros";
 
 export const taskname = 'PREPROS';
 export const canwatch = true;
-export const canbuild = true;
+export const canbuild = false;
 
 
 export default async function build(__root, task, exportPath = null) {
@@ -27,7 +27,7 @@ export async function validate(__root, task) { }
 
 
 export function getWatcher(__root, task) {
-	const root = __root.replace(process.cwd(), '').replace(/\\/g, '/').replace(/^\//, '');
+	const root = __root.replace(process.cwd(), '').replace(/\\/g, '/').replace(/^\//g, '');
 	const patterns = [joinWith(root, '**/_*.php'), joinWith(root, '**/*.yaml'), joinWith(root, '**/*.yml'), joinWith(root, '**/*.md'), joinWith(root, '**/*.json')]
 	return {
 		name: task.name,
@@ -39,7 +39,6 @@ export function getWatcher(__root, task) {
 				const dir = path.dirname(e.file.replace(root, '')).replace(/^\//, '');
 				return task.deep ? path.dirname(dir) : dir;
 			});
-			
 			await Promise.all(paths.filter((v, i, a) => a.indexOf(v) === i).map(async p => {
 				const results = await build(__root, { target: p, ...task });
 				if(results.success) {

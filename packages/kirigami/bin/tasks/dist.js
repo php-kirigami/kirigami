@@ -1,6 +1,5 @@
 import fs from 'fs'; 	
 import path from "path";
-// import util from "util";
 import ignore from 'ignore';
 import { replaceRoot, joinWith } from '../utils.js';
 
@@ -9,7 +8,7 @@ const ROOT = process.cwd();
 
 export const taskname = 'DIST';
 export const canwatch = false;
-export const canbuild = true;
+export const canbuild = false;
 
 
 export default async function dist(__root, task, exportPath = null) {

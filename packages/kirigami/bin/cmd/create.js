@@ -11,13 +11,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const HELP = {
 	name: "create",
-	description: "Compile project for developement",
-	usage: "[options]",
+	description: "Create a new Kirigami project from an official template.",
+	usage: "<template> [project-name] [options]",
 	options: [
+		{ flag: "--list, -l", desc: "List available templates (from the php-kirigami org)" },
 		{ flag: "--help, -h", desc: "Show this help section" },
 	],
+	notes: [
+		"Templates are GitHub repositories named \"template-<name>\" under the php-kirigami organization.",
+		"The template list is cached locally for 1 hour to avoid hitting the GitHub API on every call.",
+	],
 	examples: [
-		"kiri build",
+		"kiri create --list",
+		"kiri create blog my-blog",
 	],
 };
 
