@@ -11,20 +11,6 @@ const SRC_STYLES = "src/styles";
 const DIST_SCRIPTS = "dist/scripts";
 const DIST_STYLES = "dist/styles";
 
-// async function printErrors(err) {
-//   if (err?.errors?.length) {
-//     // Vraie erreur esbuild (syntaxe, résolution, etc.)
-//     const formatted = await formatMessages(err.errors, {
-//       kind: "error",
-//       color: true,
-//       terminalWidth: process.stdout.columns || 80,
-//     });
-//     console.error(formatted.join("\n"));
-//   } else {
-//     // Erreur autre (fs, verrou de fichier, etc.) — on affiche le message brut
-//     console.error("✘ Erreur inattendue:", err?.message || err);
-//   }
-// }
 
 async function printWarnings(warnings) {
 	if (!warnings?.length) return;
