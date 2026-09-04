@@ -1,12 +1,31 @@
 {
   "name": "@kirigami/canva",
   "version": "1.0.0",
-  "description": "A collection of helpers",
-  "license": "MIT",
-  "author": "Maxime Larrivée-Roy",
   "type": "module",
-  "main": "index.js",
+  "sideEffects": [
+    "./dist/scripts/dom.js"
+  ],
+  "exports": {
+    "./scripts/*": {
+      "types": "./dist/scripts/*.d.ts",
+      "import": "./dist/scripts/*.js"
+    },
+    "./styles/*": "./dist/styles/*.scss"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "node build.js",
+    "watch": "node build.js --watch"
+  },
+  "allowScripts": {
+    "@parcel/watcher@2.6.0": true,
+    "esbuild@0.28.2": true
+  },
+  "devDependencies": {
+    "chokidar": "^5.0.0",
+    "esbuild": "^0.28.2",
+    "fast-glob": "^3.3.3"
   }
 }

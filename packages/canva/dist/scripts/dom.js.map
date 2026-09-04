@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/scripts/dom.js"],
+  "sourcesContent": ["/******************************************************\r\n *                    Create Element                  *\r\n ******************************************************/\r\nexport const create = (tag, classname=null, content=null, attrs={}) => {\r\n    const elm = document.createElement(tag);\r\n    if(classname) elm.className = classname;\r\n    if(content) elm.innerHTML = content;\r\n\tObject.entries(attrs).forEach(a => elm.setAttribute(a[0], a[1]));\r\n    return elm;\r\n};\r\nHTMLElement.prototype.create = function(tag, classname=null, content=null, attrs={}) {\r\n    const elm = create(tag, classname, content, attrs);\r\n    this.append(elm);\r\n    return elm;\r\n};"],
+  "mappings": "AAGO,MAAM,SAAS,CAAC,KAAK,YAAU,MAAM,UAAQ,MAAM,QAAM,CAAC,MAAM;AACnE,QAAM,MAAM,SAAS,cAAc,GAAG;AACtC,MAAG,UAAW,KAAI,YAAY;AAC9B,MAAG,QAAS,KAAI,YAAY;AAC/B,SAAO,QAAQ,KAAK,EAAE,QAAQ,OAAK,IAAI,aAAa,EAAE,CAAC,GAAG,EAAE,CAAC,CAAC,CAAC;AAC5D,SAAO;AACX;AACA,YAAY,UAAU,SAAS,SAAS,KAAK,YAAU,MAAM,UAAQ,MAAM,QAAM,CAAC,GAAG;AACjF,QAAM,MAAM,OAAO,KAAK,WAAW,SAAS,KAAK;AACjD,OAAK,OAAO,GAAG;AACf,SAAO;AACX;",
+  "names": []
+}

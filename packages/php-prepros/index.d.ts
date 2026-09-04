@@ -9,7 +9,7 @@
  *
  * @example
  * ```js
- * import { render, sitemap, runenv } from '@kirigami/php-prepros';
+ * import { render, sitemap, runenv, mountPath } from '@kirigami/php-prepros';
  *
  * // Compile a single page
  * const result = await render('src/index.php');
@@ -22,6 +22,9 @@
  *
  * // Run an arbitrary PHP script in the same sandboxed environment
  * const result = await runenv('scripts/purge-cache.php');
+ *
+ * // Mount a local file/directory into the sandbox before rendering
+ * await mountPath('assets/data/team.yaml');
  * ```
  */
 
@@ -147,3 +150,33 @@ export function sitemap(dir?: string): Promise<PreprosResult>;
  * @throws When `script` resolves outside the project root, or doesn't exist.
  */
 export function runenv(script: string, paths?: string[], ...args: string[]): Promise<PreprosResult>;
+
+
+/**
+ * The JavaScript-side counterpart to `PREPROS::mount()`. Mounts a local
+ * file or directory — recursively, preserving structure — into the WASM
+ * sandbox's virtual filesystem, ahead of (or between) calls to
+ * {@link render}, {@link sitemap}, or {@link runenv}.
+ *
+ * Mounting a directory only copies files whose extension is one of the
+ * defaults (`.php`, `.json`, `.yaml`, `.yml`, `.md`, `.db`, `.txt`) or
+ * listed in `prepros.mountext`, same as automatic root mounting. Mounting a
+ * single file directly copies it regardless of extension.
+ *
+ * ```js
+ * // Mount a single file at its natural virtual path (/project/<relative path>)
+ * await mountPath('assets/data/team.yaml');
+ *
+ * // Mount a whole directory, at a custom virtual path
+ * await mountPath('vendor/fonts', '/project/fonts');
+ * ```
+ *
+ * @param localPath  Path to a local file or directory. Relative paths are
+ *                    resolved against the project root.
+ * @param virtualDir  Destination path inside the WASM filesystem. Defaults
+ *                     to `/project/<localPath relative to the project root>`
+ *                     when omitted.
+ * @param php  WASM PHP instance to mount into. Defaults to the shared
+ *             singleton instance (creating it if needed).
+ */
+export function mountPath(localPath: string, virtualDir?: string, php?: unknown): Promise<void>;

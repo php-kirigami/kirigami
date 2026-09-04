@@ -1,0 +1,267 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://kirigami.dev/schema/kirigami.schema.json",
+  "title": "kirigami.yaml",
+  "description": "Configuration file for the Kirigami static site generator (@kirigami/kirigami, v1.1.0). Must sit at the project root and be named exactly 'kirigami.yaml'. Read by every `kiri` command (build, export, watch, run) via bin/config.js.",
+  "type": "object",
+  "required": ["kirigami"],
+  "additionalProperties": false,
+  "properties": {
+
+    "kirigami": {
+      "type": "object",
+      "description": "Core project settings. Every key is extracted as a PHP variable and made available in every page template, before.php, after.php, and any PHP file listed under prepros.includes.",
+      "required": ["project", "baseurl", "root"],
+      "properties": {
+
+        "project": {
+          "type": "string",
+          "description": "Human-readable project/site name. REQUIRED — build fails immediately if missing. Printed in the CLI banner for `kiri build`/`kiri export`/`kiri watch` and available as the PHP variable $project in every template.",
+          "examples": ["Humain Humain"]
+        },
+
+        "baseurl": {
+          "type": "string",
+          "format": "uri",
+          "description": "Root URL of the deployed site, without a trailing slash. REQUIRED — build fails immediately if missing. Used by @kirigami/php-prepros to build absolute <loc> entries in the generated sitemap.xml, and available as the PHP variable $baseurl.",
+          "examples": ["https://humainhumain.com"]
+        },
+
+        "root": {
+          "type": "string",
+          "description": "Path, relative to the project root, to the directory containing your `_*.php` source pages. REQUIRED. Build fails immediately if missing or if the resolved path does not exist on disk. All task `entry` paths (esbuild, sass) and prepros rendering are relative to this directory.",
+          "default": "src",
+          "examples": ["src"]
+        },
+
+        "banner": {
+          "type": "string",
+          "description": "Path, relative to the project root, to a text file used as the license/copyright banner stamped on every exported .js/.css/.html file (and on sitemap.xml) during `kiri export`. Optional — if omitted, an auto-generated banner \"Exported by Kirigami: <date>\" is used instead. If provided, the file's content may contain the literal token ###DATE###, which is replaced with today's date formatted in French (e.g. \"3 septembre 2026\") at load time. Build fails if the referenced file does not exist.",
+          "default": null,
+          "examples": ["assets/banner.txt"]
+        }
+
+      },
+
+      "patternProperties": {
+        "^(?!project$|baseurl$|root$|banner$).*$": {
+          "description": "Any additional key is free-form project data (string, number, boolean, list, or nested map — anything valid YAML). Every key is extracted as a PHP variable of the same name (e.g. `author:` becomes $author) and is available in page templates, before.php, after.php, and any PHP file listed under prepros.includes. Common examples used across Kirigami projects: author, person, jobtitle, email, facebook (or other social links), area, gtag, description, knowsabout (list), keywords (list)."
+        }
+      }
+    },
+
+    "prepros": {
+      "type": "object",
+      "description": "Options passed to @kirigami/php-prepros, the PHP-to-HTML compiler. Presence of this block (even empty) also causes `kiri build`/`kiri export`/`kiri watch` to automatically prepend a forced 'prepros' task that renders every page and regenerates sitemap.xml.",
+      "additionalProperties": false,
+      "properties": {
+
+        "before": {
+          "type": "string",
+          "description": "Path, relative to kirigami.root, to a PHP file included before every page's body (typically your <head>/layout opening).",
+          "default": null,
+          "examples": ["_layouts/header.php"]
+        },
+
+        "after": {
+          "type": "string",
+          "description": "Path, relative to kirigami.root, to a PHP file included after every page's body (typically your layout closing).",
+          "default": null,
+          "examples": ["_layouts/footer.php"]
+        },
+
+        "format": {
+          "type": "boolean",
+          "description": "Pretty-print the compiled HTML output (4-space indentation via HTML::format(), Dom\\HTMLDocument/Lexbor). When false, output is written as-is.",
+          "default": false
+        },
+
+        "network": {
+          "type": "boolean",
+          "description": "Enables outbound HTTP(S) requests inside the sandboxed WASM PHP runtime. Required for PHPDOC `@tag https://…` annotations that auto-fetch remote .yaml/.json/.md data, and for CURL/SCRAPER classes to reach the network.",
+          "default": false
+        },
+
+        "mountext": {
+          "type": "array",
+          "description": "Extra file extensions to automatically mount into the virtual filesystem alongside the built-in defaults (.php, .json, .yaml, .yml, .md, .db, .txt). Use for assets your PHP code reads directly. Files with extensions not in this set are simply skipped during automatic mounting — mount them on demand instead with PREPROS::mount() from PHP.",
+          "items": { "type": "string", "examples": [".webp", ".svg"] },
+          "default": []
+        },
+
+        "includes": {
+          "type": "array",
+          "description": "PHP files, relative to kirigami.root, `include_once`'d once right after config is loaded — before any page renders. The natural place to call PREPROS::registerTag(), PREPROS::registerHook(), or MD::registerPlugin().",
+          "items": { "type": "string" },
+          "default": [],
+          "examples": [["_layouts/functions.php"]]
+        }
+      }
+    },
+
+    "esbuild": {
+      "type": ["object", "null"],
+      "description": "Free-form object. Every key/value pair under this block is passed straight through to the esbuild task as extra build parameters — there is no fixed set of allowed keys and no schema-level default values are enforced by Kirigami itself. Whatever you put here is simply merged into the esbuild call for every 'esbuild' task, so refer to esbuild's own BuildOptions documentation (https://esbuild.github.io/api/#build-api) for what's accepted. Writing `esbuild:` with nothing under it (only comments) parses to `null` in YAML, which is equivalent to omitting the block entirely.",
+      "additionalProperties": true,
+      "default": {},
+      "examples": [{ "minify": false }, { "target": ["es2018"] }]
+    },
+
+    "sass": {
+      "type": ["object", "null"],
+      "description": "Free-form object. Every key/value pair under this block is passed straight through to the sass task as extra compile parameters — there is no fixed set of allowed keys and no schema-level default values are enforced by Kirigami itself. Whatever you put here is simply merged into the sass.compile() call for every 'sass' task, so refer to Dart Sass's own Options documentation (https://sass-lang.com/documentation/js-api/interfaces/options/) for what's accepted. Writing `sass:` with nothing under it (only comments) parses to `null` in YAML, which is equivalent to omitting the block entirely.",
+      "additionalProperties": true,
+      "default": {},
+      "examples": [{ "style": "expanded" }]
+    },
+
+    "export": {
+      "type": "object",
+      "description": "Options for `kiri export` (production build). Optional — omit entirely to use the defaults below.",
+      "additionalProperties": true,
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Output directory for `kiri export`, relative to the project root. A 'dist' task (type: dist) is automatically prepended to the task list with this path, force-run, copying every non-excluded file from kirigami.root into it (skipping files/dirs starting with `_` or `.`, `.scss`, `.map`, and unminified `.js` files) and stamping the project banner on .js/.css/.html files.",
+          "default": "dist"
+        },
+        "ignore": {
+          "type": "array",
+          "description": "Extra gitignore-style patterns (parsed with the `ignore` package) of files/directories to exclude from the export copy, in addition to Kirigami's built-in exclusions.",
+          "items": { "type": "string" },
+          "default": []
+        }
+      }
+    },
+
+    "scripts": {
+      "type": "array",
+      "description": "Named PHP scripts runnable via `kiri run <name>` or automatically fired at pipeline checkpoints via `trigger`. Each script's PHP file must exist at scripts/<name>.php, relative to the project root, and is executed with runenv() from @kirigami/php-prepros (full class library available, kirigami.yaml's `kirigami` block available as PREPROS::$config->data).",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Script identifier. Must match an existing scripts/<name>.php file. Invoke manually with `kiri run <name> [args...]`; extra CLI arguments are forwarded as $argv entries to the PHP script.",
+            "examples": ["test", "convert-images", "deploy"]
+          },
+          "mount": {
+            "type": "array",
+            "description": "Glob patterns (relative to the project root) of extra local files to mount into the WASM sandbox before this script runs, in addition to the files auto-mounted from kirigami.root. Useful when the script needs to read files outside of root (e.g. raw image sources).",
+            "items": { "type": "string" },
+            "default": [],
+            "examples": [["src/images/**/*.webp"]]
+          },
+          "trigger": {
+            "type": "string",
+            "description": "When set, this script runs automatically at the named pipeline checkpoint, without needing `kiri run` to be called manually. `before-build` fires at the start of both `kiri build` and `kiri export` (as part of before-export's default sequence). `before-export` fires at the very start of `kiri export`, right before `before-build`. `after-export` fires once `kiri export` has finished writing every task's output.",
+            "enum": ["before-build", "before-export", "after-export"]
+          }
+        }
+      },
+      "default": [],
+      "examples": [
+        [{ "name": "test", "trigger": "before-build" }]
+      ]
+    },
+
+    "tasks": {
+      "type": "array",
+      "description": "Ordered list of build tasks (in addition to the implicit 'prepros' task auto-added when the top-level `prepros` block is present, and the implicit 'dist' task auto-added during `kiri export`). Executed in array order. `kiri build`/`kiri export` run every task whose type supports building (or that declares `force: true`); `kiri watch` attaches a file watcher to every task whose type supports watching.",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "title": "esbuild task",
+            "description": "Bundles and minifies a JS/TS entry point with esbuild. Supports build and watch. Output: <entry-without-ext>.min.js (plus a .map file outside of `kiri export`), next to the entry file.",
+            "required": ["name", "type", "entry"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string", "description": "Arbitrary label for this task, shown in CLI output." },
+              "type": { "const": "esbuild" },
+              "entry": {
+                "type": "string",
+                "description": "Path to the JS/TS entry point, relative to kirigami.root. Build fails if the file does not exist.",
+                "examples": ["scripts/kirigami.core.js"]
+              },
+              "force": {
+                "type": "boolean",
+                "description": "Run this task even during commands that would otherwise skip it (e.g. force build-only tasks during `kiri watch`'s initial pass). Rarely needed manually — Kirigami sets this internally for its own implicit tasks.",
+                "default": false
+              }
+            }
+          },
+          {
+            "type": "object",
+            "title": "sass task",
+            "description": "Compiles a Sass/SCSS entry point with Dart Sass, minified with csso on export. Supports build and watch. Output: <entry-without-ext>.min.css (plus a .css.map file outside of `kiri export`), next to the entry file.",
+            "required": ["name", "type", "entry"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string", "description": "Arbitrary label for this task, shown in CLI output." },
+              "type": { "const": "sass" },
+              "entry": {
+                "type": "string",
+                "description": "Path to the .scss/.sass entry point, relative to kirigami.root. Build fails if the file does not exist.",
+                "examples": ["styles/kirigami.core.scss"]
+              },
+              "force": {
+                "type": "boolean",
+                "description": "Run this task even during commands that would otherwise skip it.",
+                "default": false
+              }
+            }
+          },
+          {
+            "type": "object",
+            "title": "prepros task",
+            "description": "Renders PHP page(s) via @kirigami/php-prepros and regenerates sitemap.xml. You do NOT normally need to declare this manually — simply having a top-level `prepros` block in kirigami.yaml causes Kirigami to auto-prepend one, forced, on every build/export/watch. Declare it explicitly only if you need a second, differently-scoped prepros pass.",
+            "required": ["name", "type"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string", "description": "Arbitrary label for this task, shown in CLI output." },
+              "type": { "const": "prepros" },
+              "target": {
+                "type": "string",
+                "description": "Optional single file or subdirectory (relative to kirigami.root) to render instead of the whole source tree.",
+                "default": null
+              },
+              "force": { "type": "boolean", "default": false }
+            }
+          },
+          {
+            "type": "object",
+            "title": "dist task",
+            "description": "Copies kirigami.root into an output directory, preserving structure, skipping files/dirs starting with `_` or `.`, `.scss` and `.map` files, and unminified `.js` files, then stamps the project banner on .js/.css/.html output. You do NOT normally need to declare this manually — `kiri export` auto-prepends one, forced, using `export.path`/`export.ignore`. Declare it explicitly only for an additional, differently-scoped copy pass.",
+            "required": ["name", "type", "path"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string", "description": "Arbitrary label for this task, shown in CLI output." },
+              "type": { "const": "dist" },
+              "path": {
+                "type": "string",
+                "description": "Destination directory for the copy, emptied before every run."
+              },
+              "ignore": {
+                "type": "array",
+                "description": "Gitignore-style patterns of files/directories to additionally exclude from the copy.",
+                "items": { "type": "string" },
+                "default": []
+              },
+              "force": { "type": "boolean", "default": false }
+            }
+          }
+        ]
+      },
+      "default": [],
+      "examples": [
+        [
+          { "name": "js-core", "type": "esbuild", "entry": "scripts/kirigami.core.js" },
+          { "name": "scss-core", "type": "sass", "entry": "styles/kirigami.core.scss" }
+        ]
+      ]
+    }
+  }
+}

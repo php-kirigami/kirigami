@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../src/scripts/components/burger.js"],
+  "sourcesContent": ["export default class Burger {\r\n\t\r\n}"],
+  "mappings": "AAAA,MAAO,OAAqB;AAE5B;",
+  "names": []
+}

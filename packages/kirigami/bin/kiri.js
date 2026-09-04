@@ -1,12 +1,5 @@
 #!/usr/bin/env node
 
-/**
- * kiri — CLI principal de Kirigami
- *
- * Chaque sous-commande est un module isolé dans bin/cmd/*.js
- * Pour ajouter une commande : créer bin/cmd/macommande.js
- */
-
 import { resolve, dirname } from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 import { existsSync } from "fs";
@@ -113,4 +106,3 @@ async function main() {
 }
 
 await main();
-// process.exit(0);

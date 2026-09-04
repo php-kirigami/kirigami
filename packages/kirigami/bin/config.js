@@ -34,6 +34,7 @@ async function validateConfig(config) {
 	// verify kirigami.project, kirigami.baseurl
 	if(!config.kirigami.project) throwConfigError(__configpath, `Missing "kirigami:project" property.`);
 	if(!config.kirigami.baseurl) throwConfigError(__configpath, `Missing "kirigami:baseurl" property.`);
+	config.kirigami.baseurl = config.kirigami.baseurl.replace(/\/$/, '');
 
 	// Verify root
 	if(!config.kirigami.root) throwConfigError(__configpath, `Missing "kirigami:root" property.`);

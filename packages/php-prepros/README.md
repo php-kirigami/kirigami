@@ -9,67 +9,67 @@ It is the perfect solution for **GitHub Pages**. Since it runs entirely in Node.
 Part of the **Kirigami** project ecosystem. Other packages are coming soon.
 
 [![npm version](https://img.shields.io/npm/v/@kirigami/php-prepros)](https://www.npmjs.com/package/@kirigami/php-wasm)
-[![PHP Version](https://img.shields.io/npm/v/%40kirigami%2Fphp-wasm?label=php&color=%23777BB3)](https://www.npmjs.com/package/@kirigami/php-wasm)
+[![License: MIT](https://img.shields.io/badge/MIT-blue)](./LICENSE)
 [![Node.js >=20.10.0](https://img.shields.io/badge/node-%3E%3D20.10.0-brightgreen)](https://nodejs.org)
-[![License: MIT](https://img.shields.io/badge/MIT-yellow)](./LICENSE)
-
 
 ---
 
 ## Table of contents
 
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
-  - [Table of contents](#table-of-contents)
-  - [What's new in 1.1.0](#whats-new-in-110)
-  - [How it works](#how-it-works)
-  - [Installation](#installation)
-  - [Configuration — `kirigami.yaml`](#configuration--kirigamiyaml)
-    - [`kirigami` block](#kirigami-block)
-    - [`prepros` block](#prepros-block)
-  - [Writing pages](#writing-pages)
-    - [PHPDOC header](#phpdoc-header)
-    - [Auto-loading data files](#auto-loading-data-files)
-    - [`@content` and `@indent`](#content-and-indent)
-  - [JavaScript API](#javascript-api)
-    - [`render(file?)`](#renderfile)
-    - [`sitemap()`](#sitemap)
-    - [`runenv(script, paths?, ...args)`](#runenvscript-paths-args)
-  - [PHP classes reference](#php-classes-reference)
-    - [PREPROS](#prepros)
-      - [`PREPROS::render(string $file)`](#preprosrenderstring-file)
-      - [`PREPROS::sitemap()`](#preprossitemap)
-      - [`PREPROS::mount(string|array $patterns)`](#preprosmountstringarray-patterns)
-      - [`PREPROS::exportFile(string $file)`](#preprosexportfilestring-file)
-    - [MD](#md)
-      - [Plugin API](#plugin-api)
-    - [HTML](#html)
-    - [YAML](#yaml)
-    - [CACHE](#cache)
-    - [IMG](#img)
-    - [FS](#fs)
-    - [STR](#str)
-    - [ARR](#arr)
-    - [CURL](#curl)
-    - [SCRAPER](#scraper)
-    - [OBF](#obf)
-    - [STD](#std)
-  - [Plugin system](#plugin-system)
-    - [PREPROS tags](#prepros-tags)
-    - [PREPROS hooks](#prepros-hooks)
-    - [MD plugins](#md-plugins)
-    - [Built-in plugins](#built-in-plugins)
-      - [`{% callout type ["Title"] content %}`](#-callout-type-title-content-)
-      - [`{% youtube id [width height] %}`](#-youtube-id-width-height-)
-      - [`{% codepen id [user height] %}`](#-codepen-id-user-height-)
-      - [`{% checklist ["Title"] items %}`](#-checklist-title-items-)
-  - [Extending the `<markdown>` tag](#extending-the-markdown-tag)
-  - [License](#license)
+	- [Table of contents](#table-of-contents)
+	- [What's new in 1.1.0](#whats-new-in-110)
+	- [How it works](#how-it-works)
+	- [Installation](#installation)
+	- [Configuration — `kirigami.yaml`](#configuration--kirigamiyaml)
+		- [`kirigami` block](#kirigami-block)
+		- [`prepros` block](#prepros-block)
+	- [Writing pages](#writing-pages)
+		- [PHPDOC header](#phpdoc-header)
+		- [Auto-loading data files](#auto-loading-data-files)
+		- [`@content` and `@indent`](#content-and-indent)
+	- [JavaScript API](#javascript-api)
+		- [`render(file?)`](#renderfile)
+		- [`sitemap()`](#sitemap)
+		- [`runenv(script, paths?, ...args)`](#runenvscript-paths-args)
+		- [`mountPath(localPath, virtualDir?, php?)`](#mountpathlocalpath-virtualdir-php)
+	- [PHP classes reference](#php-classes-reference)
+		- [PREPROS](#prepros)
+			- [`PREPROS::render(string $file)`](#preprosrenderstring-file)
+			- [`PREPROS::sitemap()`](#preprossitemap)
+			- [`PREPROS::mount(string|array $patterns)`](#preprosmountstringarray-patterns)
+			- [`PREPROS::exportFile(string $file)`](#preprosexportfilestring-file)
+		- [MD](#md)
+			- [Plugin API](#plugin-api)
+		- [HTML](#html)
+		- [YAML](#yaml)
+		- [CACHE](#cache)
+		- [IMG](#img)
+		- [FS](#fs)
+		- [STR](#str)
+		- [ARR](#arr)
+		- [CURL](#curl)
+		- [SCRAPER](#scraper)
+		- [OBF](#obf)
+		- [STD](#std)
+	- [Plugin system](#plugin-system)
+		- [PREPROS tags](#prepros-tags)
+		- [PREPROS hooks](#prepros-hooks)
+		- [MD plugins](#md-plugins)
+		- [Built-in plugins](#built-in-plugins)
+			- [`{% callout type ["Title"] content %}`](#-callout-type-title-content-)
+			- [`{% youtube id [width height] %}`](#-youtube-id-width-height-)
+			- [`{% codepen id [user height] %}`](#-codepen-id-user-height-)
+			- [`{% checklist ["Title"] items %}`](#-checklist-title-items-)
+	- [Extending the `<markdown>` tag](#extending-the-markdown-tag)
+	- [License](#license)
 
 ---
 
 ## What's new in 1.1.0
 
 - **`PREPROS::mount()`** — mount extra files into the WASM filesystem on demand, from a glob pattern, at any point during rendering.
+- **`mountPath()`** JavaScript export — the JS-side counterpart to `PREPROS::mount()`: mount a local file or directory into the WASM sandbox from Node.js, before calling `render()`/`runenv()`.
 - **`runenv()`** JavaScript export — run an arbitrary PHP script (not a page template) inside the same sandboxed environment, with full access to every `php-prepros` class.
 - **`SCRAPER`** class — fetch a URL and extract `title` / `description` / `image` / `label` from its Open Graph, `<meta>`, and JSON-LD data, with automatic caching.
 - **`CURL`** class — low-level cURL helper used internally by `SCRAPER`, also usable directly (`urlExists()`, `getInfo()`, `getContents()`), with a shared, persisted cookie jar.
@@ -185,6 +185,7 @@ Source pages live in the directory pointed to by `kirigami.root`. The naming con
 src/
 ├── _layout/
 ├── _lib/
+├── about/
 ├── _index.php          →  src/index.html
 ├── about/
 │   └── _index.php      →  src/about/index.html
@@ -271,7 +272,7 @@ Two special annotation names change how a page's body is assembled:
 ## JavaScript API
 
 ```js
-import { render, sitemap, runenv } from '@kirigami/php-prepros';
+import { render, sitemap, runenv, mountPath } from '@kirigami/php-prepros';
 ```
 
 ### `render(file?)`
@@ -330,6 +331,30 @@ const result = await runenv('scripts/import.php', [], '--force');
 - `...args` — extra string arguments appended to the script's `$argv`.
 
 **Returns** `Promise<PreprosResult>`, following the same shape as `render()`. Inside the script, call `PREPROS::exportFile()` for any file you want listed in `result.files`.
+
+### `mountPath(localPath, virtualDir?, php?)`
+
+The JavaScript-side counterpart to [`PREPROS::mount()`](#preprosmountstringarray-patterns). Mounts a local file or directory — recursively, preserving structure — into the WASM sandbox's virtual filesystem, ahead of (or between) calls to `render()`, `sitemap()`, or `runenv()`. Useful when a Node-side build step needs to make extra local files visible to PHP before rendering starts.
+
+```js
+import { mountPath, render } from '@kirigami/php-prepros';
+
+// Mount a single file at its natural virtual path (/project/<relative path>)
+await mountPath('assets/data/team.yaml');
+
+// Mount a whole directory, at a custom virtual path
+await mountPath('vendor/fonts', '/project/fonts');
+
+await render();
+```
+
+- `localPath` — path to a local file or directory. Relative paths are resolved against the project root.
+- `virtualDir` — optional destination path inside the WASM filesystem. Defaults to `/project/<localPath relative to the project root>` when omitted.
+- `php` — optional WASM PHP instance to mount into. Defaults to the shared singleton instance (the same one used internally by `render()`/`sitemap()`/`runenv()`), creating it if needed.
+
+Mounting a **directory** only copies files whose extension is one of the defaults (`.php`, `.json`, `.yaml`, `.yml`, `.md`, `.db`, `.txt`) or listed in `prepros.mountext`, same as automatic root mounting. Mounting a **single file directly** copies it regardless of extension — this is the simplest way to make an arbitrary asset (an image, a font, a CSV, …) available to PHP without adding its extension to `prepros.mountext` project-wide.
+
+**Returns** `Promise<void>`.
 
 ---
 
