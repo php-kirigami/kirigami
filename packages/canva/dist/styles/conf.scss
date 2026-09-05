@@ -1,25 +1,21 @@
-@use "utils" as *;
+$bg:                   #f7f8f7 !default;
+$surface:              #ecf1f3 !default;
+$surface-2:            #ffffff !default;
+$border:               #d7dee4 !default;
+$ink:                  #2f3640 !default;
+$ink-muted:            #6b7480 !default;
+$accent:               #c7402c !default;
+$accent-soft:          #f5dfda !default;
+$logo-ink:             #2f3640 !default;
+$logo-fold-light:      #f0f4f6 !default;
+$logo-fold-mid:        #e2eef2 !default;
 
-$bg:                 #F7F8F7 !default;
-$surface:            #ECF1F3 !default;
-$surface-2:          #FFFFFF !default;
-$border:             #D7DEE4 !default;
-$ink:                #2F3640 !default;
-$ink-muted:          #6B7480 !default;
-$accent:             #C7402C !default;
-$accent-soft:        #F5DFDA !default;
-$logo-ink:           #2F3640 !default;
-$logo-fold-light:    #F0F4F6 !default;
-$logo-fold-mid:      #E2EEF2 !default;
 
-$bg-bin:              hexbin($bg);
-$surface-bin:         hexbin($surface);
-$surface-2-bin:       hexbin($surface-2);
-$border-bin:          hexbin($border);
-$ink-bin:             hexbin($ink);
-$ink-muted-bin:       hexbin($ink-muted);
-$accent-bin:          hexbin($accent);
-$accent-soft-bin:     hexbin($accent-soft);
-$logo-ink-bin:        hexbin($logo-ink);
-$logo-fold-light-bin: hexbin($logo-fold-light);
-$logo-fold-mid-bin:   hexbin($logo-fold-mid);
+$font-family:          'Inter' !default;
+$font-title:           'EB Garamond' !default;
+$font-hero:            'Nazare' !default;
+
+$font-base:            26 !default;
+$font-break:           1200 !default;
+$font-resp:            calc($font-base * 100 / $font-break);
+

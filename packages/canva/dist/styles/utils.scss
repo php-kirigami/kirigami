@@ -1,5 +1,6 @@
 @use "sass:string";
 @use "sass:color";
+@use "sass:map";
 
 
 @function wash($bg, $base, $amount) {
@@ -15,4 +16,46 @@
 
 @function hexbin($c) {
 	@return string.to-lower-case(string.unquote('#{string.slice(ie-hex-str($c), 4)}'));
+}
+
+
+@function str-replace($string, $search, $replace: "") {
+	$index: str-index($string, $search);
+	@if $index {
+		@return str-slice($string, 1, $index - 1) 
+			+ $replace 
+			+ str-replace(str-slice($string, $index + str-length($search)), $search, $replace);
+	}
+	@return $string;
+}
+
+
+@function url-encode($string) {
+	$map: (
+		"%": "%25",
+		"<": "%3C",
+		">": "%3E",
+		"#": "%23",
+		'"': "%22"
+	);
+	$result: $string;
+	@each $search, $replace in $map {
+		$result: str-replace($result, $search, $replace);
+	}
+	@return $result;
+}
+
+
+@function svg-url($svg) {
+	@return url("data:image/svg+xml,#{url-encode($svg)}");
+}
+
+
+@function apply-colors($svg, $colors) {
+	$result: $svg;
+	@each $name, $color in $colors {
+		$placeholder: "%#{$name}%"; // %bg%, %fg%, %accent%, etc.
+		$result: str-replace($result, $placeholder, "#{$color}");
+	}
+	@return $result;
 }

@@ -23,7 +23,11 @@ export default async function build(__root, task, exportPath = null) {
 	if(!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
 	try {
+		const cache = new Map();
 		const compiled = sass.compile(entry, {
+			style: "compressed",
+			sourceMap: !exportPath,
+			sourceMapIncludeSources: !exportPath,
 			loadPaths: [path.resolve(process.cwd(), "./node_modules")],
 			importers: [
 				new sass.NodePackageImporter(),
@@ -32,9 +36,20 @@ export default async function build(__root, task, exportPath = null) {
 					getGlobalRoot()
 				])
 			],
-			style: "compressed",
-			sourceMap: !exportPath,
-			sourceMapIncludeSources: !exportPath,
+			functions: {
+				"inline-file($path)": (args) => {
+					const filePath = args[0].assertString("path").text;
+					if (cache.has(filePath)) return cache.get(filePath);
+
+					const resolvedPath = path.resolve(process.cwd(), filePath);
+					const content = fs.readFileSync(resolvedPath);
+					const result = new sass.SassString(
+						`data:${guessMimeType(resolvedPath)};base64,${content.toString("base64")}`
+					);
+					cache.set(filePath, result);
+					return result;
+				}
+			},
 			...params
 		});
 		
@@ -72,7 +87,6 @@ export async function validate(__root, task) {
 }
 
 
-
 export function getWatcher(__root, task) {
 	const root = __root.replace(process.cwd(), '').replace(/\\/g, '/').replace(/^\//, '');
 	const dir = joinWith(root, path.dirname(task.entry));
@@ -103,8 +117,6 @@ function getGlobalRoot() {
 	}
 	return _globalRoot;
 }
-
-
 
 
 function createPkgImporter(roots) {
@@ -141,4 +153,19 @@ function createPkgImporter(roots) {
 			return null;
 		}
 	};
+}
+
+
+function guessMimeType(filePath) {
+	const ext = path.extname(filePath).toLowerCase();
+	const map = {
+		".png":   "image/png",
+		".jpg":   "image/jpeg",
+		".jpeg":  "image/jpeg",
+		".webp":  "image/webp",
+		".svg":   "image/svg+xml",
+		".woff":  "font/woff",
+		".woff2": "font/woff2"
+	};
+	return map[ext] || "application/octet-stream";
 }
