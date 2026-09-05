@@ -1,5 +1,7 @@
 # @kirigami/php-prepros
 
+![Kirigami](https://zmotrin.github.io/assets/kirigami/kirigami-logo-universal.svg)
+
 > PHP preprocessor for the **Kirigami** static site generator.
 
 Build full static websites in PHP — with zero server, zero runtime dependency, zero compromise on expressiveness. Write your pages as regular PHP files, annotate them with a PHPDOC header, and let `php-prepros` compile everything to clean, deployable HTML.

@@ -4,6 +4,7 @@ import util from "util";
 import * as sass from 'sass'
 import { minify } from 'csso';
 import { getConfig } from '../config.js';
+import { execSync } from 'child_process';
 import { replaceRoot, joinWith, log, c } from '../utils.js';
 
 
@@ -24,6 +25,13 @@ export default async function build(__root, task, exportPath = null) {
 	try {
 		const compiled = sass.compile(entry, {
 			loadPaths: [path.resolve(process.cwd(), "./node_modules")],
+			importers: [
+				new sass.NodePackageImporter(),
+				createPkgImporter([
+					path.resolve(process.cwd(), "./node_modules"),
+					getGlobalRoot()
+				])
+			],
 			style: "compressed",
 			sourceMap: !exportPath,
 			sourceMapIncludeSources: !exportPath,
@@ -83,6 +91,54 @@ export function getWatcher(__root, task) {
 				console.log(results.error);
 			}
 			console.log("");
+		}
+	};
+}
+
+
+let _globalRoot;
+function getGlobalRoot() {
+	if (!_globalRoot) {
+		_globalRoot = execSync("npm root -g").toString().trim();
+	}
+	return _globalRoot;
+}
+
+
+
+
+function createPkgImporter(roots) {
+	return {
+		findFileUrl(url) {
+			const match = url.match(/^(@[^/]+\/[^/]+)\/(.+)$/)
+				|| url.match(/^([^/@][^/]*)\/(.+)$/);
+			if (!match) return null;
+
+			const [, pkgName, subPath] = match;
+
+			for (const root of roots) {
+				const pkgDir = path.join(root, pkgName);
+				const pkgJsonPath = path.join(pkgDir, "package.json");
+
+				if (!fs.existsSync(pkgJsonPath)) continue; // essaie la racine suivante
+
+				const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, "utf8"));
+				const exportsMap = pkgJson.exports;
+				if (!exportsMap) continue;
+
+				for (const [pattern, target] of Object.entries(exportsMap)) {
+					const patternRe = new RegExp(
+						"^" + pattern.replace("*", "(.+)").replace("./", "\\./") + "$"
+					);
+					const m = ("./" + subPath).match(patternRe);
+					if (m) {
+						const resolved = target.replace("*", m[1]);
+						const finalPath = path.join(pkgDir, resolved);
+						return new URL("file://" + finalPath.replace(/\\/g, "/"));
+					}
+				}
+			}
+			return null;
 		}
 	};
 }

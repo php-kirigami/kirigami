@@ -1,5 +1,7 @@
 # @kirigami/php-wasm
 
+![Kirigami](https://zmotrin.github.io/assets/kirigami/kirigami-logo-universal.svg)
+
 > A custom PHP 8.5 WebAssembly build for Node.js — JSPI-only, no browser target.  
 > Built for the [Kirigami](https://github.com/php-kirigami) project.
 

@@ -1,5 +1,7 @@
 # @kirigami/struct-walker
 
+![Kirigami](https://zmotrin.github.io/assets/kirigami/kirigami-logo-universal.svg)
+
 [![npm version](https://img.shields.io/npm/v/@kirigami/struct-walker.svg)](https://www.npmjs.com/package/@kirigami/struct-walker)
 [![License: MIT](https://img.shields.io/badge/MIT-blue)](./LICENSE)
 [![Node.js >=20.10.0](https://img.shields.io/badge/node-%3E%3D20.10.0-brightgreen)](https://nodejs.org)
