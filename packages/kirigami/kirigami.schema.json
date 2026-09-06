@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://kirigami.dev/schema/kirigami.schema.json",
+  "$id": "https://cdn.jsdelivr.net/npm/@kirigami/kirigami/kirigami.schema.json",
   "title": "kirigami.yaml",
   "description": "Configuration file for the Kirigami static site generator (@kirigami/kirigami, v1.1.0). Must sit at the project root and be named exactly 'kirigami.yaml'. Read by every `kiri` command (build, export, watch, run) via bin/config.js.",
   "type": "object",
@@ -95,6 +95,33 @@
           "items": { "type": "string" },
           "default": [],
           "examples": [["_layouts/functions.php"]]
+        }
+      }
+    },
+
+    "image": {
+      "type": "object",
+      "description": "Options for Kirigami's image autogenerator, which converts source images into an optimized format. Optional — omit entirely to use the defaults below.",
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "type": "string",
+          "description": "Output image format for the autogenerator.",
+          "enum": ["webp", "avif"],
+          "default": "webp",
+          "examples": ["avif"]
+        },
+        "source": {
+          "type": "string",
+          "description": "Folder containing the source images to process, relative to cwd().",
+          "default": "assets/images",
+          "examples": ["assets/images"]
+        },
+        "dest": {
+          "type": "string",
+          "description": "Destination folder for the generated images, relative to kirigami.root.",
+          "default": "images",
+          "examples": ["images"]
         }
       }
     },

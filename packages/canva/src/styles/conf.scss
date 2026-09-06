@@ -28,7 +28,6 @@ $icons-defaults: (
 );
 
 
-
 @each $family, $path in $fonts {
 	@font-face {
 		font-family: $family;
@@ -36,7 +35,7 @@ $icons-defaults: (
 		font-weight: #{font-weight-range($path)};
 		font-stretch: #{font-stretch-range($path)};
 		font-display: block;
-		src: url(inline-file($path)) format("#{font-format($path)}");
+		src: inline-file($path) format("#{font-format($path)}");
 		unicode-range: #{font-unicode-range($path)};
 	}
 }

@@ -1,34 +1,26 @@
 import fs from 'fs'; 	
 import path from "path";
 import util from "util";
+import sharp from 'sharp';
 import * as sass from 'sass'
 import { minify } from 'csso';
-import sharp from 'sharp';
 import { getConfig } from '../config.js';
 import { execSync } from 'child_process';
-// import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { replaceRoot, joinWith, log, c } from '../utils.js';
 
 
-// const __filename = fileURLToPath(import.meta.url);
 const __dirname = process.cwd();
 const require = createRequire(import.meta.url);
 const fontkit = require('fontkit');
 const fontCache = new Map();
-// const MIME_TYPES = {
-// 	woff2: 'font/woff2',
-// 	woff: 'font/woff',
-// 	ttf: 'font/ttf',
-// 	otf: 'font/otf',
-// };
 const FORMAT_KEYWORDS = {
 	woff2: 'woff2',
-	woff: 'woff',
-	ttf: 'truetype',
-	otf: 'opentype',
-	eot: 'embedded-opentype',
-	svg: 'svg',
+	woff:  'woff',
+	ttf:   'truetype',
+	otf:   'opentype',
+	eot:   'embedded-opentype',
+	svg:   'svg',
 };
 
 // ---------------------------------------------------------------------------
@@ -87,7 +79,8 @@ export default async function build(__root, task, exportPath = null) {
 					const resolvedPath = path.resolve(process.cwd(), filePath);
 					const content = fs.readFileSync(resolvedPath);
 					const result = new sass.SassString(
-						`data:${guessMimeType(resolvedPath)};base64,${content.toString("base64")}`
+						`url("data:${guessMimeType(resolvedPath)};base64,${content.toString("base64")}")`,
+						{ quotes: false }
 					);
 					cache.set(filePath, result);
 					return result;
@@ -118,6 +111,11 @@ export default async function build(__root, task, exportPath = null) {
 					return new sass.SassString(getFormatKeyword(abs));
 				},
 
+				'font-style-detect($path)': (args) => {
+				const abs = resolveFontPath(args[0].assertString('path').text);
+					const font = getFont(abs);
+					return new sass.SassString(detectFontStyle(font));
+				},
 				'img-asset($path, $width: null, $height: null, $cover: false)': (args) => {
 					const srcRelPath = args[0].assertString('path').text;
 					const widthArg = args[1];
@@ -133,17 +131,15 @@ export default async function build(__root, task, exportPath = null) {
 					if (hasWidth && hasHeight) {
 						suffix = cover ? `-${width}x${height}-cover` : `-${width}x${height}`;
 					} else if (hasWidth) {
-						suffix = `-${width}w`; // resize proportionnel, largeur fixée
+						suffix = `-${width}w`;
 					} else if (hasHeight) {
-						suffix = `-${height}h`; // resize proportionnel, hauteur fixée
-					} // ni l'un ni l'autre: image utilisée telle quelle, juste réencodée
+						suffix = `-${height}h`;
+					}
 
 					const { dir: subDir, name } = path.parse(srcRelPath);
 					const outRelPath = (subDir ? `${subDir}/` : '') + `${name}${suffix}.${imgFormat}`;
 					const destAbsPath = path.join(imgDestRoot, outRelPath);
 
-					// chemin relatif réellement utilisable dans le css, peu importe
-					// la profondeur de task.entry (pas de préfixe "../images" fixe)
 					const returned = path.relative(path.dirname(outfile), destAbsPath).split(path.sep).join('/');
 
 					if (!imageAssets.has(destAbsPath)) {
@@ -155,7 +151,8 @@ export default async function build(__root, task, exportPath = null) {
 						});
 					}
 
-					return new sass.SassString(returned);
+					// Retourne directement une valeur CSS url(...)
+					return new sass.SassString(`url("${returned}")`, { quotes: false });
 				},
 
 			},
@@ -386,4 +383,33 @@ async function processImageAssets(imageAssets, format) {
 function getFormatKeyword(absPath) {
 	const ext = path.extname(absPath).slice(1).toLowerCase();
 	return FORMAT_KEYWORDS[ext] ?? ext; // fallback: renvoie l'extension telle quelle
+}
+
+
+
+function detectFontStyle(font) {
+	const axes = font.variationAxes || {};
+
+	// Cas 2 : axe slnt (slant continu)
+	if (axes.slnt) {
+		// Convention OpenType (slnt) et CSS (oblique deg) ont un signe opposé
+		const min = -axes.slnt.max;
+		const max = -axes.slnt.min;
+		if (min === 0 && max === 0) return 'normal';
+		return `oblique ${min}deg ${max}deg`;
+	}
+
+	// Cas 3 : axe ital (binaire) — signalé pour gestion à part, voir plus bas
+	if (axes.ital) {
+		return 'ital-axis'; // valeur sentinelle, pas une vraie valeur CSS
+	}
+
+	// Cas 1 : police statique — on regarde italicAngle puis le nom du sous-style
+	if (font.italicAngle && font.italicAngle !== 0) return 'italic';
+
+	const subfamily = (font.subfamilyName || '').toLowerCase();
+	if (subfamily.includes('italic')) return 'italic';
+	if (subfamily.includes('oblique')) return 'oblique';
+
+	return 'normal';
 }
