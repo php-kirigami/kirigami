@@ -1,8 +1,23 @@
+<div align="center">
+
+<img src="https://zmotrin.github.io/assets/kirigami/kirigami-logo-universal.svg" alt="Kirigami" width="400" />
+
+---
+
 # @kirigami/php-prepros
 
-![Kirigami](https://zmotrin.github.io/assets/kirigami/kirigami-logo-universal.svg)
 
-> PHP preprocessor for the **Kirigami** static site generator.
+PHP preprocessor for the **Kirigami** static site generator.
+
+[![npm version](https://img.shields.io/npm/v/@kirigami/php-prepros)](https://www.npmjs.com/package/@kirigami/php-wasm)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![Node.js >=20.10.0](https://img.shields.io/badge/node-%3E%3D20.10.0-brightgreen)](https://nodejs.org)
+
+</div>
+
+---
+
+## Overview
 
 Build full static websites in PHP — with zero server, zero runtime dependency, zero compromise on expressiveness. Write your pages as regular PHP files, annotate them with a PHPDOC header, and let `php-prepros` compile everything to clean, deployable HTML.
 
@@ -10,15 +25,14 @@ It is the perfect solution for **GitHub Pages**. Since it runs entirely in Node.
 
 Part of the **Kirigami** project ecosystem. Other packages are coming soon.
 
-[![npm version](https://img.shields.io/npm/v/@kirigami/php-prepros)](https://www.npmjs.com/package/@kirigami/php-wasm)
-[![License: MIT](https://img.shields.io/badge/MIT-blue)](./LICENSE)
-[![Node.js >=20.10.0](https://img.shields.io/badge/node-%3E%3D20.10.0-brightgreen)](https://nodejs.org)
 
 ---
+
 
 ## Table of contents
 
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
+  - [Overview](#overview)
   - [Table of contents](#table-of-contents)
   - [What's new in 1.1.0](#whats-new-in-110)
   - [How it works](#how-it-works)

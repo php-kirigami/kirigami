@@ -3,8 +3,8 @@ import path from "path";
 import { writeFile } from "fs/promises";
 import { fileURLToPath, pathToFileURL } from 'url';
 import { c, log, parseArgs, printCommandHelp } from "../utils.js";
-import { runenv } from "@kirigami/php-prepros";
-// import { exec, phpinfo } from "@kirigami/php-wasm";
+// import { runenv } from "@kirigami/php-prepros";
+import { exec, phpinfo, getLoadedExtensions } from "@kirigami/php-wasm";
 // import PHPInfoParser from "../libs/phpinfoparser.js";
 
 
@@ -12,6 +12,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default async function test(args) {
 	const { flags, command, subcommand } = parseArgs(args);
+	console.log(await getLoadedExtensions());
 	// const dest_html = path.resolve(__dirname, '../../phpinfo.html');
 	// const dest_md = path.resolve(__dirname, '../../phpinfo.md');
 	// const info = await phpinfo();

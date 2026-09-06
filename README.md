@@ -257,4 +257,4 @@ This project is distributed under the [MIT license](./LICENSE), except for the `
 
 ## Author
 
-Maxime Larrivée-Roy, 2026
+MIT © Maxime Larrivée-Roy, 2026

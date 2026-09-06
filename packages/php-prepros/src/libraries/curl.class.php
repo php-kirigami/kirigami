@@ -1,5 +1,10 @@
 <?php
 
+
+
+if(!boolval(PREPROS::$config->network ?? false)) STD::error("CURL Error: Network option is not activated.");
+
+
 class CURL {
 
 	const HEADERS = [

@@ -191,6 +191,141 @@ class MD {
         'speech_balloon' => '💬', 'thought_balloon' => '💭', 'zzz' => '💤', 'boom2' => '💥',
         'sos' => '🆘', 'new' => '🆕', 'ok' => '🆗', 'up' => '🆙', 'cool' => '🆒',
         'free' => '🆓', 'id' => '🆔', 'ng' => '🆖',
+
+        // -- Visages et émotions (suite) --------------------------------
+        'smiling_face_with_three_hearts' => '🥰', 'kissing' => '😗', 'kissing_closed_eyes' => '😚',
+        'kissing_smiling_eyes' => '😙', 'yum' => '😋', 'stuck_out_tongue' => '😛',
+        'stuck_out_tongue_winking_eye' => '😜', 'stuck_out_tongue_closed_eyes' => '😝',
+        'money_mouth_face' => '🤑', 'hugs' => '🤗', 'disappointed_relieved' => '😥',
+        'dizzy_face' => '😵', 'astonished' => '😲', 'open_mouth' => '😮', 'hushed' => '😯',
+        'fearful' => '😨', 'cold_sweat' => '😰', 'nauseated_face' => '🤢', 'vomiting_face' => '🤮',
+        'sneezing_face' => '🤧', 'face_with_thermometer' => '🤒', 'face_with_head_bandage' => '🤕',
+        'woozy_face' => '🥴', 'smiling_imp' => '😈', 'imp' => '👿', 'japanese_ogre' => '👹',
+        'japanese_goblin' => '👺', 'skull' => '💀', 'skull_and_crossbones' => '☠️',
+        'ghost' => '👻', 'alien' => '👽', 'space_invader' => '👾', 'robot' => '🤖',
+        'poop' => '💩', 'clown_face' => '🤡', 'smiley_cat' => '😺', 'smile_cat' => '😸',
+        'joy_cat' => '😹', 'heart_eyes_cat' => '😻', 'smirk_cat' => '😼', 'kissing_cat' => '😽',
+        'pouting_cat' => '😾', 'crying_cat_face' => '😿',
+
+        // -- Corps, gestes, personnages --------------------------------
+        'raised_hand' => '✋', 'raised_back_of_hand' => '🤚', 'vulcan_salute' => '🖖',
+        'pinching_hand' => '🤏', 'fist' => '✊', 'punch' => '👊', 'left_facing_fist' => '🤛',
+        'right_facing_fist' => '🤜', 'open_hands' => '👐', 'palms_up_together' => '🤲',
+        'nail_care' => '💅', 'selfie' => '🤳', 'ear' => '👂', 'nose' => '👃', 'brain' => '🧠',
+        'tongue' => '👅', 'lips' => '👄', 'tooth' => '🦷', 'bone' => '🦴',
+        'baby' => '👶', 'child' => '🧒', 'boy' => '👦', 'girl' => '👧', 'adult' => '🧑',
+        'man' => '👨', 'woman' => '👩', 'older_adult' => '🧓', 'older_man' => '👴', 'older_woman' => '👵',
+        'mage' => '🧙', 'superhero' => '🦸', 'supervillain' => '🦹', 'vampire' => '🧛',
+        'zombie' => '🧟', 'genie' => '🧞', 'merperson' => '🧜', 'elf' => '🧝', 'fairy' => '🧚',
+
+        // -- Animaux (suite) ---------------------------------------------
+        'wolf' => '🐺', 'boar' => '🐗', 'racehorse' => '🐎', 'zebra' => '🦓', 'deer' => '🦌',
+        'cow2' => '🐄', 'ox' => '🐂', 'water_buffalo' => '🐃', 'pig2' => '🐖', 'ram' => '🐏',
+        'sheep' => '🐑', 'goat' => '🐐', 'camel' => '🐫', 'dromedary_camel' => '🐪',
+        'llama' => '🦙', 'giraffe' => '🦒', 'elephant' => '🐘', 'rhinoceros' => '🦏',
+        'hippopotamus' => '🦛', 'mouse2' => '🐁', 'rat' => '🐀', 'hamster' => '🐹',
+        'chipmunk' => '🐿️', 'hedgehog' => '🦔', 'bat' => '🦇', 'duck' => '🦆', 'eagle' => '🦅',
+        'flamingo' => '🦩', 'peacock' => '🦚', 'parrot' => '🦜', 'swan' => '🦢',
+        'turkey' => '🦃', 'dove' => '🕊️', 'rooster' => '🐓', 'crocodile' => '🐊',
+        'turtle' => '🐢', 'lizard' => '🦎', 'snake' => '🐍', 'dragon_face' => '🐲',
+        'dragon' => '🐉', 'sauropod' => '🦕', 't-rex' => '🦖', 'whale2' => '🐋',
+        'shark' => '🦈', 'seal' => '🦭', 'squid' => '🦑', 'shrimp' => '🦐', 'lobster' => '🦞',
+        'crab' => '🦀', 'blowfish' => '🐡', 'tropical_fish' => '🐠', 'oyster' => '🦪',
+        'ant' => '🐜', 'spider' => '🕷️', 'spider_web' => '🕸️', 'scorpion' => '🦂',
+        'mosquito' => '🦟', 'microbe' => '🦠', 'paw_prints' => '🐾',
+
+        // -- Nature, plantes, météo (suite) --------------------------------
+        'cherry_blossom' => '🌸', 'blossom' => '🌼', 'rose' => '🌹', 'wilted_flower' => '🥀',
+        'hibiscus' => '🌺', 'sunflower' => '🌻', 'tulip' => '🌷', 'herb' => '🌿',
+        'shamrock' => '☘️', 'fallen_leaf' => '🍂', 'leaves' => '🍃', 'mushroom' => '🍄',
+        'chestnut' => '🌰', 'crescent_moon' => '🌙', 'full_moon' => '🌕', 'new_moon' => '🌑',
+        'milky_way' => '🌌', 'stars' => '🌠', 'cyclone' => '🌀', 'fog' => '🌫️',
+        'wind_face' => '🌬️', 'tornado' => '🌪️', 'thunder_cloud_and_rain' => '⛈️',
+        'sweat_drops' => '💦', 'snowman' => '⛄', 'snowman_with_snow' => '☃️', 'comet' => '☄️',
+
+        // -- Nourriture (suite) --------------------------------------------
+        'tomato' => '🍅', 'eggplant' => '🍆', 'avocado' => '🥑', 'broccoli' => '🥦',
+        'carrot' => '🥕', 'corn' => '🌽', 'hot_pepper' => '🌶️', 'cucumber' => '🥒',
+        'potato' => '🥔', 'sweet_potato' => '🍠', 'peanuts' => '🥜', 'honey_pot' => '🍯',
+        'croissant' => '🥐', 'bagel' => '🥯', 'pretzel' => '🥨', 'pancakes' => '🥞',
+        'waffle' => '🧇', 'meat_on_bone' => '🍖', 'poultry_leg' => '🍗', 'bacon' => '🥓',
+        'sandwich' => '🥪', 'stuffed_flatbread' => '🥙', 'burrito' => '🌯', 'salad' => '🥗',
+        'shallow_pan_of_food' => '🥘', 'canned_food' => '🥫', 'bento' => '🍱',
+        'rice_ball' => '🍙', 'rice' => '🍚', 'curry' => '🍛', 'stew' => '🍲', 'oden' => '🍢',
+        'dango' => '🍡', 'shaved_ice' => '🍧', 'ice_cream' => '🍨', 'pie' => '🥧',
+        'cupcake' => '🧁', 'moon_cake' => '🥮', 'lollipop' => '🍭', 'custard' => '🍮',
+        'milk_glass' => '🥛', 'baby_bottle' => '🍼', 'mate' => '🧉', 'ice_cube' => '🧊',
+        'tumbler_glass' => '🥃', 'cup_with_straw' => '🥤', 'chopsticks' => '🥢',
+        'fork_and_knife' => '🍴', 'spoon' => '🥄', 'plate_with_cutlery' => '🍽️',
+
+        // -- Activités, sport, loisirs --------------------------------------
+        'running' => '🏃', 'walking' => '🚶', 'swimming' => '🏊', 'surfing' => '🏄',
+        'skateboard' => '🛹', 'snowboarder' => '🏂', 'weight_lifting' => '🏋️',
+        'cyclist' => '🚴', 'medal_military' => '🎖️', 'ticket' => '🎫', 'circus_tent' => '🎪',
+        'performing_arts' => '🎭', 'art' => '🎨', 'clapper' => '🎬', 'microphone' => '🎤',
+        'headphones' => '🎧', 'musical_note' => '🎵', 'musical_score' => '🎼', 'guitar' => '🎸',
+        'violin' => '🎻', 'drum' => '🥁', 'trumpet' => '🎺', 'saxophone' => '🎷',
+        'musical_keyboard' => '🎹', 'chess_pawn' => '♟️', 'bowling' => '🎳',
+        'ice_skate' => '⛸️', 'ski' => '🎿', 'fishing_pole_and_fish' => '🎣',
+        'boxing_glove' => '🥊', 'martial_arts_uniform' => '🥋', 'goal_net' => '🥅',
+        'flying_disc' => '🥏', 'yo_yo' => '🪀', 'kite' => '🪁',
+
+        // -- Voyages et lieux (suite) ----------------------------------------
+        'airplane_departure' => '🛫', 'airplane_arriving' => '🛬', 'flying_saucer' => '🛸',
+        'motorcycle' => '🏍️', 'scooter' => '🛴', 'tractor' => '🚜', 'truck' => '🚚',
+        'articulated_lorry' => '🚛', 'trolleybus' => '🚎', 'minibus' => '🚐', 'metro' => '🚇',
+        'station' => '🚉', 'monorail' => '🚝', 'bullettrain_front' => '🚄',
+        'steam_locomotive' => '🚂', 'anchor' => '⚓', 'sailboat' => '⛵', 'canoe' => '🛶',
+        'speedboat' => '🚤', 'ferry' => '⛴️', 'passport_control' => '🛂', 'customs' => '🛃',
+        'baggage_claim' => '🛄', 'left_luggage' => '🛅', 'vertical_traffic_light' => '🚦',
+        'construction' => '🚧', 'fuelpump' => '⛽', 'busstop' => '🚏', 'moyai' => '🗿',
+        'statue_of_liberty' => '🗽', 'tokyo_tower' => '🗼', 'fountain' => '⛲',
+        'stadium' => '🏟️', 'ferris_wheel' => '🎡', 'roller_coaster' => '🎢',
+        'carousel_horse' => '🎠', 'beach_umbrella' => '🏖️', 'desert' => '🏜️',
+        'desert_island' => '🏝️', 'national_park' => '🏞️', 'sunrise' => '🌅',
+        'sunrise_over_mountains' => '🌄', 'sparkler' => '🎇', 'fireworks' => '🎆',
+        'city_sunset' => '🌇', 'bridge_at_night' => '🌉', 'houses' => '🏘️',
+        'derelict_house' => '🏚️', 'classical_building' => '🏛️', 'department_store' => '🏬',
+        'post_office' => '🏣', 'hotel' => '🏨', 'convenience_store' => '🏪', 'bank' => '🏦',
+        'factory' => '🏭',
+
+        // -- Objets (suite) ---------------------------------------------------
+        'watch' => '⌚', 'stopwatch' => '⏱️', 'timer_clock' => '⏲️', 'joystick' => '🕹️',
+        'floppy_disk' => '💾', 'cd' => '💿', 'dvd' => '📀', 'movie_camera' => '🎥',
+        'projector' => '📽️', 'telephone' => '☎️', 'pager' => '📟', 'fax' => '📠',
+        'candle' => '🕯️', 'fire_extinguisher' => '🧯', 'oil_drum' => '🛢️',
+        'money_with_wings' => '💸', 'credit_card' => '💳', 'yen' => '💴', 'euro' => '💶',
+        'pound' => '💷', 'briefcase' => '💼', 'balance_scale' => '⚖️', 'compass' => '🧭',
+        'triangular_ruler' => '📐', 'straight_ruler' => '📏', 'round_pushpin' => '📍',
+        'scissors' => '✂️', 'thread' => '🧵', 'yarn' => '🧶', 'safety_pin' => '🧷',
+        'basket' => '🧺', 'hourglass_flowing_sand' => '⏳', 'notebook' => '📓',
+        'notebook_with_decorative_cover' => '📔', 'page_facing_up' => '📄',
+        'page_with_curl' => '📃', 'bookmark_tabs' => '📑', 'bookmark' => '🔖',
+        'label' => '🏷️', 'receipt' => '🧾', 'card_index' => '📇', 'wastebasket' => '🗑️',
+        'old_key' => '🗝️', 'hammer_and_wrench' => '🛠️', 'pick' => '⛏️', 'shield' => '🛡️',
+        'syringe' => '💉', 'pill' => '💊', 'thermometer' => '🌡️', 'soap' => '🧼',
+        'broom' => '🧹',
+
+        // -- Symboles (suite) -----------------------------------------------
+        'heavy_multiplication_x' => '✖️', 'heavy_plus_sign' => '➕', 'heavy_minus_sign' => '➖',
+        'heavy_division_sign' => '➗', 'infinity' => '♾️', 'recycle' => '♻️', 'trident' => '🔱',
+        'atom_symbol' => '⚛️', 'om' => '🕉️', 'peace_symbol' => '☮️', 'yin_yang' => '☯️',
+        'wheel_of_dharma' => '☸️', 'star_of_david' => '✡️', 'star_and_crescent' => '☪️',
+        'cross' => '✝️', 'menorah' => '🕎', 'radioactive' => '☢️', 'biohazard' => '☣️',
+        'arrow_up' => '⬆️', 'arrow_down' => '⬇️', 'arrow_left' => '⬅️', 'arrow_right' => '➡️',
+        'arrow_upper_right' => '↗️', 'arrow_lower_right' => '↘️', 'arrow_lower_left' => '↙️',
+        'arrow_upper_left' => '↖️', 'arrows_clockwise' => '🔃', 'arrows_counterclockwise' => '🔄',
+        'back' => '🔙', 'end' => '🔚', 'on' => '🔛', 'soon' => '🔜', 'top' => '🔝',
+        'radio_button' => '🔘', 'red_circle' => '🔴', 'orange_circle' => '🟠',
+        'yellow_circle' => '🟡', 'green_circle' => '🟢', 'blue_circle' => '🔵',
+        'purple_circle' => '🟣', 'brown_circle' => '🟤', 'white_circle' => '⚪',
+        'black_circle' => '⚫',
+
+        // -- Drapeaux (suite) -------------------------------------------------
+        'triangular_flag_on_post' => '🚩', 'crossed_flags' => '🎌',
+        'us' => '🇺🇸', 'gb' => '🇬🇧', 'fr' => '🇫🇷', 'de' => '🇩🇪', 'es' => '🇪🇸',
+        'it' => '🇮🇹', 'jp' => '🇯🇵', 'cn' => '🇨🇳', 'kr' => '🇰🇷', 'ca' => '🇨🇦',
+        'au' => '🇦🇺', 'br' => '🇧🇷', 'in' => '🇮🇳', 'ru' => '🇷🇺', 'eu' => '🇪🇺',
     ];
 
     /**
@@ -273,6 +408,140 @@ class MD {
         }
 
         return implode("\n", $out);
+    }
+
+    // ========================================================================
+    // HTML BRUT (sous-ensemble sûr, style README GitHub)
+    //
+    // On autorise l'écriture directe de balises HTML (ex: <div align="center">,
+    // <img>, <sub>, <br>, tableaux HTML...) UNIQUEMENT si :
+    //   - la balise fait partie de la whitelist HTML_ALLOWED_TAGS ;
+    //   - chaque attribut fait partie de la whitelist pour cette balise
+    //     (ou des attributs globaux HTML_GLOBAL_ATTRS) ;
+    //   - aucun attribut ne commence par "on" (onclick, onerror, ...) ;
+    //   - les URLs (href/src) utilisent un schéma sûr (isSafeUrl).
+    //
+    // Toute balise inconnue, dangereuse (script/style/iframe/...), ou tout
+    // attribut non whitelisté est silencieusement retiré. Le contenu texte
+    // entre les balises n'est PAS avalé : il continue d'être traité comme du
+    // markdown normal (c'est ce qui permet d'avoir des titres, badges, images
+    // markdown à l'intérieur d'un <div align="center">...</div>).
+    // ========================================================================
+
+    private const HTML_ALLOWED_TAGS = [
+        'div', 'span', 'p', 'br', 'hr', 'wbr',
+        'b', 'strong', 'i', 'em', 'u', 's', 'strike', 'del', 'ins',
+        'mark', 'small', 'sub', 'sup', 'kbd', 'code', 'pre', 'abbr', 'q', 'cite',
+        'ul', 'ol', 'li', 'dl', 'dt', 'dd',
+        'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th', 'caption', 'colgroup', 'col',
+        'blockquote',
+        'a', 'img', 'picture', 'source', 'figure', 'figcaption',
+        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'details', 'summary', 'center',
+    ];
+
+    /** Attributs autorisés sur n'importe quelle balise whitelistée. */
+    private const HTML_GLOBAL_ATTRS = ['id', 'class', 'title', 'align', 'valign', 'width', 'height', 'dir', 'lang'];
+
+    /** Attributs supplémentaires autorisés, par balise. */
+    private const HTML_TAG_ATTRS = [
+        'a'       => ['href', 'name', 'target', 'rel'],
+        'img'     => ['src', 'alt', 'loading', 'srcset', 'sizes'],
+        'source'  => ['src', 'srcset', 'type', 'media'],
+        'td'      => ['colspan', 'rowspan'],
+        'th'      => ['colspan', 'rowspan', 'scope'],
+        'col'     => ['span'],
+        'ol'      => ['start', 'type'],
+        'details' => ['open'],
+    ];
+
+    /** Balises se fermant elles-mêmes (pas de balise fermante attendue). */
+    private const HTML_VOID_TAGS = ['img', 'br', 'hr', 'wbr', 'source', 'col'];
+
+    /**
+     * Vérifie qu'une URL (href/src) utilise un schéma sûr : liens relatifs,
+     * ancres, http(s), mailto, tel, ou images encodées en base64 (png/gif/
+     * jpeg/webp uniquement — pas svg+xml, qui peut embarquer du <script>).
+     * Rejette notamment javascript:, vbscript:, data:text/html.
+     */
+    private static function isSafeUrl(string $url): bool {
+        $url = trim($url);
+        if ($url === '') return true;
+        // Un chemin sans schéma explicite ("assets/x.png", "../x", "#ancre",
+        // "/x", "x") est un lien relatif ou une ancre : toujours sûr.
+        if (!preg_match('~^([a-zA-Z][a-zA-Z0-9+.\-]*):~', $url, $m)) return true;
+        $scheme = strtolower($m[1]);
+        if (in_array($scheme, ['http', 'https', 'mailto', 'tel'], true)) return true;
+        if ($scheme === 'data') {
+            // Images encodées en base64 uniquement — pas de data:image/svg+xml,
+            // qui peut embarquer du <script>, ni data:text/html.
+            return (bool) preg_match('~^data:image/(png|gif|jpe?g|webp);base64,~i', $url);
+        }
+        return false; // javascript:, vbscript:, file:, etc. → rejeté
+    }
+
+    /**
+     * Sanitise une balise HTML brute isolée (ex: '<div align="center">',
+     * '</div>', '<img src="..." onerror="...">').
+     *
+     * @return string|null La balise nettoyée à conserver, une chaîne vide
+     *                     pour la retirer silencieusement, ou null si elle ne
+     *                     ressemble pas à une balise HTML valide (dans ce cas
+     *                     l'appelant la retire aussi, par sécurité).
+     */
+    private static function sanitizeHtmlTag(string $tag): ?string {
+        if (!preg_match(
+            '/^<(\/)?([a-zA-Z][a-zA-Z0-9-]*)((?:\s+[a-zA-Z_:][a-zA-Z0-9_:.-]*(?:\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s"\'>]+))?)*)\s*(\/)?>$/s',
+            $tag,
+            $m
+        )) {
+            return null;
+        }
+
+        $closing  = $m[1] === '/';
+        $tagName  = strtolower($m[2]);
+        $attrsRaw = $m[3];
+
+        if (!in_array($tagName, self::HTML_ALLOWED_TAGS, true)) {
+            return null;
+        }
+
+        if ($closing) {
+            return "</{$tagName}>";
+        }
+
+        $allowedAttrs = array_merge(self::HTML_GLOBAL_ATTRS, self::HTML_TAG_ATTRS[$tagName] ?? []);
+        $safeAttrs    = '';
+
+        if (preg_match_all(
+            '/([a-zA-Z_:][a-zA-Z0-9_:.-]*)(?:\s*=\s*("([^"]*)"|\'([^\']*)\'|([^\s"\'>]+)))?/',
+            $attrsRaw,
+            $am,
+            PREG_SET_ORDER
+        )) {
+            foreach ($am as $a) {
+                $attrName = strtolower($a[1]);
+                if ($attrName === '') continue;
+                if (str_starts_with($attrName, 'on')) continue; // filet de sécurité anti-handlers JS
+                if (!in_array($attrName, $allowedAttrs, true)) continue;
+
+                if ($tagName === 'details' && $attrName === 'open') {
+                    $safeAttrs .= ' open';
+                    continue;
+                }
+
+                $attrVal = $a[3] ?? ($a[4] ?? ($a[5] ?? ''));
+
+                if (in_array($attrName, ['href', 'src'], true) && !self::isSafeUrl($attrVal)) {
+                    continue;
+                }
+
+                $safeAttrs .= ' ' . $attrName . '="' . htmlspecialchars($attrVal, ENT_QUOTES, 'UTF-8') . '"';
+            }
+        }
+
+        $close = in_array($tagName, self::HTML_VOID_TAGS, true) ? ' /' : '';
+        return "<{$tagName}{$safeAttrs}{$close}>";
     }
 
     // ========================================================================
@@ -550,6 +819,43 @@ class MD {
             // Voir commentaire ci-dessus : on préserve le \n final consommé.
             return $placeholder . (str_ends_with($matches[1], "\n") ? "\n" : '');
         }, $html);
+
+
+        // ====================================================================
+        // ÉTAPE 3f : HTML BRUT (sous-ensemble sûr, style README GitHub)
+        // Traité avant l'encodage XSS car les caractères < > seraient encodés
+        // en &lt; &gt; et ne seraient plus reconnus comme des balises.
+        // Le contenu entre les balises n'est pas avalé : il reste dans le
+        // flux et continue d'être traité comme du markdown normal.
+        // ====================================================================
+
+        // Éléments intrinsèquement dangereux : supprimés avec leur contenu
+        // (script/style/iframe peuvent embarquer du JS ou charger une page
+        // tierce ; form/button/textarea/select/option n'ont pas leur place
+        // dans du contenu markdown).
+        $html = preg_replace(
+            '/<(script|style|iframe|object|embed|noscript|template|form|button|textarea|select|option)\b[^>]*>[\s\S]*?<\/\1>/i',
+            '',
+            $html
+        );
+
+        $rawHtml = [];
+        $html = preg_replace_callback(
+            '/<!--[\s\S]*?-->|<\/?[a-zA-Z][a-zA-Z0-9-]*(?:\s+[a-zA-Z_:][a-zA-Z0-9_:.-]*(?:\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s"\'>]+))?)*\s*\/?>/',
+            function ($m) use (&$rawHtml): string {
+                $tag = $m[0];
+                // Commentaire HTML : invisible, retiré sans risque.
+                if (str_starts_with($tag, '<!--')) return '';
+
+                $sanitized = self::sanitizeHtmlTag($tag);
+                if ($sanitized === null || $sanitized === '') return '';
+
+                $placeholder = "\x02HT" . count($rawHtml) . "\x03";
+                $rawHtml[$placeholder] = $sanitized;
+                return $placeholder;
+            },
+            $html
+        );
 
 
         // ====================================================================
@@ -837,7 +1143,7 @@ class MD {
         $blockStartTags = ['<h', '<pre', '<ul', '<ol', '<li', '<table', '<thead', '<tbody',
                            '<tr', '<td', '<th', '<blockquote', '<div', '<hr', '<img',
                            '<dl', '<dt', '<dd',
-                           "\x02CB", "\x02PLG", "\x02BQ"];
+                           "\x02CB", "\x02PLG", "\x02BQ", "\x02HT"];
 
         $isBlockLine = static function (string $line) use ($blockStartTags): bool {
             $t = ltrim($line);
@@ -891,6 +1197,7 @@ class MD {
         // ====================================================================
         $html = strtr($html, $pluginBlocks);
         $html = strtr($html, $blockquotes);
+        $html = strtr($html, $rawHtml);
         $html = strtr($html, $codeBlocks);
         $html = strtr($html, $inlineCodes);
         $html = strtr($html, $autolinks);

@@ -34,12 +34,10 @@
     "chokidar": "^5.0.0",
     "csso": "^5.0.5",
     "esbuild": "^0.28.2",
+    "fontkit": "^2.0.4",
     "ignore": "^7.0.8",
     "picomatch": "^4.0.7",
-    "sass": "^1.104.0"
-  },
-  "allowScripts": {
-    "@parcel/watcher@2.6.0": true,
-    "esbuild@0.28.2": true
+    "sass": "^1.104.0",
+    "sharp": "^0.35.4"
   }
 }

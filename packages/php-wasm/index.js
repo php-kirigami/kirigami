@@ -43,15 +43,34 @@ async function exec(code, network = false) {
 
 
 async function phpversion() {
-	const {stdout} = await exec('echo phpversion();');
+	const { stdout } = await exec('echo phpversion();');
 	return stdout.trim();
 }
 
 
 async function phpinfo() {
-	const {stdout} = await exec('phpinfo();');
-	return stdout;
+	const { stdout } = await exec('phpinfo();');
+	return stdout.trim();
 }
 
 
-export { getPHPLoaderModule, getPHPRuntime, getPHPRuntimeWithNetwork, jspi, phpversion, phpinfo, exec };
+async function getLoadedExtensions() {
+	const { stdout } = await exec(`
+		$extensions = get_loaded_extensions();
+		natcasesort($extensions);
+		echo json_encode(array_values($extensions));
+	`);
+	return JSON.parse(stdout.trim());
+}
+
+
+export {
+	getPHPLoaderModule,
+	getPHPRuntime,
+	getPHPRuntimeWithNetwork,
+	getLoadedExtensions,
+	phpversion,
+	phpinfo,
+	exec,
+	jspi
+};

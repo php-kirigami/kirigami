@@ -19,10 +19,6 @@
     "build": "node build.js",
     "watch": "node build.js --watch"
   },
-  "allowScripts": {
-    "@parcel/watcher@2.6.0": true,
-    "esbuild@0.28.2": true
-  },
   "devDependencies": {
     "chokidar": "^5.0.0",
     "esbuild": "^0.28.2",

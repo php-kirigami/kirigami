@@ -55,26 +55,30 @@ class STR
 
 	public static function html_entities_decode(string $str): string
 	{
-		// $str = html_entity_decode(trim($str), ENT_QUOTES, 'UTF-8');
-		// $str = htmlentities($str, ENT_QUOTES, 'UTF-8');
-		// $str = mb_convert_encoding($str, 'HTML-ENTITIES', 'UTF-8');
 		$str = html_entity_decode(trim($str), ENT_QUOTES, 'UTF-8');
-		// $str = htmlentities($str, ENT_QUOTES, 'UTF-8');
 		return $str;
 	}
 
 
-	public static function shorthash(string$str): string
+	public static function shorthash(string $str): string
 	{
 		return substr(hash('sha256', $str), 0, 12);
 	}
 
 
-	public static function slug(string $str): string
+	public static function normalize(string $str) {
+		$str = Normalizer::normalize($str, Normalizer::FORM_D);
+		$str = preg_replace('/\p{Mn}/u', '', $str);
+		return $str;
+	}
+
+
+	public static function slug(string $str, $sep = ''): string
 	{
+		$str = self::normalize($str);
 		$str = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $str);
 		$str = strtolower($str);
-		$str = preg_replace('/[^a-z0-9]/', '', $str);
+		$str = preg_replace('/[^a-z0-9]/', $sep, $str);
 		return $str;
 	}
 

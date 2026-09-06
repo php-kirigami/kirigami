@@ -21,6 +21,8 @@ function _print_r(mixed $obj) {
 
 spl_autoload_register(function ($class) {
     static $catalog = [
+
+        // Out of the box
         'ARR'             => 'arr.class.php',    
         'CACHE'           => 'cache.class.php',
         'CURL'            => 'curl.class.php',
@@ -28,12 +30,16 @@ spl_autoload_register(function ($class) {
         'HTML'            => 'html.class.php',
         'IMG'             => 'img.class.php',
         'MD'              => 'md.class.php',
+        'NORM'            => 'norm.class.php',
         'OBF'             => 'obf.class.php',
 		'PREPROS'         => 'prepros.class.php',
 		'SCRAPER'         => 'scraper.class.php',
         'STD'             => 'std.class.php',
         'STR'             => 'str.class.php',
         'YAML'            => 'yaml.class.php',
+
+        // Fallbacks
+        'Normalizer'      => 'normalizer.class.php'
     ];
     if (isset($catalog[$class])) require_once(__DIR__ . '/libraries/' . $catalog[$class]);
 }, true, true);

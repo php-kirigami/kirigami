@@ -1,14 +1,33 @@
+<div align="center">
+
+<img src="https://zmotrin.github.io/assets/kirigami/kirigami-logo-universal.svg" alt="Kirigami" width="400" />
+
+---
+
 # @kirigami/struct-walker
 
-![Kirigami](https://zmotrin.github.io/assets/kirigami/kirigami-logo-universal.svg)
+Recursive structured files walker for the **Kirigami** static site generator.
+
 
 [![npm version](https://img.shields.io/npm/v/@kirigami/struct-walker.svg)](https://www.npmjs.com/package/@kirigami/struct-walker)
-[![License: MIT](https://img.shields.io/badge/MIT-blue)](./LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![Node.js >=20.10.0](https://img.shields.io/badge/node-%3E%3D20.10.0-brightgreen)](https://nodejs.org)
 
 
 
+
+
+</div>
+
+---
+
+## Overview
+
 Recursively walks a YAML or JSON file, resolving string values that reference other files relative to their parent. Nested YAML/JSON files are deserialized and inlined. Assets (images, fonts, audio, video…) are optionally converted to data URIs — either percent-encoded for text formats like SVG and CSS, or base64 for binary formats.
+
+
+---
+
 
 ## Installation
 

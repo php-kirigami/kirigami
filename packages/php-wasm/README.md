@@ -1,13 +1,19 @@
+<div align="center">
+
+<img src="https://zmotrin.github.io/assets/kirigami/kirigami-logo-universal.svg" alt="Kirigami" width="400" />
+
+---
+
 # @kirigami/php-wasm
 
-![Kirigami](https://zmotrin.github.io/assets/kirigami/kirigami-logo-universal.svg)
-
-> A custom PHP 8.5 WebAssembly build for Node.js — JSPI-only, no browser target.  
-> Built for the [Kirigami](https://github.com/php-kirigami) project.
+A custom PHP 8.5 WebAssembly build for Node.js — JSPI-only, no browser target.  
+Built for the [Kirigami](https://github.com/php-kirigami) project.
 
 [![npm version](https://img.shields.io/npm/v/@kirigami/php-wasm)](https://www.npmjs.com/package/@kirigami/php-wasm)
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)](./LICENSE)
 [![Node.js >=20.10.0](https://img.shields.io/badge/node-%3E%3D20.10.0-brightgreen)](https://nodejs.org)
+
+</div>
 
 ---
 
@@ -44,9 +50,11 @@ This package is a **drop-in replacement** for the loader module consumed by [`@p
 | `jspi()` | Detects JSPI support in the current runtime (re-exported from `wasm-feature-detect`) |
 | `getPHPRuntime()` | Returns a standard PHP instance. **Memoized singleton** — the first call creates it, subsequent calls return the same instance |
 | `getPHPRuntimeWithNetwork()` | Returns a PHP instance bound to a native, zero-dependency TCP outbound proxy with SSL root certificates injected. **Memoized singleton**, separate from `getPHPRuntime()` |
+| `getLoadedExtensions()` | Returns the loaded extensions by the PHP-WASM Runtime` |
 | `exec(code, network?)` | Executes a PHP code snippet against the standard runtime, or the network-enabled one if `network` is `true`. Returns `{ returnCode, stdout, stderr }` |
 | `phpversion()` | Returns the running PHP interpreter's version string, e.g. `"8.5.10"` |
 | `phpinfo()` | Returns the HTML result of `phpinfo()` |
+
 
 ---
 
@@ -1033,3 +1041,10 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | Key | Value |
 | --- | --- |
 | This program is free software; you can redistribute it and/or modify it under the terms of the PHP License as published by the PHP Group and included in the distribution in the file: LICENSE<br>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.<br>If you did not receive a copy of the PHP license, or have any questions about PHP licensing, please contact license@php.net. | _no value_ |
+
+
+---
+
+## License
+
+MIT © Maxime Larrivée-Roy, 2026
