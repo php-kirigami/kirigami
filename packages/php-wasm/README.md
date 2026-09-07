@@ -10,10 +10,28 @@ A custom PHP 8.5 WebAssembly build for Node.js — JSPI-only, no browser target.
 Built for the [Kirigami](https://github.com/php-kirigami) project.
 
 [![npm version](https://img.shields.io/npm/v/@kirigami/php-wasm)](https://www.npmjs.com/package/@kirigami/php-wasm)
-[![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-blue)](./LICENSE)
+[![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-yellow)](./LICENSE)
 [![Node.js >=20.10.0](https://img.shields.io/badge/node-%3E%3D20.10.0-brightgreen)](https://nodejs.org)
+[![PHP 8.5.10](https://img.shields.io/badge/php-8.5.10-777bb4)](https://www.php.net/releases/8.5/)
 
 </div>
+
+---
+
+## Contents
+
+* [Overview](#overview)
+* [Fork origin](#fork-origin)
+* [Compatibility & Runtime Helpers](#compatibility--runtime-helpers)
+* [Requirements](#requirements)
+* [Installation](#installation)
+* [Usage](#usage)
+* [Security considerations](#security-considerations)
+* [TypeScript](#typescript)
+* [Package contents](#package-contents)
+* [PHP version](#php-version)
+* [License](#license)
+* [Related](#related)
 
 ---
 
@@ -54,6 +72,8 @@ This package is a **drop-in replacement** for the loader module consumed by [`@p
 | `exec(code, network?)` | Executes a PHP code snippet against the standard runtime, or the network-enabled one if `network` is `true`. Returns `{ returnCode, stdout, stderr }` |
 | `phpversion()` | Returns the running PHP interpreter's version string, e.g. `"8.5.10"` |
 | `phpinfo()` | Returns the HTML result of `phpinfo()` |
+| `setPhpIniValues(php, values, iniPath?)` | Updates or adds one or more `php.ini` directives on a PHP instance. Also available as `php.setIniValues(values)` on instances from `getPHPRuntime()` / `getPHPRuntimeWithNetwork()` |
+| `getPhpIniValue(php, key, iniPath?)` | Reads the current value of a single, active (uncommented) `php.ini` directive |
 
 
 ---
@@ -183,6 +203,34 @@ console.log(await streamedResponse.stdoutText); // Hello, Kirigami!
 
 ---
 
+## Security considerations
+
+`exec()` and the low-level `PHP` instance run inside the compiled WASM/Emscripten sandbox: PHP code sees a virtual filesystem (`writeFile`/`unlink` operate on it, not on your real disk) and has no direct access to the host's filesystem, processes, or environment. This is not equivalent to `child_process.exec()`, which runs directly on the host.
+
+Two things narrow that isolation and are worth keeping in mind:
+
+- **`getPHPRuntimeWithNetwork()`** gives the sandboxed PHP instance genuine outbound TCP access via the local proxy (not just HTTP/HTTPS). The proxy itself binds to `127.0.0.1` only, but the PHP code running inside can now reach out to the network like any other client.
+- WASM sandboxing reduces host exposure but isn't a substitute for a security boundary like a container or VM if you're running fully untrusted PHP (e.g. user-submitted code) — apply the isolation appropriate to your threat model on top.
+
+---
+
+## TypeScript
+
+The instances returned by `getPHPRuntime()` and `getPHPRuntimeWithNetwork()` aren't plain `@php-wasm/universal` `PHP` objects — this package attaches its own convenience members to them, and the types reflect that:
+
+* `getPHPRuntime()` resolves to a `KirigamiPHP`, which extends `PHP` with a bound `.setIniValues(values)` method.
+* `getPHPRuntimeWithNetwork()` resolves to a `KirigamiNetworkPHP`, which further adds `._networkProxyServer` (the `node:http` `Server` backing the outbound proxy).
+
+```ts
+import { getPHPRuntimeWithNetwork } from '@kirigami/php-wasm';
+
+const php = await getPHPRuntimeWithNetwork();
+php.setIniValues({ memory_limit: '256M' }); // typed, no cast needed
+php._networkProxyServer.close();            // typed, no cast needed
+```
+
+---
+
 ## Package contents
 
 ```
@@ -209,23 +257,13 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 
 ---
 
-## License
-
-`GPL-2.0-or-later` — same as the upstream WordPress Playground project.
-
-See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
-
----
-
 ## Related
 
 * [WordPress Playground](https://github.com/WordPress/wordpress-playground) — upstream project
 * [`@php-wasm/universal`](https://www.npmjs.com/package/@php-wasm/universal) — the runtime this loader integrates with
 * [`wasm-feature-detect`](https://www.npmjs.com/package/wasm-feature-detect) — used for JSPI detection
 
-
 ---
-
 
 ## PHP 8.5.10 - phpinfo()
 
@@ -890,8 +928,8 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | $_SERVER['REQUEST_METHOD'] | GET |
 | $_SERVER['QUERY_STRING'] | _no value_ |
 | $_SERVER['HTTPS'] | off |
-| $_SERVER['REQUEST_TIME_FLOAT'] | 1788281833.099 |
-| $_SERVER['REQUEST_TIME'] | 1788281833 |
+| $_SERVER['REQUEST_TIME_FLOAT'] | 1788812855.23 |
+| $_SERVER['REQUEST_TIME'] | 1788812855 |
 | $_ENV['USER'] | web_user |
 | $_ENV['LOGNAME'] | web_user |
 | $_ENV['PATH'] | /internal/shared/bin |
@@ -1043,8 +1081,10 @@ See [LICENSE](https://www.google.com/search?q=./LICENSE) for the full text.
 | This program is free software; you can redistribute it and/or modify it under the terms of the PHP License as published by the PHP Group and included in the distribution in the file: LICENSE<br>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.<br>If you did not receive a copy of the PHP license, or have any questions about PHP licensing, please contact license@php.net. | _no value_ |
 
 
+
+
 ---
 
 ## License
 
-MIT © Maxime Larrivée-Roy, 2026
+`GPL-2.0-or-later` — same as the upstream WordPress Playground project. See [LICENSE](./LICENSE) for the full text.

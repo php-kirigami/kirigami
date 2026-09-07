@@ -15,8 +15,6 @@ Recursive structured files walker for the **Kirigami** static site generator.
 
 
 
-
-
 </div>
 
 ---

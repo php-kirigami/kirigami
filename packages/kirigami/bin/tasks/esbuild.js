@@ -10,6 +10,7 @@ export const taskname = 'ESBUILD';
 export const canwatch = true;
 export const canbuild = true;
 
+
 export default async function build(__root, task, exportPath = null) {
 	const config = await getConfig();
 	const params = config.esbuild || {};

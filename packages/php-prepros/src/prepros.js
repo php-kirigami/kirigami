@@ -68,7 +68,7 @@ const getPHPInstance = async () => {
                     const cmdModule = await import(pathToFileURL(file).href);
                     __modules.set(msg.command, cmdModule);
                 }
-                const mod = __modules.get(msg.command);                
+                const mod = __modules.get(msg.command);
                 const results = await mod.default(__php, msg);
                 return JSON.stringify({
                     success: true,

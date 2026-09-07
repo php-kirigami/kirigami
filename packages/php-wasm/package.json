@@ -1,14 +1,19 @@
 {
   "name": "@kirigami/php-wasm",
-  "version": "8.5.10-3",
+  "version": "8.5.10-4",
   "description": "A custom PHP-WASM build for Node.js — JSPI only, no browser support. Built for the Kirigami project.",
   "keywords": [
     "php",
+    "php8",
     "php-wasm",
     "webassembly",
     "wasm",
     "node",
     "jspi",
+    "emscripten",
+    "wordpress-playground",
+    "sandbox",
+    "curl",
     "kirigami"
   ],
   "homepage": "https://github.com/php-kirigami/kirigami/tree/main/packages/php-wasm#readme",
@@ -27,8 +32,10 @@
   "type": "module",
   "main": "index.js",
   "types": "index.d.ts",
+  "sideEffects": false,
   "exports": {
     ".": {
+      "types": "./index.d.ts",
       "import": "./index.js"
     },
     "./package.json": "./package.json"
@@ -38,7 +45,7 @@
     "npm": ">=10.2.3"
   },
   "dependencies": {
-    "@php-wasm/universal": "^3.1.52",
+    "@php-wasm/universal": "^3.1.53",
     "wasm-feature-detect": "^1.9.0",
     "ws": "^8.21.3"
   },
@@ -51,7 +58,6 @@
     "jspi",
     "runtime",
     "LICENSE",
-    "README.md",
-    "phpinfo.html"
+    "README.md"
   ]
 }

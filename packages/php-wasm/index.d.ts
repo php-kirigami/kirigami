@@ -8,6 +8,7 @@
  */
 
 import type { PHP } from '@php-wasm/universal';
+import type { Server } from 'node:http';
 
 /**
  * The PHP loader module interface, compatible with `@php-wasm/universal`.
@@ -88,6 +89,46 @@ export declare function getPHPLoaderModule(): Promise<PHPLoaderModule>;
 export declare function jspi(): Promise<boolean>;
 
 /**
+ * A {@link PHP} instance as actually returned by this package's runtime
+ * helpers — the base `@php-wasm/universal` instance plus the convenience
+ * members this package attaches to it at creation time.
+ */
+export interface KirigamiPHP extends PHP {
+  /**
+   * Updates or adds `php.ini` directives on this instance.
+   *
+   * Bound convenience wrapper around {@link setPhpIniValues} — equivalent to
+   * calling `setPhpIniValues(php, values)`, but without having to pass the
+   * instance yourself.
+   *
+   * @example
+   * ```ts
+   * const php = await getPHPRuntime();
+   * php.setIniValues({ memory_limit: '256M' });
+   * ```
+   */
+  setIniValues(values: PHPIniValues): void;
+}
+
+/**
+ * A {@link KirigamiPHP} instance as returned by {@link getPHPRuntimeWithNetwork},
+ * additionally carrying a reference to its backing outbound proxy server.
+ */
+export interface KirigamiNetworkPHP extends KirigamiPHP {
+  /**
+   * The Node.js HTTP server backing this instance's WebSocket-to-TCP outbound
+   * proxy. It is `unref()`'d, so it will not by itself keep the process
+   * alive — call `.close()` on it for an explicit, immediate shutdown.
+   *
+   * @example
+   * ```ts
+   * php._networkProxyServer.close();
+   * ```
+   */
+  _networkProxyServer: Server;
+}
+
+/**
  * Instantiates and returns a standard, isolated PHP runtime instance.
  *
  * A higher-level abstraction helper that automates the loader fetching
@@ -99,7 +140,7 @@ export declare function jspi(): Promise<boolean>;
  *
  * @returns A promise that resolves to the shared PHP instance.
  */
-export declare function getPHPRuntime(): Promise<PHP>;
+export declare function getPHPRuntime(): Promise<KirigamiPHP>;
 
 /**
  * Instantiates and returns a PHP runtime instance configured with full outbound networking.
@@ -114,7 +155,7 @@ export declare function getPHPRuntime(): Promise<PHP>;
  *
  * @returns A promise that resolves to the shared, network-enabled PHP instance.
  */
-export declare function getPHPRuntimeWithNetwork(): Promise<PHP>;
+export declare function getPHPRuntimeWithNetwork(): Promise<KirigamiNetworkPHP>;
 
 /**
  * A map of `php.ini` directive names to the value they should be set to.
