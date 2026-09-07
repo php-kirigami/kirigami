@@ -54,7 +54,7 @@
 @function apply-colors($svg, $colors) {
 	$result: $svg;
 	@each $name, $color in $colors {
-		$placeholder: "%#{$name}%"; // %bg%, %fg%, %accent%, etc.
+		$placeholder: "%#{$name}%";
 		$result: str-replace($result, $placeholder, "#{$color}");
 	}
 	@return $result;

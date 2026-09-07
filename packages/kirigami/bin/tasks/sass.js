@@ -115,7 +115,7 @@ export default async function build(__root, task, exportPath = null) {
 					const font = getFont(abs);
 					return new sass.SassString(detectFontStyle(font));
 				},
-				
+
 				'img-asset($path, $width: null, $height: null, $cover: false)': (args) => {
 					const srcRelPath = args[0].assertString('path').text;
 					const widthArg = args[1];
@@ -284,6 +284,7 @@ function guessMimeType(filePath) {
 		".jpg":   "image/jpeg",
 		".jpeg":  "image/jpeg",
 		".webp":  "image/webp",
+		".avif":  "image/avif",
 		".svg":   "image/svg+xml",
 		".woff":  "font/woff",
 		".woff2": "font/woff2"
