@@ -75,7 +75,6 @@ export default async function build(__root, task, exportPath = null) {
 				'inline-file($path)': (args) => {
 					const filePath = args[0].assertString("path").text;
 					if (cache.has(filePath)) return cache.get(filePath);
-
 					const resolvedPath = path.resolve(process.cwd(), filePath);
 					const content = fs.readFileSync(resolvedPath);
 					const result = new sass.SassString(
@@ -116,6 +115,7 @@ export default async function build(__root, task, exportPath = null) {
 					const font = getFont(abs);
 					return new sass.SassString(detectFontStyle(font));
 				},
+				
 				'img-asset($path, $width: null, $height: null, $cover: false)': (args) => {
 					const srcRelPath = args[0].assertString('path').text;
 					const widthArg = args[1];

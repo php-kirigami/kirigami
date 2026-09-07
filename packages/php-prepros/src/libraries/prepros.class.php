@@ -4,8 +4,9 @@
 final class PREPROS
 {
 
-    public  static mixed  $config;    
-    private static string $root;
+    public  static mixed  $config;
+    public  static string $file  = '';
+    private static string $root  = '';
     private static array  $files = [];
     private static array  $hooks = [];
     private static array  $tags  = [];
@@ -26,8 +27,12 @@ final class PREPROS
     {
         $dir = pathinfo($file, PATHINFO_DIRNAME) . S;
         $target = $dir . ltrim(pathinfo($file, PATHINFO_FILENAME), '_') . '.html';
-        $file = realpath($file);
+        if(!$file = realpath($file)) return false;
+        self::$file = $file;
+        
+        // a revoir = ajouter le path du baseurl
         $absurl = str_replace('//', '/', str_replace('\\', '/', pathinfo(str_replace(realpath(self::$root), '', $file), PATHINFO_DIRNAME)) . '/');
+        
         $relroot = FS::getRelativePath($dir, self::$root);
         $page = self::processHook('page_info', [$file, FS::phpFileInfo($file)]);
 
@@ -64,6 +69,7 @@ final class PREPROS
 
         file_put_contents($target, $contents);
         self::exportFile($target);
+        self::$file = '';
         return realpath($target);
     }
 
@@ -132,10 +138,28 @@ final class PREPROS
     }
 
 
-    public static function mount(string|array $patterns) {
+    public static function mount(string|array $patterns)
+    {
         $results = self::callJS('mount', ['patterns' => $patterns]);
-        if(!$results->success) return false;
+        if (!$results->success) return false;
         return $results->results;
+    }
+
+
+    public static function fstat(string $path)
+    {
+        if (!$results = self::callJS('fstat', ['path' => $path])) return false;
+        if (!$results->success) return false;
+        if (!$results->results->exists) return false;
+        return $results->results;
+    }
+
+
+    public static function backtraceFile()
+    {
+        $debug = debug_backtrace();
+        if(!isset($debug[1])) return false;
+        else return $debug[1]['file'];
     }
 
 

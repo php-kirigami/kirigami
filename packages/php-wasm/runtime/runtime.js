@@ -26,13 +26,55 @@ const PHP_INI_PATH   = '/internal/shared/php.ini';
 
 function injectCaBundle(php) {
     php.writeFile(CA_BUNDLE_PATH, rootCertificates.join('\n'));
-    let ini = '';
-    try { ini = php.readFileAsText(PHP_INI_PATH); } catch {}
-    ini = ini.split('\n')
-        .filter(l => !/^\s*(openssl\.cafile|curl\.cainfo)\s*=/i.test(l))
-        .join('\n');
-    ini += `\nopenssl.cafile=${CA_BUNDLE_PATH}\ncurl.cainfo=${CA_BUNDLE_PATH}\n`;
-    php.writeFile(PHP_INI_PATH, ini);
+    setPhpIniValues(php, {
+        'openssl.cafile': CA_BUNDLE_PATH,
+        'curl.cainfo':    CA_BUNDLE_PATH,
+    });
+}
+
+// ─── php.ini : lecture / écriture de directives ──────────────────────────────
+// Permet de modifier une directive existante (peu importe sa valeur actuelle)
+// ou de l'ajouter si elle n'existe pas encore. Fonctionne sur des paires
+// `directive = valeur` en dehors des sections [section] (cas d'usage standard
+// de php.ini pour openssl.*, curl.*, memory_limit, upload_max_filesize, etc.)
+
+function readPhpIni(php, iniPath = PHP_INI_PATH) {
+    try { return php.readFileAsText(iniPath); } catch { return ''; }
+}
+
+// Retourne la valeur actuelle d'une directive (string) ou undefined si absente.
+// Les lignes commentées (`;directive = ...`) sont ignorées.
+function getPhpIniValue(php, key, iniPath = PHP_INI_PATH) {
+    const ini = readPhpIni(php, iniPath);
+    const re  = new RegExp(`^\\s*${key.replace(/\./g, '\\.')}\\s*=\\s*(.*)$`, 'im');
+    const match = ini.split('\n').find(l => re.test(l) && !/^\s*;/.test(l));
+    if (!match) return undefined;
+    return match.match(re)[1].trim();
+}
+
+// Met à jour ou ajoute une ou plusieurs directives dans le php.ini de la VM.
+// `values` : objet { 'directive.name': valeur, ... }.
+// Toute ligne active existante portant la même directive est supprimée puis
+// remplacée par une nouvelle ligne en fin de fichier (les commentaires et
+// autres directives sont préservés).
+function setPhpIniValues(php, values, iniPath = PHP_INI_PATH) {
+    const keys = Object.keys(values).map(k => k.toLowerCase());
+    let ini = readPhpIni(php, iniPath);
+
+    const lines = ini.split('\n').filter(l => {
+        const m = l.match(/^\s*([A-Za-z0-9_.]+)\s*=/);
+        if (!m) return true; // commentaires, sections, lignes vides : on garde
+        return !keys.includes(m[1].toLowerCase());
+    });
+
+    // Nettoyer d'éventuelles lignes vides en fin de fichier avant d'ajouter
+    while (lines.length && lines[lines.length - 1].trim() === '') lines.pop();
+
+    for (const [key, value] of Object.entries(values)) {
+        lines.push(`${key}=${value}`);
+    }
+
+    php.writeFile(iniPath, lines.join('\n') + '\n');
 }
 
 // ─── Protocol de framing SOCKFS ──────────────────────────────────────────────
@@ -272,4 +314,4 @@ const getPHPRuntimeWithNetwork = async () => {
     return php;
 };
 
-export { getPHPRuntime, getPHPRuntimeWithNetwork };
+export { getPHPRuntime, getPHPRuntimeWithNetwork, setPhpIniValues, getPhpIniValue };

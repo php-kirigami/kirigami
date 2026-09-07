@@ -12,21 +12,52 @@ class STR
 
 	public static function replaceTags(string $tag, string $contents, callable $clb): string
 	{
-		$contents = preg_replace_callback('#<' . preg_quote($tag, '#') . '([^>]*)>(.*?)</' . preg_quote($tag, '#') . '>#msi', function ($m) use ($clb) {
-			return call_user_func($clb, $m[0], self::parseHtmlAttributes($m[1]), $m[2]);
+		$t = preg_quote($tag, '#');
+
+		// 1) <tag ...>...</tag>   2) <tag .../>   3) <tag ...>  (sans fermeture)
+		$pattern = '#<' . $t . '([^>]*)>(.*?)</' . $t . '>'
+			. '|<' . $t . '([^>]*)/>'
+			. '|<' . $t . '([^>]*)>#msi';
+
+		return preg_replace_callback($pattern, function ($m) use ($clb) {
+			if (isset($m[2])) {
+				// forme appariée : <tag>contenu</tag>
+				$attrs = $m[1];
+				$inner = $m[2];
+			} elseif (isset($m[3])) {
+				// auto-fermant : <tag ... />
+				$attrs = $m[3];
+				$inner = '';
+			} else {
+				// ouvrant seul, sans fermeture (img, meta, br, ...)
+				$attrs = $m[4];
+				$inner = '';
+			}
+			return call_user_func($clb, $m[0], self::parseHtmlAttributes($attrs), $inner);
 		}, $contents);
-		return $contents;
 	}
 
 
 	public static function parseHtmlAttributes(string $attributes): array
 	{
-		if (preg_match_all('#(\\w+)\s*=\\s*("[^"]*"|\'[^\']*\'|[^"\'\\s>]*)#i', $attributes, $m)) {
-			foreach ($m[1] as $k => $key) {
-				$attrs[strtolower($key)] = stripslashes(substr($m[2][$k], 1, -1));;
+		$attrs = [];
+		if (preg_match_all('#(\w+)(?:\s*=\s*("[^"]*"|\'[^\']*\'|[^"\'\s>]*))?#i', $attributes, $m, PREG_SET_ORDER)) {
+			foreach ($m as $match) {
+				$key = strtolower($match[1]);
+				if (isset($match[2]) && $match[2] !== '') {
+					$value = $match[2];
+					// retire les guillemets seulement s'ils sont présents
+					if (($value[0] === '"' || $value[0] === "'") && $value[0] === substr($value, -1)) {
+						$value = substr($value, 1, -1);
+					}
+					$attrs[$key] = stripslashes($value);
+				} else {
+					// attribut booléen : selected, muted, disabled, checked...
+					$attrs[$key] = true;
+				}
 			}
 		}
-		return isset($attrs) ? $attrs : [];
+		return $attrs;
 	}
 
 

@@ -8,6 +8,7 @@ import { walkFile } from '@kirigami/struct-walker';
 import { getPHPRuntime, getPHPRuntimeWithNetwork } from "@kirigami/php-wasm";
 
 
+const __modules = new Map;
 const __project = process.cwd();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const __configpath = path.join(__project, 'kirigami.yaml');
@@ -20,14 +21,19 @@ const config = await walkFile(__configpath);
 if(!config) throw `Invalid config file: ${__configpath}`;
 
 
-
 const getPHPInstance = async () => {
     if(!__php) {
         if(config?.kirigami?.root === undefined) throw `Missing prepros:root property in config file: ${__configpath}`;
         __root = path.join(__project, config.kirigami.root);
         if (!fs.existsSync(__root)) throw `Invalid prepros:root path: ${__root}`;
 
+        if(!config.image) config.image = {};
+        if(!config.image.format) config.image.format = 'webp';
+        if(!config.image.source) config.image.source = 'assets/images/';
+        if(!config.image.dest) config.image.dest = 'images/';
+
         const preprosConfig = config.prepros || {};
+        preprosConfig.image = config.image;
         preprosConfig.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         preprosConfig.root = joinWith('/project/', config?.kirigami?.root);
         preprosConfig.data = config.kirigami || {};
@@ -35,6 +41,14 @@ const getPHPInstance = async () => {
         __php = await (preprosConfig.network ? getPHPRuntimeWithNetwork() : getPHPRuntime());
         __php.setSpawnHandler((command, args, options) => spawn(command, args, options));
         __php.preprosConfig = preprosConfig;
+        __php.setIniValues({
+            log_errors:      1,
+            html_errors:     0,
+            display_errors:  1,
+            error_reporting: 32767,
+            error_log:       'php://stderr',
+            memory_limit:    '2G',
+        });
 
         await mountPath(__dirname, '/prepros', __php);
         await mountPath(joinWith(__project, config?.kirigami?.root), joinWith('/project', config?.kirigami?.root), __php);
@@ -44,14 +58,18 @@ const getPHPInstance = async () => {
         if (fs.existsSync(__cache)) await mountPath(__cache, '/project/.cache.db', __php);
         if (fs.existsSync(__cookie)) await mountPath(__cookie, '/project/.cookie.txt', __php);
 
-        __php.onMessage(async (data) => {
+        __php.onMessage(async data => {
             const msg = JSON.parse(data);
             if(!msg.command) return { success: false, error: "Invalid command."};
             const file = path.join(__dirname, 'phpjs', `${msg.command}.js`);
             if(!fs.existsSync(file)) return { success: false, error: "Invalid command."};
             try {
-                const cmdModule = await import(pathToFileURL(file).href);
-                const results = await cmdModule.default(__php, msg);
+                if(!__modules.has(msg.command)) {
+                    const cmdModule = await import(pathToFileURL(file).href);
+                    __modules.set(msg.command, cmdModule);
+                }
+                const mod = __modules.get(msg.command);                
+                const results = await mod.default(__php, msg);
                 return JSON.stringify({
                     success: true,
                     results: results
@@ -169,12 +187,8 @@ const render = async (file = '.') => {
     const target = path.resolve(config?.kirigami?.root, file);
     const fsvm = path.join('/project', config?.kirigami?.root, file).replace(/\\/g, '/');
     await mountPath(target);
-    if(config?.prepros?.before) {
-        await mountPath(path.resolve(config?.kirigami?.root, config?.prepros?.before));
-    }
-    if(config?.prepros?.after) {
-        await mountPath(path.resolve(config?.kirigami?.root, config?.prepros?.after));
-    }
+    if(config?.prepros?.before) await mountPath(path.resolve(config?.kirigami?.root, config?.prepros?.before));
+    if(config?.prepros?.after) await mountPath(path.resolve(config?.kirigami?.root, config?.prepros?.after));
     return run([fsvm]);
 }
 

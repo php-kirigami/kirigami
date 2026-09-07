@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { jspi } from "wasm-feature-detect";
-import { getPHPRuntime as _getPHPRuntime, getPHPRuntimeWithNetwork as _getPHPRuntimeWithNetwork } from "./runtime/runtime.js";
+import { getPHPRuntime as _getPHPRuntime, getPHPRuntimeWithNetwork as _getPHPRuntimeWithNetwork, getPhpIniValue, setPhpIniValues } from "./runtime/runtime.js";
 
 let runtime = null;
 let runtimeNetwork = null;
@@ -12,13 +12,19 @@ async function getPHPLoaderModule() {
 
 
 const getPHPRuntime = async () => {
-	if(!runtime) runtime = _getPHPRuntime();
+	if(!runtime) {
+		runtime = await _getPHPRuntime();
+		runtime.setIniValues = function(values) { setPhpIniValues(this, values); }
+	}
 	return runtime;
 };
 
 
 const getPHPRuntimeWithNetwork = async () => {
-	if(!runtimeNetwork) runtimeNetwork = _getPHPRuntimeWithNetwork();
+	if(!runtimeNetwork) {
+		runtimeNetwork = await _getPHPRuntimeWithNetwork();
+		runtimeNetwork.setIniValues = function(values) { setPhpIniValues(this, values); }
+	}
 	return runtimeNetwork;
 };
 
@@ -65,6 +71,8 @@ async function getLoadedExtensions() {
 
 
 export {
+	getPhpIniValue,
+	setPhpIniValues,
 	getPHPLoaderModule,
 	getPHPRuntime,
 	getPHPRuntimeWithNetwork,

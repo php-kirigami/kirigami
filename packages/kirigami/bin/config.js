@@ -51,6 +51,12 @@ async function validateConfig(config) {
 		config.kirigami.banner = `Exported by Kirigami: ${formatFrDate()}`;
 	}
 
+	// Verify image section
+	if(!config.image) config.image = {};
+	if(!config.image.format) config.image.format = 'webp';
+	if(!config.image.source) config.image.source = 'assets/images/';
+	if(!config.image.dest) config.image.dest = 'images/';
+
 	// Verify tasks
 	if(config.tasks) {
 		await Promise.all(config.tasks.map(async task => {

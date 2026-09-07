@@ -117,6 +117,75 @@ export declare function getPHPRuntime(): Promise<PHP>;
 export declare function getPHPRuntimeWithNetwork(): Promise<PHP>;
 
 /**
+ * A map of `php.ini` directive names to the value they should be set to.
+ *
+ * Keys are directive names as they appear in `php.ini` (e.g. `"memory_limit"`,
+ * `"date.timezone"`, `"openssl.cafile"`). Values are coerced to strings when
+ * written to the file.
+ */
+export type PHPIniValues = Record<string, string | number>;
+
+/**
+ * Updates or adds one or more directives in a PHP instance's `php.ini`.
+ *
+ * Any existing active line for a given directive is removed and replaced
+ * with a new line at the end of the file; comments and unrelated directives
+ * are left untouched. If a directive doesn't exist yet, it is appended.
+ *
+ * @example
+ * ```ts
+ * import { getPHPRuntimeWithNetwork, setPhpIniValues } from '@kirigami/php-wasm';
+ *
+ * const php = await getPHPRuntimeWithNetwork();
+ *
+ * setPhpIniValues(php, {
+ *   memory_limit: '256M',
+ *   upload_max_filesize: '20M',
+ *   'date.timezone': 'Europe/Paris',
+ * });
+ * ```
+ *
+ * @param php - The PHP instance whose `php.ini` should be updated.
+ * @param values - A map of directive names to the values they should take.
+ * @param iniPath - Absolute path to the `php.ini` file inside the PHP
+ * instance's virtual filesystem. Defaults to the runtime's shared
+ * `php.ini`.
+ */
+export declare function setPhpIniValues(
+  php: PHP,
+  values: PHPIniValues,
+  iniPath?: string
+): void;
+
+/**
+ * Reads the current value of a single `php.ini` directive.
+ *
+ * Only active (uncommented) lines are considered; a directive that is
+ * commented out (e.g. `;memory_limit = 128M`) is treated as absent.
+ *
+ * @example
+ * ```ts
+ * import { getPHPRuntime, getPhpIniValue } from '@kirigami/php-wasm';
+ *
+ * const php = await getPHPRuntime();
+ * console.log(getPhpIniValue(php, 'memory_limit')); // e.g. "128M" or undefined
+ * ```
+ *
+ * @param php - The PHP instance whose `php.ini` should be read.
+ * @param key - The directive name to look up (e.g. `"memory_limit"`).
+ * @param iniPath - Absolute path to the `php.ini` file inside the PHP
+ * instance's virtual filesystem. Defaults to the runtime's shared
+ * `php.ini`.
+ * @returns The directive's current value as a trimmed string, or
+ * `undefined` if the directive is not set (or only present in a comment).
+ */
+export declare function getPhpIniValue(
+  php: PHP,
+  key: string,
+  iniPath?: string
+): string | undefined;
+
+/**
  * Result of {@link exec}.
  */
 export interface PHPExecResult {
@@ -153,6 +222,24 @@ export interface PHPExecResult {
  * @returns A promise that resolves to `{ returnCode, stdout, stderr }`.
  */
 export declare function exec(code: string, network?: boolean): Promise<PHPExecResult>;
+
+/**
+ * Returns the names of every PHP extension currently loaded, sorted
+ * case-insensitively.
+ *
+ * Shorthand for {@link exec} running `get_loaded_extensions()` and parsing
+ * the JSON-encoded result.
+ *
+ * @example
+ * ```ts
+ * import { getLoadedExtensions } from '@kirigami/php-wasm';
+ *
+ * console.log(await getLoadedExtensions()); // e.g. ["Core", "curl", "openssl", ...]
+ * ```
+ *
+ * @returns A promise that resolves to the sorted list of loaded extension names.
+ */
+export declare function getLoadedExtensions(): Promise<string[]>;
 
 /**
  * Returns the running PHP interpreter's version string.
