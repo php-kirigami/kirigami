@@ -106,7 +106,12 @@ final class PREPROS
 
         $dest = self::$root . 'sitemap.xml';
         file_put_contents($dest, $dom->saveXML());
-        self::exportFile($dest);
+        
+        $destrobots = self::$root . 'robots.txt';
+        $urlrobots = rtrim(self::$config->data->baseurl, '/') . '/sitemap.xml';
+        file_put_contents($destrobots, "User-agent: *\nAllow: /\nSitemap: {$urlrobots}");
+        
+        self::exportFile([$dest, $destrobots]);
         return realpath($dest);
     }
 

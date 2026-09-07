@@ -12,9 +12,9 @@ kiri cache purge
 
 
 
-pour plugin, vérifier le package.json (ou pas)
 
-système pour créer des schemas json+ld
+
+
 
 
 version de kirigami minimale dans le kirigami.yaml
@@ -30,3 +30,8 @@ shortcuts.php
 
 - Plugins settés dans kirigami.yaml
 - faire un vrai test pour l'action kiribuild
+- pour plugin, vérifier le package.json (ou pas)
+
+Valider les schemas avec ajv
+
+système pour créer des schemas json+ld
