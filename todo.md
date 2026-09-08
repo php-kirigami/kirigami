@@ -25,6 +25,7 @@ remplacer le file_get_contents par une vérification si c'est un fichier ou un u
 mettre à jour le user-agent pis les headers
 block html extlink qui call scraper
 shortcuts.php
+$absurl à revoir
 
 
 - Plugins settés dans kirigami.yaml
