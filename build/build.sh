@@ -1,6 +1,7 @@
 #!/bin/bash
 cd /mnt/c/projects/kirigami/php-wasm-builder
 
+
 node packages/php-wasm/compile/build.js \
   --PHP_VERSION=8.5 \
   --PLATFORM=node \

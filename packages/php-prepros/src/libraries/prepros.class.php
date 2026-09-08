@@ -129,7 +129,7 @@ final class PREPROS
     public static function getExportedFiles(): array
     {
         $files = array_unique(self::$files);
-        sort($files);
+        // sort($files);
         return $files;
     }
 

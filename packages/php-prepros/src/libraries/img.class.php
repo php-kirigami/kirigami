@@ -112,6 +112,130 @@ class IMG
 
 
 	/**
+	 * Convertit une couleur sRGB (0-255) en Lab (D65), espace
+	 * perceptuellement uniforme : une distance euclidienne en Lab
+	 * correspond (à peu près) à une différence de couleur telle que
+	 * perçue par l'œil, contrairement au RGB où deux couleurs à la même
+	 * "distance" numérique peuvent paraître très différentes ou
+	 * identiques selon la teinte.
+	 */
+	private static function rgbToLab(int $r, int $g, int $b): array
+	{
+		$toLinear = fn(float $c) => ($c /= 255) <= 0.04045 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4;
+		[$rl, $gl, $bl] = [$toLinear($r), $toLinear($g), $toLinear($b)];
+
+		// Linéaire RGB -> XYZ (D65), puis normalisation par le point blanc.
+		$x = ($rl * 0.4124564 + $gl * 0.3575761 + $bl * 0.1804375) / 0.95047;
+		$y =  $rl * 0.2126729 + $gl * 0.7151522 + $bl * 0.0721750;
+		$z = ($rl * 0.0193339 + $gl * 0.1191920 + $bl * 0.9503041) / 1.08883;
+
+		$f = fn(float $t) => $t > 0.008856 ? $t ** (1 / 3) : (7.787 * $t) + (16 / 116);
+		[$fx, $fy, $fz] = [$f($x), $f($y), $f($z)];
+
+		return [(116 * $fy) - 16, 500 * ($fx - $fy), 200 * ($fy - $fz)]; // [L, a, b]
+	}
+
+
+	/**
+	 * Extrait les couleurs les plus représentatives de l'image.
+	 *
+	 * Algo : quantization median-cut (imagetruecolortopalette, la même
+	 * famille de technique qu'Imagick::quantizeImage), en
+	 * sur-échantillonnant largement le nombre de couleurs demandées, puis
+	 * post-traitement perceptuel dans l'espace Lab :
+	 *  - fusion des couleurs trop proches (distance CIE76 en Lab) : la
+	 *    quantization sort souvent plusieurs teintes quasi identiques à
+	 *    l'œil, qu'on ne veut pas voir comme des entrées séparées ;
+	 *  - exclusion du blanc/noir quasi purs via la luminance L (fiable
+	 *    quelle que soit la teinte, contrairement à un seuil sur r/g/b).
+	 *
+	 * @param int   $numColors                Nombre de couleurs à retourner.
+	 * @param float $mergeTolerance           Distance Lab en-dessous de laquelle deux couleurs sont fusionnées (0-100, ~6-10 = "quasi identiques").
+	 * @param bool  $excludeNearWhiteAndBlack Exclut les couleurs quasi blanches/noires.
+	 * @param float $lightnessThreshold       Seuil de luminance Lab (0-100) au-delà/en-deçà duquel une couleur est jugée quasi blanche/noire.
+	 * @return string[] Couleurs au format "#rrggbb", triées par fréquence décroissante.
+	 */
+	public function getRepresentativeColors(
+		int $numColors = 5,
+		float $mergeTolerance = 8.0,
+		bool $excludeNearWhiteAndBlack = true,
+		float $lightnessThreshold = 8.0
+	): array {
+		$srcW = $this->width;
+		$srcH = $this->height;
+
+		// Analyser la pleine résolution n'apporte rien pour ce genre
+		// d'extraction et coûte cher en temps de calcul.
+		$maxDim = 150;
+		$scale = min(1, $maxDim / max($srcW, $srcH));
+		$w = max(1, (int) round($srcW * $scale));
+		$h = max(1, (int) round($srcH * $scale));
+
+		// Aplatit sur fond blanc (comme pour l'export JPEG) : sinon les
+		// zones transparentes des PNG/WEBP seraient comptées comme du
+		// noir par défaut sur un canvas truecolor.
+		$sample = imagecreatetruecolor($w, $h);
+		imagealphablending($sample, true);
+		$white = imagecolorallocate($sample, 255, 255, 255);
+		imagefilledrectangle($sample, 0, 0, $w, $h, $white);
+		imagecopyresampled($sample, $this->im, 0, 0, 0, 0, $w, $h, $srcW, $srcH);
+
+		// On sur-échantillonne largement le nombre de couleurs demandées :
+		// ça laisse de la marge pour la fusion perceptuelle et l'exclusion
+		// du blanc/noir ci-dessous sans se retrouver à court de couleurs.
+		$buckets = max($numColors * 6, 24);
+		imagetruecolortopalette($sample, false, $buckets);
+
+		// Comptage des occurrences de chaque couleur de la palette générée.
+		$counts = array_fill(0, imagecolorstotal($sample), 0);
+		for ($y = 0; $y < $h; $y++) {
+			for ($x = 0; $x < $w; $x++) {
+				$counts[imagecolorat($sample, $x, $y)]++;
+			}
+		}
+
+		$entries = [];
+		foreach ($counts as $index => $count) {
+			if ($count === 0) continue;
+			$rgb = imagecolorsforindex($sample, $index);
+			$lab = self::rgbToLab($rgb['red'], $rgb['green'], $rgb['blue']);
+
+			if ($excludeNearWhiteAndBlack && ($lab[0] > 100 - $lightnessThreshold || $lab[0] < $lightnessThreshold)) {
+				continue;
+			}
+
+			$entries[] = ['r' => $rgb['red'], 'g' => $rgb['green'], 'b' => $rgb['blue'], 'lab' => $lab, 'count' => $count];
+		}
+
+		usort($entries, fn($a, $b) => $b['count'] - $a['count']);
+
+		// Fusionne les couleurs perceptuellement proches en regroupant
+		// leurs occurrences, en partant toujours de la plus fréquente.
+		$merged = [];
+		foreach ($entries as $entry) {
+			foreach ($merged as &$cluster) {
+				$dl = $cluster['lab'][0] - $entry['lab'][0];
+				$da = $cluster['lab'][1] - $entry['lab'][1];
+				$db = $cluster['lab'][2] - $entry['lab'][2];
+				if (sqrt($dl * $dl + $da * $da + $db * $db) <= $mergeTolerance) {
+					$cluster['count'] += $entry['count'];
+					continue 2;
+				}
+			}
+			unset($cluster);
+			$merged[] = $entry;
+		}
+
+		usort($merged, fn($a, $b) => $b['count'] - $a['count']);
+
+		return array_map(
+			fn($c) => sprintf('#%02x%02x%02x', $c['r'], $c['g'], $c['b']),
+			array_slice($merged, 0, $numColors)
+		);
+	}
+
+
+	/**
 	 * L'encodeur AVIF (libavif/aom) utilisé par imageavif() peut échouer
 	 * avec "Encoding of color planes failed" dans deux cas fréquents :
 	 *  - largeur/hauteur impaire (contrainte du sous-échantillonnage 4:2:0)

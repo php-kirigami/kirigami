@@ -25,6 +25,7 @@ PREPROS::registerTag('img', function ($tag, $attrs, $body) {
 		unset($attrs['cover']);
 	}
 	$attrs['src'] = IMG::asset($attrs['asset'], $width, $height, $cover, PREPROS::$file);
+	unset($attrs['asset']);
 	foreach($attrs as $k => $v) $props[] = $k.'="'.$v.'"';
     return '<img'.(!empty($props) ? ' '.join(' ', $props): '').'>';
 });

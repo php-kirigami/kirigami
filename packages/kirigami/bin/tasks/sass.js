@@ -8,6 +8,8 @@ import { getConfig } from '../config.js';
 import { execSync } from 'child_process';
 import { createRequire } from 'node:module';
 import { replaceRoot, joinWith, log, c } from '../utils.js';
+import { getRepresentativeColors } from '../libs/colors.js';
+import * as CACHE from '../libs/cache.js';
 
 
 const __dirname = process.cwd();
@@ -59,7 +61,7 @@ export default async function build(__root, task, exportPath = null) {
 	try {
 		const cache = new Map();
 		const imageAssets = new Map(); // path retourné (utilisé dans le css) -> infos source pour le traitement post-compile
-		const compiled = sass.compile(entry, {
+		const compiled = await sass.compileAsync(entry, {
 			style: "compressed",
 			sourceMap: !exportPath,
 			sourceMapIncludeSources: !exportPath,
@@ -153,6 +155,29 @@ export default async function build(__root, task, exportPath = null) {
 
 					// Retourne directement une valeur CSS url(...)
 					return new sass.SassString(`url("${returned}")`, { quotes: false });
+				},
+
+				'colors($path, $count: 5)': async (args) => {
+					const srcRelPath = args[0].assertString('path').text;
+					const count = Math.round(args[1].assertNumber('count').value);
+
+					const absPath = path.resolve(imgSourceRoot, srcRelPath);
+					const mtime = fs.statSync(absPath).mtimeMs;
+					const cacheKey = `colors:${absPath}:${mtime}:${count}`;
+
+					let hexColors = CACHE.get(cacheKey);
+					if (!hexColors) {
+						hexColors = await getRepresentativeColors(absPath, { numColors: count });
+						CACHE.set(cacheKey, hexColors);
+					}
+
+					const sassColors = hexColors.map((hex) => new sass.SassColor({
+						red: parseInt(hex.slice(1, 3), 16),
+						green: parseInt(hex.slice(3, 5), 16),
+						blue: parseInt(hex.slice(5, 7), 16),
+					}));
+
+					return new sass.SassList(sassColors, { separator: ',' });
 				},
 
 			},
