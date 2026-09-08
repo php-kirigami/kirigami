@@ -7,6 +7,29 @@ PREPROS::registerTag('markdown', function ($tag, $attrs, $body) {
 });
 
 
+PREPROS::registerTag('img', function ($tag, $attrs, $body) {
+    if(empty($attrs['asset'])) return $tag;
+	$width = 0;
+	$height = 0;
+	$cover = false;
+	if(isset($attrs['width'])) {
+		$width = $attrs['width'] ?? 0;
+		unset($attrs['width']);
+	}
+	if(isset($attrs['height'])) {
+		$height = $attrs['height'] ?? 0;
+		unset($attrs['height']);
+	}
+	if(isset($attrs['cover'])) {
+		$cover = true;
+		unset($attrs['cover']);
+	}
+	$attrs['src'] = IMG::asset($attrs['asset'], $width, $height, $cover, PREPROS::$file);
+	foreach($attrs as $k => $v) $props[] = $k.'="'.$v.'"';
+    return '<img'.(!empty($props) ? ' '.join(' ', $props): '').'>';
+});
+
+
 PREPROS::registerHook('page_info', function($info) {
 	list($file, $page) = $info;
 	foreach($page as $k => $v) {

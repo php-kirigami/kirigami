@@ -14,27 +14,26 @@ class STR
 	{
 		$t = preg_quote($tag, '#');
 
-		// 1) <tag ...>...</tag>   2) <tag .../>   3) <tag ...>  (sans fermeture)
 		$pattern = '#<' . $t . '([^>]*)>(.*?)</' . $t . '>'
 			. '|<' . $t . '([^>]*)/>'
 			. '|<' . $t . '([^>]*)>#msi';
 
 		return preg_replace_callback($pattern, function ($m) use ($clb) {
-			if (isset($m[2])) {
+			if (isset($m[1]) || isset($m[2])) {
 				// forme appariée : <tag>contenu</tag>
-				$attrs = $m[1];
-				$inner = $m[2];
+				$attrs = $m[1] ?? '';
+				$inner = $m[2] ?? '';
 			} elseif (isset($m[3])) {
 				// auto-fermant : <tag ... />
 				$attrs = $m[3];
 				$inner = '';
 			} else {
 				// ouvrant seul, sans fermeture (img, meta, br, ...)
-				$attrs = $m[4];
+				$attrs = $m[4] ?? '';
 				$inner = '';
 			}
 			return call_user_func($clb, $m[0], self::parseHtmlAttributes($attrs), $inner);
-		}, $contents);
+		}, $contents, -1, $count, PREG_UNMATCHED_AS_NULL); // <-- le flag qui règle tout
 	}
 
 

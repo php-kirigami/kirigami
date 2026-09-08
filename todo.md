@@ -24,7 +24,6 @@ faire le get_children avec backtrace pis un système de position
 remplacer le file_get_contents par une vérification si c'est un fichier ou un url et utiliser curl_get_contents();<>
 mettre à jour le user-agent pis les headers
 block html extlink qui call scraper
-robots.txt
 shortcuts.php
 
 
