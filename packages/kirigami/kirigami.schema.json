@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/php-kirigami/kirigami/refs/heads/main/packages/kirigami/kirigami.schema.json",
+  "$id": "https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigami.schema.json",
   "title": "kirigami.yaml",
   "description": "Configuration file for the Kirigami static site generator (@kirigami/kirigami, v1.1.0). Must sit at the project root and be named exactly 'kirigami.yaml'. Read by every `kiri` command (build, export, watch, run) via bin/config.js.",
   "type": "object",
