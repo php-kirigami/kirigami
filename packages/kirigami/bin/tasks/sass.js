@@ -11,7 +11,7 @@ import { pathToFileURL } from 'node:url';
 import { replaceRoot, joinWith, log, c } from '../utils.js';
 import { getRepresentativeColors } from '../libs/colors.js';
 import * as CACHE from '../libs/cache.js';
-import { run as runHook } from '../libs/hooks.js';
+import { run as runHook, HOOKS } from '@kirigami/sdk';
 
 
 const __dirname = process.cwd();
@@ -65,9 +65,9 @@ export default async function build(__root, task, exportPath = null) {
 	// que l'argument `functions` de l'API Sass.
 	const hookContext = { __root, task, exportPath, config };
 	const [hookBefore, hookAfter, hookFunctions] = await Promise.all([
-		runHook('sass:before', hookContext),
-		runHook('sass:after', hookContext),
-		runHook('sass:functions', hookContext),
+		runHook(HOOKS.SASS_BEFORE, hookContext),
+		runHook(HOOKS.SASS_AFTER, hookContext),
+		runHook(HOOKS.SASS_FUNCTIONS, hookContext),
 	]);
 	const beforeFiles = [...[].concat(before), ...hookBefore].filter(Boolean).map((p) => path.resolve(process.cwd(), p));
 	const afterFiles = [...[].concat(after), ...hookAfter].filter(Boolean).map((p) => path.resolve(process.cwd(), p));

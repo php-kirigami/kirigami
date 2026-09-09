@@ -1,0 +1,48 @@
+{
+  "name": "@kirigami/sdk",
+  "version": "0.1.0",
+  "description": "Shared runtime for kirigami plugins: the hook registry (and related constants) used to extend kirigami's build tasks.",
+  "license": "MIT",
+  "author": "Maxime Larrivée-Roy",
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "keywords": [
+    "kirigami",
+    "plugin",
+    "sdk",
+    "hooks"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "src/",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "types": "./index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "engines": {
+    "node": ">=20.10.0",
+    "npm": ">=10.2.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/php-kirigami/kirigami.git"
+  },
+  "homepage": "https://github.com/php-kirigami/kirigami/tree/main/packages/sdk#readme",
+  "bugs": {
+    "url": "https://github.com/php-kirigami/kirigami/issues"
+  }
+}
