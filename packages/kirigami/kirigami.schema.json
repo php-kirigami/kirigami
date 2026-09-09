@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigami.schema.json",
+  "$id": "https://cdn.jsdelivr.net/npm/@kirigami/kirigami/kirigami.schema.json",
   "title": "kirigami.yaml",
   "description": "Configuration file for the Kirigami static site generator (@kirigami/kirigami, v1.1.0). Must sit at the project root and be named exactly 'kirigami.yaml'. Read by every `kiri` command (build, export, watch, run) via bin/config.js.",
   "type": "object",
@@ -151,7 +151,7 @@
     },
     "plugins": {
       "type": "array",
-      "description": "List of Kirigami plugins. Each plugin requires a name and whether it is active. Optional options are free-form and may contain any valid JSON/YAML value.",
+      "description": "List of Kirigami plugins. Each plugin must use a supported package naming convention.",
       "items": {
         "type": "object",
         "required": [
@@ -162,17 +162,18 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "Plugin package name or identifier.",
-            "examples": [
-              "@kirigami/plugin-highlight"
-            ]
+            "pattern": "^(?:@kirigami/plugin-[^/]+|[^/]+/kirigami-plugin-[^/]+|kirigami-plugin-[^/]+)$",
+            "description": "Plugin identifier. Must use one of the supported naming conventions: @kirigami/plugin-*, */kirigami-plugin-*, or kirigami-plugin-*."
           },
           "active": {
             "type": "boolean",
-            "description": "Whether the plugin is enabled."
+            "description": "Whether the plugin is active."
           },
           "options": {
-            "description": "Free-form plugin-specific options. The structure and accepted values are defined by the plugin itself."
+            "type": "object",
+            "description": "Free-form plugin options. The structure depends on the plugin.",
+            "additionalProperties": true,
+            "default": {}
           }
         }
       },
