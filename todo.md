@@ -26,6 +26,7 @@ mettre à jour le user-agent pis les headers
 block html extlink qui call scraper
 shortcuts.php
 $absurl à revoir
+before-before/after-after hook dans prepros
 
 
 - Plugins settés dans kirigami.yaml

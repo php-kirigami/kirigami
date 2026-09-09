@@ -9,7 +9,7 @@ const N = "\n";
 
 function _print_r(mixed $obj, bool $ret = false) {
     if($ret) return '<pre>' . print_r($obj, $ret) . '</pre>';
-    echo '<pre>' . print_r($obj, $ret) . '</pre>';
+    echo '<pre>' . print_r($obj, true) . '</pre>';
 }
 
 

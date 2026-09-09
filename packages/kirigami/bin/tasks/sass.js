@@ -7,15 +7,17 @@ import { minify } from 'csso';
 import { getConfig } from '../config.js';
 import { execSync } from 'child_process';
 import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
 import { replaceRoot, joinWith, log, c } from '../utils.js';
 import { getRepresentativeColors } from '../libs/colors.js';
 import * as CACHE from '../libs/cache.js';
+import { run as runHook } from '../libs/hooks.js';
 
 
 const __dirname = process.cwd();
 const require = createRequire(import.meta.url);
 const fontkit = require('fontkit');
-const fontCache = new Map();
+const fontCache = new Map(); // cache mémoire du résultat intermédiaire (plain object) pour éviter de retaper CACHE à chaque appel dans le même process
 const FORMAT_KEYWORDS = {
 	woff2: 'woff2',
 	woff:  'woff',
@@ -43,12 +45,33 @@ export const canbuild = true;
 
 export default async function build(__root, task, exportPath = null) {
 	const config = await getConfig();
-	const params = config.sass || {};
+	const { before = [], after = [], ...params } = config.sass || {};
 	const entry = path.join(__root, task.entry);
 	const outfile = path.join(exportPath || __root, task.entry).replace(/\.s?css?$/, '.min.css');
 	const dir = path.dirname(outfile);
 
 	if(!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+	// config.sass.before / config.sass.after : fichiers additionnels compilés
+	// respectivement avant et après l'entry (chemins relatifs à cwd()).
+	// Le hook 'sass:before' / 'sass:after' permet à d'autres modules (à terme,
+	// le système de plugins lu depuis kirigami.yaml) de contribuer des
+	// fichiers supplémentaires — chaque listener peut renvoyer un chemin
+	// (absolu de préférence, ex: résolu depuis son propre package) ou un
+	// tableau de chemins. Voir buildSyntheticEntrySource() pour l'assemblage.
+	// Le hook 'sass:functions' permet d'ajouter des fonctions Sass custom, au
+	// même titre que inline-file()/img-asset()/etc. plus bas — chaque listener
+	// renvoie un objet { 'ma-fonction($arg)': (args) => ... }, au même format
+	// que l'argument `functions` de l'API Sass.
+	const hookContext = { __root, task, exportPath, config };
+	const [hookBefore, hookAfter, hookFunctions] = await Promise.all([
+		runHook('sass:before', hookContext),
+		runHook('sass:after', hookContext),
+		runHook('sass:functions', hookContext),
+	]);
+	const beforeFiles = [...[].concat(before), ...hookBefore].filter(Boolean).map((p) => path.resolve(process.cwd(), p));
+	const afterFiles = [...[].concat(after), ...hookAfter].filter(Boolean).map((p) => path.resolve(process.cwd(), p));
+	const pluginFunctions = Object.assign({}, ...hookFunctions); // objets { signature: fn } fusionnés
 
 	// config.image.* : voir kirigami.config — source est relatif à cwd(),
 	// dest est relatif à kirigami.src mais réécrit dans l'arbre de sortie
@@ -57,11 +80,17 @@ export default async function build(__root, task, exportPath = null) {
 	const imgFormat = imgConfig.format === 'avif' ? 'avif' : 'webp';
 	const imgSourceRoot = path.resolve(process.cwd(), imgConfig.source || './assets/images/');
 	const imgDestRoot = path.resolve(exportPath || __root, imgConfig.dest || './images/');
+	// Lors d'un export, l'image traitée doit atterrir à la fois dans l'arbre
+	// exporté (imgDestRoot ci-dessus) et dans l'arbre source (__root), pour
+	// que ce dernier reste à jour aussi (dev/watch). Hors export, imgDestRoot
+	// pointe déjà sur __root, donc rien à dupliquer.
+	const imgDestRootSource = exportPath ? path.resolve(__root, imgConfig.dest || './images/') : null;
 
 	try {
 		const cache = new Map();
 		const imageAssets = new Map(); // path retourné (utilisé dans le css) -> infos source pour le traitement post-compile
-		const compiled = await sass.compileAsync(entry, {
+
+		const compileOptions = {
 			style: "compressed",
 			sourceMap: !exportPath,
 			sourceMapIncludeSources: !exportPath,
@@ -74,6 +103,12 @@ export default async function build(__root, task, exportPath = null) {
 				])
 			],
 			functions: {
+				// Fonctions ajoutées par des plugins (hook 'sass:functions').
+				// Placées en premier : si un plugin réutilise par erreur une
+				// signature déjà native (inline-file, img-asset, etc.), la
+				// version native ci-dessous l'emporte toujours.
+				...pluginFunctions,
+
 				'inline-file($path)': (args) => {
 					const filePath = args[0].assertString("path").text;
 					if (cache.has(filePath)) return cache.get(filePath);
@@ -89,22 +124,17 @@ export default async function build(__root, task, exportPath = null) {
 
 				'font-weight-range($path)': (args) => {
 					const abs = resolveFontPath(args[0].assertString('path').text);
-					const font = getFont(abs);
-					const [min, max] = axisRange(font, 'wght', [400, 400]);
-					return new sass.SassString(`${min} ${max}`);
+					return new sass.SassString(getFont(abs).weightRange);
 				},
 
 				'font-stretch-range($path)': (args) => {
 					const abs = resolveFontPath(args[0].assertString('path').text);
-					const font = getFont(abs);
-					const [min, max] = axisRange(font, 'wdth', [100, 100]);
-					return new sass.SassString(`${min}% ${max}%`);
+					return new sass.SassString(getFont(abs).stretchRange);
 				},
 
 				'font-unicode-range($path)': (args) => {
 					const abs = resolveFontPath(args[0].assertString('path').text);
-					const font = getFont(abs);
-					return new sass.SassString(buildUnicodeRange(font.characterSet));
+					return new sass.SassString(getFont(abs).unicodeRange);
 				},
 
 				'font-format($path)': (args) => {
@@ -113,9 +143,8 @@ export default async function build(__root, task, exportPath = null) {
 				},
 
 				'font-style-detect($path)': (args) => {
-				const abs = resolveFontPath(args[0].assertString('path').text);
-					const font = getFont(abs);
-					return new sass.SassString(detectFontStyle(font));
+					const abs = resolveFontPath(args[0].assertString('path').text);
+					return new sass.SassString(getFont(abs).style);
 				},
 
 				'img-asset($path, $width: null, $height: null, $cover: false)': (args) => {
@@ -130,17 +159,14 @@ export default async function build(__root, task, exportPath = null) {
 					const height = hasHeight ? Math.round(heightArg.assertNumber('height').value) : null;
 
 					let suffix = '';
-					if (hasWidth && hasHeight) {
-						suffix = cover ? `-${width}x${height}-cover` : `-${width}x${height}`;
-					} else if (hasWidth) {
-						suffix = `-${width}w`;
-					} else if (hasHeight) {
-						suffix = `-${height}h`;
-					}
+					if (hasWidth && hasHeight) suffix = cover ? `-${width}x${height}-cover` : `-${width}x${height}`;
+					else if (hasWidth) suffix = `-${width}w`;
+					else if (hasHeight) suffix = `-${height}h`;
 
 					const { dir: subDir, name } = path.parse(srcRelPath);
 					const outRelPath = (subDir ? `${subDir}/` : '') + `${name}${suffix}.${imgFormat}`;
 					const destAbsPath = path.join(imgDestRoot, outRelPath);
+					const destAbsPathSource = imgDestRootSource ? path.join(imgDestRootSource, outRelPath) : null;
 
 					const returned = path.relative(path.dirname(outfile), destAbsPath).split(path.sep).join('/');
 
@@ -150,6 +176,7 @@ export default async function build(__root, task, exportPath = null) {
 							width,
 							height,
 							cover,
+							extraDest: destAbsPathSource,
 						});
 					}
 
@@ -182,7 +209,14 @@ export default async function build(__root, task, exportPath = null) {
 
 			},
 			...params
-		});
+		};
+
+		const compiled = (beforeFiles.length || afterFiles.length)
+			? await sass.compileStringAsync(
+				buildSyntheticEntrySource(entry, beforeFiles, afterFiles),
+				{ url: pathToFileURL(entry), ...compileOptions }
+			)
+			: await sass.compileAsync(entry, compileOptions);
 
 		const newImages = await processImageAssets(imageAssets, imgFormat);
 
@@ -249,6 +283,34 @@ function getGlobalRoot() {
 		_globalRoot = execSync("npm root -g").toString().trim();
 	}
 	return _globalRoot;
+}
+
+
+// ---------------------------------------------------------------------------
+// Assemble un point d'entrée synthétique qui @use avant/après l'entry
+// réelle, dans cet ordre. On ne peut pas concaténer le texte brut des
+// fichiers (les @use/@forward doivent être en tête de fichier, avant toute
+// règle CSS), donc chaque fichier est chargé comme son propre module ; le
+// module system de Sass émet le CSS de chaque module dans l'ordre où il est
+// @use pour la première fois, ce qui donne exactement l'ordre before → entry
+// → after dans le CSS compilé. Le namespace de chaque @use n'a pas
+// d'importance ici (rien ne le référence), juste besoin qu'il soit unique.
+// ---------------------------------------------------------------------------
+function buildSyntheticEntrySource(entryAbsPath, beforeFiles, afterFiles) {
+	const baseDir = path.dirname(entryAbsPath);
+	const asModuleUrl = (absPath) => {
+		let rel = path.relative(baseDir, absPath).split(path.sep).join('/');
+		if (!rel.startsWith('.')) rel = `./${rel}`;
+		return rel;
+	};
+
+	const lines = [
+		...beforeFiles.map((f, i) => `@use "${asModuleUrl(f)}" as __before_${i};`),
+		`@use "${asModuleUrl(entryAbsPath)}" as __entry;`,
+		...afterFiles.map((f, i) => `@use "${asModuleUrl(f)}" as __after_${i};`),
+	];
+
+	return lines.join('\n') + '\n';
 }
 
 
@@ -321,10 +383,39 @@ function guessMimeType(filePath) {
 function getFont(absPath) {
 	const mtime = fs.statSync(absPath).mtimeMs;
 	const key = `${absPath}:${mtime}`;
+
 	if (fontCache.has(key)) return fontCache.get(key);
-	const font = fontkit.openSync(absPath);
-	fontCache.set(key, font);
-	return font;
+
+	const cacheKey = `font:${key}`;
+	let data = CACHE.get(cacheKey);
+	if (data === null) {
+		const font = fontkit.openSync(absPath);
+		data = computeFontData(font);
+		CACHE.set(cacheKey, data);
+	}
+
+	fontCache.set(key, data);
+	return data;
+}
+
+// ---------------------------------------------------------------------------
+// L'objet Font de fontkit (buffers, getters, méthodes sur le prototype)
+// n'est pas sérialisable en JSON : on ne peut donc pas le stocker tel quel
+// dans CACHE (persisté en SQLite via JSON.stringify, voir libs/cache.js).
+// On calcule donc une seule fois toutes les propriétés dérivées dont les
+// fonctions Sass ont besoin, sous forme de données simples, et c'est ce
+// résultat intermédiaire (plain object) qui est mis en cache et réutilisé.
+// ---------------------------------------------------------------------------
+function computeFontData(font) {
+	const [weightMin, weightMax] = axisRange(font, 'wght', [400, 400]);
+	const [stretchMin, stretchMax] = axisRange(font, 'wdth', [100, 100]);
+
+	return {
+		weightRange: `${weightMin} ${weightMax}`,
+		stretchRange: `${stretchMin}% ${stretchMax}%`,
+		unicodeRange: buildUnicodeRange(font.characterSet),
+		style: detectFontStyle(font),
+	};
 }
 
 
@@ -373,23 +464,23 @@ function buildUnicodeRange(codepoints) {
 
 // ---------------------------------------------------------------------------
 // Traite la map d'images collectée par img-asset() : redimensionne et
-// convertit chaque source dans le format configuré (webp ou avif), à
-// l'emplacement absolu calculé pour chaque entrée. Sauté si la sortie
-// est déjà à jour par rapport à la source.
+// convertit chaque source dans le format configuré (webp ou avif). Chaque
+// entrée peut avoir jusqu'à deux destinations (l'arbre exporté et, lors d'un
+// export, l'arbre source) : le traitement n'a lieu qu'une fois, et le
+// résultat est écrit vers celles qui ne sont pas déjà à jour.
 // ---------------------------------------------------------------------------
 async function processImageAssets(imageAssets, format) {
 	const newImages = [];
-	await Promise.all([...imageAssets.entries()].map(async ([dest, { src, width, height, cover }]) => {
+	await Promise.all([...imageAssets.entries()].map(async ([dest, { src, width, height, cover, extraDest }]) => {
 		if (!fs.existsSync(src)) {
 			throw new Error(`img-asset: fichier source introuvable: ${src}`);
 		}
 
-		if (fs.existsSync(dest) && fs.statSync(dest).mtimeMs >= fs.statSync(src).mtimeMs) {
-			return; // déjà à jour
-		}
-		newImages.push(replaceRoot(dest));
-		const destDir = path.dirname(dest);
-		if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+		const srcMtime = fs.statSync(src).mtimeMs;
+		const dests = [dest, extraDest].filter(Boolean);
+		const staleDests = dests.filter((d) => !fs.existsSync(d) || fs.statSync(d).mtimeMs < srcMtime);
+
+		if (!staleDests.length) return; // tout est déjà à jour
 
 		let pipeline = sharp(src);
 		if (width && height) {
@@ -400,7 +491,14 @@ async function processImageAssets(imageAssets, format) {
 			pipeline = pipeline.resize({ height });
 		} // ni width ni height: pas de resize, juste réencodage dans le format cible
 
-		await pipeline[format](IMG_FORMAT_OPTIONS[format]).toFile(dest);
+		const buffer = await pipeline[format](IMG_FORMAT_OPTIONS[format]).toBuffer();
+
+		await Promise.all(staleDests.map(async (d) => {
+			const destDir = path.dirname(d);
+			if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+			await fs.promises.writeFile(d, buffer);
+			newImages.push(replaceRoot(d));
+		}));
 	}));
 	return newImages;
 }

@@ -1,9 +1,6 @@
 <?php
 
-// IMAGETYPE_AVIF n'existe qu'à partir de PHP 8.1 : on la définit au besoin
-if (!defined('IMAGETYPE_AVIF')) {
-	define('IMAGETYPE_AVIF', 19);
-}
+if (!defined('IMAGETYPE_AVIF')) define('IMAGETYPE_AVIF', 19);
 
 class IMG
 {
@@ -351,6 +348,19 @@ class IMG
 
 		if(!$backtrace) $backtrace = PREPROS::backtraceFile();
 		return FS::getRelativePath($backtrace, FS::pathJoin('/project', $destfile));
+	}
+
+
+	public static function palette(string $path, $colors = 5)
+	{
+		$srcfile = FS::pathJoin(PREPROS::$config->image->source, $path);
+		if(!$srcinfo = PREPROS::fstat($srcfile)) throw new Exception("Invalid image file.");
+		$key = 'palette_' . STR::shorthash("{$srcfile}:{$srcinfo->modifiedAt}:{$colors}");
+		if($palette = CACHE::get($key)) return $palette;
+		if(!$localfile = current(PREPROS::mount($srcfile))) throw new Exception("Can't mount image.");
+		if(!$palette = (new self($localfile))->getRepresentativeColors($colors)) throw new Exception("Can't extract palette from image \"{$path}\".");
+		CACHE::set($key, $palette);
+		return $palette;
 	}
 
 

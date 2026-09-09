@@ -182,7 +182,7 @@ console.log(await streamedResponse.stdoutText); // "8.5.10"
 
 ```
 
-> `getPHPRuntime()` and `getPHPRuntimeWithNetwork()` are memoized: every call within the same process returns the same shared instance, so state (files, defined constants, etc.) persists between calls.
+> `getPHPRuntime()` and `getPHPRuntimeWithNetwork()` are memoized: every call within the same process returns the same shared instance, so state persists between calls.
 
 ### 4. Low-level configuration (Manual)
 
