@@ -142,7 +142,9 @@ final class PREPROS
      *
      * Runs unless `prepros.head` is `false`. A single task opts out with
      * `head: false`. A file already referenced in the page is left alone.
-     * `###TIMESTAMP###` is expanded by replaceTokens() right after.
+     * The `?###TIMESTAMP###` cache-buster is left literal at render time and
+     * only expanded on export (see replaceTokens()), so rebuilding a preview
+     * never rewrites the committed page.
      */
     private static function injectHead(string $contents, string $relroot): string
     {
@@ -208,14 +210,19 @@ final class PREPROS
     /**
      * Expands the build-time text tokens in a generated file. Runs at render
      * time (so `kiri build` / `kiri watch` previews show real values, not the
-     * literal `###YEAR###`), and again — harmlessly — on export.
+     * literal `###YEAR###`).
+     *
+     * `###TIMESTAMP###` is deliberately NOT expanded here: it is only ever a
+     * cache-buster on the managed-`<head>` asset refs, has no preview value,
+     * and expanding it per render would rewrite every committed `src/**` page
+     * with a fresh number on each build. The export copy (bin/tasks/dist.js)
+     * substitutes it — and `###YEAR###` / `###TODAY###` — when writing `dist/`.
      */
     private static function replaceTokens(string $contents): string
     {
         return strtr($contents, [
-            '###YEAR###'      => date('Y'),
-            '###TIMESTAMP###' => (string) time(),
-            '###TODAY###'     => date('Y-m-d'),
+            '###YEAR###'  => date('Y'),
+            '###TODAY###' => date('Y-m-d'),
         ]);
     }
 

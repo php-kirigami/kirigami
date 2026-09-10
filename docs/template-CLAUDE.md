@@ -651,23 +651,72 @@ originals in `assets/images/`; never hand-edit `src/images/`.
 
 ## Deployment (`php-kirigami/kiribuild`)
 
+This project ships `.github/workflows/page.yml`. On every push to `main` it:
+builds with [`php-kirigami/kiribuild@v2`](https://github.com/php-kirigami/kiribuild)
+(Node 24 + `kiri` CLI + `kiri export`), **commits back anything the build
+regenerated** (e.g. `src/images/` derivatives — `dist/` stays git-ignored and
+ships via the Pages artifact), then publishes `dist/` to GitHub Pages.
+
 ```yaml
-# .github/workflows/deploy.yml
+# .github/workflows/page.yml
 name: Build & Deploy
+
+env:
+  TZ: America/Toronto
+
 on:
-  push: { branches: [main] }
-permissions: { contents: read, pages: write, id-token: write }
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: write      # commit files the build regenerated
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: php-kirigami/kiribuild@v1
+      - uses: actions/checkout@v7
+
+      - uses: php-kirigami/kiribuild@v2
+        with:
+          node-version: '24'
+
+      - name: Commit regenerated files
+        shell: bash
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name  "kirigami[bot]"
+            git config user.email "kirigami-bot@users.noreply.github.com"
+            git add -A
+            git commit -m "chore: update generated files [skip ci]"
+            git push
+          else
+            echo "Nothing to commit."
+          fi
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+      - id: deployment
+        uses: actions/deploy-pages@v5
 ```
 
-The action runs `kiri export` and deploys the result (typically GitHub Pages).
-See the [action's docs](https://github.com/php-kirigami/kiribuild) for inputs
-(export path, Pages options, …).
+v2 of the action does **only** Node + CLI + `kiri export`; checkout, the
+commit-back, and the Pages upload/deploy live in the workflow (v1 did all of it
+inside the action). Enable Pages once per repo: **Settings → Pages → Source:
+GitHub Actions**. See the [action's docs](https://github.com/php-kirigami/kiribuild)
+for its inputs.
 
 ---
 
