@@ -30,10 +30,10 @@ Cloned as siblings of this repo (`../<name>/`), all under the `php-kirigami` org
 | `../kiribuild/` | `php-kirigami/kiribuild` | the reusable GitHub Action (`kiri export` + Pages deploy) |
 | `../php-wasm-builder/` | (upstream fork) | toolchain that compiles the custom PHP WASM in `@kirigami/php-wasm` |
 
-A Kirigami **site** project (`../template-*/`, the `.github.io` site) gets its
-`CLAUDE.md` from `docs/template-CLAUDE.md` here — authored in this repo, copied to
-the sibling's root. Edit it here; never keep a divergent copy in the sibling.
-So far only `../template-demo/` has one.
+Every Kirigami **site** project (`../template-*/`, the `.github.io` site) carries
+a `CLAUDE.md` copied verbatim from `docs/template-CLAUDE.md` here — authored in
+this repo, never edited in the sibling. **After changing `docs/template-CLAUDE.md`,
+re-copy it into every `../template-*/CLAUDE.md`** (and the site repo).
 
 ### Packages (`packages/`)
 
@@ -44,7 +44,7 @@ So far only `../template-demo/` has one.
 | `@kirigami/php-wasm` | 8.5.10-5 | custom PHP 8.5.10 WASM build, JSPI + Node only, fork of WordPress Playground; now includes Imagick (wasm ~22 MB) |
 | `@kirigami/struct-walker` | 1.0.4 | recursive YAML/JSON walker: resolves nested file refs, converts assets to data URIs |
 | `@kirigami/sdk` | 0.2.0 | plugin hook registry (`on`/`run`/`HOOKS`) + `Cache` (SQLite via `node:sqlite`). 0.2.0: `runWaterfall()` (pipe a value through listeners) + `has()`; new hooks `esbuild:before`/`esbuild:after`/`esbuild:plugins` (mirror the sass ones) and `prepros:html` (waterfall — transform each rendered page's HTML) |
-| `@kirigami/canva` | 2.2.0 | shared Sass/JS design system; published & public like the rest (was private until 2026-09-10); still WIP. 1.1.0 adds optional light/dark theming to `conf` (`$dark` + `$theme: auto\|class\|both`, built-in dark palette from `assets/chart/chart.html`) + `theme` script (`data-theme` toggle, persists to `localStorage`). 1.1.1: `--font-size` is `clamp($font-min .. $font-base)` (was floorless `min()`); new `$font-min` default 17. **2.0.0 (breaking): script subpaths dropped the `scripts/` segment** — `exports` is now `{ "./styles/*": …, "./*": "./dist/scripts/*.js" }`, so `@kirigami/canva/dom` / `/theme` / `/observer` / `/components/burger` (old `scripts/*` paths gone); styles unchanged. Also new in 2.0.0: `observer` — tag-rewriting engine for non-closing authoring tags (`register('youtube', el => …)`); starts on import, sweeps current DOM + `MutationObserver`, `voidLike` lifts stray nested children out; fires `canva:observed`; the seam plugins hook into. 2.1.0: `theme` gained declarative toggles — `[data-theme-toggle]` (bare = flip, or `="dark\|light\|auto"`), wired on import (new `bindToggles()` export), reflects `data-theme-state`/`aria-pressed`, fires `canva:themechange` on `window`, re-syncs on OS change while in `auto`. Replaces the hand-rolled toggle in template-demo's `kirigami.core.js`. 2.2.0: `helpers` gained `dedent(str)` — strips the leading-whitespace prefix common to every non-blank line (relative indent kept; trims leading blank lines + trailing ws), a pure no-DOM string helper; `@kirigami/plugin-highlight` consumes it to de-indent fenced code blocks |
+| `@kirigami/canva` | 2.3.0 | shared Sass/JS design system; published & public like the rest (was private until 2026-09-10); still WIP. 1.1.0 adds optional light/dark theming to `conf` (`$dark` + `$theme: auto\|class\|both`, built-in dark palette from `assets/chart/chart.html`) + `theme` script (`data-theme` toggle, persists to `localStorage`). 1.1.1: `--font-size` is `clamp($font-min .. $font-base)` (was floorless `min()`); new `$font-min` default 17. **2.0.0 (breaking): script subpaths dropped the `scripts/` segment** — `exports` is now `{ "./styles/*": …, "./*": "./dist/scripts/*.js" }`, so `@kirigami/canva/dom` / `/theme` / `/observer` / `/components/burger` (old `scripts/*` paths gone); styles unchanged. Also new in 2.0.0: `observer` — tag-rewriting engine for non-closing authoring tags (`register('youtube', el => …)`); starts on import, sweeps current DOM + `MutationObserver`, `voidLike` lifts stray nested children out; fires `canva:observed`; the seam plugins hook into. 2.1.0: `theme` gained declarative toggles — `[data-theme-toggle]` (bare = flip, or `="dark\|light\|auto"`), wired on import (new `bindToggles()` export), reflects `data-theme-state`/`aria-pressed`, fires `canva:themechange` on `window`, re-syncs on OS change while in `auto`. Replaces the hand-rolled toggle in template-demo's `kirigami.core.js`. 2.2.0: `helpers` gained `dedent(str)` — strips the leading-whitespace prefix common to every non-blank line (relative indent kept; trims leading blank lines + trailing ws), a pure no-DOM string helper; `@kirigami/plugin-highlight` consumes it to de-indent fenced code blocks. 2.3.0: when `$dark` is on, `conf` emits a `background-color`/`background-image`/`color` transition (`var(--transition-duration)`) on `*, ::before, ::after` so a theme switch eases; `prefers-reduced-motion`-guarded, no first-paint animation, a component's own `transition` shorthand overrides it |
 | `@kirigami/plugin-highlight` | 0.1.0 | first real plugin: **build-time** highlight.js (highlighting ships 0 runtime JS). `prepros:html` hook rewrites `<pre><code class="language-x">` with `.hljs-*` spans (`hljs.highlight`, `highlightAuto` for un-tagged; each block de-indented first via `@kirigami/canva`'s `dedent` — shared leading whitespace stripped like `STR::trimIndent`, so fenced blocks can be indented in the source markdown; relative indent kept); `sass:after` appends a parametric SCSS theme (mixin `assets/_highlight.scss` + `dark()`/`light()` presets; `assets/theme-*.scss` are copy-me examples) + embedded JetBrains Mono `@font-face` (~39 KB base64 woff2, `assets/_font.scss`) + copy-button layout (`assets/_copy.scss`); `esbuild:after` bundles the ~1 KB hover copy-button script (`assets/copy.js`, skips a `<pre>` that already has a sibling `<button>`) when `copyButton` is on (warns if the project has no esbuild task); `prepros:php` includes `php/highlight.php` (the `<highlight lang="…">` authoring tag → emits `<pre><code class="language-…">`) when `tag` is on. Options (kirigami.yaml only): `languages` (12 common, or `all`), `theme` (`auto`\|`dark`\|`light`\|`none`), `autodetect`, `embedFont`, `copyButton`, `tag`; code defaults in `index.js`, schema `options.schema.json` (pkg `kirigami.optionsSchema`) — the loader validates against it, **and** `kirigami.schema.json` `$ref`s it (see its `plugins.items.allOf`) so VS Code completes/validates `plugins[].options` for this plugin. Dir renamed from `plugin-hljs` 2026-09-10 |
 
 ### Licensing
@@ -139,29 +139,23 @@ and editors would otherwise keep the stale copy for up to 12 h. Flags:
 Committed: the plugin system, `@kirigami/plugin-highlight` v0.1.0, SDK cache
 migration, `SCHEMA` and `LD` classes (697eb3d and earlier); `@kirigami/canva`
 2.2.0 `helpers.dedent(str)` + plugin-highlight consuming it (551dfbf); the
-release script (b48fe5f).
+release script (b48fe5f); `kiri create` wizard + git + metadata (f81862d).
 
 **canva is a permanent part of this monorepo — reuse its code rather than
 re-implementing shared helpers per package** (that's why plugin-highlight now
-depends on it, exact `2.2.0`).
+depends on it).
 
 Uncommitted:
 
-- **`kiri create` — interactive wizard + git + metadata.** No args (in a TTY) →
-  wizard: pick template (`select()`), target dir, then project name /
-  description / author / base URL. Those get written into `package.json` and
-  `kirigami.yaml` (`setKirigamiKey()` — line-level edit, comments preserved,
-  handles `>-` block scalars). Passing a template name skips the prompts;
-  `--yes` / non-TTY takes defaults. Extraction is now **non-destructive and
-  never errors on a non-empty target** (existing files kept, `package.json`
-  deep-merged, missing files added) — an existing `package.json` / `.git` /
-  `node_modules` is fine. If the template ships no `package.json` (e.g.
-  `template-default`), a starter one is written pinning the running kiri's
-  `@kirigami/*` versions. Then `git init` + initial commit (unless already in a
-  worktree or `--no-git`), then `npm install` (unless `--no-install`). New
-  flags: `--name`/`--description`/`--author`/`--baseurl`, `--yes`/`-y`,
-  `--no-git`, `--no-install`. Prompt helpers `isInteractive()` / `ask()` /
-  `confirm()` / `select()` added to `bin/utils.js`.
+- **`@kirigami/canva` 2.3.0 — theme-change transition.** `conf` emits a
+  `background-color`/`background-image`/`color` transition on `*` when `$dark`
+  is on (see the package-table row). `packages/kirigami` +
+  `packages/plugin-highlight` deps bumped to `2.3.0` to match.
+- **`../template-default/` rebuilt as a real starter kit** (that repo, on its
+  own `main`): layout + 2 pages + themeable SCSS (green palette, light/dark) +
+  progressive-enhancement JS + `.vscode` + `package.json` + `.editorconfig`.
+  Verified with `kiri build`. Every `template-*` repo now also carries a
+  `CLAUDE.md` copied from `docs/template-CLAUDE.md`.
 - **DX issue logged in `todo.md`, not fixed:** `HTML::format()`
   (`php-prepros/src/libraries/html.class.php`) lowercases element/attribute
   names unconditionally (`:76`, `:166`, `:246`), flattening inline SVG/MathML

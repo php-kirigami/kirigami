@@ -6,6 +6,11 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 
 
+<!-- FAIT (canva 2.3.0): conf.scss émet une transition background-color/background-image/color (var(--transition-duration)) sur *, ::before, ::after quand $dark est activé. Guardé prefers-reduced-motion, pas d'anim au premier paint, une transition shorthand d'un composant l'écrase -->
+
+
+
+
 <!-- FAIT: "kirigami.optionsSchema" dans le package.json du plugin = path vers un JSON Schema; le loader (bin/libs/plugins.js) valide entry.options (de kirigami.yaml) contre, via Ajv, avant de charger le plugin. Ex: packages/plugin-highlight/options.schema.json -->
 <!-- FAIT (reconnu par VSCode): kirigami.schema.json > properties.plugins.items.allOf a un bloc if/then par plugin first-party — if name const "@kirigami/plugin-highlight" then options $ref "../plugin-highlight/options.schema.json" (résolu en sibling monorepo / jsdelivr). config.js inline ces $ref depuis le disque au build (skip si plugin pas installé). Ajouter un bloc allOf quand on ajoute un plugin officiel. 3rd-party = options free-form + validation build-time seulement -->
 

@@ -34,6 +34,18 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 2.3.0
+
+- **`conf` — theme-change transition.** When the dark palette is enabled
+  (`$dark`), `conf` now emits a `background-color` / `background-image` / `color`
+  transition (`var(--transition-duration)`) on every element, so a theme toggle
+  or an OS switch eases between palettes instead of snapping. Guarded by
+  `prefers-reduced-motion`; the first paint is not animated. A component that
+  sets its own `transition` shorthand overrides this — re-add those properties
+  there if you want them to animate too.
+
+---
+
 ## What's new in 2.2.0
 
 - **`helpers` — `dedent()`.** Strips the whitespace prefix shared by every
@@ -98,6 +110,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/canva](#kirigamicanva)
   - [Overview](#overview)
+  - [What's new in 2.3.0](#whats-new-in-230)
   - [What's new in 2.2.0](#whats-new-in-220)
   - [What's new in 2.1.0](#whats-new-in-210)
   - [What's new in 2.0.0](#whats-new-in-200)
@@ -239,6 +252,13 @@ When enabled, `conf` emits a second copy of every palette custom property
 (and every recoloured `--icon-*`) under the dark palette — as a
 `@media (prefers-color-scheme: dark)` block, a `:root[data-theme="dark"]`
 rule, or both, per `$theme`.
+
+It also adds a `background-color` / `background-image` / `color` transition
+(`var(--transition-duration)`, ~200 ms) on `*, *::before, *::after` so switching
+theme eases instead of snapping. It's wrapped in
+`@media (prefers-reduced-motion: no-preference)` and doesn't fire on first paint.
+A component that declares its own `transition` shorthand replaces this on that
+element — list the palette-driven properties there too if you want them animated.
 
 The built-in dark palette is exposed as `$dark-*` `!default` variables
 (`$dark-bg`, `$dark-ink`, `$dark-accent`, `$dark-logo-ink`, …), overridable

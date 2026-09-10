@@ -159,6 +159,18 @@ $dark-enabled: $dark == true or meta.type-of($dark) == "map";
 			@include palette-props($dark-palette);
 		}
 	}
+
+	// Ease the palette swap on a theme change (toggle or OS flip). Only the
+	// properties that follow a token are transitioned; `prefers-reduced-motion`
+	// opts out. First paint isn't animated (no prior value to transition from).
+	@media (prefers-reduced-motion: no-preference) {
+		*, *::before, *::after {
+			transition:
+				background-color var(--transition-duration) ease,
+				background-image var(--transition-duration) ease,
+				color var(--transition-duration) ease;
+		}
+	}
 }
 
 
