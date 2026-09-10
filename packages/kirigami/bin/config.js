@@ -84,6 +84,12 @@ function inlinePluginOptionSchemas(schema) {
 			return []; // plugin not installed in this project — skip its schema
 		}
 	});
+
+	// An empty `allOf: []` is invalid JSON Schema — Ajv refuses to compile it
+	// ("schema is invalid: ... allOf must NOT have fewer than 1 items"), which
+	// would break `kiri build` for every project that doesn't have a first-party
+	// plugin installed. Drop the key entirely when nothing resolved.
+	if (items.allOf.length === 0) delete items.allOf;
 }
 
 
