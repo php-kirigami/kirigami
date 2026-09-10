@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigami.schema.json",
   "title": "kirigami.yaml",
-  "description": "Configuration file for the Kirigami static site generator (@kirigami/kirigami, v1.3.2). Must sit at the project root and be named exactly 'kirigami.yaml'. Read by every `kiri` command (build, export, watch, run) via bin/config.js.",
+  "description": "Configuration file for the Kirigami static site generator (@kirigami/kirigami, v1.4.0). Must sit at the project root and be named exactly 'kirigami.yaml'. Read by every `kiri` command (build, export, watch, run) via bin/config.js.",
   "type": "object",
   "required": [
     "kirigami"
@@ -168,6 +168,151 @@
           "examples": [
             "https://example.com/?q={search_term_string}"
           ]
+        }
+      }
+    },
+    "meta": {
+      "type": [
+        "object",
+        "boolean"
+      ],
+      "description": "Top-level block. Configuration for @kirigami/php-prepros' META class, which builds the standard SEO / social <meta> and <link> tags (description, keywords, robots, author, generator, Open Graph, Twitter Card, canonical, favicon, …) and injects them into every page's <head>. Automatic injection is OPT-IN: it happens only when this block is present. An empty map (`meta: {}`) is enough to turn it on, deriving everything from the loose keys of the `kirigami` block, the `jsonld` block, and each page's PHPDOC (@title, @description / @abstract, @keywords, @image, @robots, @og_type). A tag the page's layout already hand-writes is left untouched. Omit the block entirely and nothing is injected (explicit META::tag() / meta_tag() calls from templates still emit). Set to `false`, or `{ \"auto\": false }`, to keep the config values but stop the automatic injection. Per-page PHPDOC tags: @meta false (skip the page, or @meta_ignore true), @meta_title, @meta_description, @meta_keywords, @meta_image, @meta_robots, @meta_type, @canonical <url>.",
+      "additionalProperties": true,
+      "properties": {
+        "auto": {
+          "type": "boolean",
+          "description": "Whether to automatically inject the generated tags into each page's <head>. Defaults to true once this block exists; set false to keep the block for its config values while placing tags by hand with META::tags() / meta_tags().",
+          "default": true
+        },
+        "titleFormat": {
+          "type": "string",
+          "description": "Template for the composed <title> / og:title / twitter:title on a normal page. Tokens: {title} (the page's @title), {project}, {tagline}. Dangling separators left by an empty token are trimmed.",
+          "default": "{title} — {project}",
+          "examples": [
+            "{title} — {project}",
+            "{project} | {title}"
+          ]
+        },
+        "titleFormatHome": {
+          "type": "string",
+          "description": "Title template used when the page has no @title (or its @title equals `project`) — i.e. the home page and section landing pages without their own title.",
+          "default": "{project} — {tagline}"
+        },
+        "description": {
+          "type": "string",
+          "description": "Default site description, used on pages that declare no @description / @abstract of their own. Defaults to the `jsonld` description, then the loose `description` key."
+        },
+        "keywords": {
+          "type": [
+            "array",
+            "string"
+          ],
+          "description": "Default <meta name=\"keywords\"> content. A list or a comma-separated string. Defaults to the `jsonld` keywords, then the loose `keywords` key. A page's @keywords overrides it.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "robots": {
+          "type": "string",
+          "description": "Default <meta name=\"robots\"> directive. A page's @robots overrides it; `robots: false` (or @robots false) omits the tag.",
+          "default": "index, follow",
+          "examples": [
+            "index, follow",
+            "noindex, nofollow"
+          ]
+        },
+        "language": {
+          "type": "string",
+          "description": "BCP-47 language tag emitted as <meta name=\"language\"> and, with the dash turned into an underscore, as og:locale. Defaults to the `jsonld` lang, then the loose `lang` / `language` key, then `en`.",
+          "examples": [
+            "en",
+            "fr-CA"
+          ]
+        },
+        "generator": {
+          "type": [
+            "string",
+            "boolean"
+          ],
+          "description": "<meta name=\"generator\"> content. Set a string to override, or `false` to omit the tag.",
+          "default": "Kirigami"
+        },
+        "author": {
+          "type": "string",
+          "description": "<meta name=\"author\"> content. Defaults to the loose `author` key, then the `jsonld` person's name."
+        },
+        "designer": {
+          "type": "string",
+          "description": "<meta name=\"designer\"> content. Defaults to the loose `designer` key; not emitted unless set."
+        },
+        "themeColor": {
+          "type": "string",
+          "description": "<meta name=\"theme-color\"> content (a CSS color). Not emitted unless set.",
+          "examples": [
+            "#0b7285"
+          ]
+        },
+        "image": {
+          "type": "string",
+          "description": "Default og:image / twitter:image — an absolute URL or a path relative to `baseurl`. Defaults to the `jsonld` image, then its logo, then the loose `image` / `ogimage` key. A page's @image overrides it."
+        },
+        "ogType": {
+          "type": "string",
+          "description": "Default og:type. A page's @og_type overrides it.",
+          "default": "website",
+          "examples": [
+            "website",
+            "article",
+            "profile"
+          ]
+        },
+        "twitterCard": {
+          "type": "string",
+          "description": "twitter:card type.",
+          "default": "summary_large_image",
+          "enum": [
+            "summary",
+            "summary_large_image",
+            "app",
+            "player"
+          ]
+        },
+        "twitter": {
+          "type": [
+            "string",
+            "object"
+          ],
+          "description": "Twitter handle(s) for twitter:site / twitter:creator. A bare string (with or without the leading @, or a full profile URL) fills both; an object accepts `site` and `creator` separately.",
+          "additionalProperties": true,
+          "examples": [
+            "@kirigami"
+          ]
+        },
+        "canonical": {
+          "type": "boolean",
+          "description": "Emit <link rel=\"canonical\"> (URL derived from the page's file path + `baseurl`, or a page's @canonical). Set false to never emit it.",
+          "default": true
+        },
+        "favicon": {
+          "type": [
+            "string",
+            "boolean"
+          ],
+          "description": "<link rel=\"icon\">. A path (page-relative when it is a bare filename) sets it explicitly; `true` forces the default `favicon.ico`; omitted, it is auto-detected on disk at the source root; `false` disables it."
+        },
+        "appleTouchIcon": {
+          "type": [
+            "string",
+            "boolean"
+          ],
+          "description": "<link rel=\"apple-touch-icon\">. Same resolution as `favicon`; default file `apple-touch-icon.png`."
+        },
+        "humans": {
+          "type": [
+            "string",
+            "boolean"
+          ],
+          "description": "<link rel=\"author\" type=\"text/plain\">. Same resolution as `favicon`; default file `humans.txt`."
         }
       }
     },

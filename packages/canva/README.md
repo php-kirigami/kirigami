@@ -34,6 +34,25 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 2.4.0
+
+- **`styles/prose` — Markdown / long-form base styles.** A new partial with a
+  `prose($measure, $flow)` mixin and, unless you `@use ... with ($emit-class:
+  false)`, a ready-made `.prose {}` wrapper. Styles headings, lists, tables,
+  quotes, code, media, definition lists and `<details>`, plus the GFM output
+  `@kirigami/php-prepros`' `MD` class emits (`.task-list` / `.task-item`,
+  `.markdown-alert*`, `.footnotes`). All colours are `conf` tokens, so it tracks
+  the light / dark palette for free. Tunable at runtime through `--prose-measure`
+  / `--prose-flow` / `--prose-radius`. `@kirigami/plugin-highlight`'s code theme
+  still layers on top via its `sass:after` hook.
+- **`reveal` — reveal-on-scroll.** A new script: `import '@kirigami/canva/reveal'`
+  adds `is-in` to each `[data-reveal]` element as it scrolls into view (once,
+  then unobserved). Reduced-motion, no `IntersectionObserver`, and a safety
+  timeout all fall back to showing everything. Lifted from the copy the starter
+  templates each carried in `kirigami.core.js`.
+
+---
+
 ## What's new in 2.3.0
 
 - **`conf` — theme-change transition.** When the dark palette is enabled
@@ -110,6 +129,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/canva](#kirigamicanva)
   - [Overview](#overview)
+  - [What's new in 2.4.0](#whats-new-in-240)
   - [What's new in 2.3.0](#whats-new-in-230)
   - [What's new in 2.2.0](#whats-new-in-220)
   - [What's new in 2.1.0](#whats-new-in-210)
@@ -123,12 +143,14 @@ Part of the **Kirigami** project ecosystem.
     - [`styles/conf`](#stylesconf)
     - [Dark theme](#dark-theme)
     - [`styles/utils`](#stylesutils)
+    - [`styles/prose`](#stylesprose)
     - [`styles/main`](#stylesmain)
   - [Scripts](#scripts)
     - [`dom`](#dom)
     - [`helpers`](#helpers)
     - [`theme`](#theme)
     - [`observer`](#observer)
+    - [`reveal`](#reveal)
     - [`components/burger`](#componentsburger)
   - [Build](#build)
   - [Requirements](#requirements)
@@ -173,11 +195,13 @@ segment is optional there (Node's own resolver still needs it).
     │   ├── helpers.js
     │   ├── theme.js
     │   ├── observer.js
+    │   ├── reveal.js
     │   └── components/
     │       └── burger.js
     └── styles/                # exposed as @kirigami/canva/styles/<name>
         ├── conf.scss
         ├── utils.scss
+        ├── prose.scss
         └── main.scss
 ```
 
@@ -308,6 +332,43 @@ Dependency-free Sass functions (`@use` with `as *`):
 | `url-encode($string)` | Percent-encodes `% < > # "` for use in a `url()`. |
 | `svg-url($svg)` | Wraps raw SVG markup into a `url("data:image/svg+xml,…")`. |
 | `apply-colors($svg, $colors)` | Replaces each `%name%` placeholder in an SVG string with the mapped colour. |
+
+### `styles/prose`
+
+Baseline typography for rendered Markdown and other long-form content. Colours
+are `conf` tokens, so it follows the light / dark palette with nothing extra to
+wire.
+
+```scss
+// take the ready-made wrapper class
+@use '@kirigami/canva/prose';
+//  → `.prose { … }` is now defined
+```
+
+```scss
+// …or just the mixin, on a selector of your own
+@use '@kirigami/canva/prose' as prose with ($emit-class: false);
+
+.page-about #main { @include prose.prose($measure: 46rem); }
+```
+
+| | |
+|---|---|
+| `prose($measure: 42rem, $flow: 1.5em)` | Mixin. `$measure` → `max-width` (`none` to skip); `$flow` → vertical rhythm between top-level blocks. |
+| `$emit-class` (`true`) | `@use ... with ($emit-class: false)` suppresses the `.prose {}` rule and exposes only the mixin. |
+
+Covers headings, lists, `blockquote`, `hr`, `table`, `code` / `pre`, `img` /
+`figure`, `dl`, `<details>`, inline `mark` / `sub` / `sup` / `abbr`, and the GFM
+output `@kirigami/php-prepros`' `MD` class emits: `.task-list` / `.task-item`,
+`.markdown-alert*`, `.footnotes`. Tables scroll within themselves rather than
+widening the page.
+
+Runtime knobs (set on the element or `:root`): `--prose-measure`,
+`--prose-flow`, `--prose-radius`.
+
+`@kirigami/plugin-highlight` appends its code-block theme (embedded font,
+`.hljs-*` colours) after this via its `sass:after` hook, so highlighted `<pre>`
+blocks pick up the richer styling automatically.
 
 ### `styles/main`
 
@@ -443,6 +504,35 @@ the tag genuinely wraps content you want to keep inside the replacement.
 
 Each replacement also fires a `canva:observed` `CustomEvent` on `document`
 (`detail: { tag, source, nodes }`).
+
+### `reveal`
+
+```js
+import { reveal } from '@kirigami/canva/reveal';
+```
+
+Adds `is-in` to each `[data-reveal]` element the first time it scrolls into
+view, then stops watching it. **Side effect:** importing the module sweeps the
+document once the DOM is ready.
+
+Pair it with a CSS rule that hides `[data-reveal]` and shows
+`[data-reveal].is-in` — gate that rule on the `js` class Kirigami's managed
+`<head>` sets on `<html>`, so content stays visible if the bundle never loads:
+
+```scss
+@media (prefers-reduced-motion: no-preference) {
+    .js [data-reveal]        { opacity: 0; transform: translateY(14px);
+                               transition: opacity .5s ease, transform .5s ease; }
+    .js [data-reveal].is-in  { opacity: 1; transform: none; }
+}
+```
+
+| Export | Signature | Description |
+|---|---|---|
+| `reveal` | `reveal(target = document) → void` | Reveals every `[data-reveal]` under `target`. Elements already carrying `is-in` are skipped, so call it again after inserting more content. |
+
+`prefers-reduced-motion: reduce`, a missing `IntersectionObserver`, or the
+internal safety timeout each fall back to revealing everything at once.
 
 ### `components/burger`
 

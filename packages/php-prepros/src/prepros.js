@@ -38,6 +38,15 @@ const getPHPInstance = async () => {
         preprosConfig.root = joinWith('/project/', config?.kirigami?.root);
         preprosConfig.data = config.kirigami || {};
         preprosConfig.jsonld = config.jsonld ?? null;
+        preprosConfig.meta = config.meta ?? null;
+        // META auto-detects favicon / apple-touch-icon / humans.txt at the
+        // source root; those extensions aren't mounted into the sandbox, so the
+        // presence check is done here on the real filesystem instead.
+        preprosConfig.metaFiles = {
+            favicon:        fs.existsSync(path.join(__root, 'favicon.ico')),
+            appleTouchIcon: fs.existsSync(path.join(__root, 'apple-touch-icon.png')),
+            humans:         fs.existsSync(path.join(__root, 'humans.txt')),
+        };
         // The build task list — read by PREPROS::injectHead() to auto-wire each
         // page's <head> with a <link>/<script> per sass/esbuild task output.
         preprosConfig.tasks = config.tasks || [];

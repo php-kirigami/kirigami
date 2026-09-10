@@ -65,14 +65,17 @@ PREPROS::registerHook('page_info', function($info) {
 });
 
 
-// LD — capture the page under render, then inject the automatic
-// schema.org JSON-LD `<script>` into its `<head>` once the HTML is assembled.
-// Registered after the data-loading hook above so `$page` arrives resolved.
+// LD / META — capture the page under render, then inject the automatic
+// schema.org JSON-LD `<script>` and the SEO/social `<meta>`/`<link>` block into
+// its `<head>` once the HTML is assembled. Registered after the data-loading
+// hook above so `$page` arrives resolved.
 PREPROS::registerHook('page_info', function($page) {
 	LD::capture($page);
+	META::capture($page);
 	return $page;
 });
 
 PREPROS::registerHook('post_render', function($html) {
+	$html = META::inject($html);
 	return LD::inject($html);
 });

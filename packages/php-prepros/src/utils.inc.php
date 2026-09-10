@@ -25,6 +25,7 @@ spl_autoload_register(function ($class) {
         'IMG'             => 'img.class.php',
         'LD'              => 'ld.class.php',
         'MD'              => 'md.class.php',
+        'META'            => 'meta.class.php',
         'NORM'            => 'norm.class.php',
         'OBF'             => 'obf.class.php',
 		'PREPROS'         => 'prepros.class.php',

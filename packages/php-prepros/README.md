@@ -34,6 +34,7 @@ Part of the **Kirigami** project ecosystem.
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
   - [Overview](#overview)
   - [Table of contents](#table-of-contents)
+  - [What's new in 1.7.0](#whats-new-in-170)
   - [What's new in 1.6.0](#whats-new-in-160)
   - [What's new in 1.4.0](#whats-new-in-140)
   - [What's new in 1.3.0](#whats-new-in-130)
@@ -44,6 +45,7 @@ Part of the **Kirigami** project ecosystem.
   - [Configuration — `kirigami.yaml`](#configuration--kirigamiyaml)
     - [`kirigami` block](#kirigami-block)
     - [`jsonld` block](#jsonld-block)
+    - [`meta` block](#meta-block)
     - [`prepros` block](#prepros-block)
     - [`image` block](#image-block)
     - [`plugins` block](#plugins-block)
@@ -77,6 +79,8 @@ Part of the **Kirigami** project ecosystem.
       - [Automatic mode](#automatic-mode)
       - [Explicit builders](#explicit-builders)
       - [`jsonld` config](#jsonld-config)
+    - [META](#meta)
+      - [`meta` config](#meta-config)
     - [CACHE](#cache)
     - [IMG](#img)
     - [FS](#fs)
@@ -100,6 +104,30 @@ Part of the **Kirigami** project ecosystem.
   - [Extending the `<markdown>` tag](#extending-the-markdown-tag)
   - [Requirements](#requirements)
   - [License](#license)
+
+---
+
+## What's new in 1.7.0
+
+- **`META`** class — a `<head>` SEO / social metadata generator, the companion
+  to [`LD`](#ld). Builds the standard tags — `<title>`, `description`,
+  `keywords`, `robots`, `language`, `generator`, `author`, Open Graph, Twitter
+  Card, `<link rel="canonical">`, favicon / apple-touch-icon / humans — from
+  each page's PHPDOC, the top-level `meta:` block, and the loose `kirigami:` /
+  `jsonld:` keys `LD` already reads. It emits only what it can resolve, and
+  leaves any tag the layout already hand-writes untouched.
+
+  - **Opt-in**: a top-level `meta:` block (empty `meta: {}` is enough) switches
+    on automatic injection into every page's `<head>`. `meta: false` (or
+    `{ auto: false }`) keeps the config but stops the injection.
+  - Per-page PHPDOC: `@meta false` (skip), `@meta_title`, `@meta_description`
+    (falls back to `@description` / `@abstract` / `@excerpt`), `@meta_keywords`,
+    `@meta_image`, `@meta_robots`, `@meta_type`, `@canonical`.
+  - Manual builders — always emitted, still de-duplicated: `META::tag()`,
+    `META::link()`, `META::raw()`, `META::tags()`. Procedural aliases:
+    `meta_tag()`, `meta_link()`, `meta_raw()`, `meta_tags()`.
+
+  Full key reference: [`META` → `meta` config](#meta-config).
 
 ---
 
@@ -370,6 +398,19 @@ otherwise infers from the `kirigami` block and each page's PHPDOC. `jsonld: fals
 (or `jsonld: { auto: false }`) keeps the config values but stops the injection;
 no block at all means nothing is injected. Full key reference and per-page
 `@ld_*` tags: [`LD` → `jsonld` config](#jsonld-config).
+
+### `meta` block
+
+Top-level, optional. Its **presence** switches on the [`META`](#meta) generator —
+the standard SEO / social `<meta>` and `<link>` tags are then built for every
+page and injected into its `<head>`. An empty `meta: {}` is enough; everything is
+derived from the `kirigami` block, the `jsonld` block, and each page's PHPDOC
+(`@title`, `@description` / `@abstract`, `@keywords`, `@image`, `@robots`,
+`@og_type`, `@canonical`). Keys refine those inferences. A tag the layout already
+hand-writes is left untouched. `meta: false` (or `meta: { auto: false }`) keeps
+the config values but stops the injection; no block at all means nothing is
+injected (explicit `META::tag()` / `meta_tag()` calls still emit). Full key
+reference and per-page `@meta_*` tags: [`META` → `meta` config](#meta-config).
 
 ### `prepros` block
 
@@ -1095,6 +1136,96 @@ jsonld:                                   # top-level; the block being present i
 
 ---
 
+### META
+
+A **`<head>` SEO / social metadata generator** — the companion to [`LD`](#ld).
+Where `LD` emits a schema.org `application/ld+json` graph, `META` emits the plain
+tags a browser and a link-preview crawler read: `<title>`, `<meta name="…">`,
+`<meta property="og:…">`, `<meta name="twitter:…">`, and a handful of `<link>`s.
+
+It draws on the same sources, in this order of precedence: the page's PHPDOC, the
+top-level `meta:` block, then the loose `kirigami:` keys and the `jsonld:` block.
+Every tag is emitted **only when it can be resolved** — no value, no tag — and a
+tag the page's layout already writes by hand is detected and skipped, so it drops
+in beside an existing `header.php` without duplicating anything.
+
+**Automatic mode** is opt-in: the top-level `meta:` block (empty `meta: {}` is
+enough) turns on injection into every page's `<head>`, right before `</head>`.
+
+```yaml
+kirigami:
+  project:     Humain Humain
+  baseurl:     https://humainhumain.com
+  tagline:     Ethnographie au service des organisations
+  description: A social-science consultancy using ethnography for organisational change.
+  keywords:    [ethnographie, consultation publique, sciences sociales]
+  author:      Maxime Larrivée-Roy
+
+jsonld:  {}                       # META reads its logo / image / lang / person too
+meta:                             # top-level; the block being present is the switch
+  twitter: "@humainhumain"
+  themeColor: "#0b7285"
+```
+
+Per-page, from the PHPDOC block — each falls back to the generic page tag:
+
+| Tag | Feeds | Default |
+|-----|-------|---------|
+| `@meta false` | skip metadata for this page entirely | — (`@meta_ignore true` also works) |
+| `@meta_title` | `<title>`, `og:title`, `twitter:title` | `@title` |
+| `@meta_description` | `description`, `og:description`, `twitter:description` | `@description` / `@abstract` / `@excerpt` / `@summary`, then the site `description` |
+| `@meta_keywords` | `<meta name="keywords">` | `@keywords`, then `meta.keywords` |
+| `@meta_image` | `og:image`, `twitter:image` | `@image` / `@ogimage`, then `meta.image` |
+| `@meta_robots` | `<meta name="robots">` | `@robots`, then `meta.robots` |
+| `@meta_type` | `og:type` | `@og_type`, then `meta.ogType` |
+| `@canonical` | `<link rel="canonical">` | derived from the file path + `baseurl` |
+
+**Manual builders** — always emitted (with or without a `meta:` block), still
+de-duplicated against the page:
+
+```php
+META::tag(string $name, ?string $content): void   // name= , or property= for an og:* key
+META::link(string $rel, string $href, array $attrs = []): void
+META::raw(string $html): void                       // a verbatim, already-valid tag line
+META::tags(string $html = ''): string               // the whole block, \n-joined
+META::reset(): void
+```
+
+```php
+META::tag('twitter:image', 'https://humainhumain.com/card.png');
+META::tag('og:image:alt', 'The Humain Humain team at work');
+META::link('icon', './favicon.svg', ['type' => 'image/svg+xml']);
+```
+
+Same API from procedural code: `meta_tag()`, `meta_link()`, `meta_raw()`,
+`meta_tags()`.
+
+#### `meta` config
+
+`meta:` is a **top-level** block of `kirigami.yaml` (a sibling of `kirigami:`,
+`jsonld:`, `prepros:`, …). All keys are optional.
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `auto` | `bool` | Inject the tags automatically. Default `true` **once the `meta:` block exists**. `auto: false` (or `meta: false`) keeps the block for its values but stops the injection — `META::tags()` / `meta_tags()` can place them by hand. |
+| `titleFormat` | `string` | `<title>` template for a normal page. Tokens `{title}`, `{project}`, `{tagline}`. Dangling separators from an empty token are trimmed. Default `{title} — {project}`. |
+| `titleFormatHome` | `string` | Title template when the page has no `@title` (home / section landings). Default `{project} — {tagline}`. |
+| `description` | `string` | Default description for pages with no `@description` / `@abstract`. Defaults to the `jsonld` / loose `description`. |
+| `keywords` | `string[]` \| `string` | Default `keywords` content (list or comma string). Defaults to the `jsonld` / loose `keywords`. |
+| `robots` | `string` | Default robots directive. Default `index, follow`. `robots: false` omits the tag. |
+| `language` | `string` | BCP-47 tag → `<meta name="language">` and, dash→underscore, `og:locale`. Defaults to `jsonld.lang` / loose `lang` / `language`, then `en`. |
+| `generator` | `string` \| `false` | `<meta name="generator">`. Default `Kirigami`; `false` omits it. |
+| `author` / `designer` | `string` | Default to the loose `author` / `designer` keys (author also falls back to the `jsonld` person's name). `designer` is not emitted unless set. |
+| `themeColor` | `string` | `<meta name="theme-color">`. Not emitted unless set. |
+| `image` | `string` | Default `og:image` / `twitter:image` — absolute URL or path relative to `baseurl`. Defaults to `jsonld.image` → `jsonld.logo` → loose `image` / `ogimage`. |
+| `ogType` | `string` | Default `og:type`. Default `website`. |
+| `twitterCard` | `string` | `twitter:card` type. Default `summary_large_image`. |
+| `twitter` | `string` \| `map` | Handle for `twitter:site` / `twitter:creator`. A bare string (with/without `@`, or a profile URL) fills both; a map takes `site` / `creator` separately. |
+| `canonical` | `bool` | Emit `<link rel="canonical">`. Default `true`. |
+| `favicon` / `appleTouchIcon` / `humans` | `string` \| `bool` | `<link rel="icon">` / `rel="apple-touch-icon"` / `rel="author"`. A path sets it (page-relative when a bare filename); `true` forces the default file (`favicon.ico` / `apple-touch-icon.png` / `humans.txt`); omitted, the default file is auto-detected on disk at the source root; `false` disables it. |
+
+---
+
 ### CACHE
 
 Persistent SQLite-backed key-value cache. Survives across incremental builds via `.cache.db` at the project root.
@@ -1364,6 +1495,7 @@ surface the signature, parameters, and description.
 | `YAML` | `yaml_parse` · `yaml_parse_file` · `yaml_load_file` |
 | `SCHEMA` | `schema` (factory) · `schema_validate` |
 | `LD` | `ld_add` · `ld_node` · `ld_ref` · `ld_organization` · `ld_person` · `ld_website` · `ld_web_page` · `ld_breadcrumb` · `ld_faq_page` · `ld_script` · `ld_json` |
+| `META` | `meta_tag` · `meta_link` · `meta_raw` · `meta_tags` |
 | `CACHE` | `cache_get` · `cache_set` · `cache_delete` · `cache_purge` |
 | `IMG` | `img_asset` · `img_palette` |
 | `FS` | `fs_dig` · `fs_get_relative_path` · `fs_php_file_info` · `fs_rmdir` · `fs_path_join` |
@@ -1451,6 +1583,11 @@ PREPROS::registerHook(string $hookName, callable $callback): void
 | `post_render` | After tag processing, before `HTML::format()` | Assembled HTML `string` | `string` |
 
 Multiple callbacks can be registered for the same hook — they are executed in registration order, each receiving the return value of the previous one.
+
+> Built-in `page_info` + `post_render` callbacks power [`LD`](#ld) and
+> [`META`](#meta): `page_info` captures the page under render, `post_render`
+> injects the JSON-LD `<script>` and the `<meta>`/`<link>` block into its
+> `<head>`. Your own callbacks run after them.
 
 > **`page_info` payload shape.** The hook *fires* with `[$filePath, $pageObject]`,
 > but each callback is expected to return the `$pageObject` alone — so a callback

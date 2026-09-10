@@ -426,6 +426,49 @@ function ld_json(bool $pretty = true): string { return LD::json($pretty); }
 
 
 // ===========================================================================
+// META — <head> SEO / social metadata generator
+// ===========================================================================
+
+/**
+ * Adds a `<meta>` tag to the page's `<head>`. The key picks the attribute:
+ * `og:*` → `property=`, everything else → `name=`. An empty value is a no-op.
+ * Always emitted (and de-duplicated against the page), `meta:` block or not.
+ *
+ *   meta_tag('twitter:image', 'https://…/card.png');
+ *
+ * @see META::tag()
+ */
+function meta_tag(string $name, ?string $content): void { META::tag($name, $content); }
+
+/**
+ * Adds a `<link>` tag to the page's `<head>`. `$attrs` are extra attributes
+ * (`type`, `sizes`, `hreflang`, …).
+ *
+ *   meta_link('icon', './favicon.svg', ['type' => 'image/svg+xml']);
+ *
+ * @param  array<string,string|int|bool|null> $attrs
+ * @see    META::link()
+ */
+function meta_link(string $rel, string $href, array $attrs = []): void { META::link($rel, $href, $attrs); }
+
+/**
+ * Adds a verbatim tag line (already valid HTML) to the page's `<head>`.
+ *
+ * @see META::raw()
+ */
+function meta_raw(string $html): void { META::raw($html); }
+
+/**
+ * The full block of generated `<meta>`/`<link>` lines for the current page,
+ * `\n`-joined, or `''`. Calling this places the block by hand.
+ *
+ * @param  string $html Page HTML, used only to skip tags it already carries.
+ * @see    META::tags()
+ */
+function meta_tags(string $html = ''): string { return META::tags($html); }
+
+
+// ===========================================================================
 // CACHE — persistent key/value (SQLite, `.cache.db` at the project root)
 // ===========================================================================
 
