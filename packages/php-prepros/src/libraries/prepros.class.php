@@ -232,7 +232,11 @@ final class PREPROS
 
     public static function getExportedFiles(): array
     {
-        $files = array_unique(self::$files);
+        // array_unique() keeps the original keys, so any duplicate leaves a gap
+        // in the sequence — json_encode() would then emit a JSON object instead
+        // of an array and the JS side chokes ("retobj.files.map is not a
+        // function"). array_values() reindexes so it always serialises as a list.
+        $files = array_values(array_unique(self::$files));
         // sort($files);
         return $files;
     }

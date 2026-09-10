@@ -151,6 +151,9 @@ const run = async (args = [], script = null, mountfiles = []) => {
             const buffer = php.readFileAsBuffer(resultPath);
             retobj = JSON.parse(Buffer.from(buffer).toString('utf8'));
             retobj.debug = stdout;
+            // json_encode() turns a PHP array with gaps in its integer keys
+            // into an object — normalise back to a list before we map over it.
+            if (retobj.files && !Array.isArray(retobj.files)) retobj.files = Object.values(retobj.files);
             if(retobj.files) await Promise.all(retobj.files.map(async (file, i) => {
                 const fbuffer = php.readFileAsBuffer(file);
                 const dest = file.replace(/^\/project\//i, '');
