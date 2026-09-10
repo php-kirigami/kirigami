@@ -76,6 +76,10 @@ final class PREPROS
         $contents = self::processTags($contents);
         $contents = self::processHook('post_render', $contents);
 
+        if ((self::$config->head ?? true) !== false) {
+            $contents = self::injectHead($contents, $relroot);
+        }
+
         if(!empty(self::$config->format)) $contents = HTML::format($contents);
 
         $contents = self::replaceTokens($contents);
@@ -126,6 +130,67 @@ final class PREPROS
         
         self::exportFile([$dest, $destrobots]);
         return realpath($dest);
+    }
+
+
+    /**
+     * Auto-wires each page's <head>: a small theme/FOUC guard as the first
+     * child of <head>, a <link> for every `sass` task output and a <script>
+     * (no `defer`, before </body>) for every `esbuild` task output. Paths are
+     * built from $relroot so they work at any depth and under a subfolder.
+     *
+     * Runs unless `prepros.head` is `false`. A single task opts out with
+     * `head: false`. A file already referenced in the page is left alone, so a
+     * template can still place one by hand. `###TIMESTAMP###` is expanded by
+     * replaceTokens() right after.
+     */
+    private static function injectHead(string $contents, string $relroot): string
+    {
+        $inject = [];
+
+        // Theme guard — skip if the page already carries one.
+        if (!str_contains($contents, 'kirigami-theme')) {
+            $inject[] = '<script>(function(){var e=document.documentElement;'
+                . 'e.classList.add("js");try{var t=localStorage.getItem("kirigami-theme");'
+                . 'if(t==="dark"||t==="light")e.setAttribute("data-theme",t)}catch(x){}})();</script>';
+        }
+
+        $links   = [];
+        $scripts = [];
+        foreach ((array) (self::$config->tasks ?? []) as $task) {
+            $task = (array) $task;
+            if (($task['head'] ?? true) === false) continue;
+            $entry = (string) ($task['entry'] ?? '');
+            if ($entry === '') continue;
+
+            if (($task['type'] ?? '') === 'sass') {
+                $out = preg_replace('/\.s?css$/', '.min.css', $entry);
+                if ($out !== $entry && !str_contains($contents, $out)) {
+                    $links[] = '<link rel="stylesheet" href="' . $relroot . $out . '?###TIMESTAMP###">';
+                }
+            } elseif (($task['type'] ?? '') === 'esbuild') {
+                $out = preg_replace('/\.[jt]s$/', '.min.js', $entry);
+                if ($out !== $entry && !str_contains($contents, $out)) {
+                    $scripts[] = '<script src="' . $relroot . $out . '?###TIMESTAMP###"></script>';
+                }
+            }
+        }
+
+        $head = implode("\n    ", array_merge($inject, $links));
+        if ($head !== '') {
+            // Slot it right after <meta charset> when there is one (keep the
+            // charset first), otherwise right after <head>.
+            if (preg_match('/<meta\s+charset=[^>]*>/i', $contents)) {
+                $contents = preg_replace('/(<meta\s+charset=[^>]*>)/i', "$1\n    " . $head, $contents, 1);
+            } elseif (preg_match('/<head\b[^>]*>/i', $contents)) {
+                $contents = preg_replace('/(<head\b[^>]*>)/i', "$1\n    " . $head, $contents, 1);
+            }
+        }
+        if ($scripts && preg_match('/<\/body>/i', $contents)) {
+            $contents = preg_replace('/(<\/body>)/i', "    " . implode("\n    ", $scripts) . "\n$1", $contents, 1);
+        }
+
+        return $contents;
     }
 
 

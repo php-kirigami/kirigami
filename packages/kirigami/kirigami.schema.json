@@ -197,6 +197,11 @@
           "description": "Pretty-print the compiled HTML output (4-space indentation via HTML::format(), Dom\\HTMLDocument/Lexbor). When false, output is written as-is.",
           "default": false
         },
+        "head": {
+          "type": "boolean",
+          "description": "Auto-wire each page's <head>: a small theme/FOUC guard as the first child of <head>, a <link rel=\"stylesheet\"> for every `sass` task output, and a <script> (no `defer`, before </body>) for every `esbuild` task output — all with a per-page relative path and a cache-busting query. A file already referenced in the page is left alone. Set false to disable, or `head: false` on a single sass/esbuild task to skip just its tag.",
+          "default": true
+        },
         "network": {
           "type": "boolean",
           "description": "Enables outbound HTTP(S) requests inside the sandboxed WASM PHP runtime. Required for PHPDOC `@tag https://…` annotations that auto-fetch remote .yaml/.json/.md data, and for CURL/SCRAPER classes to reach the network.",
@@ -444,6 +449,11 @@
                   "scripts/kirigami.core.js"
                 ]
               },
+              "head": {
+                "type": "boolean",
+                "description": "Whether prepros should auto-inject a <script src> for this task's output into every page (before </body>, no `defer`). Defaults to true when `prepros.head` is on; set false to place the tag yourself.",
+                "default": true
+              },
               "force": {
                 "type": "boolean",
                 "description": "Run this task even during commands that would otherwise skip it (e.g. force build-only tasks during `kiri watch`'s initial pass). Rarely needed manually — Kirigami sets this internally for its own implicit tasks.",
@@ -475,6 +485,11 @@
                 "examples": [
                   "styles/kirigami.core.scss"
                 ]
+              },
+              "head": {
+                "type": "boolean",
+                "description": "Whether prepros should auto-inject a <link rel=\"stylesheet\"> for this task's output into every page's <head>. Defaults to true when `prepros.head` is on; set false to place the tag yourself.",
+                "default": true
               },
               "force": {
                 "type": "boolean",

@@ -38,6 +38,9 @@ const getPHPInstance = async () => {
         preprosConfig.root = joinWith('/project/', config?.kirigami?.root);
         preprosConfig.data = config.kirigami || {};
         preprosConfig.jsonld = config.jsonld ?? null;
+        // The build task list — read by PREPROS::injectHead() to auto-wire each
+        // page's <head> with a <link>/<script> per sass/esbuild task output.
+        preprosConfig.tasks = config.tasks || [];
 
         __php = await (preprosConfig.network ? getPHPRuntimeWithNetwork() : getPHPRuntime());
         __php.setSpawnHandler((command, args, options) => spawn(command, args, options));

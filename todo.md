@@ -8,6 +8,8 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 <!-- FAIT (canva 2.3.0): conf.scss émet une transition background-color/background-image/color (var(--transition-duration)) sur *, ::before, ::after quand $dark est activé. Guardé prefers-reduced-motion, pas d'anim au premier paint, une transition shorthand d'un composant l'écrase -->
 
+<!-- FAIT (php-prepros 1.6.0 / kiri 1.3.0): managed <head> — PREPROS::injectHead() injecte le theme guard (1er enfant de <head>) + un <link> par task sass + un <script> (sans defer, avant </body>) par task esbuild, chemins relatifs par page + ?###TIMESTAMP###. Gate prepros.head (défaut true) + head:false par task. prepros.js forward config.tasks. header.php des templates vidé du plumbing d'assets. Schema: prepros.head, tasks[].head -->
+
 
 
 

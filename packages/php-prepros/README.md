@@ -34,6 +34,7 @@ Part of the **Kirigami** project ecosystem.
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
   - [Overview](#overview)
   - [Table of contents](#table-of-contents)
+  - [What's new in 1.6.0](#whats-new-in-160)
   - [What's new in 1.4.0](#whats-new-in-140)
   - [What's new in 1.3.0](#whats-new-in-130)
   - [What's new in 1.2.1](#whats-new-in-121)
@@ -99,6 +100,20 @@ Part of the **Kirigami** project ecosystem.
   - [Extending the `<markdown>` tag](#extending-the-markdown-tag)
   - [Requirements](#requirements)
   - [License](#license)
+
+---
+
+## What's new in 1.6.0
+
+- **Managed `<head>` (`prepros.head`).** Every rendered page's `<head>` is now
+  auto-wired: a tiny theme/FOUC guard as the first child (adds the `js` class,
+  applies the stored `data-theme` before first paint), a
+  `<link rel="stylesheet">` for every `sass` task output, and a `<script>` (no
+  `defer`, just before `</body>`) for every `esbuild` task output — each with a
+  per-page relative path and a `?<timestamp>` cache-bust. A file already
+  referenced in the page is left alone, so you can still hand-place one. Turn it
+  off with `prepros: { head: false }`, or `head: false` on a single sass/esbuild
+  task. A template's `header.php` no longer wires assets at all.
 
 ---
 
@@ -356,6 +371,7 @@ Options for the PHP → HTML compiler. **Read by `php-prepros`.** Declaring this
 | `before` | `string` | — | Path (relative to `kirigami.root`) to a PHP file included **before** every page's body. Typically your `<head>`/layout opening. |
 | `after` | `string` | — | Path (relative to `kirigami.root`) to a PHP file included **after** every page's body. Typically your layout closing. |
 | `format` | `bool` | `false` | Pretty-print the compiled HTML via [`HTML::format()`](#html) before writing it to disk. |
+| `head` | `bool` | `true` | Auto-wire each page's `<head>`: a theme/FOUC guard as the first child, a `<link rel="stylesheet">` per `sass` task output, and a `<script>` (no `defer`, before `</body>`) per `esbuild` task output — each with a per-page relative path and a `?<timestamp>` cache-bust. A file already referenced in the page is skipped. Set `false` to disable, or `head: false` on a single `sass`/`esbuild` task to skip just its tag. |
 | `network` | `bool` | `false` | Enables outbound HTTP(S) inside the WASM PHP runtime. Required for PHPDOC `@tag https://…` annotations that fetch remote `.yaml`/`.json`/`.md` data (see [Auto-loading data files](#auto-loading-data-files)), and for the `CURL` / `SCRAPER` classes. |
 | `mountext` | `string[]` | `[]` | Extra file extensions to mount automatically into the virtual filesystem alongside the built-in `.php`, `.json`, `.yaml`, `.yml`, `.md`, `.db`, `.txt`. Use this for assets your PHP code reads directly (e.g. `.svg`, `.webp`). Files with extensions not in this set are skipped during mounting — mount them on demand with [`PREPROS::mount()`](#preprosmountstringarray-patterns) instead. |
 | `includes` | `string[]` | `[]` | PHP files (relative to `kirigami.root`) `include_once`'d once, right after config is loaded — before any page renders. The natural place to `PREPROS::registerTag()`, `PREPROS::registerHook()`, or `MD::registerPlugin()`. |

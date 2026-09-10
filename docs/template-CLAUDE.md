@@ -144,6 +144,7 @@ prepros:                          # PHP → HTML compiler. Present (even empty) 
   before:   _layouts/header.php   # PHP file (rel. to root) included before every page body
   after:    _layouts/footer.php   # PHP file included after every page body
   format:   true                  # pretty-print HTML output (4-space indent). default false
+  head:     true                  # default true — auto-inject the theme guard + a <link>/<script> per sass/esbuild task into every page. `false` to opt out
   network:  false                 # allow outbound HTTP(S) in the WASM runtime (remote @tags, CURL, SCRAPER)
   mountext: [.svg, .webp]          # extra extensions auto-mounted into the virtual FS
   includes: [_lib/functions.php]   # PHP include_once'd before any page renders — register tags/hooks/MD plugins here
@@ -182,8 +183,8 @@ tasks:                            # ordered build pipeline, on top of implicit p
 
 | `type` | Purpose | Required | Optional | Output |
 |---|---|---|---|---|
-| `esbuild` | Bundle + minify a JS/TS entry (`bundle`, `treeShaking`, `target es2020`). Build + watch. | `name`, `type`, `entry` | `force` | `<entry>.min.js` (+ `.map` outside export) |
-| `sass` | Compile a `.scss`/`.sass` entry (`style: compressed`), re-minified with csso on export. Build + watch. | `name`, `type`, `entry` | `force` | `<entry>.min.css` (+ `.css.map` outside export) |
+| `esbuild` | Bundle + minify a JS/TS entry (`bundle`, `treeShaking`, `target es2020`). Build + watch. | `name`, `type`, `entry` | `force`, `head` | `<entry>.min.js` (+ `.map` outside export) |
+| `sass` | Compile a `.scss`/`.sass` entry (`style: compressed`), re-minified with csso on export. Build + watch. | `name`, `type`, `entry` | `force`, `head` | `<entry>.min.css` (+ `.css.map` outside export) |
 | `prepros` | Render pages + `sitemap.xml`. Watch-only unless forced/implicit. `target` renders just one file/subdir. | `name`, `type` | `target`, `force` | `*.html`, `sitemap.xml`, `robots.txt` |
 | `dist` | Copy `kirigami.root` into `path`, stamping the banner. Implicit during `kiri export` only. | `name`, `type`, `path` | `ignore`, `force` | the exported tree |
 
@@ -191,6 +192,21 @@ tasks:                            # ordered build pipeline, on top of implicit p
 custom importer that also accepts an implicit `styles/` prefix
 (`@use '@kirigami/canva/conf'` → `@kirigami/canva/styles/conf`) and falls back to
 the global `npm root -g`.
+
+### Managed `<head>`
+
+Unless `prepros.head` is `false`, every rendered page's `<head>` is auto-wired
+and `header.php` should **not** hand-write any of it:
+
+- a small theme/FOUC guard as the first child of `<head>` (adds the `js` class,
+  applies the stored `data-theme` before first paint — pair it with
+  `@kirigami/canva`'s `$theme` / `theme` script);
+- a `<link rel="stylesheet">` for every `sass` task output;
+- a `<script>` (no `defer`, just before `</body>`) for every `esbuild` task output.
+
+Paths are per-page-relative and carry a `?<timestamp>` cache-bust. A file already
+referenced in the page is left alone (you can still place one by hand). Skip a
+single task's tag with `head: false` on that task.
 
 ---
 
