@@ -114,7 +114,12 @@ The plugin registers `@kirigami/sdk` hooks:
   `hljs.highlightAuto()` for un-tagged blocks), and writes back
   `<pre><code class="hljs language-…">…spans…</code></pre>`. A block whose
   language isn't registered is left as-is but still tagged `.hljs`, so the
-  theme's frame still applies.
+  theme's frame still applies. Each block is de-indented first (via
+  `@kirigami/canva`'s `dedent`) — the whitespace prefix shared by every line is
+  stripped, matching what `STR::trimIndent` already does for the `<highlight>`
+  tag — so you can indent a fenced block in your source markdown for readability
+  without that indentation showing up in the rendered code. Relative indentation
+  is kept.
 - **`sass:after`** — appends the theme stylesheet (plus, by default, the font
   `@font-face` and the copy-button styles) to every `sass` task's output.
 - **`esbuild:after`** — with `copyButton` on, bundles the copy-button script
@@ -232,6 +237,8 @@ highlighting is currently all-or-nothing per project._
 - npm `>= 10.2.3`
 - `@kirigami/kirigami` `>= 1.2.0` (the plugin loader; `prepros:html` /
   `prepros:php` / `esbuild:*` hooks)
+- `@kirigami/canva` (bundled dependency — supplies the `dedent` helper used to
+  de-indent fenced blocks)
 - ESM only (`"type": "module"`)
 
 ---

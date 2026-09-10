@@ -34,6 +34,15 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 2.2.0
+
+- **`helpers` — `dedent()`.** Strips the whitespace prefix shared by every
+  non-blank line of a string, so a block indented for readability in its source
+  (a fenced code block, a template literal, an authoring-tag body) renders
+  flush-left with its relative indentation intact. See [`helpers`](#helpers).
+
+---
+
 ## What's new in 2.1.0
 
 - **`theme` — declarative toggles.** Mark up any control with
@@ -89,6 +98,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/canva](#kirigamicanva)
   - [Overview](#overview)
+  - [What's new in 2.2.0](#whats-new-in-220)
   - [What's new in 2.1.0](#whats-new-in-210)
   - [What's new in 2.0.0](#whats-new-in-200)
   - [What's new in 1.1.1](#whats-new-in-111)
@@ -305,7 +315,7 @@ import { create } from '@kirigami/canva/dom';
 ### `helpers`
 
 ```js
-import { busy, working, preloadImage, documentReady } from '@kirigami/canva/helpers';
+import { busy, working, preloadImage, documentReady, dedent } from '@kirigami/canva/helpers';
 ```
 
 | Export | Signature | Description |
@@ -314,6 +324,7 @@ import { busy, working, preloadImage, documentReady } from '@kirigami/canva/help
 | `working` | `working(promise \| promise[]) → Promise` | Same, with the `is-working` class. |
 | `preloadImage` | `preloadImage(url) → Promise<'preloaded' \| 'memory-cache'>` | Resolves once the image has loaded (or immediately if already cached), rejects on error. |
 | `documentReady` | `documentReady(cb?) → Promise` | Resolves on `DOMContentLoaded` (or immediately if the document is already parsed); resolves with `cb()`'s return value when a callback is given. |
+| `dedent` | `dedent(str) → string` | Strips the whitespace prefix shared by every non-blank line (relative indentation kept); trims leading blank lines and trailing whitespace. Pure string helper, no DOM. |
 
 ### `theme`
 

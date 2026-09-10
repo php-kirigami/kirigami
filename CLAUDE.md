@@ -28,8 +28,8 @@ Actions.
 | `@kirigami/php-wasm` | 8.5.10-5 | custom PHP 8.5.10 WASM build, JSPI + Node only, fork of WordPress Playground; now includes Imagick (wasm ~22 MB) |
 | `@kirigami/struct-walker` | 1.0.4 | recursive YAML/JSON walker: resolves nested file refs, converts assets to data URIs |
 | `@kirigami/sdk` | 0.2.0 | plugin hook registry (`on`/`run`/`HOOKS`) + `Cache` (SQLite via `node:sqlite`). 0.2.0: `runWaterfall()` (pipe a value through listeners) + `has()`; new hooks `esbuild:before`/`esbuild:after`/`esbuild:plugins` (mirror the sass ones) and `prepros:html` (waterfall — transform each rendered page's HTML) |
-| `@kirigami/canva` | 2.0.0 | shared Sass/JS design system; published & public like the rest (was private until 2026-09-10); still WIP. 1.1.0 adds optional light/dark theming to `conf` (`$dark` + `$theme: auto\|class\|both`, built-in dark palette from `assets/chart/chart.html`) + `theme` script (`data-theme` toggle, persists to `localStorage`). 1.1.1: `--font-size` is `clamp($font-min .. $font-base)` (was floorless `min()`); new `$font-min` default 17. **2.0.0 (breaking): script subpaths dropped the `scripts/` segment** — `exports` is now `{ "./styles/*": …, "./*": "./dist/scripts/*.js" }`, so `@kirigami/canva/dom` / `/theme` / `/observer` / `/components/burger` (old `scripts/*` paths gone); styles unchanged. Also new in 2.0.0: `observer` — tag-rewriting engine for non-closing authoring tags (`register('youtube', el => …)`); starts on import, sweeps current DOM + `MutationObserver`, `voidLike` lifts stray nested children out; fires `canva:observed`; the seam plugins hook into. 2.1.0: `theme` gained declarative toggles — `[data-theme-toggle]` (bare = flip, or `="dark\|light\|auto"`), wired on import (new `bindToggles()` export), reflects `data-theme-state`/`aria-pressed`, fires `canva:themechange` on `window`, re-syncs on OS change while in `auto`. Replaces the hand-rolled toggle in template-demo's `kirigami.core.js` |
-| `@kirigami/plugin-highlight` | 0.1.0 | first real plugin: **build-time** highlight.js (highlighting ships 0 runtime JS). `prepros:html` hook rewrites `<pre><code class="language-x">` with `.hljs-*` spans (`hljs.highlight`, `highlightAuto` for un-tagged); `sass:after` appends a parametric SCSS theme (mixin `assets/_highlight.scss` + `dark()`/`light()` presets; `assets/theme-*.scss` are copy-me examples) + embedded JetBrains Mono `@font-face` (~39 KB base64 woff2, `assets/_font.scss`) + copy-button layout (`assets/_copy.scss`); `esbuild:after` bundles the ~1 KB hover copy-button script (`assets/copy.js`, skips a `<pre>` that already has a sibling `<button>`) when `copyButton` is on (warns if the project has no esbuild task); `prepros:php` includes `php/highlight.php` (the `<highlight lang="…">` authoring tag → emits `<pre><code class="language-…">`) when `tag` is on. Options (kirigami.yaml only): `languages` (12 common, or `all`), `theme` (`auto`\|`dark`\|`light`\|`none`), `autodetect`, `embedFont`, `copyButton`, `tag`; code defaults in `index.js`, schema `options.schema.json` (pkg `kirigami.optionsSchema`) — the loader validates against it, **and** `kirigami.schema.json` `$ref`s it (see its `plugins.items.allOf`) so VS Code completes/validates `plugins[].options` for this plugin. Dir renamed from `plugin-hljs` 2026-09-10 |
+| `@kirigami/canva` | 2.2.0 | shared Sass/JS design system; published & public like the rest (was private until 2026-09-10); still WIP. 1.1.0 adds optional light/dark theming to `conf` (`$dark` + `$theme: auto\|class\|both`, built-in dark palette from `assets/chart/chart.html`) + `theme` script (`data-theme` toggle, persists to `localStorage`). 1.1.1: `--font-size` is `clamp($font-min .. $font-base)` (was floorless `min()`); new `$font-min` default 17. **2.0.0 (breaking): script subpaths dropped the `scripts/` segment** — `exports` is now `{ "./styles/*": …, "./*": "./dist/scripts/*.js" }`, so `@kirigami/canva/dom` / `/theme` / `/observer` / `/components/burger` (old `scripts/*` paths gone); styles unchanged. Also new in 2.0.0: `observer` — tag-rewriting engine for non-closing authoring tags (`register('youtube', el => …)`); starts on import, sweeps current DOM + `MutationObserver`, `voidLike` lifts stray nested children out; fires `canva:observed`; the seam plugins hook into. 2.1.0: `theme` gained declarative toggles — `[data-theme-toggle]` (bare = flip, or `="dark\|light\|auto"`), wired on import (new `bindToggles()` export), reflects `data-theme-state`/`aria-pressed`, fires `canva:themechange` on `window`, re-syncs on OS change while in `auto`. Replaces the hand-rolled toggle in template-demo's `kirigami.core.js`. 2.2.0: `helpers` gained `dedent(str)` — strips the leading-whitespace prefix common to every non-blank line (relative indent kept; trims leading blank lines + trailing ws), a pure no-DOM string helper; `@kirigami/plugin-highlight` consumes it to de-indent fenced code blocks |
+| `@kirigami/plugin-highlight` | 0.1.0 | first real plugin: **build-time** highlight.js (highlighting ships 0 runtime JS). `prepros:html` hook rewrites `<pre><code class="language-x">` with `.hljs-*` spans (`hljs.highlight`, `highlightAuto` for un-tagged; each block de-indented first via `@kirigami/canva`'s `dedent` — shared leading whitespace stripped like `STR::trimIndent`, so fenced blocks can be indented in the source markdown; relative indent kept); `sass:after` appends a parametric SCSS theme (mixin `assets/_highlight.scss` + `dark()`/`light()` presets; `assets/theme-*.scss` are copy-me examples) + embedded JetBrains Mono `@font-face` (~39 KB base64 woff2, `assets/_font.scss`) + copy-button layout (`assets/_copy.scss`); `esbuild:after` bundles the ~1 KB hover copy-button script (`assets/copy.js`, skips a `<pre>` that already has a sibling `<button>`) when `copyButton` is on (warns if the project has no esbuild task); `prepros:php` includes `php/highlight.php` (the `<highlight lang="…">` authoring tag → emits `<pre><code class="language-…">`) when `tag` is on. Options (kirigami.yaml only): `languages` (12 common, or `all`), `theme` (`auto`\|`dark`\|`light`\|`none`), `autodetect`, `embedFont`, `copyButton`, `tag`; code defaults in `index.js`, schema `options.schema.json` (pkg `kirigami.optionsSchema`) — the loader validates against it, **and** `kirigami.schema.json` `$ref`s it (see its `plugins.items.allOf`) so VS Code completes/validates `plugins[].options` for this plugin. Dir renamed from `plugin-hljs` 2026-09-10 |
 
 ### Licensing
 
@@ -97,76 +97,35 @@ canva's README carries a WIP note (`styles/main.scss` and `Burger` are stubs).
 
 ---
 
-## Current work (as of 2026-09-09, uncommitted on `main`)
+## Current work (as of 2026-09-10, uncommitted on `main`)
 
-- **Plugin system driven by `kirigami.yaml` — DONE (2026-09-10).** `@kirigami/sdk`
-  (v0.2.0) is the shared in-memory hook registry. `@kirigami/kirigami` 1.2.0 adds
-  the loader (`bin/libs/plugins.js`): reads `plugins:` (schema already had the
-  key + the `@kirigami/plugin-*` / `*/kirigami-plugin-*` / `kirigami-plugin-*`
-  naming rule), resolves from the project's `node_modules`, honours the package's
-  `kirigami` block in its `package.json` — `type` (`"plugin"`; `"task"` /
-  `"command"` reserved for later), `minVersion` gate, `optionsSchema` (a JSON
-  Schema the loader validates the yaml `options` against, via Ajv) — imports and
-  calls `default(options, { config, name })`. Options live only in kirigami.yaml.
-  `kirigami.schema.json` `$ref`s each first-party plugin's `options.schema.json`
-  (`plugins.items.allOf` — `if name const → then options $ref`) for VS Code
-  completion/validation; `bin/config.js` `inlinePluginOptionSchemas()` resolves
-  those refs from disk at build time (skips a plugin that isn't installed).
-  Hooks now:
-  sass (`SASS_BEFORE`/`AFTER`/`FUNCTIONS`), esbuild (`ESBUILD_BEFORE`/`AFTER`/
-  `PLUGINS`), `PREPROS_HTML` (waterfall, per rendered page), and `PREPROS_PHP`
-  (abs PHP paths → mounted + `include_once`'d in the prepros runtime; kiri's
-  prepros task runs it once and threads the paths into `render()`). Still open
-  in `todo.md`: a real kiribuild test; `@breadcrumb true`; before-before/
-  after-after prepros hooks.
-- **`@kirigami/plugin-highlight` v0.1.0 — first real plugin, working end-to-end.**
-  See its package-table row. Build-time highlight.js via `PREPROS_HTML`;
-  parametric SCSS theme + JetBrains Mono + copy-button layout via `SASS_AFTER`;
-  the hover copy-button script via `ESBUILD_AFTER`; the `<highlight>` tag via
-  `PREPROS_PHP` (`php/highlight.php`). `assets/` holds `_highlight.scss` (mixin),
-  `_font.scss` (base64 woff2), `_copy.scss` + `copy.js` (copy button),
-  `inject-*.scss` (what the sass hook returns), `theme-{dark,light}.scss`
-  (copy-me examples); `php/highlight.php` is the tag. Dir was renamed from
-  `plugin-hljs` → `plugin-highlight` 2026-09-10.
-- **SDK cache migration.** `Cache` (SQLite/`node:sqlite`) moved out of
-  `packages/kirigami/bin/libs/{cache,hooks}.js` into `@kirigami/sdk`
-  (`src/cache.js`, `src/hooks.js`). `bin/tasks/sass.js` now imports from
-  `@kirigami/sdk`. `bin/cmd/create.js` also migrated off the old
-  `bin/libs/store.js` (now deleted) to `@kirigami/sdk` `Cache`, using a global
-  cache db at `~/.config/kirigami/kiri.db` (NOT the per-project `.node.db` core
-  uses — `create` isn't tied to a project). `create <template>` now downloads
-  the GitHub `.tar.gz` and extracts it with a zero-dep tar parser; target dir
-  must be empty, unless it already has a `package.json`, in which case the
-  template's `package.json` is deep-merged (existing values win) and
-  `npm install` runs via `execSync`.
-- **`SCHEMA` class** (new, `php-prepros/src/libraries/schema.class.php`) — a
-  pure-PHP, dependency-free JSON Schema validator (Draft-7-ish, Ajv-like API:
-  `isValid()` / `validate()` / `getErrors()`). Replaces the "validate schemas
-  with ajv" todo.
-- **`LD` class** (new, `php-prepros/src/libraries/ld.class.php`, php-prepros
-  1.3.0) — schema.org JSON-LD generator. Accumulates nodes during a render and
-  injects one `<script type="application/ld+json">` `@graph` into `<head>` via a
-  `post_render` hook. **Automatic injection is opt-in**: it fires only when
-  `kirigami.yaml` has a **top-level `jsonld:` block** (sibling of `kirigami:`,
-  passed through by `prepros.js` as `PREPROS::$config->jsonld`; empty
-  `jsonld: {}` is enough) — that block, plus the `kirigami:` loose keys
-  `person`/`jobtitle`/`area`/`knowsabout`/`keywords`/social URLs, feeds an
-  `Organization`+`Person`+`WebSite`+`WebPage`+
-  `BreadcrumbList` graph. No block → nothing injected (but explicit
-  `LD::add()` calls from templates still emit). Config-aware builders
-  (`organization`/`person`/`website`/`webPage`/`breadcrumb`/`faqPage`) + every
-  schema.org type via `__callStatic` (`LD::recipe([...])`). The `BreadcrumbList`
-  is built from the `_index.php` ancestor trail for every non-home page (no
-  `@breadcrumb` opt-in — that stays a separate FS feature). Per-page PHPDOC
-  tags: `@ld false`, `@ld_type <Type>` (AboutPage / Article / Service / …),
-  `@ld_title`, `@ld_description`, `@ld_image`, `@ld_published`, `@ld_modified`,
-  `@ld_breadcrumb false`. Opt out globally: drop the block, `jsonld: false`,
-  `jsonld: { auto: false }`. Aliases `ld_*()`. Side changes: `FS::phpFileInfo()`
-  regex now allows `_` in tag names (for `@ld_*`); fixed a latent
-  `STR::is_url()` `strtolower(null)` deprecation. Closes the "système pour créer
-  des schemas json+ld" todo.
-- Recent commits ("Schema + sdk", "Ajv", "The good $id", "Bon là je l'ai") are
-  all around `$id` / regex handling in the schema work.
+The plugin system, `@kirigami/plugin-highlight` v0.1.0, the SDK cache migration,
+the `SCHEMA` class and the `LD` class are all **committed** now (697eb3d and
+earlier). What's uncommitted:
 
-Other open `todo.md` items: `kiri cache purge` command, exclude wildcard paths on
-export, `@breadcrumb true` handling, before-before / after-after prepros hooks.
+- **`@kirigami/canva` 2.2.0 — `helpers.dedent(str)`.** Pure no-DOM string
+  helper: strips the leading-whitespace prefix common to every non-blank line
+  (relative indent kept; leading blank lines + trailing whitespace trimmed).
+  Same algorithm as php-prepros' `STR::trimIndent`, JS side.
+- **`@kirigami/plugin-highlight` consumes it.** `src/highlight.js` does
+  `import { dedent } from '@kirigami/canva/helpers'` and de-indents every fenced
+  code block before `hljs.highlight()`, so a ```` ``` ```` block indented for
+  readability in the source markdown/PHP renders flush-left (the `<highlight>`
+  tag already did this PHP-side via `STR::trimIndent`). New dependency
+  `@kirigami/canva` (exact `2.2.0`); `packages/kirigami` bumped to match.
+  **canva is a permanent part of this monorepo — reuse its code rather than
+  re-implementing shared helpers per package.**
+- **Next:** a publish script — canva 2.2.0 and plugin-highlight are not on npm
+  yet, and the exact-version pins won't resolve from the registry until they are.
+- **DX issue logged in `todo.md`, not fixed:** `HTML::format()`
+  (`php-prepros/src/libraries/html.class.php`) lowercases element/attribute
+  names unconditionally (`:76`, `:166`, `:246`), flattening inline SVG/MathML
+  foreign-content camelCase (`viewBox` → `viewbox`, `linearGradient`, …) on
+  output. Not a render bug — the browser's foreign-content adjustment re-maps it
+  at parse — but the serialised source is invalid. Fix: make the serializer
+  namespace-aware (keep original case under `<svg>` / MathML).
+
+Still-open `todo.md` items: `kiri create` git check + interactive prompt; an
+`<extlink>` authoring tag (calls `SCRAPER`); a real kiribuild action test;
+`@highlight false` PHPDOC page-skip for plugin-highlight; plugin-declared tasks /
+commands (`kirigami.type` `"task"` / `"command"`).

@@ -21,6 +21,16 @@ const preloadImage = (url) => {
     if (img.complete && img.naturalWidth > 0) res("memory-cache");
   });
 };
+const dedent = (str) => {
+  const lines = String(str).replace(/^\n+/, "").replace(/\s+$/, "").split("\n");
+  let min = Infinity;
+  for (const line of lines) {
+    if (line.trim() === "") continue;
+    min = Math.min(min, line.match(/^\s*/)[0].length);
+  }
+  if (!min || min === Infinity) return lines.join("\n");
+  return lines.map((line) => line.slice(min)).join("\n");
+};
 const documentReady = function(clb = null) {
   return new Promise((res) => {
     if (document.readyState === "loading") {
@@ -36,6 +46,7 @@ const documentReady = function(clb = null) {
 };
 export {
   busy,
+  dedent,
   documentReady,
   preloadImage,
   working

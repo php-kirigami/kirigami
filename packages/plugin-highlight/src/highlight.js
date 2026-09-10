@@ -14,6 +14,7 @@
 // ---------------------------------------------------------------------------
 
 import hljs from 'highlight.js/lib/core';
+import { dedent } from '@kirigami/canva/helpers';
 
 const registered = new Set();  // language names successfully registered on `hljs`
 const warned = new Set();      // language names we've already complained about
@@ -87,7 +88,11 @@ export async function highlightHtml(html, options = {}) {
 
 	let touched = false;
 	const out = html.replace(BLOCK_RE, (whole, cls, body) => {
-		const code = decode(body);
+		// Drop indentation shared with the surrounding source (a fenced block
+		// indented for readability in the markdown/PHP). The <highlight> tag
+		// already does this PHP-side via STR::trimIndent; fenced blocks reach
+		// Node raw, so mirror it here. Relative indentation is kept.
+		const code = dedent(decode(body));
 		const requested = langFromClass(cls);
 		let rendered;
 		let resolved = requested;

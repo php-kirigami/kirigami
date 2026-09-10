@@ -32,6 +32,25 @@ export const preloadImage = url => {
 
 
 /******************************************************
+ *          Strip shared leading indentation           *
+ ******************************************************/
+// Removes the whitespace prefix common to every non-blank line, so a block that
+// was indented for readability in its source (a fenced code block, a template
+// literal, an authoring tag body) renders flush-left. Relative indentation is
+// preserved. Leading blank lines and trailing whitespace are trimmed.
+export const dedent = (str) => {
+	const lines = String(str).replace(/^\n+/, '').replace(/\s+$/, '').split('\n');
+	let min = Infinity;
+	for (const line of lines) {
+		if (line.trim() === '') continue;
+		min = Math.min(min, line.match(/^\s*/)[0].length);
+	}
+	if (!min || min === Infinity) return lines.join('\n');
+	return lines.map(line => line.slice(min)).join('\n');
+}
+
+
+/******************************************************
  *               DOMDocument async loaded             *
  ******************************************************/
 export const documentReady = function(clb = null) {
