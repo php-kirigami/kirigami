@@ -83,8 +83,36 @@ class HTML
             return "{$pad}<{$tag}{$attrs}>\n";
         }
 
+        // `<pre><code>` (a fenced code block): re-indent the code to this
+        // element's depth so the HTML source stays readable. The exact leading
+        // run added here is stripped again before display — at build time by
+        // @kirigami/plugin-highlight, otherwise by the small de-indent script
+        // Kirigami injects (prepros.head). Relative indentation is preserved.
+        if ($tag === 'pre') {
+            $code = self::soleCodeChild($node);
+            if ($code !== null) {
+                $childPad = str_repeat(' ', ($depth + 1) * self::INDENT);
+                $lines    = explode("\n", $code->innerHTML);
+
+                $min = PHP_INT_MAX;
+                foreach ($lines as $line) {
+                    if (trim($line) === '') continue;
+                    $min = min($min, strlen($line) - strlen(ltrim($line, ' ')));
+                }
+                $min = $min === PHP_INT_MAX ? 0 : $min;
+
+                $body = implode("\n", array_map(
+                    static fn(string $line) => trim($line) === '' ? '' : $childPad . substr($line, $min),
+                    $lines
+                ));
+                $token = "\x01VERB" . count(self::$verbatim) . "\x01";
+                self::$verbatim[$token] = "\n" . rtrim($body, "\n") . "\n{$pad}";
+                return "{$pad}<pre><code" . static::renderAttrs($code) . ">{$token}</code></pre>\n";
+            }
+        }
+
         // Whitespace-significant: emit the inner HTML exactly as parsed, so a
-        // <pre>/<textarea> keeps its line breaks and indentation. Only the
+        // bare <pre>/<textarea> keeps its line breaks and indentation. Only the
         // opening tag is padded to the current depth.
         if (in_array($tag, self::VERBATIM, true)) {
             /** @var DOMElement $node */
@@ -212,6 +240,23 @@ class HTML
             }
         }
         return true;
+    }
+
+    // The lone <code> child of a <pre> (a fenced code block), or null when the
+    // <pre> holds anything else — raw text, several elements, markup to keep.
+    private static function soleCodeChild(Dom\Node $node): ?Dom\Node
+    {
+        $code = null;
+        foreach ($node->childNodes as $child) {
+            if ($child->nodeType === XML_TEXT_NODE) {
+                if (trim($child->nodeValue) !== '') return null;
+                continue;
+            }
+            if ($code !== null || $child->nodeType !== XML_ELEMENT_NODE) return null;
+            if (strtolower($child->nodeName) !== 'code') return null;
+            $code = $child;
+        }
+        return $code;
     }
 
     private static function renderText(Dom\Node $node, int $depth): string

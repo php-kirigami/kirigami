@@ -208,6 +208,11 @@ Paths are per-page-relative and carry a `?<timestamp>` cache-bust. A file alread
 referenced in the page is left alone (you can still place one by hand). Skip a
 single task's tag with `head: false` on that task.
 
+With `format: true`, `HTML::format()` also indents each `<pre><code>` block to
+its nesting depth (so the HTML source stays readable) and `prepros.head` injects
+a small script that de-indents it again before display — `@kirigami/plugin-highlight`
+does the same at build time, so highlighted blocks skip the runtime step.
+
 ---
 
 ## Writing pages

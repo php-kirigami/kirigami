@@ -134,15 +134,15 @@ final class PREPROS
 
 
     /**
-     * Auto-wires each page's <head>: a small theme/FOUC guard as the first
-     * child of <head>, a <link> for every `sass` task output and a <script>
-     * (no `defer`, before </body>) for every `esbuild` task output. Paths are
-     * built from $relroot so they work at any depth and under a subfolder.
+     * Auto-wires each page: a theme/FOUC guard as the first child of <head>, a
+     * <link> for every `sass` task output, a <script> (no `defer`, before
+     * </body>) for every `esbuild` task output, and — when `format` is on — a
+     * tiny de-indent script that flattens the leading whitespace HTML::format()
+     * adds inside `<pre><code>`. Paths use $relroot so they work at any depth.
      *
      * Runs unless `prepros.head` is `false`. A single task opts out with
-     * `head: false`. A file already referenced in the page is left alone, so a
-     * template can still place one by hand. `###TIMESTAMP###` is expanded by
-     * replaceTokens() right after.
+     * `head: false`. A file already referenced in the page is left alone.
+     * `###TIMESTAMP###` is expanded by replaceTokens() right after.
      */
     private static function injectHead(string $contents, string $relroot): string
     {
@@ -157,6 +157,17 @@ final class PREPROS
 
         $links   = [];
         $scripts = [];
+
+        // Undo the <pre><code> indentation HTML::format() added, at parse time
+        // (before first paint), for blocks a build-time highlighter didn't
+        // already flatten (those carry child <span>s).
+        if (!empty(self::$config->format)) {
+            $scripts[] = '<script>document.querySelectorAll("pre>code").forEach(function(c){'
+                . 'if(c.children.length)return;'
+                . 'var L=c.textContent.replace(/^\n+/,"").replace(/\s+$/,"").split("\n"),n=1/0;'
+                . 'L.forEach(function(l){if(l.trim())n=Math.min(n,l.match(/^\s*/)[0].length)});'
+                . 'if(n&&n<1/0)c.textContent=L.map(function(l){return l.slice(n)}).join("\n")});</script>';
+        }
         foreach ((array) (self::$config->tasks ?? []) as $task) {
             $task = (array) $task;
             if (($task['head'] ?? true) === false) continue;

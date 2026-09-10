@@ -115,6 +115,14 @@ Part of the **Kirigami** project ecosystem.
   off with `prepros: { head: false }`, or `head: false` on a single sass/esbuild
   task. A template's `header.php` no longer wires assets at all.
 
+- **`HTML::format()` indents `<pre><code>`.** A fenced code block's lines are
+  shifted to the block's nesting depth so the HTML source stays readable
+  (relative indentation preserved). The exact leading run is stripped again
+  before it's shown — at build time by `@kirigami/plugin-highlight`, otherwise
+  by a ~250-byte de-indent script `prepros.head` injects before `</body>` (only
+  when `format` is on; it skips blocks a highlighter already flattened). A bare
+  `<pre>` and `<textarea>` are still emitted byte-for-byte.
+
 ---
 
 ## What's new in 1.4.0
@@ -125,7 +133,8 @@ scratch — mostly developer-experience, all backward compatible.
 - **`HTML::format()` keeps `<pre>` / `<textarea>` verbatim.** Their line breaks,
   indentation and blank lines are no longer collapsed, so a fenced code block
   survives the formatter intact — `format: true` and Markdown code blocks now
-  coexist.
+  coexist. (1.6.0 refines this: a `<pre><code>` block is re-indented to its
+  nesting depth and de-indented again before display.)
 - **The default Markdown plugins load out of the box.** `{% callout %}`,
   `{% youtube %}`, `{% codepen %}` and `{% checklist %}` are registered
   automatically (`md.plugins.php` is auto-included from `MD`), as the docs always
@@ -846,7 +855,7 @@ Pretty-printer for the final HTML output. Used automatically when `format: true`
 $formatted = HTML::format(string $html): string;
 ```
 
-Uses PHP 8.4's `Dom\HTMLDocument` (Lexbor engine) to parse the input and re-serialize it with consistent 4-space indentation. Inline elements, `<script>`, and `<style>` blocks are handled correctly — their content is indented but not reformatted. Boolean HTML5 attributes (`muted`, `autoplay`, `noopener`, etc.) are written without a value.
+Uses PHP 8.4's `Dom\HTMLDocument` (Lexbor engine) to parse the input and re-serialize it with consistent 4-space indentation. Inline elements, `<script>`, and `<style>` blocks are handled correctly — their content is indented but not reformatted. A `<pre><code>` block is shifted to its nesting depth too (relative indentation kept), and the leading run is stripped again before display; a bare `<pre>` and `<textarea>` stay byte-for-byte. Boolean HTML5 attributes (`muted`, `autoplay`, `noopener`, etc.) are written without a value.
 
 ---
 
