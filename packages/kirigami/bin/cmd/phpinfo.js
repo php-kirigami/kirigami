@@ -8,7 +8,7 @@ const HELP = {
 	description: "Print phpinfo() from the embedded PHP-WASM runtime used by Kirigami.",
 	usage: "[options]",
 	options: [
-		{ flag: "--md, -h", desc: "Output as Markdown instead of HTML" },
+		{ flag: "--md, -m", desc: "Output as Markdown instead of HTML" },
 		{ flag: "--json, -j", desc: "Output as JSON instead of HTML" },
 		{ flag: "--help, -h", desc: "Show this help section" },
 	],

@@ -1,29 +1,29 @@
 <?php
 
 /**
- * YAML — Parseur YAML léger, entièrement statique.
+ * YAML — lightweight, fully static YAML parser.
  *
- * Utilisation :
- *   $data = YAML::parse($yamlString);          // mappings → stdClass (défaut)
- *   $data = YAML::parse($yamlString, true);    // mappings → array associatif
- *   $data = YAML::parseFile('/chemin/vers/config.yaml');
+ * Usage:
+ *   $data = YAML::parse($yamlString);          // mappings → stdClass (default)
+ *   $data = YAML::parse($yamlString, true);    // mappings → associative array
+ *   $data = YAML::parseFile('/path/to/config.yaml');
  *
- * Supporte :
- *  - Scalaires typés (string, int, float, bool, null)
- *  - Guillemets simples et doubles (avec séquences d'échappement)
- *  - Blocs multi-lignes (| littéral et > replié, avec chomping -, +)
- *  - Plain scalars multi-lignes (continuation sans indicateur)
- *  - Mappings et séquences imbriqués
- *  - Collections inline [a, b] et {k: v}
- *  - Commentaires (#)
- *  - Documents multiples séparés par ---
+ * Supports:
+ *  - Typed scalars (string, int, float, bool, null)
+ *  - Single and double quotes (with escape sequences)
+ *  - Multi-line blocks (| literal and > folded, with chomping -, +)
+ *  - Multi-line plain scalars (continuation with no indicator)
+ *  - Nested mappings and sequences
+ *  - Inline collections [a, b] and {k: v}
+ *  - Comments (#)
+ *  - Multiple documents separated by ---
  */
 class YAML
 {
     private function __construct() {}
 
     // -------------------------------------------------------------------------
-    // Points d'entrée publics
+    // Public entry points
     // -------------------------------------------------------------------------
 
     public static function parse(string $yaml, bool $assoc = false): mixed
@@ -49,60 +49,60 @@ class YAML
     public static function parseFile(string $path, bool $assoc = false): mixed
     {
         if (!is_readable($path)) {
-            throw new \RuntimeException("Impossible de lire le fichier : $path");
+            throw new \RuntimeException("Cannot read file: $path");
         }
         return self::parse(file_get_contents($path), $assoc);
     }
 
     /**
-     * Charge un fichier YAML ou JSON, puis parcourt récursivement le résultat
-     * et remplace toute valeur string qui correspond à un chemin relatif vers
-     * un fichier YAML/JSON existant par le contenu désérialisé de ce fichier.
+     * Loads a YAML or JSON file, then walks the result recursively and replaces
+     * any string value that matches a relative path to an existing YAML/JSON
+     * file with that file's deserialized content.
      *
-     * Chaque fichier inclus est lui-même résolu relativement à son propre
-     * répertoire, et ainsi de suite (récursif).
+     * Each included file is itself resolved relative to its own directory, and
+     * so on (recursive).
      *
-     * Si la chaîne ne se termine pas par .yml/.yaml/.json, ou si le fichier
-     * résolu n'existe pas, la valeur est conservée telle quelle.
+     * If the string doesn't end in .yml/.yaml/.json, or the resolved file
+     * doesn't exist, the value is kept as-is.
      *
-     * Les références circulaires (ex. A → B → A) lèvent une RuntimeException.
+     * Circular references (e.g. A → B → A) throw a RuntimeException.
      *
-     * Utilisation :
-     *   $data = YAML::loadFile('/chemin/vers/config.yaml');
-     *   $data = YAML::loadFile('/chemin/vers/config.yaml', true); // arrays assoc
+     * Usage:
+     *   $data = YAML::loadFile('/path/to/config.yaml');
+     *   $data = YAML::loadFile('/path/to/config.yaml', true); // assoc arrays
      *
-     * @param string   $path   Chemin vers le fichier racine (YAML ou JSON).
-     * @param bool     $assoc  true → mappings en array, false → stdClass.
+     * @param string   $path   Path to the root file (YAML or JSON).
+     * @param bool     $assoc  true → mappings as arrays, false → stdClass.
      * @return mixed
      */
     public static function loadFile(string $path, bool $assoc = false): mixed
     {
         $absolute = realpath($path);
         if ($absolute === false || !is_readable($absolute)) {
-            throw new \RuntimeException("Impossible de lire le fichier : $path");
+            throw new \RuntimeException("Cannot read file: $path");
         }
 
         return self::loadFileRecursive($absolute, $assoc, []);
     }
 
     // -------------------------------------------------------------------------
-    // Méthodes privées pour loadFile
+    // Private methods for loadFile
     // -------------------------------------------------------------------------
 
     /**
-     * Charge et résout un fichier, en propageant la liste des ancêtres pour
-     * détecter les cycles.
+     * Loads and resolves a file, propagating the list of ancestors to detect
+     * cycles.
      *
-     * @param string   $absolute Chemin absolu canonique du fichier à charger.
+     * @param string   $absolute Canonical absolute path of the file to load.
      * @param bool     $assoc
-     * @param string[] $ancestors Chemins absolus des fichiers en cours de traitement.
+     * @param string[] $ancestors Absolute paths of the files currently being processed.
      * @return mixed
      */
     private static function loadFileRecursive(string $absolute, bool $assoc, array $ancestors): mixed
     {
         if (in_array($absolute, $ancestors, true)) {
             throw new \RuntimeException(
-                "Référence circulaire détectée : " . implode(' → ', $ancestors) . " → $absolute"
+                "Circular reference detected: " . implode(' → ', $ancestors) . " → $absolute"
             );
         }
 
@@ -113,7 +113,7 @@ class YAML
         if ($ext === 'json') {
             $data = json_decode($raw, $assoc, 512, JSON_THROW_ON_ERROR);
         } else {
-            // .yml, .yaml ou autre extension traitée comme YAML
+            // .yml, .yaml or any other extension treated as YAML
             $data = self::parse($raw, $assoc);
         }
 
@@ -121,11 +121,11 @@ class YAML
     }
 
     /**
-     * Parcourt récursivement une valeur PHP (objet stdClass, array, string,
-     * scalaire) et résout les références vers des fichiers externes.
+     * Recursively walks a PHP value (stdClass object, array, string, scalar)
+     * and resolves references to external files.
      *
      * @param mixed    $node
-     * @param string   $dir      Répertoire du fichier qui contient ce nœud.
+     * @param string   $dir      Directory of the file that contains this node.
      * @param bool     $assoc
      * @param string[] $ancestors
      * @return mixed
@@ -150,14 +150,14 @@ class YAML
             return $node;
         }
 
-        // int, float, bool, null → retourné tel quel
+        // int, float, bool, null → returned as-is
         return $node;
     }
 
     /**
-     * Si la chaîne pointe vers un fichier YAML/JSON existant (chemin relatif
-     * au répertoire $dir), charge ce fichier récursivement. Sinon retourne la
-     * chaîne d'origine.
+     * If the string points to an existing YAML/JSON file (path relative to the
+     * $dir directory), loads that file recursively. Otherwise returns the
+     * original string.
      *
      * @param string   $str
      * @param string   $dir
@@ -169,24 +169,24 @@ class YAML
     {
         $trimmed = trim($str);
 
-        // Filtre rapide sur l'extension
+        // Quick filter on the extension
         if (!preg_match('/\.(ya?ml|json)$/i', $trimmed)) {
             return $str;
         }
 
-        // Résolution du chemin relatif au répertoire du fichier parent
+        // Resolve the path relative to the parent file's directory
         $candidate = $dir . DIRECTORY_SEPARATOR . $trimmed;
         $absolute  = realpath($candidate);
 
         if ($absolute === false || !is_readable($absolute)) {
-            return $str; // Fichier introuvable → string ordinaire
+            return $str; // File not found → plain string
         }
 
         return self::loadFileRecursive($absolute, $assoc, $ancestors);
     }
 
     // -------------------------------------------------------------------------
-    // Parsing récursif
+    // Recursive parsing
     // -------------------------------------------------------------------------
 
     private static function parseBlock(array $lines, int &$pos, int $indent, bool $assoc = false): mixed
@@ -231,13 +231,13 @@ class YAML
             $pos++;
 
             if ($rest === null) {
-                // Valeur sur les lignes suivantes : sous-bloc ou plain scalar multi-ligne
+                // Value on the following lines: sub-block or multi-line plain scalar
                 self::skipEmptyAndComments($lines, $pos);
                 if ($pos < count($lines)) {
                     $nextIndent = self::getIndent($lines[$pos]);
                     if ($nextIndent > $indent) {
                         $nextTrimmed = ltrim($lines[$pos]);
-                        // Plain scalar si ce n'est ni un mapping ni une séquence
+                        // Plain scalar if it's neither a mapping nor a sequence
                         if (!self::isMapping($nextTrimmed) && !str_starts_with($nextTrimmed, '- ')) {
                             $result[$key] = self::parseScalar(
                                 self::collectPlainScalar($lines, $pos, $indent, '')
@@ -258,7 +258,7 @@ class YAML
             } elseif ($rest !== '' && ($rest[0] === '[' || $rest[0] === '{')) {
                 $result[$key] = self::parseInlineCollection($rest, $assoc);
             } else {
-                // Scalaire inline, peut être suivi de lignes de continuation
+                // Inline scalar, may be followed by continuation lines
                 $result[$key] = self::parseScalar(
                     self::collectPlainScalar($lines, $pos, $indent, $rest)
                 );
@@ -299,10 +299,10 @@ class YAML
                     $result[] = null;
                 }
             } elseif (self::isMapping($itemContent)) {
-                // Mapping inline dans la séquence :
-                // On reconstruit un tableau de lignes virtuel en préfixant la première clé
-                // avec fakeIndent, puis on délègue entièrement à parseMapping pour bénéficier
-                // de toute sa logique (|, >, plain scalars, sous-blocs…).
+                // Inline mapping inside the sequence:
+                // Rebuild a virtual array of lines by prefixing the first key
+                // with fakeIndent, then delegate entirely to parseMapping to get
+                // all of its logic (|, >, plain scalars, sub-blocks…).
                 $fakeIndent   = $lineIndent + 2;
                 $fakePrefix   = str_repeat(' ', $fakeIndent);
                 $virtualLines = array_merge(
@@ -324,12 +324,12 @@ class YAML
     }
 
     // -------------------------------------------------------------------------
-    // Plain scalar multi-ligne
+    // Multi-line plain scalar
     // -------------------------------------------------------------------------
 
     /**
-     * Collecte un scalaire qui peut continuer sur des lignes plus indentées que $parentIndent.
-     * Les lignes de continuation sont jointes par un espace (repli implicite).
+     * Collects a scalar that may continue on lines more indented than $parentIndent.
+     * Continuation lines are joined with a space (implicit folding).
      */
     private static function collectPlainScalar(array $lines, int &$pos, int $parentIndent, string $first): string
     {
@@ -339,18 +339,18 @@ class YAML
             $raw     = $lines[$pos];
             $trimmed = trim($raw);
 
-            // Ligne vide : fin du scalaire
+            // Blank line: end of the scalar
             if ($trimmed === '') break;
 
             $lineIndent = self::getIndent($raw);
 
-            // Retour à l'indentation parente ou moins : fin
+            // Back to the parent indentation or less: end
             if ($lineIndent <= $parentIndent) break;
 
-            // Commentaire seul sur la ligne : fin
+            // Comment alone on the line: end
             if (str_starts_with($trimmed, '#')) break;
 
-            // C'est un mapping ou une séquence : fin
+            // It's a mapping or a sequence: end
             if (self::isMapping($trimmed) || str_starts_with($trimmed, '- ')) break;
 
             $parts[] = $trimmed;
@@ -361,7 +361,7 @@ class YAML
     }
 
     // -------------------------------------------------------------------------
-    // Blocs multi-lignes
+    // Multi-line blocks
     // -------------------------------------------------------------------------
 
     private static function parseLiteralBlock(array $lines, int &$pos, int $parentIndent, string $indicator): string
@@ -435,7 +435,7 @@ class YAML
     }
 
     // -------------------------------------------------------------------------
-    // Collections inline  [a, b]  {k: v}
+    // Inline collections  [a, b]  {k: v}
     // -------------------------------------------------------------------------
 
     private static function parseInlineCollection(string $raw, bool $assoc = false): mixed
@@ -500,7 +500,7 @@ class YAML
     }
 
     // -------------------------------------------------------------------------
-    // Scalaires
+    // Scalars
     // -------------------------------------------------------------------------
 
     private static function parseScalar(string $value): mixed
@@ -534,7 +534,7 @@ class YAML
     }
 
     // -------------------------------------------------------------------------
-    // Utilitaires
+    // Helpers
     // -------------------------------------------------------------------------
 
     private static function getIndent(string $line): int

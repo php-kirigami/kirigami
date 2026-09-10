@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/kirigami",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "Tools to build static website with PHP",
   "license": "MIT",
   "author": "Maxime Larrivée-Roy",
@@ -20,7 +20,7 @@
     "kirigami.schema.json"
   ],
   "engines": {
-    "node": ">=20.10.0",
+    "node": ">=24.0.0",
     "npm": ">=10.2.3"
   },
   "exports": {
@@ -28,11 +28,12 @@
     "./schema": "./kirigami.schema.json"
   },
   "dependencies": {
-    "@kirigami/php-prepros": "1.1.0-1",
+    "@kirigami/canva": "1.0.1",
+    "@kirigami/php-prepros": "1.2.0",
     "@kirigami/sdk": "0.1.0",
-    "@kirigami/struct-walker": "1.0.3",
+    "@kirigami/struct-walker": "1.0.4",
     "@octokit/rest": "^22.0.1",
-    "better-sqlite3": "^13.0.3",
+    "ajv": "^8.20.0",
     "chokidar": "^5.0.0",
     "csso": "^5.0.5",
     "esbuild": "^0.28.2",

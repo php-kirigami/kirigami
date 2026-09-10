@@ -30,7 +30,7 @@ final class PREPROS
         if(!$file = realpath($file)) return false;
         self::$file = $file;
         
-        // a revoir = ajouter le path du baseurl
+        // to review = add the baseurl path
         $absurl = str_replace('//', '/', str_replace('\\', '/', pathinfo(str_replace(realpath(self::$root), '', $file), PATHINFO_DIRNAME)) . '/');
         
         $relroot = FS::getRelativePath($dir, self::$root);

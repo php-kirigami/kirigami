@@ -1,15 +1,13 @@
 // ---------------------------------------------------------------------------
-// Registre de hooks générique, en mémoire. Les tasks de @kirigami/kirigami
-// (comme sass.js) déclenchent des points d'extension nommés via
-// run(hookName, ...args), et n'importe quel plugin peut s'y greffer via
-// on(hookName, fn).
+// Generic in-memory hook registry. The @kirigami/kirigami tasks (like sass.js)
+// fire named extension points via run(hookName, ...args), and any plugin can
+// hook into them via on(hookName, fn).
 //
-// Ce module ne connaît rien de kirigami.yaml ni des plugins eux-mêmes : le
-// système de plugins de kirigami-core lit kirigami.yaml, charge les packages
-// actifs, et laisse chaque plugin appeler on() lui-même. Ici, on ne fait que
-// router — c'est ce qui permet à kirigami-core et aux plugins (des packages
-// npm distincts) de partager le même registre en mémoire, en dépendant tous
-// de la même instance de ce module.
+// This module knows nothing about kirigami.yaml or the plugins themselves:
+// kirigami-core's plugin system reads kirigami.yaml, loads the active
+// packages, and lets each plugin call on() itself. Here we only route — which
+// is what lets kirigami-core and the plugins (separate npm packages) share the
+// same in-memory registry, all depending on the same instance of this module.
 // ---------------------------------------------------------------------------
 
 const listeners = new Map(); // hookName -> Set<fn>
@@ -18,7 +16,7 @@ const listeners = new Map(); // hookName -> Set<fn>
 export function on(hookName, fn) {
 	if (!listeners.has(hookName)) listeners.set(hookName, new Set());
 	listeners.get(hookName).add(fn);
-	return () => off(hookName, fn); // pratique pour se désenregistrer si besoin
+	return () => off(hookName, fn); // handy for unregistering if needed
 }
 
 
@@ -27,9 +25,9 @@ export function off(hookName, fn) {
 }
 
 
-// Exécute tous les listeners d'un hook, dans l'ordre d'enregistrement, et
-// aplatit leurs résultats. Un listener peut renvoyer undefined/null (ignoré),
-// une valeur unique, ou un tableau de valeurs.
+// Runs every listener of a hook, in registration order, and flattens their
+// results. A listener may return undefined/null (ignored), a single value, or
+// an array of values.
 export async function run(hookName, ...args) {
 	const fns = listeners.get(hookName);
 	if (!fns || !fns.size) return [];

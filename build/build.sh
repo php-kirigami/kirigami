@@ -13,7 +13,7 @@ node packages/php-wasm/compile/build.js \
   --WITH_CLI_SAPI=no \
   --WITH_OPCACHE=no \
   --WITH_GD=yes \
-  --WITH_IMAGICK=no \
+  --WITH_IMAGICK=yes \
   --WITH_LIBXML=yes \
   --WITH_SOAP=no \
   --WITH_CURL=yes \

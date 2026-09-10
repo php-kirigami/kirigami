@@ -9,7 +9,7 @@ import { phpversion } from "@kirigami/php-wasm";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 
-// ─── Sous-commandes disponibles ─────────────────────────────────────────────
+// ─── Available subcommands ─────────────────────────────────────────────────
 const COMMANDS = {
 	build: "Compile project for developement",
 	export: "Compile and export project for production",
@@ -19,7 +19,7 @@ const COMMANDS = {
 	phpinfo: "Print phpinfo() from the embedded PHP-WASM runtime",
 };
 
-// ─── Aide globale ────────────────────────────────────────────────────────────
+// ─── Global help ───────────────────────────────────────────────────────────
 function printHelp() {
 	console.log(`
 ██╗  ██╗██╗██████╗ ██╗ ██████╗  █████╗ ███╗   ███╗██╗
@@ -54,7 +54,7 @@ ${c.dim("Type `kiri <command> --help` for detailed help on a command.")}
 `);
 }
 
-// ─── Version ─────────────────────────────────────────────────────────────────
+// ─── Version ───────────────────────────────────────────────────────────────
 async function printVersion() {
 	const { createRequire } = await import("module");
 	const require = createRequire(import.meta.url);
@@ -66,12 +66,12 @@ async function printVersion() {
 	console.log(`${c.cyan("php: ")} v${php_version}`);
 }
 
-// ─── Dispatcher ──────────────────────────────────────────────────────────────
+// ─── Dispatcher ────────────────────────────────────────────────────────────
 async function main() {
 	const args = process.argv.slice(2);
 	const [subcommand, ...rest] = args;
 
-	// Flags globaux
+	// Global flags
 	if (!subcommand || subcommand === "--help" || subcommand === "-h") {
 		printHelp();
 		process.exit(0);
@@ -82,7 +82,7 @@ async function main() {
 		process.exit(0);
 	}
 
-	// Résoudre le fichier de commande
+	// Resolve the command file
 	const cmdPath = resolve(__dirname, "cmd", `${subcommand}.js`);
 
 	if (!existsSync(cmdPath)) {
@@ -93,7 +93,7 @@ async function main() {
 		process.exit(1);
 	}
 
-	// Charger et exécuter la sous-commande
+	// Load and run the subcommand
 	try {
 		const cmdModule = await import(pathToFileURL(cmdPath).href);
 		await cmdModule.default(rest);

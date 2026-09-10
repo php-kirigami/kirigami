@@ -35,3 +35,40 @@ export declare const HOOKS: {
 	readonly SASS_AFTER: 'sass:after';
 	readonly SASS_FUNCTIONS: 'sass:functions';
 };
+
+/**
+ * A persistent key/value cache backed by SQLite (via node:sqlite — no
+ * native compilation required). Values are JSON-serialized; each can carry
+ * an optional TTL in seconds (0 = never expires).
+ *
+ * Every key must start with a namespace: one or more `[a-z]` characters
+ * followed by `_` (e.g. `colors_`, `font_`, `meta_`). Keys that don't match
+ * throw a `TypeError`. The namespace is what `purge(mask)` targets.
+ */
+export declare class Cache {
+	/**
+	 * @param dbFile Path to the SQLite database file. Defaults to
+	 * `.node.db` in the current working directory.
+	 */
+	constructor(dbFile?: string);
+
+	/** Returns the stored value for `key`, or `null` if missing/expired. */
+	get<T = unknown>(key: string): T | null;
+
+	/** Stores `val` (JSON-serialized) under `key`, with an optional TTL in seconds. */
+	set(key: string, val: unknown, ttl?: number): boolean;
+
+	/**
+	 * Without an argument: deletes all expired entries.
+	 * With a glob mask (`"meta_*"`, `"colors_*"`, …): deletes every entry
+	 * whose key matches, expired or not — targeted invalidation of a
+	 * namespace. Returns the number of rows deleted.
+	 */
+	purge(mask?: string | null): number;
+
+	/** Deletes a single entry by key. */
+	del(key: string): boolean;
+
+	/** Closes the underlying database connection. */
+	close(): void;
+}

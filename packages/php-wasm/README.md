@@ -7,31 +7,14 @@
 # @kirigami/php-wasm
 
 A custom PHP 8.5 WebAssembly build for Node.js — JSPI-only, no browser target.  
-Built for the [Kirigami](https://github.com/php-kirigami) project.
+Built for the **[Kirigami](https://github.com/php-kirigami)** static site generator.
 
 [![npm version](https://img.shields.io/npm/v/@kirigami/php-wasm)](https://www.npmjs.com/package/@kirigami/php-wasm)
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-yellow)](./LICENSE)
-[![Node.js >=20.10.0](https://img.shields.io/badge/node-%3E%3D20.10.0-brightgreen)](https://nodejs.org)
+[![Node.js >=24.0.0](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](https://nodejs.org)
 [![PHP 8.5.10](https://img.shields.io/badge/php-8.5.10-777bb4)](https://www.php.net/releases/8.5/)
 
 </div>
-
----
-
-## Contents
-
-* [Overview](#overview)
-* [Fork origin](#fork-origin)
-* [Compatibility & Runtime Helpers](#compatibility--runtime-helpers)
-* [Requirements](#requirements)
-* [Installation](#installation)
-* [Usage](#usage)
-* [Security considerations](#security-considerations)
-* [TypeScript](#typescript)
-* [Package contents](#package-contents)
-* [PHP version](#php-version)
-* [License](#license)
-* [Related](#related)
 
 ---
 
@@ -45,6 +28,28 @@ Built for the [Kirigami](https://github.com/php-kirigami) project.
 - ❌ No `WORKER` / `IFRAME` targets
 
 This intentional reduction keeps the package lean and avoids shipping browser-specific glue code that would never be used inside Kirigami's server-side execution environment.
+
+Part of the **Kirigami** project ecosystem.
+
+---
+
+## Table of contents
+
+- [@kirigami/php-wasm](#kirigamiphp-wasm)
+  - [Overview](#overview)
+  - [Table of contents](#table-of-contents)
+  - [Fork origin](#fork-origin)
+  - [Compatibility & Runtime Helpers](#compatibility--runtime-helpers)
+  - [Requirements](#requirements)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Security considerations](#security-considerations)
+  - [TypeScript](#typescript)
+  - [Package contents](#package-contents)
+  - [PHP version](#php-version)
+  - [Related](#related)
+  - [PHP 8.5.10 - phpinfo()](#php-8510---phpinfo)
+  - [License](#license)
 
 ---
 
@@ -68,7 +73,7 @@ This package is a **drop-in replacement** for the loader module consumed by [`@p
 | `jspi()` | Detects JSPI support in the current runtime (re-exported from `wasm-feature-detect`) |
 | `getPHPRuntime()` | Returns a standard PHP instance. **Memoized singleton** — the first call creates it, subsequent calls return the same instance |
 | `getPHPRuntimeWithNetwork()` | Returns a PHP instance bound to a native, zero-dependency TCP outbound proxy with SSL root certificates injected. **Memoized singleton**, separate from `getPHPRuntime()` |
-| `getLoadedExtensions()` | Returns the loaded extensions by the PHP-WASM Runtime` |
+| `getLoadedExtensions()` | Returns the names of every loaded PHP extension, sorted case-insensitively (e.g. `["Core", "curl", "gd", "imagick", "openssl", …]`) |
 | `exec(code, network?)` | Executes a PHP code snippet against the standard runtime, or the network-enabled one if `network` is `true`. Returns `{ returnCode, stdout, stderr }` |
 | `phpversion()` | Returns the running PHP interpreter's version string, e.g. `"8.5.10"` |
 | `phpinfo()` | Returns the HTML result of `phpinfo()` |
@@ -80,13 +85,10 @@ This package is a **drop-in replacement** for the loader module consumed by [`@p
 
 ## Requirements
 
-| Requirement | Minimum version |
-|---|---|
-| Node.js | `>=20.10.0` |
-| npm | `>=10.2.3` |
-| Node.js JSPI flag | See note below |
+- Node.js `>= 24.0.0`
+- npm `>= 10.2.3`
 
-> **JSPI in Node.js**: JSPI (WebAssembly JavaScript Promise Integration) landed behind a V8 flag in Node.js 20 and became available without flags in Node.js 22+. If you are on Node.js 20, start your process with `--experimental-wasm-stack-switching`. On Node.js 22 and above, no flag is needed.
+> **JSPI in Node.js**: JSPI (WebAssembly JavaScript Promise Integration) is available without any flag from Node.js 22 onward, so the required Node.js 24 needs no special startup option.
 
 ---
 
@@ -242,7 +244,7 @@ php._networkProxyServer.close();            // typed, no cast needed
 ├── jspi/
 │   ├── php_8_5.js        # Emscripten-generated Node.js loader (JSPI build)
 │   └── 8_5_10/
-│       └── php_8_5.wasm  # Compiled PHP 8.5.10 WebAssembly binary (~17 MB)
+│       └── php_8_5.wasm  # Compiled PHP 8.5.10 WebAssembly binary (~22 MB)
 └── LICENSE
 
 ```
@@ -267,7 +269,7 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 
 ## PHP 8.5.10 - phpinfo()
 
-**Version PHP :** 8.5.10
+**PHP version:** 8.5.10
 
 ### General
 
@@ -278,9 +280,9 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | Key | Value |
 | --- | --- |
 | System | Emscripten emscripten 4.0.19 #1 wasm32 |
-| Build Date | Sep 1 2026 02:57:39 |
+| Build Date | Sep 9 2026 23:55:03 |
 | Build System | Linux buildkitsandbox 6.18.33.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux |
-| Configure Command | './configure' 'PKG_CONFIG_PATH=/root/lib/lib/pkgconfig' '--disable-fiber-asm' '--disable-phar' '--enable-json' '--enable-embed=static' '--with-layout=GNU' '--disable-cgi' '--disable-posix' '--enable-hash' '--enable-static' '--enable-shared' '--disable-session' '--enable-filter' '--enable-calendar' '--disable-rpath' '--disable-phpdbg' '--without-pear' '--with-valgrind=no' '--without-pcre-jit' '--enable-bcmath' '--enable-ctype' '--enable-tokenizer' '--enable-wasm_memory_storage' '--enable-dns_polyfill' '--enable-post_message_to_js' '--disable-opcache' '--with-zlib' '--with-zlib-dir=/root/lib' '--with-zip' '--enable-libxml' '--with-libxml' '--with-libxml-dir=/root/lib' '--enable-dom' '--enable-xml' '--enable-simplexml' '--enable-xmlreader' '--enable-xmlwriter' '--disable-soap' '--with-sqlite3' '--enable-pdo' '--with-pdo-sqlite=/root/lib' '--with-external-gd=/root/lib' '--enable-gd' '--with-avif' '--with-png-dir=/root/lib' '--with-jpeg' '--with-webp' '--with-openssl' '--with-openssl-dir=/root/lib' '--disable-fileinfo' '--with-iconv=/root/lib' '--with-curl=/root/lib' '--enable-mbstring' '--enable-exif' '--disable-mbregex' 'PKG_CONFIG_LIBDIR=/root/emsdk/upstream/emscripten/cache/sysroot/local/lib/pkgconfig:/root/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig' 'CURL_CFLAGS=-I/root/lib/include' 'CURL_LIBS=-I/root/lib/lib -L/root/lib/lib' 'PNG_CFLAGS=-I/root/lib/include' 'PNG_LIBS=-L/root/lib/lib -lpng16 -lz' 'AVIF_CFLAGS=-I/root/lib/include' 'AVIF_LIBS=-L/root/lib/lib -lavif' 'WEBP_CFLAGS=-I/root/lib/include' 'WEBP_LIBS=-L/root/lib/lib -lwebp -lsharpyuv' 'JPEG_CFLAGS=-I/root/lib/include' 'JPEG_LIBS=-L/root/lib/lib -ljpeg' 'GDLIB_CFLAGS=-I/root/lib/include' 'GDLIB_LIBS=-L/root/lib/lib -lgd -lpng16 -lz -ljpeg -lwebp -lsharpyuv -lavif' |
+| Configure Command | './configure' 'PKG_CONFIG_PATH=/root/lib/lib/pkgconfig' '--disable-fiber-asm' '--disable-phar' '--enable-json' '--enable-embed=static' '--with-layout=GNU' '--disable-cgi' '--disable-posix' '--enable-hash' '--enable-static' '--enable-shared' '--disable-session' '--enable-filter' '--enable-calendar' '--disable-rpath' '--disable-phpdbg' '--without-pear' '--with-valgrind=no' '--without-pcre-jit' '--enable-bcmath' '--enable-ctype' '--enable-tokenizer' '--enable-wasm_memory_storage' '--enable-dns_polyfill' '--enable-post_message_to_js' '--disable-opcache' '--with-zlib' '--with-zlib-dir=/root/lib' '--with-zip' '--enable-libxml' '--with-libxml' '--with-libxml-dir=/root/lib' '--enable-dom' '--enable-xml' '--enable-simplexml' '--enable-xmlreader' '--enable-xmlwriter' '--disable-soap' '--with-sqlite3' '--enable-pdo' '--with-pdo-sqlite=/root/lib' '--with-external-gd=/root/lib' '--enable-gd' '--with-avif' '--with-png-dir=/root/lib' '--with-jpeg' '--with-webp' '--with-openssl' '--with-openssl-dir=/root/lib' '--disable-fileinfo' '--with-iconv=/root/lib' '--with-curl=/root/lib' '--enable-mbstring' '--enable-exif' '--disable-mbregex' '--with-imagick=/root/lib' '--with-imagick-config=/root/lib/bin/wasm32-unknown-emscripten-MagickWand-config' 'PKG_CONFIG_LIBDIR=/root/emsdk/upstream/emscripten/cache/sysroot/local/lib/pkgconfig:/root/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig' 'CURL_CFLAGS=-I/root/lib/include' 'CURL_LIBS=-I/root/lib/lib -L/root/lib/lib' 'PNG_CFLAGS=-I/root/lib/include' 'PNG_LIBS=-L/root/lib/lib -lpng16 -lz' 'AVIF_CFLAGS=-I/root/lib/include' 'AVIF_LIBS=-L/root/lib/lib -lavif' 'WEBP_CFLAGS=-I/root/lib/include' 'WEBP_LIBS=-L/root/lib/lib -lwebp -lsharpyuv' 'JPEG_CFLAGS=-I/root/lib/include' 'JPEG_LIBS=-L/root/lib/lib -ljpeg' 'GDLIB_CFLAGS=-I/root/lib/include' 'GDLIB_LIBS=-L/root/lib/lib -lgd -lpng16 -lz -ljpeg -lwebp -lsharpyuv -lavif' |
 | Server API | PHP WASM SAPI (JSPI) |
 | Virtual Directory Support | disabled |
 | Configuration File (php.ini) Path | /usr/local/etc |
@@ -588,6 +590,28 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | iconv.input_encoding | _no value_ | _no value_ |
 | iconv.internal_encoding | _no value_ | _no value_ |
 | iconv.output_encoding | _no value_ | _no value_ |
+
+### imagick
+
+| imagick module | enabled |
+| --- | --- |
+| imagick module version | @PACKAGE_VERSION@ |
+| imagick classes | Imagick, ImagickDraw, ImagickPixel, ImagickPixelIterator, ImagickKernel |
+| Imagick compiled with ImageMagick version | ImageMagick 7.1.1-39 Q16-HDRI i386 e339a05ed:20241002 https://imagemagick.org |
+| Imagick using ImageMagick library version | ImageMagick 7.1.1-39 Q16-HDRI i386 e339a05ed:20241002 https://imagemagick.org |
+| ImageMagick copyright | (C) 1999 ImageMagick Studio LLC |
+| ImageMagick release date | 2024-10-02 |
+| ImageMagick number of supported formats: | 246 |
+| ImageMagick supported formats | 3FR, 3G2, 3GP, A, AAI, AI, APNG, ART, ARW, ASHLAR, AVI, AVS, B, BAYER, BAYERA, BGR, BGRA, BGRO, BMP, BMP2, BMP3, BRF, C, CAL, CALS, CANVAS, CAPTION, CIN, CIP, CLIP, CMYK, CMYKA, CR2, CR3, CRW, CUBE, CUR, CUT, DATA, DCM, DCR, DCRAW, DCX, DDS, DNG, DPX, DXT1, DXT5, EPDF, EPI, EPS, EPS2, EPS3, EPSF, EPSI, ERF, FARBFELD, FAX, FF, FFF, FILE, FITS, FL32, FLV, FRACTAL, FTP, FTS, FTXT, G, G3, G4, GIF, GIF87, GRADIENT, GRAY, GRAYA, HALD, HDR, HISTOGRAM, HRZ, HTM, HTML, HTTP, HTTPS, ICB, ICO, ICON, IIQ, INFO, INLINE, IPL, ISOBRL, ISOBRL6, JNG, JNX, JPE, JPEG, JPG, JPS, JSON, K, K25, KDC, LABEL, M, M2V, M4V, MAC, MAP, MASK, MAT, MATTE, MDC, MEF, MIFF, MKV, MNG, MONO, MOS, MOV, MP4, MPC, MPEG, MPG, MPO, MRW, MSL, MSVG, MTV, MVG, NEF, NRW, NULL, O, ORA, ORF, OTB, PAL, PALM, PAM, PANGO, PATTERN, PBM, PCD, PCDS, PCL, PCT, PCX, PDB, PDF, PDFA, PEF, PES, PFM, PGM, PGX, PHM, PICON, PICT, PIX, PJPEG, PLASMA, PNG, PNG00, PNG24, PNG32, PNG48, PNG64, PNG8, PNM, POCKETMOD, PPM, PS, PS2, PS3, PSB, PSD, PWP, QOI, R, RADIAL-GRADIENT, RAF, RAS, RAW, RGB, RGB565, RGBA, RGBO, RGF, RLA, RLE, RMF, RW2, RWL, SCR, SCREENSHOT, SCT, SFW, SGI, SHTML, SIX, SIXEL, SPARSE-COLOR, SR2, SRF, SRW, STEGANO, STI, STRIMG, SUN, SVG, SVGZ, TEXT, TGA, THUMBNAIL, TILE, TIM, TM2, TXT, UBRL, UBRL6, UIL, UYVY, VDA, VICAR, VID, VIFF, VIPS, VST, WBMP, WEBM, WEBP, WMV, WPG, X3F, XBM, XC, XCF, XPM, XPS, XV, Y, YAML, YCBCR, YCBCRA, YUV |
+
+| Directive | Local Value | Master Value |
+| --- | --- | --- |
+| imagick.allow_zero_dimension_images | 0 | 0 |
+| imagick.locale_fix | 0 | 0 |
+| imagick.progress_monitor | 0 | 0 |
+| imagick.set_single_thread | 1 | 1 |
+| imagick.shutdown_sleep_count | 10 | 10 |
+| imagick.skip_version_check | 0 | 0 |
 
 ### json
 
@@ -901,7 +925,7 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | PWD | / |
 | HOME | /home/web_user |
 | LANG | en_CA.UTF-8 |
-| _ | C:/Program Files/nodejs/node_modules/@kirigami/kirigami/bin/kiri.js |
+| _ | C:/projects/kirigami/kirigami/packages/kirigami/bin/kiri.js |
 | USE_ZEND_ALLOC | 0 |
 
 ### PHP Variables
@@ -914,7 +938,7 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | $_SERVER['PWD'] | / |
 | $_SERVER['HOME'] | /home/web_user |
 | $_SERVER['LANG'] | en_CA.UTF-8 |
-| $_SERVER['_'] | C:/Program Files/nodejs/node_modules/@kirigami/kirigami/bin/kiri.js |
+| $_SERVER['_'] | C:/projects/kirigami/kirigami/packages/kirigami/bin/kiri.js |
 | $_SERVER['USE_ZEND_ALLOC'] | 0 |
 | $_SERVER['REQUEST_URI'] | _no value_ |
 | $_SERVER['SCRIPT_NAME'] | _no value_ |
@@ -928,15 +952,15 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | $_SERVER['REQUEST_METHOD'] | GET |
 | $_SERVER['QUERY_STRING'] | _no value_ |
 | $_SERVER['HTTPS'] | off |
-| $_SERVER['REQUEST_TIME_FLOAT'] | 1788812855.23 |
-| $_SERVER['REQUEST_TIME'] | 1788812855 |
+| $_SERVER['REQUEST_TIME_FLOAT'] | 1789011340.69 |
+| $_SERVER['REQUEST_TIME'] | 1789011340 |
 | $_ENV['USER'] | web_user |
 | $_ENV['LOGNAME'] | web_user |
 | $_ENV['PATH'] | /internal/shared/bin |
 | $_ENV['PWD'] | / |
 | $_ENV['HOME'] | /home/web_user |
 | $_ENV['LANG'] | en_CA.UTF-8 |
-| $_ENV['_'] | C:/Program Files/nodejs/node_modules/@kirigami/kirigami/bin/kiri.js |
+| $_ENV['_'] | C:/projects/kirigami/kirigami/packages/kirigami/bin/kiri.js |
 | $_ENV['USE_ZEND_ALLOC'] | 0 |
 
 ### PHP Credits
@@ -1079,9 +1103,6 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | Key | Value |
 | --- | --- |
 | This program is free software; you can redistribute it and/or modify it under the terms of the PHP License as published by the PHP Group and included in the distribution in the file: LICENSE<br>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.<br>If you did not receive a copy of the PHP license, or have any questions about PHP licensing, please contact license@php.net. | _no value_ |
-
-
-
 
 ---
 

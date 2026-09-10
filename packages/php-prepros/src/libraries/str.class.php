@@ -20,20 +20,20 @@ class STR
 
 		return preg_replace_callback($pattern, function ($m) use ($clb) {
 			if (isset($m[1]) || isset($m[2])) {
-				// forme appariée : <tag>contenu</tag>
+				// paired form: <tag>content</tag>
 				$attrs = $m[1] ?? '';
 				$inner = $m[2] ?? '';
 			} elseif (isset($m[3])) {
-				// auto-fermant : <tag ... />
+				// self-closing: <tag ... />
 				$attrs = $m[3];
 				$inner = '';
 			} else {
-				// ouvrant seul, sans fermeture (img, meta, br, ...)
+				// opening only, no closing (img, meta, br, ...)
 				$attrs = $m[4] ?? '';
 				$inner = '';
 			}
 			return call_user_func($clb, $m[0], self::parseHtmlAttributes($attrs), $inner);
-		}, $contents, -1, $count, PREG_UNMATCHED_AS_NULL); // <-- le flag qui règle tout
+		}, $contents, -1, $count, PREG_UNMATCHED_AS_NULL); // <-- the flag that fixes everything
 	}
 
 
@@ -45,13 +45,13 @@ class STR
 				$key = strtolower($match[1]);
 				if (isset($match[2]) && $match[2] !== '') {
 					$value = $match[2];
-					// retire les guillemets seulement s'ils sont présents
+					// strip the quotes only if they're present
 					if (($value[0] === '"' || $value[0] === "'") && $value[0] === substr($value, -1)) {
 						$value = substr($value, 1, -1);
 					}
 					$attrs[$key] = stripslashes($value);
 				} else {
-					// attribut booléen : selected, muted, disabled, checked...
+					// boolean attribute: selected, muted, disabled, checked...
 					$attrs[$key] = true;
 				}
 			}

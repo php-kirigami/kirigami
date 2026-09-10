@@ -87,8 +87,8 @@ async function main() {
 
 	if (!existsSync(cmdPath)) {
 		console.error(
-			`\n${c.red("✖")} Commande inconnue : ${c.bold(subcommand)}\n` +
-			`  Tape ${c.cyan("kiri --help")} pour voir les commandes disponibles.\n`
+			`\n${c.red("✖")} Unknown command : ${c.bold(subcommand)}\n` +
+			`  Type ${c.cyan("kiri --help")} to see avaiables commands.\n`
 		);
 		process.exit(1);
 	}
@@ -98,7 +98,7 @@ async function main() {
 		const cmdModule = await import(pathToFileURL(cmdPath).href);
 		await cmdModule.default(rest);
 	} catch (err) {
-		console.error(`\n${c.red("✖")} Erreur dans ${c.bold(subcommand)} :\n  ${err.message}\n`);
+		console.error(`\n${c.red("✖")} Error in ${c.bold(subcommand)} :\n  ${err.message}\n`);
 		if (process.env.KIRI_DEBUG) console.error(err);
 		process.exit(1);
 	}

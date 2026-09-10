@@ -9,13 +9,13 @@
 **A static site generator that turns PHP into fast, dependency-free HTML — no server required.**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![Node](https://img.shields.io/badge/node-%3E%3D20.10.0-brightgreen)](#requirements)
+[![Node](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](#requirements)
 
 </div>
 
 ---
 
-## About
+## Overview
 
 **Kirigami** lets you build static websites using a language you already know — **PHP** — and compiles them straight into clean, production-ready HTML. There's no server to provision, no runtime to patch, and no infrastructure to maintain: the PHP engine runs entirely in **WebAssembly** (via `@kirigami/php-wasm`), directly inside the Node.js process. You get the full expressiveness of PHP templating with the simplicity, speed, and portability of a static site.
 
@@ -30,6 +30,33 @@ Here's what Kirigami brings to your workflow:
 
 Every project is driven by a single configuration file, `kirigami.yaml`, at the project root.
 
+---
+
+## Table of contents
+
+- [Kirigami](#kirigami)
+  - [Overview](#overview)
+  - [Table of contents](#table-of-contents)
+  - [Monorepo structure](#monorepo-structure)
+  - [Requirements](#requirements)
+  - [Installation](#installation)
+  - [Quick start](#quick-start)
+  - [CLI commands](#cli-commands)
+  - [Configuration (`kirigami.yaml`)](#configuration-kirigamiyaml)
+    - [`kirigami:` — core project settings](#kirigami--core-project-settings)
+    - [`prepros:` — the PHP → HTML compiler](#prepros--the-php--html-compiler)
+    - [`image:` — image autogenerator](#image--image-autogenerator)
+    - [`plugins:` — Kirigami plugins](#plugins--kirigami-plugins)
+    - [`esbuild:` / `sass:` — global build options](#esbuild--sass--global-build-options)
+    - [`export:` — production export options](#export--production-export-options)
+    - [`scripts:` — named PHP scripts](#scripts--named-php-scripts)
+    - [`tasks:` — the build pipeline](#tasks--the-build-pipeline)
+  - [Continuous deployment](#continuous-deployment)
+  - [License](#license)
+  - [Author](#author)
+
+---
+
 ## Monorepo structure
 
 This repository is an npm workspaces monorepo, organized as follows:
@@ -40,12 +67,17 @@ This repository is an npm workspaces monorepo, organized as follows:
 | [`packages/php-prepros`](./packages/php-prepros) | The PHP → HTML compiler that powers the CLI (template rendering, sitemap generation, and more). |
 | [`packages/php-wasm`](./packages/php-wasm) | A custom PHP WebAssembly build for Node.js (JSPI only, no browser support). |
 | [`packages/struct-walker`](./packages/struct-walker) | Recursively walks YAML/JSON structures, resolving relative file references and converting assets to data URIs. |
-| [`packages/canva`](./packages/canva) | Shared Sass/JS styles and scripts reused across Kirigami projects. |
+| [`packages/sdk`](./packages/sdk) | Shared runtime for plugins: the hook registry and the on-disk `Cache`. |
+| [`packages/canva`](./packages/canva) | Shared Sass/JS design system reused across Kirigami projects. |
+
+---
 
 ## Requirements
 
-- Node.js `>= 20.10.0`
+- Node.js `>= 24.0.0`
 - npm `>= 10.2.3`
+
+---
 
 ## Installation
 
@@ -56,6 +88,8 @@ npm install -D @kirigami/kirigami
 ```
 
 That's it — the `kiri` command is ready to go (via `npx kiri` or an npm script).
+
+---
 
 ## Quick start
 
@@ -86,6 +120,8 @@ npx kiri watch
 npx kiri export
 ```
 
+---
+
 ## CLI commands
 
 | Command | Description |
@@ -98,6 +134,8 @@ npx kiri export
 | `kiri phpinfo` | Prints `phpinfo()` from the embedded PHP-WASM runtime. |
 
 Every command comes with its own detailed help: `kiri <command> --help`.
+
+---
 
 ## Configuration (`kirigami.yaml`)
 
@@ -141,9 +179,21 @@ prepros:
   format: true
   network: true
   # mountext: ['.webp']
-  includes: [_layouts/functions.php]
+  includes: [_lib/functions.php]
   before: _layouts/header.php
   after:  _layouts/footer.php
+
+
+image:
+  # format: avif        # webp | avif (default: webp)
+  source: assets/images  # relative to cwd()          (default: assets/images)
+  dest:   images         # relative to kirigami.root  (default: images)
+
+
+plugins:
+  - name: "@kirigami/plugin-highlight"
+    active: true
+    options: {}
 
 
 esbuild:
@@ -162,11 +212,11 @@ scripts:
 tasks:
   - name:  js-core
     type:  esbuild
-    entry: scripts/kiri.core.js
+    entry: scripts/kirigami.core.js
 
   - name:  scss-core
     type:  sass
-    entry: styles/kiri.core.scss
+    entry: styles/kirigami.core.scss
 ```
 
 ### `kirigami:` — core project settings
@@ -192,9 +242,29 @@ Just declaring this block (even empty) automatically prepends a forced `prepros`
 | `mountext` | Extra file extensions auto-mounted into the virtual filesystem, in addition to the built-in defaults (`.php`, `.json`, `.yaml`, `.yml`, `.md`, `.db`, `.txt`). |
 | `includes` | PHP files `include_once`'d right after config load, before any page renders — the natural place to register tags/hooks/Markdown plugins. |
 
+### `image:` — image autogenerator
+
+Options for the built-in image autogenerator behind the `img-asset()` and `colors()` Sass functions. Optional — the defaults below apply even when the block is absent.
+
+| Key | Description |
+|---|---|
+| `format` | Output format for generated images: `webp` or `avif`. Defaults to `webp`. |
+| `source` | Folder holding the source images, relative to `cwd()`. Defaults to `assets/images`. |
+| `dest` | Destination folder for generated images, relative to `kirigami.root`. Defaults to `images`. |
+
+### `plugins:` — Kirigami plugins
+
+A list of plugins loaded through [`@kirigami/sdk`](./packages/sdk). Each entry's package name must match `@kirigami/plugin-*`, `<scope>/kirigami-plugin-*`, or `kirigami-plugin-*`.
+
+| Key | Description |
+|---|---|
+| `name` | Plugin package name (following one of the naming conventions above). |
+| `active` | Whether the plugin is loaded. |
+| `options` | Free-form object passed to the plugin; its shape depends on the plugin. |
+
 ### `esbuild:` / `sass:` — global build options
 
-Both are free-form objects passed straight through to the underlying build call: `esbuild:` maps to esbuild's own [`BuildOptions`](https://esbuild.github.io/api/#build-api), `sass:` to Dart Sass's own [`Options`](https://sass-lang.com/documentation/js-api/interfaces/options/). Leaving them empty (as in the example above) is equivalent to omitting the block entirely.
+Both are free-form objects passed straight through to the underlying build call, *after* Kirigami's own defaults (so they can override them): `esbuild:` maps to esbuild's own [`BuildOptions`](https://esbuild.github.io/api/#build-api), `sass:` to Dart Sass's own [`Options`](https://sass-lang.com/documentation/js-api/interfaces/options/). `sass:` also accepts `before` / `after` — arrays of extra `.scss` files compiled respectively before and after the entry (paths relative to `cwd()`). Leaving a block empty (as in the example above) is equivalent to omitting it entirely.
 
 ### `export:` — production export options
 
@@ -221,6 +291,8 @@ An ordered list of build tasks, run in array order — on top of the implicit `p
 |---|---|---|
 | `esbuild` | Bundles/minifies a JS or TS entry point. Supports build & watch. | `name`, `entry` |
 | `sass` | Compiles a `.scss`/`.sass` entry point, minified with csso on export. Supports build & watch. | `name`, `entry` |
+
+---
 
 ## Continuous deployment
 
@@ -251,9 +323,13 @@ jobs:
 
 Check the [action's own documentation](https://github.com/php-kirigami/kiribuild) for the full list of inputs (export path, GitHub Pages deployment options, etc.).
 
+---
+
 ## License
 
 This project is distributed under the [MIT license](./LICENSE), except for the `@kirigami/php-wasm` package, which is distributed under **GPL-2.0-or-later** (see its [README](./packages/php-wasm/README.md)).
+
+---
 
 ## Author
 

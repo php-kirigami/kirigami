@@ -1,7 +1,6 @@
-import fs from 'fs'; 	
+import fs from 'fs';
 import path from "path";
 import util from "util";
-import sharp from 'sharp';
 import * as sass from 'sass'
 import { minify } from 'csso';
 import { getConfig } from '../config.js';
@@ -9,15 +8,19 @@ import { execSync } from 'child_process';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { replaceRoot, joinWith, log, c } from '../utils.js';
-import { getRepresentativeColors } from '../libs/colors.js';
-import * as CACHE from '../libs/cache.js';
-import { run as runHook, HOOKS } from '@kirigami/sdk';
+import { getRepresentativeColors, imgasset } from '../libs/image.js';
+import { run as runHook, HOOKS, Cache } from '@kirigami/sdk';
 
 
 const __dirname = process.cwd();
 const require = createRequire(import.meta.url);
 const fontkit = require('fontkit');
-const fontCache = new Map(); // cache mémoire du résultat intermédiaire (plain object) pour éviter de retaper CACHE à chaque appel dans le même process
+const fontCache = new Map(); // in-memory cache of the intermediate result (plain object) to avoid hitting CACHE again on every call within the same process
+// kirigami-core's default cache instance (representative colors, font
+// metadata, etc.), a .node.db file at the cwd root — see @kirigami/sdk for the
+// implementation (node:sqlite) and to spin up its own Cache if needed (e.g. in
+// a plugin).
+const CACHE = new Cache();
 const FORMAT_KEYWORDS = {
 	woff2: 'woff2',
 	woff:  'woff',
@@ -26,17 +29,6 @@ const FORMAT_KEYWORDS = {
 	eot:   'embedded-opentype',
 	svg:   'svg',
 };
-
-// ---------------------------------------------------------------------------
-// Options d'encodage par format pour img-asset(). Le format lui-même, le
-// dossier des images sources et le dossier de destination viennent de
-// config.image (voir kirigami.config), pas d'ici.
-// ---------------------------------------------------------------------------
-const IMG_FORMAT_OPTIONS = {
-	webp: { quality: 82 },
-	avif: { quality: 50 }, // l'échelle de qualité avif n'est pas la même que webp
-};
-
 
 export const taskname = 'SASS';
 export const canwatch = true;
@@ -52,17 +44,17 @@ export default async function build(__root, task, exportPath = null) {
 
 	if(!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-	// config.sass.before / config.sass.after : fichiers additionnels compilés
-	// respectivement avant et après l'entry (chemins relatifs à cwd()).
-	// Le hook 'sass:before' / 'sass:after' permet à d'autres modules (à terme,
-	// le système de plugins lu depuis kirigami.yaml) de contribuer des
-	// fichiers supplémentaires — chaque listener peut renvoyer un chemin
-	// (absolu de préférence, ex: résolu depuis son propre package) ou un
-	// tableau de chemins. Voir buildSyntheticEntrySource() pour l'assemblage.
-	// Le hook 'sass:functions' permet d'ajouter des fonctions Sass custom, au
-	// même titre que inline-file()/img-asset()/etc. plus bas — chaque listener
-	// renvoie un objet { 'ma-fonction($arg)': (args) => ... }, au même format
-	// que l'argument `functions` de l'API Sass.
+	// config.sass.before / config.sass.after: extra files compiled respectively
+	// before and after the entry (paths relative to cwd()).
+	// The 'sass:before' / 'sass:after' hook lets other modules (eventually the
+	// plugin system read from kirigami.yaml) contribute extra files — each
+	// listener can return a path (preferably absolute, e.g. resolved from its
+	// own package) or an array of paths. See buildSyntheticEntrySource() for
+	// the assembly.
+	// The 'sass:functions' hook lets you add custom Sass functions, just like
+	// inline-file()/img-asset()/etc. below — each listener returns an object
+	// { 'my-function($arg)': (args) => ... }, in the same format as the Sass
+	// API `functions` argument.
 	const hookContext = { __root, task, exportPath, config };
 	const [hookBefore, hookAfter, hookFunctions] = await Promise.all([
 		runHook(HOOKS.SASS_BEFORE, hookContext),
@@ -71,24 +63,24 @@ export default async function build(__root, task, exportPath = null) {
 	]);
 	const beforeFiles = [...[].concat(before), ...hookBefore].filter(Boolean).map((p) => path.resolve(process.cwd(), p));
 	const afterFiles = [...[].concat(after), ...hookAfter].filter(Boolean).map((p) => path.resolve(process.cwd(), p));
-	const pluginFunctions = Object.assign({}, ...hookFunctions); // objets { signature: fn } fusionnés
+	const pluginFunctions = Object.assign({}, ...hookFunctions); // merged { signature: fn } objects
 
-	// config.image.* : voir kirigami.config — source est relatif à cwd(),
-	// dest est relatif à kirigami.src mais réécrit dans l'arbre de sortie
-	// (exportPath || __root), en miroir de outfile/entry.
+	// config.image.*: see kirigami.config — source is relative to cwd(), dest
+	// is relative to kirigami.src but rewritten into the output tree
+	// (exportPath || __root), mirroring outfile/entry.
 	const imgConfig = config.image || {};
 	const imgFormat = imgConfig.format === 'avif' ? 'avif' : 'webp';
 	const imgSourceRoot = path.resolve(process.cwd(), imgConfig.source || './assets/images/');
-	const imgDestRoot = path.resolve(exportPath || __root, imgConfig.dest || './images/');
-	// Lors d'un export, l'image traitée doit atterrir à la fois dans l'arbre
-	// exporté (imgDestRoot ci-dessus) et dans l'arbre source (__root), pour
-	// que ce dernier reste à jour aussi (dev/watch). Hors export, imgDestRoot
-	// pointe déjà sur __root, donc rien à dupliquer.
-	const imgDestRootSource = exportPath ? path.resolve(__root, imgConfig.dest || './images/') : null;
+	const images = imgasset({
+		format: imgFormat,
+		sourceRoot: imgSourceRoot,
+		destRoot: path.resolve(exportPath || __root, imgConfig.dest || './images/'),
+		destRootSource: exportPath ? path.resolve(__root, imgConfig.dest || './images/') : null,
+		outDir: dir,
+	});
 
 	try {
 		const cache = new Map();
-		const imageAssets = new Map(); // path retourné (utilisé dans le css) -> infos source pour le traitement post-compile
 
 		const compileOptions = {
 			style: "compressed",
@@ -103,10 +95,10 @@ export default async function build(__root, task, exportPath = null) {
 				])
 			],
 			functions: {
-				// Fonctions ajoutées par des plugins (hook 'sass:functions').
-				// Placées en premier : si un plugin réutilise par erreur une
-				// signature déjà native (inline-file, img-asset, etc.), la
-				// version native ci-dessous l'emporte toujours.
+				// Functions added by plugins (the 'sass:functions' hook).
+				// Placed first: if a plugin accidentally reuses a signature
+				// that's already native (inline-file, img-asset, etc.), the
+				// native version below always wins.
 				...pluginFunctions,
 
 				'inline-file($path)': (args) => {
@@ -153,35 +145,14 @@ export default async function build(__root, task, exportPath = null) {
 					const heightArg = args[2];
 					const cover = args[3].isTruthy;
 
-					const hasWidth = widthArg !== sass.sassNull;
-					const hasHeight = heightArg !== sass.sassNull;
-					const width = hasWidth ? Math.round(widthArg.assertNumber('width').value) : null;
-					const height = hasHeight ? Math.round(heightArg.assertNumber('height').value) : null;
+					const width = widthArg !== sass.sassNull ? Math.round(widthArg.assertNumber('width').value) : null;
+					const height = heightArg !== sass.sassNull ? Math.round(heightArg.assertNumber('height').value) : null;
 
-					let suffix = '';
-					if (hasWidth && hasHeight) suffix = cover ? `-${width}x${height}-cover` : `-${width}x${height}`;
-					else if (hasWidth) suffix = `-${width}w`;
-					else if (hasHeight) suffix = `-${height}h`;
-
-					const { dir: subDir, name } = path.parse(srcRelPath);
-					const outRelPath = (subDir ? `${subDir}/` : '') + `${name}${suffix}.${imgFormat}`;
-					const destAbsPath = path.join(imgDestRoot, outRelPath);
-					const destAbsPathSource = imgDestRootSource ? path.join(imgDestRootSource, outRelPath) : null;
-
-					const returned = path.relative(path.dirname(outfile), destAbsPath).split(path.sep).join('/');
-
-					if (!imageAssets.has(destAbsPath)) {
-						imageAssets.set(destAbsPath, {
-							src: path.resolve(imgSourceRoot, srcRelPath),
-							width,
-							height,
-							cover,
-							extraDest: destAbsPathSource,
-						});
-					}
-
-					// Retourne directement une valeur CSS url(...)
-					return new sass.SassString(`url("${returned}")`, { quotes: false });
+					// Output naming and source collection live in imgasset()
+					// (see libs/image.js); here we just forward the params and
+					// wrap the returned path in a CSS url(...) value.
+					const url = images.ref(srcRelPath, { width, height, cover });
+					return new sass.SassString(`url("${url}")`, { quotes: false });
 				},
 
 				'colors($path, $count: 5)': async (args) => {
@@ -190,7 +161,7 @@ export default async function build(__root, task, exportPath = null) {
 
 					const absPath = path.resolve(imgSourceRoot, srcRelPath);
 					const mtime = fs.statSync(absPath).mtimeMs;
-					const cacheKey = `colors:${absPath}:${mtime}:${count}`;
+					const cacheKey = `colors_${absPath}:${mtime}:${count}`;
 
 					let hexColors = CACHE.get(cacheKey);
 					if (!hexColors) {
@@ -218,7 +189,7 @@ export default async function build(__root, task, exportPath = null) {
 			)
 			: await sass.compileAsync(entry, compileOptions);
 
-		const newImages = await processImageAssets(imageAssets, imgFormat);
+		const newImages = await images.process();
 
 		if(exportPath) {
 			const minified = minify(compiled.css, { restructure: false });
@@ -287,14 +258,13 @@ function getGlobalRoot() {
 
 
 // ---------------------------------------------------------------------------
-// Assemble un point d'entrée synthétique qui @use avant/après l'entry
-// réelle, dans cet ordre. On ne peut pas concaténer le texte brut des
-// fichiers (les @use/@forward doivent être en tête de fichier, avant toute
-// règle CSS), donc chaque fichier est chargé comme son propre module ; le
-// module system de Sass émet le CSS de chaque module dans l'ordre où il est
-// @use pour la première fois, ce qui donne exactement l'ordre before → entry
-// → after dans le CSS compilé. Le namespace de chaque @use n'a pas
-// d'importance ici (rien ne le référence), juste besoin qu'il soit unique.
+// Builds a synthetic entry point that @use's the files before/after the real
+// entry, in that order. We can't concatenate the raw text of the files
+// (@use/@forward must be at the top of the file, before any CSS rule), so each
+// file is loaded as its own module; Sass's module system emits each module's
+// CSS in the order it's first @use'd, which gives exactly the order
+// before → entry → after in the compiled CSS. Each @use's namespace doesn't
+// matter here (nothing references it), it just has to be unique.
 // ---------------------------------------------------------------------------
 function buildSyntheticEntrySource(entryAbsPath, beforeFiles, afterFiles) {
 	const baseDir = path.dirname(entryAbsPath);
@@ -327,15 +297,15 @@ function createPkgImporter(roots) {
 				const pkgDir = path.join(root, pkgName);
 				const pkgJsonPath = path.join(pkgDir, "package.json");
 
-				if (!fs.existsSync(pkgJsonPath)) continue; // essaie la racine suivante
+				if (!fs.existsSync(pkgJsonPath)) continue; // try the next root
 
 				const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, "utf8"));
 				const exportsMap = pkgJson.exports;
 				if (!exportsMap) continue;
 
-				// candidats à tester, dans l'ordre : le subPath tel quel,
-				// puis le même subPath préfixé par "styles/" (pour supporter
-				// les imports du type "@scope/pkg/init" en plus de
+				// candidates to try, in order: the subPath as-is, then the
+				// same subPath prefixed with "styles/" (to support imports
+				// like "@scope/pkg/init" in addition to
 				// "@scope/pkg/styles/init")
 				const candidates = [subPath, `styles/${subPath}`];
 
@@ -386,7 +356,7 @@ function getFont(absPath) {
 
 	if (fontCache.has(key)) return fontCache.get(key);
 
-	const cacheKey = `font:${key}`;
+	const cacheKey = `font_${key}`;
 	let data = CACHE.get(cacheKey);
 	if (data === null) {
 		const font = fontkit.openSync(absPath);
@@ -399,12 +369,11 @@ function getFont(absPath) {
 }
 
 // ---------------------------------------------------------------------------
-// L'objet Font de fontkit (buffers, getters, méthodes sur le prototype)
-// n'est pas sérialisable en JSON : on ne peut donc pas le stocker tel quel
-// dans CACHE (persisté en SQLite via JSON.stringify, voir libs/cache.js).
-// On calcule donc une seule fois toutes les propriétés dérivées dont les
-// fonctions Sass ont besoin, sous forme de données simples, et c'est ce
-// résultat intermédiaire (plain object) qui est mis en cache et réutilisé.
+// fontkit's Font object (buffers, getters, prototype methods) is not
+// JSON-serializable: we therefore can't store it as-is in CACHE (persisted to
+// SQLite via JSON.stringify, see @kirigami/sdk). So we compute once all the
+// derived properties the Sass functions need, as plain data, and it's that
+// intermediate result (a plain object) that gets cached and reused.
 // ---------------------------------------------------------------------------
 function computeFontData(font) {
 	const [weightMin, weightMax] = axisRange(font, 'wght', [400, 400]);
@@ -431,8 +400,8 @@ function axisRange(font, tag, fallback) {
 }
 
 // ---------------------------------------------------------------------------
-// Unicode-range : fusionne les code points couverts par la police en plages
-// contiguës, format CSS (U+XXXX-YYYY)
+// Unicode-range: merges the code points covered by the font into contiguous
+// ranges, CSS format (U+XXXX-YYYY)
 // ---------------------------------------------------------------------------
 function buildUnicodeRange(codepoints) {
 	const sorted = [...codepoints].sort((a, b) => a - b);
@@ -462,51 +431,9 @@ function buildUnicodeRange(codepoints) {
 }
 
 
-// ---------------------------------------------------------------------------
-// Traite la map d'images collectée par img-asset() : redimensionne et
-// convertit chaque source dans le format configuré (webp ou avif). Chaque
-// entrée peut avoir jusqu'à deux destinations (l'arbre exporté et, lors d'un
-// export, l'arbre source) : le traitement n'a lieu qu'une fois, et le
-// résultat est écrit vers celles qui ne sont pas déjà à jour.
-// ---------------------------------------------------------------------------
-async function processImageAssets(imageAssets, format) {
-	const newImages = [];
-	await Promise.all([...imageAssets.entries()].map(async ([dest, { src, width, height, cover, extraDest }]) => {
-		if (!fs.existsSync(src)) {
-			throw new Error(`img-asset: fichier source introuvable: ${src}`);
-		}
-
-		const srcMtime = fs.statSync(src).mtimeMs;
-		const dests = [dest, extraDest].filter(Boolean);
-		const staleDests = dests.filter((d) => !fs.existsSync(d) || fs.statSync(d).mtimeMs < srcMtime);
-
-		if (!staleDests.length) return; // tout est déjà à jour
-
-		let pipeline = sharp(src);
-		if (width && height) {
-			pipeline = pipeline.resize(width, height, { fit: cover ? 'cover' : 'inside', withoutEnlargement: !cover });
-		} else if (width) {
-			pipeline = pipeline.resize({ width });
-		} else if (height) {
-			pipeline = pipeline.resize({ height });
-		} // ni width ni height: pas de resize, juste réencodage dans le format cible
-
-		const buffer = await pipeline[format](IMG_FORMAT_OPTIONS[format]).toBuffer();
-
-		await Promise.all(staleDests.map(async (d) => {
-			const destDir = path.dirname(d);
-			if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
-			await fs.promises.writeFile(d, buffer);
-			newImages.push(replaceRoot(d));
-		}));
-	}));
-	return newImages;
-}
-
-
 function getFormatKeyword(absPath) {
 	const ext = path.extname(absPath).slice(1).toLowerCase();
-	return FORMAT_KEYWORDS[ext] ?? ext; // fallback: renvoie l'extension telle quelle
+	return FORMAT_KEYWORDS[ext] ?? ext; // fallback: return the extension as-is
 }
 
 
@@ -514,21 +441,21 @@ function getFormatKeyword(absPath) {
 function detectFontStyle(font) {
 	const axes = font.variationAxes || {};
 
-	// Cas 2 : axe slnt (slant continu)
+	// Case 2: slnt axis (continuous slant)
 	if (axes.slnt) {
-		// Convention OpenType (slnt) et CSS (oblique deg) ont un signe opposé
+		// The OpenType (slnt) and CSS (oblique deg) conventions have opposite signs
 		const min = -axes.slnt.max;
 		const max = -axes.slnt.min;
 		if (min === 0 && max === 0) return 'normal';
 		return `oblique ${min}deg ${max}deg`;
 	}
 
-	// Cas 3 : axe ital (binaire) — signalé pour gestion à part, voir plus bas
+	// Case 3: ital axis (binary) — flagged for separate handling, see below
 	if (axes.ital) {
-		return 'ital-axis'; // valeur sentinelle, pas une vraie valeur CSS
+		return 'ital-axis'; // sentinel value, not a real CSS value
 	}
 
-	// Cas 1 : police statique — on regarde italicAngle puis le nom du sous-style
+	// Case 1: static font — look at italicAngle then the subfamily name
 	if (font.italicAngle && font.italicAngle !== 0) return 'italic';
 
 	const subfamily = (font.subfamilyName || '').toLowerCase();

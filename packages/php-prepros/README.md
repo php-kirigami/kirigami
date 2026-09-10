@@ -9,9 +9,9 @@
 
 PHP preprocessor for the **Kirigami** static site generator.
 
-[![npm version](https://img.shields.io/npm/v/@kirigami/php-prepros)](https://www.npmjs.com/package/@kirigami/php-wasm)
+[![npm version](https://img.shields.io/npm/v/@kirigami/php-prepros)](https://www.npmjs.com/package/@kirigami/php-prepros)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
-[![Node.js >=20.10.0](https://img.shields.io/badge/node-%3E%3D20.10.0-brightgreen)](https://nodejs.org)
+[![Node.js >=24.0.0](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](https://nodejs.org)
 
 </div>
 
@@ -23,7 +23,7 @@ Build full static websites in PHP — with zero server, zero runtime dependency,
 
 It is the perfect solution for **GitHub Pages**. Since it runs entirely in Node.js, it is fully compatible with **GitHub Actions**, allowing you to automate your deployment pipeline effortlessly.
 
-Part of the **Kirigami** project ecosystem. Other packages are coming soon.
+Part of the **Kirigami** project ecosystem.
 
 
 ---
@@ -34,12 +34,18 @@ Part of the **Kirigami** project ecosystem. Other packages are coming soon.
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
   - [Overview](#overview)
   - [Table of contents](#table-of-contents)
-  - [What's new in 1.1.0](#whats-new-in-110)
+  - [What's new in 1.2.0](#whats-new-in-120)
   - [How it works](#how-it-works)
   - [Installation](#installation)
   - [Configuration — `kirigami.yaml`](#configuration--kirigamiyaml)
     - [`kirigami` block](#kirigami-block)
     - [`prepros` block](#prepros-block)
+    - [`image` block](#image-block)
+    - [`plugins` block](#plugins-block)
+    - [`esbuild` / `sass` blocks](#esbuild--sass-blocks)
+    - [`export` block](#export-block)
+    - [`scripts` block](#scripts-block)
+    - [`tasks` block](#tasks-block)
   - [Writing pages](#writing-pages)
     - [PHPDOC header](#phpdoc-header)
     - [Auto-loading data files](#auto-loading-data-files)
@@ -59,6 +65,7 @@ Part of the **Kirigami** project ecosystem. Other packages are coming soon.
       - [Plugin API](#plugin-api)
     - [HTML](#html)
     - [YAML](#yaml)
+    - [SCHEMA](#schema)
     - [CACHE](#cache)
     - [IMG](#img)
     - [FS](#fs)
@@ -68,6 +75,7 @@ Part of the **Kirigami** project ecosystem. Other packages are coming soon.
     - [SCRAPER](#scraper)
     - [OBF](#obf)
     - [STD](#std)
+    - [Bundled polyfills](#bundled-polyfills)
   - [Plugin system](#plugin-system)
     - [PREPROS tags](#prepros-tags)
     - [PREPROS hooks](#prepros-hooks)
@@ -78,22 +86,38 @@ Part of the **Kirigami** project ecosystem. Other packages are coming soon.
       - [`{% codepen id [user height] %}`](#-codepen-id-user-height-)
       - [`{% checklist ["Title"] items %}`](#-checklist-title-items-)
   - [Extending the `<markdown>` tag](#extending-the-markdown-tag)
+  - [Requirements](#requirements)
   - [License](#license)
 
 ---
 
-## What's new in 1.1.0
+## What's new in 1.2.0
 
-- **`PREPROS::mount()`** — mount extra files into the WASM filesystem on demand, from a glob pattern, at any point during rendering.
-- **`mountPath()`** JavaScript export — the JS-side counterpart to `PREPROS::mount()`: mount a local file or directory into the WASM sandbox from Node.js, before calling `render()`/`runenv()`.
-- **`runenv()`** JavaScript export — run an arbitrary PHP script (not a page template) inside the same sandboxed environment, with full access to every `php-prepros` class.
-- **`SCRAPER`** class — fetch a URL and extract `title` / `description` / `image` / `label` from its Open Graph, `<meta>`, and JSON-LD data, with automatic caching.
-- **`CURL`** class — low-level cURL helper used internally by `SCRAPER`, also usable directly (`urlExists()`, `getInfo()`, `getContents()`), with a shared, persisted cookie jar.
-- **`ARR`** class — recursive associative array/object key lookup.
-- **`YAML::loadFile()`** — like `YAML::parseFile()`, but recursively resolves any string value that points to another existing `.yaml`/`.yml`/`.json` file into its parsed content.
-- New `STR` helpers: `STR::is_url()`, `STR::html_entities_decode()`, `STR::shorthash()`, `STR::slug()`.
-- New built-in MD plugins: `{% youtube %}`, `{% codepen %}`, and `{% checklist %}`, alongside the existing `{% callout %}`.
-- `@content` and `@indent` PHPDOC annotations, letting a page skip its own PHP body in favour of pre-rendered content, and control its indentation when nested inside a layout.
+- **`SCHEMA`** class — a pure-PHP, dependency-free JSON Schema validator
+  (Draft-7 style, Ajv-like API: `isValid()` / `validate()` / `getErrors()`).
+- **`IMG::asset()` / `IMG::palette()`** — static helpers powering kirigami-core's
+  `img-asset()` and `colors()` Sass functions: on-demand resize/convert of a
+  source image, and cached representative-colour extraction.
+- **`IMG` now handles vector and exotic formats** — SVG, EPS, AI, PDF (rasterized
+  via Imagick), plus HEIC / TIFF / BMP, on top of GD's JPEG / PNG / GIF / WebP /
+  AVIF.
+- **`MD` emoji shortcodes** — `:rocket:` → 🚀 from a large built-in map, extend­able
+  with `MD::registerEmoji()`.
+- **`MD` footnotes and definition lists** — `[^1]` / `[^1]: …`, and `Term` / `: …`.
+- **`MD` inline HTML is now sanitized** against a tag/attribute allowlist rather
+  than passed through verbatim.
+- **`STR::normalize()`** — Unicode NFD + combining-mark stripping;
+  **`STR::slug($str, $sep = '')`** now takes a separator (pass `'-'` for a
+  hyphenated slug).
+- **Bundled `Normalizer` polyfill** — `ext-intl` isn't in the WASM build, so a
+  polyfill keeps `Normalizer::normalize()` (and `STR::normalize()` / `slug()`)
+  working.
+
+Earlier, in 1.1.x: `PREPROS::mount()` + the `mountPath()` / `runenv()` JS
+exports, the `SCRAPER` and `CURL` and `ARR` classes, `YAML::loadFile()`, the
+`STR::is_url()` / `html_entities_decode()` / `shorthash()` / `slug()` helpers,
+the `{% youtube %}` / `{% codepen %}` / `{% checklist %}` MD plugins, and the
+`@content` / `@indent` PHPDOC annotations.
 
 ---
 
@@ -121,75 +145,173 @@ Files are mounted into the WebAssembly virtual filesystem on demand. Only `.php`
 npm install @kirigami/php-prepros
 ```
 
-> **Node.js ≥ 20** is required (ESM-only package).
-
 ---
 
 ## Configuration — `kirigami.yaml`
 
 Every project **must** have a `kirigami.yaml` at its root. The preprocessor reads it at startup and throws if it is absent or invalid.
 
+`@kirigami/php-prepros` itself only acts on three blocks — **`kirigami:`**, **`prepros:`**, and **`image:`**. The remaining blocks (**`plugins:`**, **`esbuild:`**, **`sass:`**, **`export:`**, **`scripts:`**, **`tasks:`**) are consumed by the [`kiri`](https://www.npmjs.com/package/@kirigami/kirigami) CLI that drives the build; they are documented here for completeness because everything lives in the one file. The full file is validated against [`kirigami.schema.json`](https://github.com/php-kirigami/kirigami/blob/main/packages/kirigami/kirigami.schema.json), also served for editor autocompletion:
+
+```yaml
+# yaml-language-server: $schema=https://cdn.jsdelivr.net/npm/@kirigami/kirigami/kirigami.schema.json
+```
+
 ```yaml
 kirigami:
   # ── Required ──────────────────────────────────────────────────────────
+  project:     My Website           # Site name. Printed in the CLI banner, exposed as $project.
+  baseurl:     https://example.com  # Deployed root URL, no trailing slash. Used for sitemap.xml.
   root:        src                  # Source directory containing your _*.php pages.
 
-  # ── Used internally ──────────────────────────────────────────────────
-  baseurl:     https://example.com  # Used as the base URL when generating sitemap.xml.
+  # ── Optional ────────────────────────────────────────────────────────
+  banner:      assets/banner.txt    # Text file stamped as a license banner on exported files.
 
   # ── Arbitrary project data ──────────────────────────────────────────
   # Everything else under `kirigami:` is free-form. The whole block is
   # extracted as PHP variables and made available in every page, in
   # before.php/after.php, and anywhere PREPROS::$config->data is read.
-  project:     My Website
   author:      Jane Doe
-  person:      John Smith
-  jobtitle:    Founder
   email:       hello@example.com
-  facebook:    https://www.facebook.com/example
-  area:        Somewhere, Country
   gtag:        G-XXXXXXXXXX
-  banner:      assets/banner.txt
   description: A short description of the site, useful for <meta name="description">.
-  knowsabout:
-    - Topic one
-    - Topic two
   keywords:
     - keyword one
     - keyword two
 
 prepros:
-  before:  _layout/header.php   # Included before every page body.
-  after:   _layout/footer.php   # Included after every page body.
+  before:  _layouts/header.php  # Included before every page body.
+  after:   _layouts/footer.php  # Included after every page body.
   format:  true                 # Pretty-print the HTML output (default: false).
-  network: false                # Allow HTTP fetches in PHPDOC @tag annotations.
+  network: true                 # Allow HTTP fetches in PHPDOC @tag annotations / CURL / SCRAPER.
   mountext:                     # Extra file extensions to auto-mount into the wasm fs,
     - .svg                      # in addition to the defaults (.php .json .yaml .yml .md .db .txt).
     - .webp
   includes:                     # PHP files auto-included once, before any page renders.
-    - _lib/helpers.php
+    - _lib/functions.php
+
+image:                          # Image autogenerator — powers IMG::asset() / IMG::palette().
+  format: webp                  # webp | avif (default: webp)
+  source: assets/images         # Source folder, relative to cwd() (default: assets/images)
+  dest:   images                # Output folder, relative to kirigami.root (default: images)
+
+plugins:
+  - name: "@kirigami/plugin-highlight"
+    active: true
+    options:
+      style: canva
+      color: black
+
+esbuild:
+  # minify: false
+
+sass:
+  style: expanded
+
+export:
+  path:   dist
+  ignore: ["*.psd", "notes/"]
+
+scripts:
+  - name: convert-images
+    mount: ["assets/images/**/*.jpg"]
+    trigger: before-build       # before-build | before-export | after-export
+
+tasks:
+  - name:  js-core
+    type:  esbuild
+    entry: scripts/kirigami.core.js
+
+  - name:  scss-core
+    type:  sass
+    entry: styles/kirigami.core.scss
 ```
 
 ### `kirigami` block
 
+Core project settings. **Read by `php-prepros`.** The entire block is extracted into PHP variables and made available in every page template, `before.php`, `after.php`, and `prepros.includes` files — `$project`, `$author`, `$gtag`, etc. are available with no further setup, and also as `PREPROS::$config->data`.
+
 | Key | Required | Description |
 |-----|----------|--------------|
+| `project` | ✅ | Human-readable site name. Exposed as `$project`. |
+| `baseurl` | ✅ | Root URL of the deployed site, no trailing slash. Used to build absolute `<loc>` entries in `sitemap.xml`; exposed as `$baseurl`. |
 | `root` | ✅ | Path (relative to the project root) to the directory containing your `_*.php` source pages. Build fails immediately if missing or if the path doesn't exist. |
-| `baseurl` | for `sitemap()` | Root URL used to build absolute `<loc>` entries when generating `sitemap.xml`. |
-| *anything else* | — | Free-form key/value pairs (strings, numbers, booleans, lists, nested maps — anything valid YAML). Every key is extracted as a PHP variable (`$project`, `$author`, `$gtag`, …) and available in page templates, `before.php`, `after.php`, and PHP files listed under `prepros.includes`. Use this to hold your site name, contact info, social links, analytics IDs, SEO keywords, banners, or any project-specific data you want available everywhere. |
+| `banner` | — | Path (relative to the project root) to a text file stamped as a license/copyright banner on exported `.js`/`.css`/`.html` files during `kiri export`. May contain the `###DATE###` token, replaced with today's date. Falls back to an auto-generated banner. |
+| *anything else* | — | Free-form key/value pairs (strings, numbers, booleans, lists, nested maps — anything valid YAML). Every key is extracted as a PHP variable (`$author`, `$gtag`, …). Use this for contact info, social links, analytics IDs, SEO keywords, or any project data you want available everywhere. |
 
 ### `prepros` block
+
+Options for the PHP → HTML compiler. **Read by `php-prepros`.** Declaring this block (even empty) also makes `kiri` prepend a forced `prepros` task on every build/export/watch.
 
 | Key | Type | Default | Description |
 |-----|------|---------|--------------|
 | `before` | `string` | — | Path (relative to `kirigami.root`) to a PHP file included **before** every page's body. Typically your `<head>`/layout opening. |
 | `after` | `string` | — | Path (relative to `kirigami.root`) to a PHP file included **after** every page's body. Typically your layout closing. |
 | `format` | `bool` | `false` | Pretty-print the compiled HTML via [`HTML::format()`](#html) before writing it to disk. |
-| `network` | `bool` | `false` | Enables outbound HTTP(S) inside the WASM PHP runtime. Required for PHPDOC `@tag https://…` annotations that fetch remote `.yaml`/`.json`/`.md` data (see [Auto-loading data files](#auto-loading-data-files)). |
-| `mountext` | `string[]` | `[]` | Extra file extensions to mount automatically into the virtual filesystem alongside the built-in `.php`, `.json`, `.yaml`, `.yml`, `.md`, `.db`, `.txt`. Use this for assets your PHP code reads directly (e.g. `.svg`, `.txt`, `.webp`). Files with extensions not in this set are simply skipped during mounting — mount them on demand with [`PREPROS::mount()`](#preprosmountstringarray-patterns) instead. |
+| `network` | `bool` | `false` | Enables outbound HTTP(S) inside the WASM PHP runtime. Required for PHPDOC `@tag https://…` annotations that fetch remote `.yaml`/`.json`/`.md` data (see [Auto-loading data files](#auto-loading-data-files)), and for the `CURL` / `SCRAPER` classes. |
+| `mountext` | `string[]` | `[]` | Extra file extensions to mount automatically into the virtual filesystem alongside the built-in `.php`, `.json`, `.yaml`, `.yml`, `.md`, `.db`, `.txt`. Use this for assets your PHP code reads directly (e.g. `.svg`, `.webp`). Files with extensions not in this set are skipped during mounting — mount them on demand with [`PREPROS::mount()`](#preprosmountstringarray-patterns) instead. |
 | `includes` | `string[]` | `[]` | PHP files (relative to `kirigami.root`) `include_once`'d once, right after config is loaded — before any page renders. The natural place to `PREPROS::registerTag()`, `PREPROS::registerHook()`, or `MD::registerPlugin()`. |
 
-The entire `kirigami` block is extracted into PHP variables and made available in every page template, `before.php`, and `after.php`. `$project`, `$author`, `$gtag`, etc. are available without any further setup.
+### `image` block
+
+Options for the image autogenerator. **Read by `php-prepros`** — these are what [`IMG::asset()` / `IMG::palette()`](#img) (and kirigami-core's `img-asset()` / `colors()` Sass functions) resolve against. Optional; the defaults below apply even when the block is absent.
+
+| Key | Type | Default | Description |
+|-----|------|---------|--------------|
+| `format` | `string` | `webp` | Output format for generated images: `webp` or `avif`. |
+| `source` | `string` | `assets/images` | Folder holding the source images, relative to `cwd()`. |
+| `dest` | `string` | `images` | Destination folder for generated images, relative to `kirigami.root`. |
+
+### `plugins` block
+
+List of Kirigami plugins. **Consumed by the `kiri` CLI** (see [`@kirigami/sdk`](https://www.npmjs.com/package/@kirigami/sdk)), not by `php-prepros` directly.
+
+| Key | Required | Description |
+|-----|----------|--------------|
+| `name` | ✅ | Plugin package name. Must match `@kirigami/plugin-*`, `<scope>/kirigami-plugin-*`, or `kirigami-plugin-*`. |
+| `active` | ✅ | Whether the plugin is loaded. |
+| `options` | — | Free-form object passed to the plugin; its shape depends on the plugin. |
+
+### `esbuild` / `sass` blocks
+
+Free-form objects. **Consumed by the `kiri` CLI.** There is no fixed key set: whatever you put here is spread straight into the underlying library call for every matching task, *after* Kirigami's own defaults — so it can also override them (`minify`, `target`, `style: "compressed"`, source maps, …). Refer to esbuild's [`BuildOptions`](https://esbuild.github.io/api/#build-api) and Dart Sass's [`Options`](https://sass-lang.com/documentation/js-api/interfaces/options/) for what's accepted. Writing the key with nothing under it parses to `null` in YAML, equivalent to omitting the block.
+
+`sass:` additionally recognizes two keys that are **not** passed to Dart Sass:
+
+| Key | Type | Description |
+|-----|------|--------------|
+| `before` | `string` / `string[]` | Extra `.scss` files compiled **before** the task entry (paths relative to `cwd()`). |
+| `after` | `string` / `string[]` | Extra `.scss` files compiled **after** the task entry. |
+
+### `export` block
+
+Options for `kiri export`. **Consumed by the `kiri` CLI.** Optional.
+
+| Key | Type | Default | Description |
+|-----|------|---------|--------------|
+| `path` | `string` | `dist` | Output directory for `kiri export`, relative to the project root. |
+| `ignore` | `string[]` | `[]` | Extra gitignore-style patterns excluded from the export copy, on top of Kirigami's built-in exclusions. |
+
+### `scripts` block
+
+Named PHP scripts. **Consumed by the `kiri` CLI**, which runs each `scripts/<name>.php` through [`runenv()`](#runenvscript-paths-args) — so the full `php-prepros` class library is available and `kirigami.yaml`'s `kirigami` block is exposed as `PREPROS::$config->data`.
+
+| Key | Required | Description |
+|-----|----------|--------------|
+| `name` | ✅ | Must match an existing `scripts/<name>.php` file. Run with `kiri run <name> [args...]`; extra CLI arguments are forwarded as `$argv` entries. |
+| `mount` | — | Glob patterns (relative to the project root) of extra local files to mount into the sandbox before the script runs. |
+| `trigger` | — | Fire the script automatically: `before-build` (start of `build` and `export`), `before-export` (very start of `export`), or `after-export` (once `export` has finished). |
+
+### `tasks` block
+
+Ordered list of build tasks, run in array order. **Consumed by the `kiri` CLI**, on top of the implicit `prepros` task (added when the `prepros` block is present) and the implicit `dist` task (added during `kiri export`).
+
+| `type` | Purpose | Required fields | Optional |
+|--------|---------|-----------------|----------|
+| `esbuild` | Bundle/minify a JS/TS entry. Build + watch. Output: `<entry>.min.js`. | `name`, `type`, `entry` | `force` |
+| `sass` | Compile a `.scss`/`.sass` entry, minified with csso on export. Build + watch. Output: `<entry>.min.css`. | `name`, `type`, `entry` | `force` |
+| `prepros` | Render pages + `sitemap.xml`. Watch only (runs on build/export only when forced/implicit). | `name`, `type` | `target`, `force` |
+| `dist` | Copy `kirigami.root` into an output dir, stamping the banner. Forced/implicit only. | `name`, `type`, `path` | `ignore`, `force` |
 
 ---
 
@@ -199,9 +321,8 @@ Source pages live in the directory pointed to by `kirigami.root`. The naming con
 
 ```
 src/
-├── _layout/
+├── _layouts/
 ├── _lib/
-├── about/
 ├── _index.php          →  src/index.html
 ├── about/
 │   └── _index.php      →  src/about/index.html
@@ -210,7 +331,7 @@ src/
     └── _articles.yaml   (data file, not compiled)
 ```
 
-Directories whose name starts with `_` (e.g. `_layout/`, `_lib/`) are skipped entirely during directory-wide builds.
+Directories whose name starts with `_` (e.g. `_layouts/`, `_lib/`) are skipped entirely during directory-wide builds.
 
 ### PHPDOC header
 
@@ -386,12 +507,15 @@ The core engine. Manages the rendering pipeline, tag processing, hooks, mounting
 
 ```php
 // Available inside page templates and included files.
-PREPROS::$config          // stdClass — full resolved config (prepros section of kirigami.yaml)
+PREPROS::$config          // stdClass — full resolved config; ->data is the kirigami: block,
+                          // ->image the image: block, plus before/after/format/… from prepros:
 PREPROS::registerTag(string $tag, callable $callback)
 PREPROS::registerHook(string $hook, callable $callback)
 PREPROS::mount(string|array $patterns)
-PREPROS::exportFile(string $absolutePath)
+PREPROS::exportFile(string|array $absolutePath)
 PREPROS::getExportedFiles(): string[]
+PREPROS::fstat(string $path)          // stat a file in the WASM FS (or false)
+PREPROS::backtraceFile()              // path of the page currently rendering
 ```
 
 #### `PREPROS::render(string $file)`
@@ -438,9 +562,9 @@ Markdown-to-HTML converter with a plugin system for custom shortcodes.
 $html = MD::toHtml(string $markdown): string;
 ```
 
-Supports the full GitHub Flavored Markdown subset:
+Supports the full GitHub Flavored Markdown subset, plus a few extensions:
 
-- ATX headings (`#` through `######`) with auto-generated `id` attributes
+- ATX (`#` … `######`) and Setext headings, with auto-generated `id` attributes
 - Ordered and unordered lists, including nested
 - GFM task lists (`- [ ]` / `- [x]`)
 - GFM tables with column alignment
@@ -454,6 +578,10 @@ Supports the full GitHub Flavored Markdown subset:
 - Auto-linked bare URLs
 - Horizontal rules
 - Hard line breaks (trailing double space → `<br>`)
+- **Footnotes** — `[^1]` references and `[^1]: …` definitions (multi-paragraph)
+- **Definition lists** — `Term` / `: Definition`
+- **Emoji shortcodes** — `:rocket:` → 🚀, from a built-in map (see `MD::registerEmoji()`)
+- **Sanitized inline HTML** — raw tags are filtered against an allowlist of tags and attributes, not passed through verbatim
 
 #### Plugin API
 
@@ -468,6 +596,7 @@ Extend Markdown with custom shortcode tags:
 MD::registerPlugin(string $name, callable $callback): void
 MD::unregisterPlugin(string $name): void
 MD::getRegisteredPlugins(): string[]
+MD::registerEmoji(string $shortcode, string $char): void   // `:name:` → char
 ```
 
 The callback always receives `(array $args, string $body)`:
@@ -540,6 +669,44 @@ $team = YAML::loadFile('/project/data/team.yaml');
 
 ---
 
+### SCHEMA
+
+A pure-PHP, dependency-free JSON Schema validator — Draft-7 style, with an
+Ajv-like API. Used internally to validate structured data, but available to your
+own code and plugins.
+
+```php
+$validator = new SCHEMA(array $schema);
+
+$validator->isValid(mixed $data): bool     // true / false
+$validator->validate(mixed $data): bool    // alias of isValid()
+$validator->getErrors(): string[]          // "path: message" strings from the last run
+```
+
+Supported keywords: `type`, `required`, `properties`, `patternProperties`,
+`additionalProperties`, `items`, `minItems`, `maxItems`, `uniqueItems`,
+`minLength`, `maxLength`, `pattern`, `minimum`, `maximum`, `exclusiveMinimum`,
+`exclusiveMaximum`, `minProperties`, `maxProperties`, `enum`, `const`,
+`anyOf`, `allOf`, `oneOf`, `not`, `format`, and local `$ref` pointers.
+
+```php
+$validator = new SCHEMA([
+    'type'     => 'object',
+    'required' => ['name', 'age'],
+    'properties' => [
+        'name' => ['type' => 'string', 'minLength' => 1],
+        'age'  => ['type' => 'integer', 'minimum' => 0],
+    ],
+    'additionalProperties' => false,
+]);
+
+if (!$validator->isValid($data)) {
+    foreach ($validator->getErrors() as $err) echo $err, PHP_EOL;
+}
+```
+
+---
+
 ### CACHE
 
 Persistent SQLite-backed key-value cache. Survives across incremental builds via `.cache.db` at the project root.
@@ -565,7 +732,11 @@ if ($data === null) {
 
 ### IMG
 
-Image manipulation helper built on PHP GD. Supports JPEG, PNG, GIF, and WebP.
+Image manipulation helper. GD handles JPEG, PNG, GIF, WebP and AVIF directly;
+anything GD can't decode (HEIC, TIFF, BMP, and the vector formats SVG, EPS, AI,
+PDF) falls back to Imagick, which rasterizes it to a GD image in memory. Vector
+files with no intrinsic pixel size are rasterized at 2000&nbsp;px on the longest
+side, preserving the aspect ratio.
 
 ```php
 $img = new IMG(string $file);
@@ -574,20 +745,31 @@ $img = new IMG(string $file);
 $img->width   // int
 $img->height  // int
 
-// Methods (chainable)
+// Instance methods (resize/save are chainable)
 $img->resize(int $width, int $height = 0, bool $cover = false): self
 $img->save(string $dest): self
+$img->getRepresentativeColors(int $count = 5): string[]   // ['#rrggbb', …]
+
+// Static helpers
+IMG::asset(string $path, int $width = 0, int $height = 0, bool $cover = false): string
+IMG::palette(string $path, int $colors = 5): string[]
 ```
 
 `resize()` operates in *contain* mode by default (scales to fit within the target box while preserving aspect ratio). Pass `$cover = true` to crop and fill the exact target dimensions.
 
-`save()` infers the output format from the file extension (`.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`).
+`save()` infers the output format from the file extension (`.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.avif`) and marks the file as a build output.
 
 ```php
 (new IMG('/project/src/images/hero.jpg'))
     ->resize(1200, 630, true)
     ->save('/project/src/images/hero-og.jpg');
 ```
+
+`IMG::asset()` and `IMG::palette()` are what back kirigami-core's `img-asset()`
+and `colors()` Sass functions: they resolve `$path` against `image.source` from
+`kirigami.yaml`, generate a resized/re-encoded file under `image.dest` (only
+when missing or stale), or return a `CACHE`-backed list of representative
+colours. Both are equally usable from your own PHP.
 
 ---
 
@@ -621,7 +803,8 @@ STR::trimIndent(string $str): string
 STR::is_url(string $str): bool
 STR::html_entities_decode(string $str): string
 STR::shorthash(string $str): string
-STR::slug(string $str): string
+STR::normalize(string $str): string
+STR::slug(string $str, string $sep = ''): string
 ```
 
 `STR::replaceTags()` is the engine behind `PREPROS::registerTag()`. It finds all occurrences of `<tagname ...>...</tagname>` in an HTML string and replaces each with the return value of `$callback($fullMatch, $attrs, $body)`.
@@ -634,7 +817,9 @@ STR::slug(string $str): string
 
 `STR::shorthash()` returns the first 12 characters of a string's SHA-256 hash — used internally as a stable, filename-safe cache key (see `SCRAPER`).
 
-`STR::slug()` transliterates a string to ASCII, lowercases it, and strips anything that isn't `[a-z0-9]` — a compact identifier rather than a hyphenated slug.
+`STR::normalize()` applies Unicode NFD decomposition and strips combining marks (`é` → `e`) — the accent-folding step used by `slug()`.
+
+`STR::slug()` normalizes, transliterates to ASCII, lowercases, and replaces every run of non-`[a-z0-9]` characters with `$sep` (empty by default → a compact identifier; pass `'-'` for a conventional hyphenated slug).
 
 ---
 
@@ -723,6 +908,18 @@ STD::error(array|string $props = []): void    // exits 1, writes JSON to stderr
 ```
 
 These are internal to the build runner (`render()`, `sitemap()`, and `runenv()` all rely on them). You generally do not need to call them in page templates, but they are available if a script run via `runenv()` needs to terminate early with a custom result.
+
+---
+
+### Bundled polyfills
+
+The WASM PHP build ships without `ext-intl`, so `@kirigami/php-prepros` bundles a
+`Normalizer` polyfill (autoloaded like every other class). It provides the
+standard `Normalizer::normalize()` / `Normalizer::isNormalized()` API and the
+`Normalizer::NFC` / `NFD` / `NFKC` / `NFKD` (and `FORM_*`) constants — enough for
+`STR::normalize()` and `STR::slug()` to fold accents. Prefer the `STR` helpers in
+your own code; the polyfill is there so third-party snippets that call
+`Normalizer` directly keep working.
 
 ---
 
@@ -901,6 +1098,14 @@ PREPROS::registerTag('markdown', function (string $tag, array $attrs, string $bo
     return "<div class=\"{$class}\">{$html}</div>";
 });
 ```
+
+---
+
+## Requirements
+
+- Node.js `>= 24.0.0`
+- npm `>= 10.2.3`
+- ESM only (`"type": "module"`)
 
 ---
 

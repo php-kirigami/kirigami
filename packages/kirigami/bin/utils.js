@@ -2,10 +2,10 @@ import fs from 'fs';
 import path from "path";
 import picomatch from "picomatch";
 /**
- * bin/utils.js — Utilitaires partagés entre toutes les sous-commandes
+ * bin/utils.js — Shared helpers used by every subcommand
  */
 
-// ─── Couleurs ANSI (zero-dep) ────────────────────────────────────────────────
+// ─── ANSI colors (zero-dep) ─────────────────────────────────────────────────
 export const c = {
 	bold: (s) => `\x1b[1m${s}\x1b[0m`,
 	dim: (s) => `\x1b[2m${s}\x1b[0m`,
@@ -26,7 +26,7 @@ export const log = {
 	step: (...a) => console.log(c.gray("›"), ...a),
 };
 
-// ─── Parser d'arguments minimaliste ─────────────────────────────────────────
+// ─── Minimal argument parser ────────────────────────────────────────────────
 /**
  * parseArgs(["--port", "3000", "--minify", "src/"])
  * → { flags: { port: "3000", minify: true }, positional: ["src/"] }
@@ -69,7 +69,7 @@ export function parseArgs(args = []) {
 	return { command, subcommand, flags, positional };
 }
 
-// ─── Aide par commande ───────────────────────────────────────────────────────
+// ─── Per-command help ──────────────────────────────────────────────────────
 export function printCommandHelp({ name, description, usage, options = [], notes = [], examples = [] }) {
 	console.log(`
 ${c.bold(c.cyan(`kiri ${name}`))} — ${c.dim(description)}
@@ -93,7 +93,7 @@ ${c.bold("USAGE")}
 	}
 
 	if (examples.length) {
-		console.log(c.bold("EXEMPLES"));
+		console.log(c.bold("EXAMPLES"));
 		examples.forEach((ex) => console.log(`  ${c.dim(ex)}`));
 		console.log();
 	}

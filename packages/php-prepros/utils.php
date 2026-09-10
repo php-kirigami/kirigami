@@ -321,7 +321,7 @@ function get_relative_path($from, $to)
 
 
 function get_absolute_url(string $baseUrl, string $relativePath): string {
-    // Vérifier si l'URL de base pointe vers un fichier et retirer le fichier du chemin
+    // Check whether the base URL points to a file and drop the file from the path
 
     if(parse_url($relativePath, PHP_URL_SCHEME)) return $relativePath;
 
@@ -331,15 +331,15 @@ function get_absolute_url(string $baseUrl, string $relativePath): string {
         $basePath = dirname($basePath);
     }
     
-    // S'assurer que le chemin de base a un slash à la fin
+    // Make sure the base path has a trailing slash
     $basePath = rtrim($basePath, '/') . '/';
     
-    // Si le chemin relatif commence par '/', l'interpréter comme un chemin absolu sur le domaine
+    // If the relative path starts with '/', treat it as a domain-absolute path
     if (strpos($relativePath, '/') === 0) {
         return $baseParts['scheme'] . '://' . $baseParts['host'] . $relativePath;
     }
     
-    // Convertir en un chemin absolu en résolvant les '..' et '.'
+    // Convert to an absolute path by resolving '..' and '.'
     $absoluteParts = explode('/', $basePath . $relativePath);
     $resolvedParts = [];
     
@@ -378,7 +378,7 @@ function get_absolute_url(string $baseUrl, string $relativePath): string {
 //         }
 //     }
     
-//     // Trier par fréquence d'apparition
+//     // Sort by frequency of appearance
 //     usort($colors, function($a, $b) {
 //         return $b['count'] - $a['count'];
 //     });
@@ -396,7 +396,7 @@ function getRepresentativeColorsGD($imagePath, $numColors = 5, $tolerance = 30) 
     
     $colorCounts = [];
     
-    // Scanner chaque pixel
+    // Scan every pixel
     for ($x = 0; $x < $width; $x++) {
         for ($y = 0; $y < $height; $y++) {
             $rgb = imagecolorat($image, $x, $y);
@@ -404,8 +404,8 @@ function getRepresentativeColorsGD($imagePath, $numColors = 5, $tolerance = 30) 
             $g = ($rgb >> 8) & 0xFF;
             $b = $rgb & 0xFF;
             
-            // Exclure le blanc et le noir
-            if (!($r > 255 - $tolerance && $g > 255 - $tolerance && $b > 255 - $tolerance) && 
+            // Exclude white and black
+            if (!($r > 255 - $tolerance && $g > 255 - $tolerance && $b > 255 - $tolerance) &&
                 !($r < $tolerance && $g < $tolerance && $b < $tolerance)) {
                 
                 $colorHex = sprintf("#%02x%02x%02x", $r, $g, $b);
@@ -419,7 +419,7 @@ function getRepresentativeColorsGD($imagePath, $numColors = 5, $tolerance = 30) 
     }
     imagedestroy($image);
     
-    // Trier les couleurs par fréquence d'apparition
+    // Sort colors by frequency of appearance
     arsort($colorCounts);
     
     return array_slice(array_keys($colorCounts), 0, $numColors);

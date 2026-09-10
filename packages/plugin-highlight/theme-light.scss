@@ -1,0 +1,290 @@
+@use "sass:color";
+
+$bg:          #f7f8f7 !default;
+$surface:     #ecf1f3 !default;
+$surface-2:   #ffffff !default;
+$border:      #d7dee4 !default;
+$ink:         #2f3640 !default;
+$ink-muted:   #6b7480 !default;
+$accent:      #c7402c !default;
+$accent-soft: #f5dfda !default;
+
+
+// -----------------------------------------------------------------------------
+// Highlight.js
+// -----------------------------------------------------------------------------
+
+// Derived palette
+$hljs-comment: color.adjust($ink-muted, $lightness: 4%);
+$hljs-keyword: $accent;
+$hljs-string: color.adjust($accent, $lightness: 8%);
+$hljs-number: color.adjust($accent, $saturation: -10%, $lightness: -5%);
+
+$hljs-title: color.adjust($accent, $lightness: -8%);
+$hljs-built-in: color.adjust($ink, $lightness: 8%);
+$hljs-type: color.adjust($ink, $lightness: 2%);
+
+$hljs-variable: $ink;
+$hljs-attr: color.adjust($accent, $lightness: -5%);
+$hljs-symbol: color.adjust($accent, $lightness: 4%);
+
+$hljs-meta: $ink-muted;
+$hljs-punctuation: color.adjust($ink, $lightness: 18%);
+
+$hljs-addition: color.adjust($accent-soft, $lightness: -8%);
+$hljs-deletion: color.adjust($accent-soft, $lightness: -2%);
+
+
+// -----------------------------------------------------------------------------
+// Base
+// -----------------------------------------------------------------------------
+
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 1.25rem 1.5rem;
+
+  color: $ink;
+  background: $surface-2;
+
+  border: 1px solid $border;
+  border-radius: 0.5rem;
+
+  font-family:
+    "SFMono-Regular",
+    Consolas,
+    "Liberation Mono",
+    Menlo,
+    monospace;
+
+  font-size: 0.875rem;
+  line-height: 1.65;
+
+  -webkit-font-smoothing: antialiased;
+  tab-size: 2;
+}
+
+
+// -----------------------------------------------------------------------------
+// Comments
+// -----------------------------------------------------------------------------
+
+.hljs-comment,
+.hljs-quote {
+  color: $hljs-comment;
+  font-style: italic;
+}
+
+
+// -----------------------------------------------------------------------------
+// Keywords / control flow
+// -----------------------------------------------------------------------------
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst {
+  color: $hljs-keyword;
+  font-weight: 600;
+}
+
+.hljs-selector-id,
+.hljs-selector-class {
+  color: $hljs-keyword;
+}
+
+
+// -----------------------------------------------------------------------------
+// Strings
+// -----------------------------------------------------------------------------
+
+.hljs-string,
+.hljs-regexp,
+.hljs-template-tag,
+.hljs-template-variable {
+  color: $hljs-string;
+}
+
+
+// -----------------------------------------------------------------------------
+// Numbers / literals
+// -----------------------------------------------------------------------------
+
+.hljs-number,
+.hljs-literal {
+  color: $hljs-number;
+}
+
+
+// -----------------------------------------------------------------------------
+// Functions / classes
+// -----------------------------------------------------------------------------
+
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.class_.inherited__,
+.hljs-title.function_ {
+  color: $hljs-title;
+  font-weight: 600;
+}
+
+.hljs-function {
+  color: $ink;
+}
+
+.hljs-params {
+  color: $hljs-variable;
+}
+
+
+// -----------------------------------------------------------------------------
+// Types / built-ins
+// -----------------------------------------------------------------------------
+
+.hljs-type,
+.hljs-built_in,
+.hljs-built_in.class_ {
+  color: $hljs-type;
+  font-weight: 500;
+}
+
+.hljs-variable,
+.hljs-variable.language_ {
+  color: $hljs-variable;
+}
+
+
+// -----------------------------------------------------------------------------
+// Attributes / properties
+// -----------------------------------------------------------------------------
+
+.hljs-attr,
+.hljs-attribute,
+.hljs-property {
+  color: $hljs-attr;
+}
+
+
+// -----------------------------------------------------------------------------
+// Symbols
+// -----------------------------------------------------------------------------
+
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link {
+  color: $hljs-symbol;
+}
+
+
+// -----------------------------------------------------------------------------
+// Meta
+// -----------------------------------------------------------------------------
+
+.hljs-meta,
+.hljs-meta .hljs-keyword {
+  color: $hljs-meta;
+}
+
+.hljs-meta .hljs-string {
+  color: $hljs-string;
+}
+
+
+// -----------------------------------------------------------------------------
+// Punctuation / operators
+// -----------------------------------------------------------------------------
+
+.hljs-punctuation {
+  color: $hljs-punctuation;
+}
+
+.hljs-operator {
+  color: $ink;
+}
+
+
+// -----------------------------------------------------------------------------
+// HTML / XML
+// -----------------------------------------------------------------------------
+
+.hljs-tag {
+  color: $ink;
+}
+
+.hljs-name {
+  color: $hljs-keyword;
+  font-weight: 600;
+}
+
+.hljs-tag .hljs-attr {
+  color: $hljs-attr;
+}
+
+.hljs-tag .hljs-string {
+  color: $hljs-string;
+}
+
+
+// -----------------------------------------------------------------------------
+// CSS
+// -----------------------------------------------------------------------------
+
+.hljs-selector-tag,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-selector-attr,
+.hljs-selector-pseudo {
+  color: $hljs-keyword;
+}
+
+.hljs-attribute {
+  color: $hljs-attr;
+}
+
+
+// -----------------------------------------------------------------------------
+// Markdown
+// -----------------------------------------------------------------------------
+
+.hljs-section {
+  color: $hljs-title;
+  font-weight: 700;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: 700;
+}
+
+
+// -----------------------------------------------------------------------------
+// Diff
+// -----------------------------------------------------------------------------
+
+.hljs-addition {
+  display: inline-block;
+  width: 100%;
+
+  color: color.adjust($accent, $lightness: -5%);
+  background: color.adjust($accent-soft, $lightness: 3%);
+}
+
+.hljs-deletion {
+  display: inline-block;
+  width: 100%;
+
+  color: color.adjust($accent, $lightness: -15%);
+  background: $accent-soft;
+}
+
+
+// -----------------------------------------------------------------------------
+// Links
+// -----------------------------------------------------------------------------
+
+.hljs-link {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

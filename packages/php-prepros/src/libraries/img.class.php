@@ -5,6 +5,22 @@ if (!defined('IMAGETYPE_AVIF')) define('IMAGETYPE_AVIF', 19);
 class IMG
 {
 
+	/**
+	 * Default raster size (in pixels) used for the longest side when
+	 * rasterizing vector formats (SVG, EPS, AI, PDF) via Imagick. Vector
+	 * files are resolution-independent, and GD only ever deals in pixels,
+	 * so a fallback size is needed for files that don't declare their own
+	 * explicit pixel dimensions -- otherwise the underlying delegate
+	 * library (librsvg, ghostscript...) may rasterize at a tiny default
+	 * (often 100x100). The other side is scaled to preserve the aspect
+	 * ratio reported by the file (explicit width/height, or a viewBox);
+	 * a file that does declare explicit dimensions is honored as-is.
+	 */
+	private const VECTOR_DEFAULT_SIZE = 2000;
+
+	/** File extensions treated as vector formats for VECTOR_DEFAULT_SIZE purposes. */
+	private const VECTOR_EXTENSIONS = ['svg', 'eps', 'ai', 'pdf'];
+
 	private GdImage|null $im = null;
 	private array|null $info = null;
 
@@ -14,21 +30,99 @@ class IMG
 		if (!is_file($file) || !is_readable($file)) throw new Exception("Source file unreadable.");
 
 		$this->info = @getimagesize($file);
-		if (!$this->info) throw new Exception("Invalid image file.");
 
-		[$srcW, $srcH, $type] = $this->info;
-		if ($srcW <= 0 || $srcH <= 0) throw new Exception("Invalid image file.");
+		if ($this->info) {
+			[$srcW, $srcH, $type] = $this->info;
+			if ($srcW <= 0 || $srcH <= 0) throw new Exception("Invalid image file.");
 
-		$this->im = match ($type) {
-			IMAGETYPE_JPEG => @imagecreatefromjpeg($file),
-			IMAGETYPE_PNG  => @imagecreatefrompng($file),
-			IMAGETYPE_GIF  => @imagecreatefromgif($file),
-			IMAGETYPE_WEBP => (function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($file) : null),
-			IMAGETYPE_AVIF => (function_exists('imagecreatefromavif') ? @imagecreatefromavif($file) : null),
-			default => throw new Exception("Image format not supported."),
-		};
+			$this->im = match ($type) {
+				IMAGETYPE_JPEG => @imagecreatefromjpeg($file),
+				IMAGETYPE_PNG  => @imagecreatefrompng($file),
+				IMAGETYPE_GIF  => @imagecreatefromgif($file),
+				IMAGETYPE_WEBP => (function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($file) : null),
+				IMAGETYPE_AVIF => (function_exists('imagecreatefromavif') ? @imagecreatefromavif($file) : null),
+				default => null,
+			};
+		}
+
+		// Fall back to Imagick for anything GD can't handle: a type GD
+		// doesn't recognize at all, a format GD was compiled without
+		// support for, or a format getimagesize() itself can't parse
+		// (e.g. HEIC, TIFF, BMP).
+		if (!$this->im) {
+			$this->im = $this->loadFromImagick($file);
+		}
 
 		if (!$this->im) throw new Exception("Image format not supported or GD extension missing support for this format.");
+
+		// getimagesize() failed but Imagick managed to decode the file:
+		// rebuild a minimal $info from the resulting GD image so the rest
+		// of the class (which reads $this->info[2]) keeps working.
+		if (!$this->info) {
+			$this->info = [imagesx($this->im), imagesy($this->im), IMAGETYPE_PNG];
+		}
+	}
+
+
+	/**
+	 * Loads an image via Imagick and bridges it back to a GD resource.
+	 * Used as a fallback for formats GD itself cannot decode (HEIC, TIFF,
+	 * BMP, or any format missing from the compiled GD build). Imagick
+	 * converts the image to a PNG blob in memory (preserving alpha), and
+	 * GD then decodes that blob normally; nothing is written to disk.
+	 */
+	private function loadFromImagick(string $file): ?GdImage
+	{
+		if (!class_exists('Imagick')) return null;
+
+		try {
+			$imagick = new Imagick();
+
+			$ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+			if (in_array($ext, self::VECTOR_EXTENSIONS, true)) {
+				// Vector formats have no intrinsic pixel size. Ping first
+				// to read whatever aspect ratio the file/delegate reports
+				// (an explicit width/height, or an SVG viewBox), then
+				// rasterize at VECTOR_DEFAULT_SIZE on the longest side
+				// while keeping that ratio, instead of forcing a square
+				// that could distort the image.
+				$probe = new Imagick();
+				$probe->pingImage($file);
+				$pw = $probe->getImageWidth();
+				$ph = $probe->getImageHeight();
+				$probe->clear();
+
+				if ($pw > 0 && $ph > 0) {
+					$scale = self::VECTOR_DEFAULT_SIZE / max($pw, $ph);
+					$targetW = max(1, (int) round($pw * $scale));
+					$targetH = max(1, (int) round($ph * $scale));
+				} else {
+					// Nothing usable to infer a ratio from: fall back to
+					// a square canvas.
+					$targetW = $targetH = self::VECTOR_DEFAULT_SIZE;
+				}
+
+				$imagick->setBackgroundColor(new ImagickPixel('transparent'));
+				$imagick->setSize($targetW, $targetH);
+			}
+
+			$imagick->readImage($file);
+
+			// If the source has multiple frames/pages (e.g. an animated
+			// HEIC sequence, or a multi-page PDF), keep only the first
+			// one, matching how GD would have loaded a static image.
+			if ($imagick->getNumberImages() > 1) {
+				$imagick->setIteratorIndex(0);
+			}
+			$imagick->setImageFormat('png32'); // 32-bit PNG, keeps alpha channel
+			$blob = $imagick->getImageBlob();
+			$imagick->clear();
+		} catch (\Throwable $e) {
+			return null;
+		}
+
+		$im = @imagecreatefromstring($blob);
+		return $im ?: null;
 	}
 
 
@@ -109,19 +203,18 @@ class IMG
 
 
 	/**
-	 * Convertit une couleur sRGB (0-255) en Lab (D65), espace
-	 * perceptuellement uniforme : une distance euclidienne en Lab
-	 * correspond (à peu près) à une différence de couleur telle que
-	 * perçue par l'œil, contrairement au RGB où deux couleurs à la même
-	 * "distance" numérique peuvent paraître très différentes ou
-	 * identiques selon la teinte.
+	 * Converts an sRGB color (0-255) to Lab (D65), a perceptually uniform
+	 * color space: a Euclidean distance in Lab roughly matches a color
+	 * difference as perceived by the eye, unlike RGB where two colors at
+	 * the same numeric "distance" can look very different or identical
+	 * depending on the hue.
 	 */
 	private static function rgbToLab(int $r, int $g, int $b): array
 	{
 		$toLinear = fn(float $c) => ($c /= 255) <= 0.04045 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4;
 		[$rl, $gl, $bl] = [$toLinear($r), $toLinear($g), $toLinear($b)];
 
-		// Linéaire RGB -> XYZ (D65), puis normalisation par le point blanc.
+		// Linear RGB -> XYZ (D65), then normalization against the white point.
 		$x = ($rl * 0.4124564 + $gl * 0.3575761 + $bl * 0.1804375) / 0.95047;
 		$y =  $rl * 0.2126729 + $gl * 0.7151522 + $bl * 0.0721750;
 		$z = ($rl * 0.0193339 + $gl * 0.1191920 + $bl * 0.9503041) / 1.08883;
@@ -134,23 +227,23 @@ class IMG
 
 
 	/**
-	 * Extrait les couleurs les plus représentatives de l'image.
+	 * Extracts the most representative colors from the image.
 	 *
-	 * Algo : quantization median-cut (imagetruecolortopalette, la même
-	 * famille de technique qu'Imagick::quantizeImage), en
-	 * sur-échantillonnant largement le nombre de couleurs demandées, puis
-	 * post-traitement perceptuel dans l'espace Lab :
-	 *  - fusion des couleurs trop proches (distance CIE76 en Lab) : la
-	 *    quantization sort souvent plusieurs teintes quasi identiques à
-	 *    l'œil, qu'on ne veut pas voir comme des entrées séparées ;
-	 *  - exclusion du blanc/noir quasi purs via la luminance L (fiable
-	 *    quelle que soit la teinte, contrairement à un seuil sur r/g/b).
+	 * Algorithm: median-cut quantization (imagetruecolortopalette, the
+	 * same family of technique as Imagick::quantizeImage), heavily
+	 * over-sampling the number of requested colors, followed by
+	 * perceptual post-processing in Lab space:
+	 *  - merging colors that are too close (CIE76 distance in Lab): the
+	 *    quantization often produces several hues that look virtually
+	 *    identical to the eye, which we don't want as separate entries;
+	 *  - excluding near-pure white/black via the L lightness component
+	 *    (reliable regardless of hue, unlike a threshold on raw r/g/b).
 	 *
-	 * @param int   $numColors                Nombre de couleurs à retourner.
-	 * @param float $mergeTolerance           Distance Lab en-dessous de laquelle deux couleurs sont fusionnées (0-100, ~6-10 = "quasi identiques").
-	 * @param bool  $excludeNearWhiteAndBlack Exclut les couleurs quasi blanches/noires.
-	 * @param float $lightnessThreshold       Seuil de luminance Lab (0-100) au-delà/en-deçà duquel une couleur est jugée quasi blanche/noire.
-	 * @return string[] Couleurs au format "#rrggbb", triées par fréquence décroissante.
+	 * @param int   $numColors                Number of colors to return.
+	 * @param float $mergeTolerance           Lab distance below which two colors are merged (0-100, ~6-10 = "near identical").
+	 * @param bool  $excludeNearWhiteAndBlack Excludes near-white/near-black colors.
+	 * @param float $lightnessThreshold       Lab lightness threshold (0-100) above/below which a color is considered near-white/near-black.
+	 * @return string[] Colors as "#rrggbb", sorted by descending frequency.
 	 */
 	public function getRepresentativeColors(
 		int $numColors = 5,
@@ -161,29 +254,29 @@ class IMG
 		$srcW = $this->width;
 		$srcH = $this->height;
 
-		// Analyser la pleine résolution n'apporte rien pour ce genre
-		// d'extraction et coûte cher en temps de calcul.
+		// Analyzing at full resolution brings nothing for this kind of
+		// extraction and is expensive in compute time.
 		$maxDim = 150;
 		$scale = min(1, $maxDim / max($srcW, $srcH));
 		$w = max(1, (int) round($srcW * $scale));
 		$h = max(1, (int) round($srcH * $scale));
 
-		// Aplatit sur fond blanc (comme pour l'export JPEG) : sinon les
-		// zones transparentes des PNG/WEBP seraient comptées comme du
-		// noir par défaut sur un canvas truecolor.
+		// Flatten onto a white background (as for JPEG export): otherwise
+		// the transparent areas of PNG/WEBP images would default to being
+		// counted as black on a truecolor canvas.
 		$sample = imagecreatetruecolor($w, $h);
 		imagealphablending($sample, true);
 		$white = imagecolorallocate($sample, 255, 255, 255);
 		imagefilledrectangle($sample, 0, 0, $w, $h, $white);
 		imagecopyresampled($sample, $this->im, 0, 0, 0, 0, $w, $h, $srcW, $srcH);
 
-		// On sur-échantillonne largement le nombre de couleurs demandées :
-		// ça laisse de la marge pour la fusion perceptuelle et l'exclusion
-		// du blanc/noir ci-dessous sans se retrouver à court de couleurs.
+		// We heavily over-sample the number of requested colors: this
+		// leaves enough room for the perceptual merge and the white/black
+		// exclusion below without running short of colors.
 		$buckets = max($numColors * 6, 24);
 		imagetruecolortopalette($sample, false, $buckets);
 
-		// Comptage des occurrences de chaque couleur de la palette générée.
+		// Count occurrences of each color in the generated palette.
 		$counts = array_fill(0, imagecolorstotal($sample), 0);
 		for ($y = 0; $y < $h; $y++) {
 			for ($x = 0; $x < $w; $x++) {
@@ -206,8 +299,8 @@ class IMG
 
 		usort($entries, fn($a, $b) => $b['count'] - $a['count']);
 
-		// Fusionne les couleurs perceptuellement proches en regroupant
-		// leurs occurrences, en partant toujours de la plus fréquente.
+		// Merge perceptually close colors by grouping their occurrences,
+		// always starting from the most frequent one.
 		$merged = [];
 		foreach ($entries as $entry) {
 			foreach ($merged as &$cluster) {
@@ -233,20 +326,20 @@ class IMG
 
 
 	/**
-	 * L'encodeur AVIF (libavif/aom) utilisé par imageavif() peut échouer
-	 * avec "Encoding of color planes failed" dans deux cas fréquents :
-	 *  - largeur/hauteur impaire (contrainte du sous-échantillonnage 4:2:0)
-	 *  - image trop grande, l'encodeur manquant alors de mémoire pour ses
-	 *    buffers internes (aom_codec_encode: "Failed to allocate lag buffers")
-	 * On corrige les deux avant d'encoder, sur une copie temporaire, sans
-	 * modifier $this->im.
+	 * The AVIF encoder (libavif/aom) used by imageavif() can fail with
+	 * "Encoding of color planes failed" in two common cases:
+	 *  - odd width/height (4:2:0 chroma subsampling constraint)
+	 *  - image too large, causing the encoder to run out of memory for
+	 *    its internal buffers ("aom_codec_encode: Failed to allocate lag buffers")
+	 * We fix both before encoding, on a temporary copy, without modifying
+	 * $this->im.
 	 */
 	private function prepareForAvif(GdImage $im, int $maxDimension = 4000): GdImage
 	{
 		$w = imagesx($im);
 		$h = imagesy($im);
 
-		// Plafonne la résolution si besoin (protection mémoire de l'encodeur).
+		// Cap the resolution if needed (encoder memory protection).
 		if ($w > $maxDimension || $h > $maxDimension) {
 			$scale = min($maxDimension / $w, $maxDimension / $h);
 			$newW = max(1, (int) round($w * $scale));
@@ -262,7 +355,7 @@ class IMG
 			$h = $newH;
 		}
 
-		// Force des dimensions paires.
+		// Force even dimensions.
 		$w2 = $w % 2 ? $w + 1 : $w;
 		$h2 = $h % 2 ? $h + 1 : $h;
 		if ($w2 !== $w || $h2 !== $h) {
@@ -280,11 +373,11 @@ class IMG
 
 
 	/**
-	 * Encode en AVIF avec repli automatique : si l'encodage échoue (memory
-	 * error ou autre souci interne d'aom), on retente avec un speed plus
-	 * élevé (moins gourmand en mémoire), puis en réduisant la résolution.
-	 * Lève une exception explicite si tout échoue, plutôt que de laisser
-	 * passer un warning PHP silencieux et un fichier corrompu/absent.
+	 * Encodes to AVIF with automatic fallback: if encoding fails (memory
+	 * error or another internal aom issue), retry with a higher speed
+	 * (less memory-hungry), then with a reduced resolution. Throws an
+	 * explicit exception if everything fails, instead of letting a silent
+	 * PHP warning through and leaving a corrupted/missing file behind.
 	 */
 	private function encodeAvif(GdImage $im, string $dest, int $quality = 82): bool
 	{

@@ -91,7 +91,7 @@ function normalizePatterns(patterns) {
 }
 
 /**
- * Extrait le répertoire de base d'un glob (partie avant le premier caractère spécial).
+ * Extracts the base directory of a glob (the part before the first special character).
  */
 function globBaseDir(glob) {
 	const g = toPosix(glob);
@@ -102,8 +102,8 @@ function globBaseDir(glob) {
 }
 
 /**
- * Compile une liste d'ignorés (globs string, RegExp ou fonctions) en fonctions de test.
- * Retourne un seul prédicat (string) => boolean.
+ * Compiles a list of ignore entries (string globs, RegExp or functions) into test functions.
+ * Returns a single predicate (string) => boolean.
  */
 function buildIgnorePredicate(ignoreList) {
 	if (!ignoreList || ignoreList.length === 0) return () => false;
@@ -121,18 +121,18 @@ function buildIgnorePredicate(ignoreList) {
 /**
  * createWatchers(rules, options)
  *
- * Chaque règle :
- *   - name        {string}   — label pour les logs
- *   - patterns    {string|string[]} — globs include (relatifs au cwd)
- *   - ignored     {string|RegExp|Function|(string|RegExp|Function)[]} — globs/regex/fonctions à exclure
- *   - debounceMs  {number}   — délai de debounce (défaut 150 ms)
+ * Each rule:
+ *   - name        {string}   — label for the logs
+ *   - patterns    {string|string[]} — include globs (relative to cwd)
+ *   - ignored     {string|RegExp|Function|(string|RegExp|Function)[]} — globs/regex/functions to exclude
+ *   - debounceMs  {number}   — debounce delay (default 150 ms)
  *   - callback    {Function} — async (events, ctx) => void
  *
- * Options globales :
- *   - cwd           {string}  — répertoire de travail (défaut process.cwd())
- *   - globalIgnored {string[]}— ignorés appliqués à toutes les règles
- *   - ignoreInitial {boolean} — ignore les events à l'initialisation (défaut true)
- *   - awaitWriteFinish         — options chokidar awaitWriteFinish
+ * Global options:
+ *   - cwd           {string}  — working directory (default process.cwd())
+ *   - globalIgnored {string[]}— ignore entries applied to every rule
+ *   - ignoreInitial {boolean} — ignore events on startup (default true)
+ *   - awaitWriteFinish         — chokidar awaitWriteFinish options
  *   - usePolling    {boolean}
  *   - interval      {number}
  *   - binaryInterval{number}
@@ -161,16 +161,16 @@ function createWatchers(rules, options = {}) {
 		const name = rule.name || "rule";
 		const patterns = normalizePatterns(rule.patterns);
 
-		// include: un seul matcher picomatch pour tous les patterns de la règle
+		// include: a single picomatch matcher for all of the rule's patterns
 		const isIncluded = picomatch(patterns, { dot: true });
 
-		// ignore: global + règle
+		// ignore: global + rule
 		const isIgnored = buildIgnorePredicate([
 			...(opt.globalIgnored || []),
 			...(normalizePatterns(rule.ignored || [])),
 		]);
 
-		// baseDirs déduits des patterns
+		// baseDirs derived from the patterns
 		const baseDirs = Array.from(
 			new Set(patterns.map(globBaseDir).map((d) => d || "."))
 		).map((d) => path.resolve(opt.cwd, d));
@@ -219,7 +219,7 @@ function createWatchers(rules, options = {}) {
 			timer = setTimeout(flush, rule.debounceMs ?? 150);
 		};
 
-		// ⚠️  On ne passe pas "ignored" à chokidar — le filtrage se fait dans queue()
+		// ⚠️  We don't pass "ignored" to chokidar — filtering happens in queue()
 		const watcher = chokidar.watch(baseDirs, {
 			ignoreInitial: opt.ignoreInitial,
 			awaitWriteFinish: opt.awaitWriteFinish,

@@ -22,8 +22,8 @@ async function printWarnings(warnings) {
 	console.warn(formatted.join("\n"));
 }
 
-// Verrou simple : si un build est déjà en cours, on ignore les déclenchements
-// concurrents et on relance un seul build juste après, pas plusieurs en parallèle.
+// Simple lock: if a build is already running, ignore concurrent triggers and
+// re-run a single build right after, not several in parallel.
 let scriptsBuildRunning = false;
 let scriptsBuildQueued = false;
 
@@ -42,7 +42,7 @@ async function buildScripts() {
 				outdir: DIST_SCRIPTS,
 				outbase: SRC_SCRIPTS,
 				format: "esm",
-				bundle: false, // un fichier source = un fichier dist
+				bundle: false, // one source file = one dist file
 				sourcemap: true,
 				// legalComments: 'inline',
 				target: ["es2022"],
@@ -53,7 +53,7 @@ async function buildScripts() {
 			});
 
 			await printWarnings(result.warnings);
-			console.log(`✔ scripts buildés (${entries.length} fichier(s))`);
+			console.log(`✔ scripts built (${entries.length} file(s))`);
 		}
 	} catch (err) {
 		let msg = err;
@@ -73,7 +73,7 @@ async function buildScripts() {
 		scriptsBuildRunning = false;
 		if (scriptsBuildQueued) {
 			scriptsBuildQueued = false;
-			await buildScripts(); // rejoue une seule fois avec l'état le plus récent
+			await buildScripts(); // re-run once with the most recent state
 		}
 	}
 }
@@ -87,9 +87,9 @@ async function copyDeclarations() {
 			await mkdir(path.dirname(dest), { recursive: true });
 			await copyFile(file, dest);
 		}
-		if (entries.length) console.log(`✔ .d.ts copiés (${entries.length} fichier(s))`);
+		if (entries.length) console.log(`✔ .d.ts copied (${entries.length} file(s))`);
 	} catch (err) {
-		console.error("✘ échec de la copie des .d.ts:", err.message);
+		console.error("✘ failed to copy .d.ts:", err.message);
 	}
 }
 
@@ -97,9 +97,9 @@ async function copyStyles() {
 	try {
 		await mkdir(DIST_STYLES, { recursive: true });
 		await cp(SRC_STYLES, DIST_STYLES, { recursive: true });
-		console.log("✔ styles copiés");
+		console.log("✔ styles copied");
 	} catch (err) {
-		console.error("✘ échec de la copie des styles:", err.message);
+		console.error("✘ failed to copy styles:", err.message);
 	}
 }
 
@@ -110,8 +110,8 @@ async function buildAll() {
 	await copyStyles();
 }
 
-// Debounce générique : évite de traiter chaque event fs individuellement
-// quand plusieurs arrivent en rafale pour la même sauvegarde.
+// Generic debounce: avoids handling each fs event individually when several
+// arrive in a burst for the same save.
 function debounce(fn, delay = 100) {
 	let timer;
 	return (...args) => {
@@ -124,7 +124,7 @@ async function main() {
 	await buildAll();
 
 	if (isWatch) {
-		console.log("👀 watch activé...");
+		console.log("👀 watch enabled...");
 
 		const debouncedScripts = debounce((file) => {
 			console.log(`[scripts] change: ${file}`);

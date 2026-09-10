@@ -1,15 +1,15 @@
 /**
- * runtime.js — PHP WASM runtime avec networking
+ * runtime.js — PHP WASM runtime with networking
  *
- * Zéro dépendance externe : node:http, node:net, node:crypto, node:tls, node:dns
+ * Zero external dependency: node:http, node:net, node:crypto, node:tls, node:dns
  *
- * Architecture du networking :
+ * Networking architecture:
  *   PHP (WASM/SOCKFS)
- *     └─ ws (hardcodé par Emscripten, lib externe)
+ *     └─ ws (hardcoded by Emscripten, external lib)
  *         └─ decorator → PHPWasmWebSocket (framing COMMAND_CHUNK / COMMAND_SET_SOCKETOPT)
- *             └─ WS vers ws://127.0.0.1:<proxyPort>/?host=X&port=Y
- *                 └─ Proxy HTTP/WS natif (node:http upgrade)
- *                     └─ TCP vers la vraie destination
+ *             └─ WS to ws://127.0.0.1:<proxyPort>/?host=X&port=Y
+ *                 └─ Native HTTP/WS proxy (node:http upgrade)
+ *                     └─ TCP to the real destination
  */
 
 import { PHP, loadPHPRuntime }    from '@php-wasm/universal';
@@ -32,18 +32,18 @@ function injectCaBundle(php) {
     });
 }
 
-// ─── php.ini : lecture / écriture de directives ──────────────────────────────
-// Permet de modifier une directive existante (peu importe sa valeur actuelle)
-// ou de l'ajouter si elle n'existe pas encore. Fonctionne sur des paires
-// `directive = valeur` en dehors des sections [section] (cas d'usage standard
-// de php.ini pour openssl.*, curl.*, memory_limit, upload_max_filesize, etc.)
+// ─── php.ini: reading / writing directives ──────────────────────────────────
+// Lets you change an existing directive (whatever its current value) or add it
+// if it doesn't exist yet. Works on `directive = value` pairs outside of
+// [section] sections (the standard php.ini use case for openssl.*, curl.*,
+// memory_limit, upload_max_filesize, etc.)
 
 function readPhpIni(php, iniPath = PHP_INI_PATH) {
     try { return php.readFileAsText(iniPath); } catch { return ''; }
 }
 
-// Retourne la valeur actuelle d'une directive (string) ou undefined si absente.
-// Les lignes commentées (`;directive = ...`) sont ignorées.
+// Returns a directive's current value (string) or undefined if absent.
+// Commented-out lines (`;directive = ...`) are ignored.
 function getPhpIniValue(php, key, iniPath = PHP_INI_PATH) {
     const ini = readPhpIni(php, iniPath);
     const re  = new RegExp(`^\\s*${key.replace(/\./g, '\\.')}\\s*=\\s*(.*)$`, 'im');
@@ -52,22 +52,22 @@ function getPhpIniValue(php, key, iniPath = PHP_INI_PATH) {
     return match.match(re)[1].trim();
 }
 
-// Met à jour ou ajoute une ou plusieurs directives dans le php.ini de la VM.
-// `values` : objet { 'directive.name': valeur, ... }.
-// Toute ligne active existante portant la même directive est supprimée puis
-// remplacée par une nouvelle ligne en fin de fichier (les commentaires et
-// autres directives sont préservés).
+// Updates or adds one or more directives in the VM's php.ini.
+// `values`: object { 'directive.name': value, ... }.
+// Any existing active line for the same directive is removed and replaced by a
+// new line at the end of the file (comments and other directives are
+// preserved).
 function setPhpIniValues(php, values, iniPath = PHP_INI_PATH) {
     const keys = Object.keys(values).map(k => k.toLowerCase());
     let ini = readPhpIni(php, iniPath);
 
     const lines = ini.split('\n').filter(l => {
         const m = l.match(/^\s*([A-Za-z0-9_.]+)\s*=/);
-        if (!m) return true; // commentaires, sections, lignes vides : on garde
+        if (!m) return true; // comments, sections, blank lines: keep them
         return !keys.includes(m[1].toLowerCase());
     });
 
-    // Nettoyer d'éventuelles lignes vides en fin de fichier avant d'ajouter
+    // Clean up any trailing blank lines before appending
     while (lines.length && lines[lines.length - 1].trim() === '') lines.pop();
 
     for (const [key, value] of Object.entries(values)) {
@@ -77,9 +77,9 @@ function setPhpIniValues(php, values, iniPath = PHP_INI_PATH) {
     php.writeFile(iniPath, lines.join('\n') + '\n');
 }
 
-// ─── Protocol de framing SOCKFS ──────────────────────────────────────────────
-// Emscripten envoie chaque message WebSocket préfixé d'un octet de commande.
-//   1 = COMMAND_CHUNK        → données TCP brutes (octets 1..n)
+// ─── SOCKFS framing protocol ────────────────────────────────────────────────
+// Emscripten sends each WebSocket message prefixed with a command byte.
+//   1 = COMMAND_CHUNK        → raw TCP data (bytes 1..n)
 //   2 = COMMAND_SET_SOCKETOPT → [optClass, optName, optValue]
 
 const COMMAND_CHUNK         = 1;
@@ -97,8 +97,8 @@ function prependByte(chunk, byte) {
     return buf.buffer;
 }
 
-// Decorator attendu par SOCKFS : wrape le constructeur WebSocket (lib `ws`)
-// pour que send() préfixe COMMAND_CHUNK et expose setSocketOpt().
+// Decorator expected by SOCKFS: wraps the WebSocket constructor (the `ws` lib)
+// so that send() prefixes COMMAND_CHUNK and exposes setSocketOpt().
 function addSocketOptionsSupportToWebSocketClass(WsConstructor) {
     return class PHPWasmWebSocket extends WsConstructor {
         send(chunk, callback) {
@@ -117,7 +117,7 @@ function addSocketOptionsSupportToWebSocketClass(WsConstructor) {
     };
 }
 
-// ─── Proxy WebSocket → TCP (natif node:http, zéro dépendance) ────────────────
+// ─── WebSocket → TCP proxy (native node:http, zero dependency) ───────────────
 
 function wsHandshakeResponse(key) {
     const accept = createHash('sha1')
@@ -133,7 +133,7 @@ function wsHandshakeResponse(key) {
     ].join('\r\n');
 }
 
-// Encode un message WebSocket binaire (frame non masquée, opcode 0x2)
+// Encodes a binary WebSocket message (unmasked frame, opcode 0x2)
 function wsFrame(data) {
     const payload = Buffer.isBuffer(data) ? data : Buffer.from(data);
     const len = payload.length;
@@ -152,7 +152,7 @@ function wsFrame(data) {
     return Buffer.concat([header, payload]);
 }
 
-// Parse les frames WebSocket depuis un Buffer, retourne { frames, remaining }
+// Parses WebSocket frames from a Buffer, returns { frames, remaining }
 function parseFrames(buf) {
     const frames = [];
     let offset = 0;
@@ -191,12 +191,12 @@ function startOutboundProxy(port) {
 
         server.on('upgrade', async (request, socket, head) => {
             // console.error(`[proxy] upgrade: ${request.url}`);
-            // Handshake WebSocket
+            // WebSocket handshake
             const key = request.headers['sec-websocket-key'];
             if (!key) { socket.destroy(); return; }
             socket.write(wsHandshakeResponse(key));
 
-            // Extraire host/port depuis ?host=X&port=Y
+            // Extract host/port from ?host=X&port=Y
             const url       = new URL(`ws://0.0.0.0${request.url}`);
             const destPort  = Number(url.searchParams.get('port'));
             const destHost  = url.searchParams.get('host');
@@ -205,7 +205,7 @@ function startOutboundProxy(port) {
                 socket.destroy(); return;
             }
 
-            // Résolution DNS
+            // DNS resolution
             let destIp = destHost;
             if (isIP(destHost) === 0) {
                 try   { destIp = await lookupIPv4(destHost); }
@@ -249,7 +249,7 @@ function startOutboundProxy(port) {
             socket.on('error', () => tcpSocket?.end());
 
             tcpSocket = createConnection(destPort, destIp, () => {
-                // console.error(`[proxy] TCP connecté → ${destIp}:${destPort}`);
+                // console.error(`[proxy] TCP connected → ${destIp}:${destPort}`);
                 flush();
             });
             tcpSocket.on('data',  (data) => {
@@ -261,16 +261,16 @@ function startOutboundProxy(port) {
         });
 
         server.listen(port, '127.0.0.1', () => {
-            // unref() : le serveur ne maintient pas l'event loop active.
-            // Le processus peut se terminer normalement quand tout le travail
-            // PHP est fini, sans avoir à fermer le proxy explicitement.
+            // unref(): the server doesn't keep the event loop alive.
+            // The process can exit normally once all the PHP work is done,
+            // without having to close the proxy explicitly.
             server.unref();
             resolve(server);
         });
     });
 }
 
-// ─── Port libre ──────────────────────────────────────────────────────────────
+// ─── Free port ─────────────────────────────────────────────────────────────
 
 function getFreePort() {
     return new Promise((resolve) => {
@@ -308,7 +308,7 @@ const getPHPRuntimeWithNetwork = async () => {
     const php = new PHP(runtime);
     injectCaBundle(php);
 
-    // Référence pour arrêt propre si nécessaire : php._networkProxyServer.close()
+    // Reference for a clean shutdown if needed: php._networkProxyServer.close()
     php._networkProxyServer = httpServer;
 
     return php;

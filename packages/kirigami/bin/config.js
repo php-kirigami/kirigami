@@ -1,16 +1,20 @@
-import fs from 'fs'; 	
+import fs from 'fs';
 import path from "path";
 import util from "util";
+import Ajv from 'ajv';
+import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { walkFile } from "@kirigami/struct-walker";
 import { formatFrDate } from "./utils.js";
 
 
+const require = createRequire(import.meta.url);
 const __project = process.cwd();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const __configpath = path.join(__project, 'kirigami.yaml');
 
 let config = null;
+let schemaValidator = null;
 
 
 export async function getConfig() {
@@ -18,10 +22,36 @@ export async function getConfig() {
 		if (!fs.existsSync(__configpath)) throw `Config file not found: ${__configpath}`;
 		const _config = await walkFile(__configpath);
 		if(!_config) throw `Invalid config file: ${__configpath}`;
+		validateAgainstSchema(_config);
 		await validateConfig(_config);
 		config = _config;
 	}
 	return config;
+}
+
+
+// ---------------------------------------------------------------------------
+// Structural validation against kirigami.schema.json (the same schema editors
+// use for kirigami.yaml autocompletion), run once walkFile() has loaded the
+// file and resolved its nested file references. Catches unknown keys, wrong
+// types and missing required properties before the imperative checks in
+// validateConfig() below. strict: false so the schema's `examples`/`default`
+// annotations compile without extra Ajv plugins; validateFormats: false skips
+// the `format` keyword (baseurl is checked imperatively in validateConfig()).
+// ---------------------------------------------------------------------------
+function validateAgainstSchema(_config) {
+	if (!schemaValidator) {
+		const schema = require('../kirigami.schema.json');
+		const ajv = new Ajv({ allErrors: true, strict: false, validateFormats: false });
+		schemaValidator = ajv.compile(schema);
+	}
+
+	if (!schemaValidator(_config)) {
+		const details = schemaValidator.errors
+			.map((e) => `  ${e.instancePath || '(root)'} ${e.message}`)
+			.join('\n');
+		throwConfigError(__configpath, `Schema validation failed:\n${details}`);
+	}
 }
 
 

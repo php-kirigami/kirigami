@@ -27,6 +27,7 @@ spl_autoload_register(function ($class) {
         'NORM'            => 'norm.class.php',
         'OBF'             => 'obf.class.php',
 		'PREPROS'         => 'prepros.class.php',
+        'SCHEMA'          => 'schema.class.php',
 		'SCRAPER'         => 'scraper.class.php',
         'STD'             => 'std.class.php',
         'STR'             => 'str.class.php',

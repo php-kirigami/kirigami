@@ -1,16 +1,16 @@
 <?php
 
 /**
- * HtmlFormatter — formateur HTML pour Kirigami
- * Utilise Dom\HTMLDocument (PHP 8.4, moteur Lexbor) pour parser,
- * puis re-sérialise avec indentation.
- * Les blocs <script> et <style> sont indentés au bon niveau mais non reformatés.
+ * HtmlFormatter — HTML formatter for Kirigami
+ * Uses Dom\HTMLDocument (PHP 8.4, Lexbor engine) to parse, then re-serializes
+ * with indentation.
+ * <script> and <style> blocks are indented at the right level but not reformatted.
  */
 class HTML
 {
     private const INDENT = 4;
 
-    // Attributs booléens HTML5 — écrits sans valeur
+    // HTML5 boolean attributes — written without a value
     private const BOOLEAN_ATTRS = [
         'allowfullscreen', 'async', 'autofocus', 'autoplay', 'checked',
         'controls', 'default', 'defer', 'disabled', 'formnovalidate',
@@ -19,7 +19,7 @@ class HTML
         'readonly', 'required', 'reversed', 'selected', 'webkit-playsinline',
     ];
 
-    // Éléments inline — leur présence dans un parent n'empêche pas le rendu inline
+    // Inline elements — their presence in a parent doesn't prevent inline rendering
     private const INLINE = [
         'a', 'abbr', 'acronym', 'b', 'bdo', 'big', 'br', 'button', 'cite',
         'code', 'dfn', 'em', 'i', 'img', 'input', 'kbd', 'label', 'map',
@@ -78,7 +78,7 @@ class HTML
             $childPad = str_repeat(' ', ($depth + 1) * self::INDENT);
             $lines    = explode("\n", $inner);
 
-            // Calcule le niveau d'indentation minimal existant (ignore les lignes vides)
+            // Compute the existing minimum indentation level (ignoring blank lines)
             $minIndent = PHP_INT_MAX;
             foreach ($lines as $line) {
                 if (trim($line) === '') continue;
@@ -86,7 +86,7 @@ class HTML
             }
             $minIndent = $minIndent === PHP_INT_MAX ? 0 : $minIndent;
 
-            // Dédente puis ré-indente au bon niveau
+            // Dedent then re-indent at the right level
             $indented = implode("\n", array_map(
                 static fn(string $line) => trim($line) !== ''
                     ? $childPad . substr($line, $minIndent)
@@ -102,11 +102,11 @@ class HTML
             return "{$pad}<{$tag}{$attrs}></{$tag}>\n";
         }
 
-        // Si tous les enfants sont inline ET que ça ressemble à un flux de texte
-        // (du vrai texte, ou un seul élément enfant), on re-sérialise en une seule ligne.
-        // Sans looksLikeTextFlow, un <section> qui contient plusieurs gros <a> côte à côte
-        // (ex: une grille de logos) se retrouverait aussi collé sur une seule ligne,
-        // puisque <a> est dans INLINE — ce n'est pas ce qu'on veut.
+        // If all children are inline AND it looks like a text flow (real text,
+        // or a single child element), re-serialize on a single line.
+        // Without looksLikeTextFlow, a <section> holding several large <a> side
+        // by side (e.g. a logo grid) would also end up crammed onto one line,
+        // since <a> is in INLINE — which is not what we want.
         if (static::hasOnlyInlineChildren($node) && static::looksLikeTextFlow($node)) {
             $inner = trim(static::renderInline($node));
             return "{$pad}<{$tag}{$attrs}>{$inner}</{$tag}>\n";
@@ -120,9 +120,9 @@ class HTML
         return "{$pad}<{$tag}{$attrs}>\n{$inner}{$pad}</{$tag}>\n";
     }
 
-    // Sérialise le contenu inline d'un nœud sur une seule ligne, en réduisant
-    // tout groupe d'espaces/tabs/retours à la ligne du texte source à une seule espace
-    // (équivalent au comportement de collapse des espaces en HTML).
+    // Serializes a node's inline content on a single line, collapsing any run
+    // of spaces/tabs/newlines in the source text to a single space (equivalent
+    // to HTML's whitespace-collapsing behavior).
     private static function renderInline(Dom\Node $node): string
     {
         $out = '';
@@ -150,9 +150,10 @@ class HTML
         return $out;
     }
 
-    // Distingue "du texte qui contient un peu d'inline" (Cliquez <a>ici</a>.) d'un
-    // conteneur qui aligne simplement plusieurs blocs inline côte à côte (grille de <a><img></a>).
-    // Vrai si : il y a du texte significatif parmi les enfants, OU un seul enfant élément.
+    // Tells "text that contains a bit of inline" (Click <a>here</a>.) apart from
+    // a container that just lines up several inline blocks side by side (a grid
+    // of <a><img></a>).
+    // True if: there is meaningful text among the children, OR a single child element.
     private static function looksLikeTextFlow(Dom\Node $node): bool
     {
         $elementCount = 0;
@@ -167,8 +168,8 @@ class HTML
         return $elementCount <= 1;
     }
 
-    // Vérifie que tous les descendants directs sont inline (texte, void inline, éléments inline)
-    // Les éléments inline eux-mêmes ne doivent pas contenir d'éléments block
+    // Checks that every direct descendant is inline (text, inline void, inline elements)
+    // The inline elements themselves must not contain block elements
     private static function hasOnlyInlineChildren(Dom\Node $node): bool
     {
         foreach ($node->childNodes as $child) {
@@ -181,7 +182,7 @@ class HTML
             if (!in_array(strtolower($child->nodeName), self::INLINE, true)) {
                 return false;
             }
-            // Récursif : l'élément inline ne doit pas contenir d'éléments block
+            // Recursive: the inline element must not contain block elements
             if (!static::hasOnlyInlineChildren($child)) {
                 return false;
             }

@@ -9,9 +9,9 @@
 Recursive structured files walker for the **Kirigami** static site generator.
 
 
-[![npm version](https://img.shields.io/npm/v/@kirigami/struct-walker.svg)](https://www.npmjs.com/package/@kirigami/struct-walker)
+[![npm version](https://img.shields.io/npm/v/@kirigami/struct-walker)](https://www.npmjs.com/package/@kirigami/struct-walker)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
-[![Node.js >=20.10.0](https://img.shields.io/badge/node-%3E%3D20.10.0-brightgreen)](https://nodejs.org)
+[![Node.js >=24.0.0](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](https://nodejs.org)
 
 
 
@@ -23,15 +23,37 @@ Recursive structured files walker for the **Kirigami** static site generator.
 
 Recursively walks a YAML or JSON file, resolving string values that reference other files relative to their parent. Nested YAML/JSON files are deserialized and inlined. Assets (images, fonts, audio, video…) are optionally converted to data URIs — either percent-encoded for text formats like SVG and CSS, or base64 for binary formats.
 
+Part of the **Kirigami** project ecosystem.
 
 ---
 
+## Table of contents
+
+- [@kirigami/struct-walker](#kirigamistruct-walker)
+  - [Overview](#overview)
+  - [Table of contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [How it works](#how-it-works)
+    - [Example structure](#example-structure)
+  - [API](#api)
+    - [`walkFile(filePath, resolveAssets?, _visited?)`](#walkfilefilepath-resolveassets-_visited)
+    - [`fileToDataUri(absolutePath)`](#filetodatauriabsolutepath)
+    - [`TEXT_URI_MIME_TYPES`](#text_uri_mime_types)
+    - [`ASSET_EXTS`](#asset_exts)
+  - [Dependencies](#dependencies)
+  - [Requirements](#requirements)
+  - [License](#license)
+
+---
 
 ## Installation
 
 ```bash
 npm install @kirigami/struct-walker
 ```
+
+---
 
 ## Usage
 
@@ -44,6 +66,8 @@ const config = await walkFile('./config/main.yaml');
 // Also embed asset files as data URIs
 const theme = await walkFile('./theme/index.yaml', true);
 ```
+
+---
 
 ## How it works
 
@@ -101,6 +125,8 @@ const result = await walkFile('./config/main.yaml', true);
 // }
 ```
 
+---
+
 ## API
 
 ### `walkFile(filePath, resolveAssets?, _visited?)`
@@ -111,9 +137,9 @@ const result = await walkFile('./config/main.yaml', true);
 | `resolveAssets` | `boolean` | `false` | Convert asset file references to data URIs |
 | `_visited` | `Set<string>` | — | Internal — do not pass |
 
-Returns `Promise<unknown>` — the fully resolved value.
+Returns `Promise<unknown>` — the fully resolved value (plain object, array, string, number, boolean, or `null`).
 
-Throws an `Error` if a circular reference is detected (e.g. `A → B → A`).
+Throws an `Error` if a circular reference is detected (e.g. `A → B → A`). Sibling references — two keys pointing at the same file — are allowed.
 
 ---
 
@@ -155,19 +181,25 @@ text/javascript  application/json  application/xml  text/xml
 - **3-D models** — `.glb` `.gltf`
 - **Archives** — `.zip` `.gz`
 
+---
+
 ## Dependencies
 
 | Package | Role |
 |---|---|
-| [`js-yaml`](https://github.com/nodeca/js-yaml) `5.0.0` | YAML parsing and serialization |
-| [`file-type`](https://github.com/sindresorhus/file-type) `22.0.1` | MIME detection via magic bytes |
+| [`js-yaml`](https://github.com/nodeca/js-yaml) `5.4.1` | YAML parsing and serialization |
+| [`file-type`](https://github.com/sindresorhus/file-type) `22.0.2` | MIME detection via magic bytes |
 | [`mime-types`](https://github.com/jshttp/mime-types) `3.0.2` | MIME detection via extension (fallback) |
+
+---
 
 ## Requirements
 
-- Node.js `>=20.10.0`
-- npm `>=10.2.3`
+- Node.js `>= 24.0.0`
+- npm `>= 10.2.3`
 - ESM only (`"type": "module"`)
+
+---
 
 ## License
 

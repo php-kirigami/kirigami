@@ -1,17 +1,19 @@
+import fs from 'fs';
+import path from 'path';
 import sharp from 'sharp';
+import { replaceRoot } from '../utils.js';
 
 /**
- * Convertit une couleur sRGB (0-255) en Lab (D65), espace perceptuellement
- * uniforme : une distance euclidienne en Lab correspond (à peu près) à une
- * différence de couleur telle que perçue par l'œil, contrairement au RGB
- * où deux couleurs à la même "distance" numérique peuvent paraître très
- * différentes ou identiques selon la teinte.
+ * Converts an sRGB color (0-255) to Lab (D65), a perceptually uniform space:
+ * a Euclidean distance in Lab corresponds (roughly) to a color difference as
+ * perceived by the eye, unlike RGB where two colors at the same numeric
+ * "distance" can look very different or identical depending on the hue.
  */
 function rgbToLab(r, g, b) {
 	const toLinear = (c) => ((c /= 255) <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 	const rl = toLinear(r), gl = toLinear(g), bl = toLinear(b);
 
-	// Linéaire RGB -> XYZ (D65), puis normalisation par le point blanc.
+	// Linear RGB → XYZ (D65), then normalize by the white point.
 	const x = (rl * 0.4124564 + gl * 0.3575761 + bl * 0.1804375) / 0.95047;
 	const y = rl * 0.2126729 + gl * 0.7151522 + bl * 0.0721750;
 	const z = (rl * 0.0193339 + gl * 0.1191920 + bl * 0.9503041) / 1.08883;
@@ -23,14 +25,14 @@ function rgbToLab(r, g, b) {
 }
 
 /**
- * Quantization median-cut : divise récursivement la boîte englobante des
- * couleurs selon le canal de plus grande étendue, en priorisant les boîtes
- * les plus "peuplées" (étendue x population), jusqu'à atteindre le nombre
- * de buckets demandé. Chaque bucket est ensuite réduit à sa couleur
- * moyenne, pondérée par le nombre d'occurrences.
+ * Median-cut quantization: recursively splits the bounding box of the colors
+ * along the channel with the largest spread, prioritizing the most "populated"
+ * boxes (spread x population), until the requested number of buckets is
+ * reached. Each bucket is then reduced to its average color, weighted by the
+ * occurrence count.
  *
- * C'est la même famille de technique que Imagick::quantizeImage() ou
- * imagetruecolortopalette() côté PHP.
+ * This is the same family of technique as Imagick::quantizeImage() or
+ * imagetruecolortopalette() on the PHP side.
  */
 function medianCutQuantize(pixels, targetBuckets) {
 	let boxes = [pixels];
@@ -60,13 +62,13 @@ function medianCutQuantize(pixels, targetBuckets) {
 			}
 		}
 
-		if (boxIndex === -1) break; // plus aucune boîte n'est divisible
+		if (boxIndex === -1) break; // no box is divisible anymore
 
 		const box = boxes[boxIndex];
 		box.sort((a, b) => a[bestChannel] - b[bestChannel]);
 
-		// Découpe à la médiane pondérée par occurrence, pas juste au milieu
-		// du tableau, pour équilibrer la population des deux moitiés.
+		// Split at the occurrence-weighted median, not just the middle of the
+		// array, to balance the population of the two halves.
 		const total = box.reduce((s, p) => s + p.count, 0);
 		let acc = 0, splitAt = 0;
 		for (let i = 0; i < box.length; i++) {
@@ -91,16 +93,16 @@ function medianCutQuantize(pixels, targetBuckets) {
 }
 
 /**
- * Extrait les couleurs les plus représentatives d'une image.
+ * Extracts the most representative colors of an image.
  *
- * @param {string|Buffer} input                     Chemin de fichier ou Buffer, tout ce qu'accepte sharp().
+ * @param {string|Buffer} input                     File path or Buffer, anything sharp() accepts.
  * @param {object}  [options]
- * @param {number}  [options.numColors=5]                    Nombre de couleurs à retourner.
- * @param {number}  [options.mergeTolerance=8]               Distance Lab en-dessous de laquelle deux couleurs sont fusionnées (~6-10 = "quasi identiques").
- * @param {boolean} [options.excludeNearWhiteAndBlack=true]  Exclut les couleurs quasi blanches/noires.
- * @param {number}  [options.lightnessThreshold=8]           Seuil de luminance Lab (0-100) en-deçà/au-delà duquel une couleur est jugée quasi blanche/noire.
- * @param {number}  [options.maxDim=150]                     Dimension max de l'échantillon analysé (perf).
- * @returns {Promise<string[]>} Couleurs au format "#rrggbb", triées par fréquence décroissante.
+ * @param {number}  [options.numColors=5]                    Number of colors to return.
+ * @param {number}  [options.mergeTolerance=8]               Lab distance below which two colors are merged (~6-10 = "nearly identical").
+ * @param {boolean} [options.excludeNearWhiteAndBlack=true]  Excludes near-white/near-black colors.
+ * @param {number}  [options.lightnessThreshold=8]           Lab lightness threshold (0-100) below/above which a color is considered near-white/near-black.
+ * @param {number}  [options.maxDim=150]                     Max dimension of the analyzed sample (perf).
+ * @returns {Promise<string[]>} Colors as "#rrggbb", sorted by decreasing frequency.
  */
 async function getRepresentativeColors(input, options = {}) {
 	const {
@@ -111,10 +113,10 @@ async function getRepresentativeColors(input, options = {}) {
 		maxDim = 150,
 	} = options;
 
-	// Analyser la pleine résolution n'apporte rien pour ce genre
-	// d'extraction et coûte cher en temps de calcul. flatten() aplatit la
-	// transparence sur fond blanc (sinon les zones transparentes des
-	// PNG/WEBP seraient comptées comme du noir).
+	// Analyzing the full resolution adds nothing for this kind of extraction
+	// and costs a lot of compute time. flatten() composites transparency onto
+	// a white background (otherwise the transparent areas of PNG/WEBP would be
+	// counted as black).
 	const { data, info } = await sharp(input)
 		.resize(maxDim, maxDim, { fit: 'inside', withoutEnlargement: true })
 		.flatten({ background: '#ffffff' })
@@ -123,8 +125,8 @@ async function getRepresentativeColors(input, options = {}) {
 
 	const { width, height, channels } = info;
 
-	// Regroupe les pixels identiques en amont : ça limite le nombre
-	// d'entrées à traiter par le median-cut et accélère nettement le tri.
+	// Group identical pixels up front: this limits the number of entries the
+	// median-cut has to process and speeds up the sort noticeably.
 	const colorMap = new Map();
 	for (let i = 0; i < width * height; i++) {
 		const o = i * channels;
@@ -137,9 +139,9 @@ async function getRepresentativeColors(input, options = {}) {
 		pixels.push({ r: (key >> 16) & 255, g: (key >> 8) & 255, b: key & 255, count });
 	}
 
-	// On sur-échantillonne largement le nombre de couleurs demandées : ça
-	// laisse de la marge pour la fusion perceptuelle et l'exclusion du
-	// blanc/noir ci-dessous sans se retrouver à court de couleurs.
+	// We heavily oversample the requested number of colors: this leaves room
+	// for the perceptual merge and the white/black exclusion below without
+	// running short of colors.
 	const buckets = Math.min(Math.max(numColors * 6, 24), pixels.length);
 	let entries = medianCutQuantize(pixels, buckets).map((c) => ({ ...c, lab: rgbToLab(c.r, c.g, c.b) }));
 
@@ -149,10 +151,10 @@ async function getRepresentativeColors(input, options = {}) {
 
 	entries.sort((a, b) => b.count - a.count);
 
-	// Fusionne les couleurs perceptuellement proches (distance CIE76 en
-	// Lab) en regroupant leurs occurrences, en partant toujours de la
-	// plus fréquente. Le median-cut sort souvent plusieurs teintes quasi
-	// identiques à l'œil, qu'on ne veut pas voir comme des entrées séparées.
+	// Merge perceptually close colors (CIE76 distance in Lab) by combining
+	// their occurrences, always starting from the most frequent one. The
+	// median-cut often outputs several hues that look nearly identical to the
+	// eye, which we don't want as separate entries.
 	const merged = [];
 	for (const entry of entries) {
 		const cluster = merged.find((c) => {
@@ -174,7 +176,110 @@ async function getRepresentativeColors(input, options = {}) {
 
 export { getRepresentativeColors };
 
-// Exemple d'utilisation :
-// import { getRepresentativeColors } from './getRepresentativeColors.js';
+// Usage:
+// import { getRepresentativeColors } from './image.js';
 // const colors = await getRepresentativeColors('./photo.jpg', { numColors: 5 });
 // console.log(colors); // => ['#3a6b8f', '#e0c14c', '#7a2d2d', '#1e1e1e', '#c9c9c9']
+
+
+// ---------------------------------------------------------------------------
+// Per-format encoding options for img-asset(). The avif quality scale is not
+// the same as webp's.
+// ---------------------------------------------------------------------------
+const IMG_FORMAT_OPTIONS = {
+	webp: { quality: 82 },
+	avif: { quality: 50 },
+};
+
+
+// ---------------------------------------------------------------------------
+// img-asset(): collect, then process, the images referenced from Sass, in two
+// phases. A Sass function must return synchronously (the output path), while
+// the sharp resize / re-encode is async: `ref()` computes the output name
+// (with a dimension suffix) and records the source during compilation;
+// `process()` does the sharp work once compilation is done and returns the
+// files it wrote.
+//
+//   const images = imgasset({ format, sourceRoot, destRoot, destRootSource, outDir });
+//   // during compilation:  const url = images.ref('hero.jpg', { width: 1200 });
+//   // after compilation:    const written = await images.process();
+//
+// - `format`         : 'webp' | 'avif' — output format.
+// - `sourceRoot`     : source images directory (paths passed to ref() are relative to it).
+// - `destRoot`       : output directory for processed images.
+// - `destRootSource` : optional second destination (on export, the source tree,
+//                      so it stays current too); null to write only once.
+// - `outDir`         : directory of the compiled CSS file — the path returned by
+//                      ref() is relative to it (usable as-is in the CSS).
+// ---------------------------------------------------------------------------
+function imgasset({ format = 'webp', sourceRoot, destRoot, destRootSource = null, outDir }) {
+	// destAbsPath -> source info for post-compile processing.
+	const assets = new Map();
+
+	function ref(srcRelPath, { width = null, height = null, cover = false } = {}) {
+		let suffix = '';
+		if (width && height) suffix = cover ? `-${width}x${height}-cover` : `-${width}x${height}`;
+		else if (width) suffix = `-${width}w`;
+		else if (height) suffix = `-${height}h`;
+
+		const { dir: subDir, name } = path.parse(srcRelPath);
+		const outRelPath = (subDir ? `${subDir}/` : '') + `${name}${suffix}.${format}`;
+		const destAbsPath = path.join(destRoot, outRelPath);
+		const destAbsPathSource = destRootSource ? path.join(destRootSource, outRelPath) : null;
+
+		if (!assets.has(destAbsPath)) {
+			assets.set(destAbsPath, {
+				src: path.resolve(sourceRoot, srcRelPath),
+				width,
+				height,
+				cover,
+				extraDest: destAbsPathSource,
+			});
+		}
+
+		return path.relative(outDir, destAbsPath).split(path.sep).join('/');
+	}
+
+	// Process the collected image map: resize and convert each source to the
+	// configured format. Each entry can have up to two destinations (the
+	// exported tree and, on export, the source tree): the work happens only
+	// once, and the result is written to whichever destinations are not
+	// already up to date.
+	async function process() {
+		const written = [];
+		await Promise.all([...assets.entries()].map(async ([dest, { src, width, height, cover, extraDest }]) => {
+			if (!fs.existsSync(src)) {
+				throw new Error(`img-asset: source file not found: ${src}`);
+			}
+
+			const srcMtime = fs.statSync(src).mtimeMs;
+			const dests = [dest, extraDest].filter(Boolean);
+			const staleDests = dests.filter((d) => !fs.existsSync(d) || fs.statSync(d).mtimeMs < srcMtime);
+
+			if (!staleDests.length) return; // everything is already up to date
+
+			let pipeline = sharp(src);
+			if (width && height) {
+				pipeline = pipeline.resize(width, height, { fit: cover ? 'cover' : 'inside', withoutEnlargement: !cover });
+			} else if (width) {
+				pipeline = pipeline.resize({ width });
+			} else if (height) {
+				pipeline = pipeline.resize({ height });
+			} // neither width nor height: no resize, just re-encode to the target format
+
+			const buffer = await pipeline[format](IMG_FORMAT_OPTIONS[format]).toBuffer();
+
+			await Promise.all(staleDests.map(async (d) => {
+				const destDir = path.dirname(d);
+				if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+				await fs.promises.writeFile(d, buffer);
+				written.push(replaceRoot(d));
+			}));
+		}));
+		return written;
+	}
+
+	return { ref, process };
+}
+
+export { imgasset };

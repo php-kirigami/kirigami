@@ -1,20 +1,18 @@
 // ---------------------------------------------------------------------------
-// Noms des hooks exposés par les tasks de @kirigami/kirigami. Un plugin
-// devrait toujours utiliser ces constantes plutôt que retaper les strings à
-// la main, pour éviter les fautes de frappe silencieuses (un hook mal
-// orthographié ne lève aucune erreur, il ne se déclenche juste jamais) et
-// profiter de l'autocomplete.
+// Names of the hooks exposed by the @kirigami/kirigami tasks. A plugin should
+// always use these constants rather than retyping the strings by hand, to
+// avoid silent typos (a misspelled hook throws no error, it just never fires)
+// and to get autocomplete.
 //
-// Cette liste grandit au fil des tasks qui exposent de nouveaux points
-// d'extension — voir le README pour le détail de ce que chaque hook reçoit
-// et attend en retour.
+// This list grows as tasks expose new extension points — see the README for
+// what each hook receives and expects in return.
 // ---------------------------------------------------------------------------
 
 export const HOOKS = Object.freeze({
-	/** Chemin(s) de fichier .scss compilé(s) avant l'entry de la task sass. */
+	/** Path(s) of .scss file(s) compiled before the sass task entry. */
 	SASS_BEFORE: 'sass:before',
-	/** Chemin(s) de fichier .scss compilé(s) après l'entry de la task sass. */
+	/** Path(s) of .scss file(s) compiled after the sass task entry. */
 	SASS_AFTER: 'sass:after',
-	/** Fonctions Sass custom, au même format que l'option `functions` de l'API Sass. */
+	/** Custom Sass functions, in the same format as the Sass API `functions` option. */
 	SASS_FUNCTIONS: 'sass:functions',
 });

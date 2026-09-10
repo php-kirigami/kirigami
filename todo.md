@@ -33,6 +33,11 @@ before-before/after-after hook dans prepros
 - faire un vrai test pour l'action kiribuild
 - pour plugin, vérifier le package.json (ou pas)
 
+img_asset en nodejs et en md
+
 Valider les schemas avec ajv
 
 système pour créer des schemas json+ld
+
+
+@breadcrumb true|1 signifi qu'il sera calculé dans le breadcrumb
