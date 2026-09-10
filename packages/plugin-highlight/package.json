@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/plugin-highlight",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "highlight.js syntax highlighting for Kirigami — applied at build time, zero runtime JavaScript shipped.",
   "keywords": [
     "kirigami",

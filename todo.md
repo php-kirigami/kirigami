@@ -12,14 +12,6 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   smoke. kiribuild@v2 est live et les deux `template-*` ont un `.github/workflows/page.yml`
   (kiribuild@v2 → commit-back → deploy Pages) ; reste à vérifier bout-en-bout qu'un
   site se déploie vraiment et que le contenu est bon.
-- **Floor `@kirigami/kirigami` des templates** — `package.json` pointe `^1.2.0`. La CI
-  (`npm install`) prend donc `latest` sur npm ; tant que kiri 1.3.3 / php-prepros 1.6.2
-  ne sont pas release, le commit-back du workflow re-bake `###TIMESTAMP###` dans les
-  pages `src/**`. Après release, bumper le floor pour garantir le fix.
-- **Commit-back du workflow encore bruyant** — `git add -A` recommit aussi les dérivés
-  `src/images/` (voulu) et un `package-lock.json` régénéré par `npm install`. Voir si
-  kiribuild devrait faire `npm ci` quand un lockfile existe.
-- **`@highlight false`** (tag PHPDOC) pour sauter une page dans `@kirigami/plugin-highlight`.
 - **`copyButton` sans task esbuild** — dans plugin-highlight, si le projet n'a pas de task
   esbuild le bouton ne marche pas (warn seulement). Voir si un plugin devrait pouvoir
   déclarer sa propre task / bundle JS auto.
@@ -38,12 +30,9 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   « je veux les exports / appeler `setTheme()` ». Coût : le contrat (clé `kirigami-theme`,
   event `canva:themechange`, attr `data-theme`) vit alors dans canva **et** dans une string
   PHP de php-prepros — garder le snippet injecté minimal, canva/theme.js fait foi.
-- **Base markdown → `@kirigami/canva/prose`** — fait dans canva 2.4.0 (partial `prose.scss` :
-  mixin `prose($measure, $flow)` + wrapper `.prose`, `$emit-class: false` pour le mixin seul).
-  Couvre titres/listes/tables/quotes/code/media/`dl`/`<details>` + le GFM que `MD` émet
-  (`.task-list`, `.markdown-alert*`, `.footnotes`). Reste : après release de canva 2.4.0,
-  faire pointer `../template-*/_main.scss` dessus (`@use "@kirigami/canva/prose"`) et
-  retirer le bloc `.prose` copié-collé. `styles/main.scss` reste un stub.
+- **`@kirigami/canva` `styles/main.scss`** — encore un stub. `styles/prose` couvre le
+  markdown ; `main.scss` reste réservé aux styles de composants partagés (WIP dans le
+  README canva).
 
 
 ## DX — `HTML::format()` écrase la casse du SVG/MathML inline (pas commité)

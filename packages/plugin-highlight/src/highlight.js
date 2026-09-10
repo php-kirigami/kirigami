@@ -36,6 +36,13 @@ function escape(s) {
 // so there is no raw `</code>` to trip on.
 const BLOCK_RE = /<pre>\s*<code(?:\s+class="([^"]*)")?\s*>([\s\S]*?)<\/code>\s*<\/pre>/g;
 
+// Page opt-out: `php/page.php` injects this comment when a page's PHPDOC says
+// `@highlight false`. Strip it and leave the page untouched.
+const SKIP_MARKER = /\s*<!--\s*kirigami:nohighlight\s*-->/i;
+
+// Per-block opt-out on the `<code>` class — leave the block exactly as authored.
+const NOHIGHLIGHT_CLASS = /(?:^|\s)(?:no-?highlight|language-(?:plain(?:text)?|text|none))(?:\s|$)/i;
+
 function langFromClass(cls) {
 	if (!cls) return null;
 	const m = cls.match(/(?:^|\s)(?:language|lang)-([\w+#.-]+)/i);
@@ -81,13 +88,19 @@ async function prepareEngine(options) {
 
 
 export async function highlightHtml(html, options = {}) {
-	if (!html || html.indexOf('<pre>') === -1) return html;
+	if (!html) return html;
+	if (SKIP_MARKER.test(html)) return html.replace(SKIP_MARKER, '');
+	if (html.indexOf('<pre>') === -1) return html;
 
 	const { engine, languages } = await prepareEngine(options);
 	const autodetect = options.autodetect !== false && languages.length > 0;
 
 	let touched = false;
 	const out = html.replace(BLOCK_RE, (whole, cls, body) => {
+		// Author opted this block out (`nohighlight`, `language-plaintext`, …):
+		// hand it back byte-for-byte.
+		if (cls && NOHIGHLIGHT_CLASS.test(cls)) return whole;
+
 		// Drop indentation shared with the surrounding source (a fenced block
 		// indented for readability in the markdown/PHP). The <highlight> tag
 		// already does this PHP-side via STR::trimIndent; fenced blocks reach

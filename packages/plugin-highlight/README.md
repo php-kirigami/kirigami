@@ -49,6 +49,7 @@ build. Part of the **Kirigami** project ecosystem.
     - [Manual (`theme: none`)](#manual-theme-none)
     - [The embedded font](#the-embedded-font)
   - [The `<highlight>` tag](#the-highlight-tag)
+  - [Per-page and per-block control](#per-page-and-per-block-control)
   - [Per-page control](#per-page-control)
   - [Requirements](#requirements)
   - [License](#license)
@@ -114,7 +115,10 @@ The plugin registers `@kirigami/sdk` hooks:
   `hljs.highlightAuto()` for un-tagged blocks), and writes back
   `<pre><code class="hljs language-…">…spans…</code></pre>`. A block whose
   language isn't registered is left as-is but still tagged `.hljs`, so the
-  theme's frame still applies. Each block is de-indented first (via
+  theme's frame still applies. Pages marked `@highlight false` and blocks tagged
+  `nohighlight` / `plaintext` are skipped (see
+  [Per-page and per-block control](#per-page-and-per-block-control)). Each block
+  is de-indented first (via
   `@kirigami/canva`'s `dedent`) — the whitespace prefix shared by every line is
   stripped, matching what `STR::trimIndent` already does for the `<highlight>`
   tag — so you can indent a fenced block in your source markdown for readability
@@ -128,9 +132,11 @@ The plugin registers `@kirigami/sdk` hooks:
   writes the block's text to the clipboard. **If your project has no `esbuild`
   task, the script has nowhere to go** — the build warns and the styles are
   emitted but inert; add an `esbuild` task or set `copyButton: false`.
-- **`prepros:php`** — with `tag` on, includes `php/highlight.php` in the prepros
-  runtime, which registers the `<highlight>` authoring tag (see below). It ships
-  no highlighter — it just emits `<pre><code class="language-…">` for the
+- **`prepros:php`** — always includes `php/page.php` (the `@highlight false`
+  page opt-out: a `page_info` / `post_render` hook pair that leaves a marker
+  comment for the `prepros:html` pass). With `tag` on it also includes
+  `php/highlight.php`, which registers the `<highlight>` authoring tag (see
+  below) — no highlighter, just `<pre><code class="language-…">` for the
   `prepros:html` pass to pick up.
 
 highlight.js is a **dev dependency of your build** only. Nothing from it reaches
@@ -224,10 +230,27 @@ block early — use a fence for that case.
 
 ---
 
-## Per-page control
+## Per-page and per-block control
 
-_Planned: `@highlight false` (PHPDOC) to skip a page. Not implemented yet —
-highlighting is currently all-or-nothing per project._
+**Skip a whole page** — put `@highlight false` (also `no` / `off` / `0`) in the
+page's first PHPDOC block. Every `<pre><code>` on that page is left exactly as
+rendered:
+
+```php
+<?php
+/**
+ * @title  Raw output
+ * @highlight false
+ */
+```
+
+**Skip one block** — give the `<code>` a `nohighlight` (or `no-highlight`) class,
+or tag it as plain text — `language-plaintext` / `language-text` / `language-none`.
+A fenced block does this with its info string:
+
+    ```plaintext
+    this stays verbatim
+    ```
 
 ---
 

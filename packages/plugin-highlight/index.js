@@ -44,9 +44,10 @@ export default function register(options = {}, { config } = {}) {
 
 	on(HOOKS.PREPROS_HTML, (html) => highlightHtml(html, opts));
 
-	// PHP: the <highlight lang="…">…</highlight> authoring tag, which just
-	// emits <pre><code class="language-…"> for the pass above to pick up.
-	if (opts.tag) on(HOOKS.PREPROS_PHP, () => php('highlight'));
+	// PHP: `php/page.php` wires the `@highlight false` page opt-out (always on);
+	// `php/highlight.php` adds the <highlight lang="…">…</highlight> authoring
+	// tag, which emits <pre><code class="language-…"> for the pass above.
+	on(HOOKS.PREPROS_PHP, () => opts.tag ? [php('page'), php('highlight')] : php('page'));
 
 	// Sass: theme colours + font @font-face + copy-button layout, each appended
 	// after the project's entry. `theme: none` skips the palette (you @use the
