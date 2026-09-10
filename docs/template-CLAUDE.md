@@ -116,7 +116,7 @@ Every command has `--help`.
 Point your editor at the schema for autocompletion:
 
 ```yaml
-# yaml-language-server: $schema=https://cdn.jsdelivr.net/npm/@kirigami/kirigami/kirigami.schema.json
+# yaml-language-server: $schema=https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigami.schema.json
 ```
 
 The file is loaded through `@kirigami/struct-walker` (so nested file references

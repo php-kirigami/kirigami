@@ -201,7 +201,7 @@ Every project **must** have a `kirigami.yaml` at its root. The preprocessor read
 `@kirigami/php-prepros` itself only acts on four blocks — **`kirigami:`**, **`jsonld:`**, **`prepros:`**, and **`image:`**. The remaining blocks (**`plugins:`**, **`esbuild:`**, **`sass:`**, **`export:`**, **`scripts:`**, **`tasks:`**) are consumed by the [`kiri`](https://www.npmjs.com/package/@kirigami/kirigami) CLI that drives the build; they are documented here for completeness because everything lives in the one file. The full file is validated against [`kirigami.schema.json`](https://github.com/php-kirigami/kirigami/blob/main/packages/kirigami/kirigami.schema.json), also served for editor autocompletion:
 
 ```yaml
-# yaml-language-server: $schema=https://cdn.jsdelivr.net/npm/@kirigami/kirigami/kirigami.schema.json
+# yaml-language-server: $schema=https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigami.schema.json
 ```
 
 ```yaml

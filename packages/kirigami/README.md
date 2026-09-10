@@ -96,7 +96,7 @@ npx kiri --version     # kiri + embedded PHP version
 1. Add a `kirigami.yaml` at the project root:
 
 ```yaml
-# yaml-language-server: $schema=https://cdn.jsdelivr.net/npm/@kirigami/kirigami/kirigami.schema.json
+# yaml-language-server: $schema=https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigami.schema.json
 kirigami:
   project: My Site
   baseurl: https://mysite.com

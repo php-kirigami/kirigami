@@ -143,7 +143,7 @@ Every command comes with its own detailed help: `kiri <command> --help`.
 The whole project is configured through a single `kirigami.yaml` file at the project root, validated against a [JSON schema](./packages/kirigami/kirigami.schema.json). Point your editor at it and enjoy full autocompletion:
 
 ```yaml
-# yaml-language-server: $schema=https://cdn.jsdelivr.net/npm/@kirigami/kirigami/kirigami.schema.json
+# yaml-language-server: $schema=https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigami.schema.json
 ```
 
 Here's a real-world example, showing most of the available sections:
