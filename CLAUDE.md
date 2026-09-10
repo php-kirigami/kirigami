@@ -19,6 +19,22 @@ Actions.
 - Every project that uses Kirigami is driven by one `kirigami.yaml` at its root,
   validated against `packages/kirigami/kirigami.schema.json`.
 
+### Sibling repos (checked out next to this one)
+
+Cloned as siblings of this repo (`../<name>/`), all under the `php-kirigami` org:
+
+| Path | Repo | What it is |
+|---|---|---|
+| `../template-*/` | `php-kirigami/template-<name>` | **every Kirigami template** — `kiri create <name>` clones these. Currently `../template-default/` (minimal starter) and `../template-demo/` (full feature tour; has its own `todo.md`). |
+| `../php-kirigami.github.io/` | `php-kirigami/php-kirigami.github.io` | the org site, itself built with Kirigami |
+| `../kiribuild/` | `php-kirigami/kiribuild` | the reusable GitHub Action (`kiri export` + Pages deploy) |
+| `../php-wasm-builder/` | (upstream fork) | toolchain that compiles the custom PHP WASM in `@kirigami/php-wasm` |
+
+A Kirigami **site** project (`../template-*/`, the `.github.io` site) gets its
+`CLAUDE.md` from `docs/template-CLAUDE.md` here — authored in this repo, copied to
+the sibling's root. Edit it here; never keep a divergent copy in the sibling.
+So far only `../template-demo/` has one.
+
 ### Packages (`packages/`)
 
 | Package | Ver | Role |
@@ -94,6 +110,27 @@ Match these when writing code in this repo.
 9. `## License` — `MIT © Maxime Larrivée-Roy, 2026` (php-wasm: GPL-2.0-or-later).
 
 canva's README carries a WIP note (`styles/main.scss` and `Burger` are stubs).
+
+---
+
+## Releasing
+
+`npm run release` (→ `node scripts/publish.js`). Bump the version in each
+package's `package.json` first, and — because the internal deps are pinned to
+**exact** versions — bump every dependent's dep range to match (e.g. bumping
+`@kirigami/canva` means editing `@kirigami/kirigami` and
+`@kirigami/plugin-highlight` too), then `npm install` to refresh the lockfile,
+commit, and **push `main`** before releasing.
+
+The script: topo-sorts `packages/*` on their `@kirigami/*` deps, then for each,
+skips it if that exact version is already on npm, else runs its `build` script
+(tarball publishes skip `prepublishOnly`), `npm pack`s into `packs/`, and
+`npm publish`es. Then it purges the jsDelivr cache for `kirigami.schema.json`
+and every plugin's `kirigami.optionsSchema` — they're served from GitHub `@main`
+and editors would otherwise keep the stale copy for up to 12 h. Flags:
+`--dry-run`, `--no-purge`, `--purge-only`, `--only <name>`, `--otp <code>`,
+`--yes` (skip the "is HEAD pushed?" preflight). Needs `npm login` with
+`@kirigami` publish rights.
 
 ---
 

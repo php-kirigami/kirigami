@@ -4,5 +4,9 @@
   "private": false,
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "scripts": {
+    "release": "node scripts/publish.js",
+    "release:dry": "node scripts/publish.js --dry-run"
+  }
 }
