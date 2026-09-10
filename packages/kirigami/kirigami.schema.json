@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigami.schema.json",
   "title": "kirigami.yaml",
-  "description": "Configuration file for the Kirigami static site generator (@kirigami/kirigami, v1.3.1). Must sit at the project root and be named exactly 'kirigami.yaml'. Read by every `kiri` command (build, export, watch, run) via bin/config.js.",
+  "description": "Configuration file for the Kirigami static site generator (@kirigami/kirigami, v1.3.2). Must sit at the project root and be named exactly 'kirigami.yaml'. Read by every `kiri` command (build, export, watch, run) via bin/config.js.",
   "type": "object",
   "required": [
     "kirigami"

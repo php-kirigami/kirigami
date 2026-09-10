@@ -143,24 +143,28 @@ release script (b48fe5f); `kiri create` wizard + git + metadata (f81862d);
 `@kirigami/canva` 2.3.0 theme-change transition (3fce596); managed `<head>` +
 `<pre><code>` indent — `@kirigami/php-prepros` 1.6.0, `@kirigami/kirigami` 1.3.0
 (0b2f8b5, f7bf67a); `kiri` 1.3.1 schema-loader hotfix (`allOf: []` crash, fe40988);
-`php-prepros` 1.6.1 — `getExportedFiles()` always returns a list (7d5ea65).
+`php-prepros` 1.6.1 — `getExportedFiles()` always returns a list (7d5ea65);
+`kiri` 1.3.2 — dep bump to php-prepros 1.6.1 (1.3.1 already shipped pinning 1.6.0).
 
 **npm state:** `sdk` 0.2.0, `canva` 2.3.0 and `plugin-highlight` 0.1.0 are
-published and good. **Two broken published versions need a release to fix:**
+published and good. Two bugs, and the partial release that made it messy:
 
-- `@kirigami/kirigami` 1.3.0 — `allOf: []` schema crash (above); every `kiri`
-  command fails unless plugin-highlight is installed. Fixed by 1.3.1.
+- `@kirigami/kirigami` 1.3.0 — `allOf: []` schema crash; every `kiri` command
+  fails unless plugin-highlight is installed. Fixed in code by 1.3.1.
 - `@kirigami/php-prepros` 1.6.0 — `getExportedFiles()` emits a JSON object, not
   an array, when a file is exported twice at non-adjacent positions (e.g.
   `.cookie.txt` re-exported by every page that does an `@readme`/`@tag http`
   fetch). Breaks `PREPROS: render-all` with "retobj.files.map is not a
-  function". Fixed by 1.6.1.
+  function". Fixed in code by 1.6.1.
+- `@kirigami/kirigami` **1.3.1 was published** (from an intermediate commit) and
+  is `latest` — it has the schema fix but still **pins `@kirigami/php-prepros`
+  1.6.0** (the broken one), so `render-all` stays broken for multi-fetch sites.
 
-**Both fixes are committed on `main` but not released** — needs `npm run release`
-(publishes `@kirigami/kirigami` 1.3.1 + `@kirigami/php-prepros` 1.6.1) on a
-pushed `main`. Last known-good `kiri` before 1.3.1 is 1.1.3 (kiribuild CI pins
-its fixtures there, with a non-blocking `latest-canary` scenario to detect when
-a fixed release lands).
+**Still to release:** `@kirigami/php-prepros` 1.6.1 + `@kirigami/kirigami`
+**1.3.2** (dep bumped to php-prepros 1.6.1) — both committed on `main`, run
+`npm run release`. Last known-good `kiri` before this mess is 1.1.3 (kiribuild CI
+pins its fixtures there, with a non-blocking `latest-canary` scenario to detect
+when a good release lands).
 
 **canva is a permanent part of this monorepo — reuse its code rather than
 re-implementing shared helpers per package** (that's why plugin-highlight now
