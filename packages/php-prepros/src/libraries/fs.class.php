@@ -59,20 +59,20 @@ class FS
 	 *
 	 * Only usable while a render is in progress (`PREPROS::$file` set).
 	 *
-	 * @param  string $backtrace Path of the caller's file; defaults to the
-	 *                           file that invoked this method. The
-	 *                           `fs_get_children()` wrapper forwards the real
-	 *                           caller here.
-	 * @return object[]          One `stdClass` per child: the parsed PHPDOC
-	 *                           of its `_index.php`, plus a `->file` key
-	 *                           holding that file's absolute path.
-	 * @throws \Exception        When called outside of a render.
+	 * @param  string $anchor Path whose folder is scanned; defaults to the page
+	 *                         currently being rendered (`PREPROS::$file`), so it
+	 *                         works the same called straight from a template, from
+	 *                         a layout partial, or from a helper function.
+	 * @return object[]         One `stdClass` per child: the parsed PHPDOC
+	 *                          of its `_index.php`, plus a `->file` key
+	 *                          holding that file's absolute path.
+	 * @throws \Exception       When called outside of a render.
 	 */
-	public static function getChildren(string $backtrace = ''): array
+	public static function getChildren(string $anchor = ''): array
 	{
 		if (PREPROS::$file === '') throw new Exception('FS::getChildren() can only be called during a render.');
-		if (!$backtrace) $backtrace = PREPROS::backtraceFile();
-		if (!$backtrace || !$dir = realpath(pathinfo($backtrace, PATHINFO_DIRNAME))) return [];
+		if (!$anchor) $anchor = PREPROS::$file;
+		if (!$anchor || !$dir = realpath(pathinfo($anchor, PATHINFO_DIRNAME))) return [];
 
 		$children = [];
 		foreach (glob($dir . '/*', GLOB_ONLYDIR) as $subdir) {
@@ -107,24 +107,24 @@ class FS
 	 *
 	 * Only usable while a render is in progress (`PREPROS::$file` set).
 	 *
-	 * @param  string $backtrace Path of the caller's file; defaults to the
-	 *                           file that invoked this method. The
-	 *                           `fs_get_breadcrumb()` wrapper forwards the
-	 *                           real caller here.
-	 * @return object[]          One `stdClass` per ancestor page, ordered from
-	 *                           the top-most ancestor down to the nearest
-	 *                           parent: the parsed PHPDOC of its `_index.php`,
-	 *                           plus a `->file` key holding that file's
-	 *                           absolute path.
-	 * @throws \Exception        When called outside of a render.
+	 * @param  string $anchor Path the trail is walked from; defaults to the page
+	 *                         currently being rendered (`PREPROS::$file`), so it
+	 *                         works the same called straight from a template, from
+	 *                         a layout partial, or from a helper function.
+	 * @return object[]         One `stdClass` per ancestor page, ordered from
+	 *                          the top-most ancestor down to the nearest
+	 *                          parent: the parsed PHPDOC of its `_index.php`,
+	 *                          plus a `->file` key holding that file's
+	 *                          absolute path.
+	 * @throws \Exception       When called outside of a render.
 	 */
-	public static function getBreadcrumb(string $backtrace = ''): array
+	public static function getBreadcrumb(string $anchor = ''): array
 	{
 		if (PREPROS::$file === '') throw new Exception('FS::getBreadcrumb() can only be called during a render.');
-		if (!$backtrace) $backtrace = PREPROS::backtraceFile();
-		if (!$backtrace || !$dir = realpath(pathinfo($backtrace, PATHINFO_DIRNAME))) return [];
+		if (!$anchor) $anchor = PREPROS::$file;
+		if (!$anchor || !$dir = realpath(pathinfo($anchor, PATHINFO_DIRNAME))) return [];
 
-		$self = FS::phpFileInfo($backtrace) ?: new stdClass;
+		$self = FS::phpFileInfo($anchor) ?: new stdClass;
 		if (!self::truthy($self->breadcrumb ?? null)) return [];
 
 		if (!$root = realpath(PREPROS::$config->root)) return [];
@@ -182,14 +182,49 @@ class FS
 				}
 			}
 			if (empty($block)) return new stdClass;
-			if (!preg_match_all('#@([a-z0-9_]+)[\s\t]+([^\n]+)#msi', $block, $m)) $files[$file] = new stdClass;
-			else {
-				$info = [];
-				foreach ($m[1] as $k => $v) $info[trim($v)] = trim($m[2][$k]);
-				$files[$file] = (object)$info;
-			}
+			$files[$file] = (object) self::parseDocBlock($block);
 		}
 		return $files[$file];
+	}
+
+
+	/**
+	 * Parses the `@tag value` lines of a PHPDOC block into a `tag => value` map.
+	 *
+	 * Only lines whose first non-whitespace character (past an optional `*`
+	 * gutter) is an `@` start a tag — so an `@word` dropped mid-sentence in the
+	 * block's prose is ignored and can't clobber a real tag. A tag's value may
+	 * wrap onto the following *indented* (hanging-indent) continuation lines,
+	 * up to the next `@tag`, a blank line, a flush-left prose line, or the end
+	 * of the block; continuation lines are joined with a single space.
+	 *
+	 * @param  string $block Raw `/** … *&#47;` doc-comment text.
+	 * @return array<string,string>
+	 */
+	private static function parseDocBlock(string $block): array
+	{
+		$info    = [];
+		$current = null;
+
+		foreach (preg_split('/\r\n|\r|\n/', $block) as $line) {
+			// Drop the opening `/**`, a ` * ` gutter, and the closing ` */`.
+			$line = preg_replace('#^\s*/\*\*+#', '', $line);
+			$line = preg_replace('#\s*\*/\s*$#', '', $line);
+			$line = preg_replace('#^[ \t]*\*[ \t]?#', '', $line, 1);
+
+			if (preg_match('/^[ \t]*@([A-Za-z0-9_]+)[ \t]*(.*)$/', $line, $m)) {
+				$current = trim($m[1]);
+				$info[$current] = trim($m[2]);
+			} elseif (trim($line) === '') {
+				$current = null;                                   // blank line ends a value
+			} elseif ($current !== null && preg_match('/^[ \t]/', $line)) {
+				$info[$current] = trim($info[$current] . ' ' . trim($line));   // hanging indent → continuation
+			} else {
+				$current = null;                                   // flush-left prose ends a value
+			}
+		}
+
+		return $info;
 	}
 
 

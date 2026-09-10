@@ -147,6 +147,13 @@ class IMG
 
 	public function resize(int $width, int $height = 0, bool $cover = false)
 	{
+		// Never upscale. The AVIF encoder (and, less visibly, the others) can
+		// choke on an enlarged raster, and blowing pixels up gains nothing —
+		// so a target larger than the source is clamped down to it rather than
+		// throwing an opaque encode error. Ask for sizes <= the source.
+		if ($width  > $this->width)  $width  = $this->width;
+		if ($height > $this->height) $height = $this->height;
+
 		$srcRatio = $this->width / $this->height;
 
 		if (!$height) {

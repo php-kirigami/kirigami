@@ -28,21 +28,35 @@ class HTML
     ];
 
     private const RAW  = ['script', 'style'];
+    // Whitespace-significant elements: their text content is emitted byte for
+    // byte, never re-indented or collapsed (a code block must keep its line
+    // breaks and leading spaces; a <textarea> its exact value).
+    private const VERBATIM = ['pre', 'textarea'];
     private const VOID = [
         'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
         'link', 'meta', 'source', 'track', 'wbr',
     ];
 
+    /** Verbatim blocks stashed during a format() run, keyed by placeholder. */
+    private static array $verbatim = [];
+
     public static function format(string $html): string
     {
         $dom = Dom\HTMLDocument::createFromString($html, LIBXML_NOERROR);
 
+        self::$verbatim = [];
         $output = '';
         foreach ($dom->childNodes as $node) {
             $output .= static::renderNode($node, 0);
         }
 
+        // Collapse runs of blank lines — but not inside <pre>/<textarea>, whose
+        // content was swapped out for a placeholder above.
         $output = preg_replace('/\n{3,}/', "\n\n", $output);
+        if (self::$verbatim) {
+            $output = strtr($output, self::$verbatim);
+            self::$verbatim = [];
+        }
 
         return rtrim($output) . "\n";
     }
@@ -67,6 +81,16 @@ class HTML
 
         if ($isVoid) {
             return "{$pad}<{$tag}{$attrs}>\n";
+        }
+
+        // Whitespace-significant: emit the inner HTML exactly as parsed, so a
+        // <pre>/<textarea> keeps its line breaks and indentation. Only the
+        // opening tag is padded to the current depth.
+        if (in_array($tag, self::VERBATIM, true)) {
+            /** @var DOMElement $node */
+            $token = "\x01VERB" . count(self::$verbatim) . "\x01";
+            self::$verbatim[$token] = $node->innerHTML;
+            return "{$pad}<{$tag}{$attrs}>" . $token . "</{$tag}>\n";
         }
 
         if ($isRaw) {

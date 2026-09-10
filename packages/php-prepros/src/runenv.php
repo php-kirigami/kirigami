@@ -10,8 +10,11 @@ try {
 
     require_once($argv[1]);
 
-} catch(Exception $e) {
-    STD::error($e->getMessage());
+} catch(Throwable $e) {
+    STD::error([
+        'error' => $e->getMessage(),
+        'where' => $e->getFile() . ':' . $e->getLine(),
+    ]);
 }
 
 STD::succeed(['files' => PREPROS::getExportedFiles()]);

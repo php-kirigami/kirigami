@@ -73,6 +73,8 @@ final class PREPROS
 
         if(!empty(self::$config->format)) $contents = HTML::format($contents);
 
+        $contents = self::replaceTokens($contents);
+
         file_put_contents($target, $contents);
         self::exportFile($target);
         self::$file = '';
@@ -119,6 +121,21 @@ final class PREPROS
         
         self::exportFile([$dest, $destrobots]);
         return realpath($dest);
+    }
+
+
+    /**
+     * Expands the build-time text tokens in a generated file. Runs at render
+     * time (so `kiri build` / `kiri watch` previews show real values, not the
+     * literal `###YEAR###`), and again — harmlessly — on export.
+     */
+    private static function replaceTokens(string $contents): string
+    {
+        return strtr($contents, [
+            '###YEAR###'      => date('Y'),
+            '###TIMESTAMP###' => (string) time(),
+            '###TODAY###'     => date('Y-m-d'),
+        ]);
     }
 
 

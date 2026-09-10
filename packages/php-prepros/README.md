@@ -34,6 +34,7 @@ Part of the **Kirigami** project ecosystem.
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
   - [Overview](#overview)
   - [Table of contents](#table-of-contents)
+  - [What's new in 1.4.0](#whats-new-in-140)
   - [What's new in 1.3.0](#whats-new-in-130)
   - [What's new in 1.2.1](#whats-new-in-121)
   - [What's new in 1.2.0](#whats-new-in-120)
@@ -98,6 +99,52 @@ Part of the **Kirigami** project ecosystem.
   - [Extending the `<markdown>` tag](#extending-the-markdown-tag)
   - [Requirements](#requirements)
   - [License](#license)
+
+---
+
+## What's new in 1.4.0
+
+A round of fixes to the rough edges that showed up building a full site from
+scratch — mostly developer-experience, all backward compatible.
+
+- **`HTML::format()` keeps `<pre>` / `<textarea>` verbatim.** Their line breaks,
+  indentation and blank lines are no longer collapsed, so a fenced code block
+  survives the formatter intact — `format: true` and Markdown code blocks now
+  coexist.
+- **The default Markdown plugins load out of the box.** `{% callout %}`,
+  `{% youtube %}`, `{% codepen %}` and `{% checklist %}` are registered
+  automatically (`md.plugins.php` is auto-included from `MD`), as the docs always
+  said. Drop one with `MD::unregisterPlugin('name')` or shadow it with your own
+  `MD::registerPlugin()`.
+- **Build errors you can actually read.** A fatal in a template (a bad call, a
+  `null` argument, a `TypeError`…) comes back as a structured failure with the
+  message, the offending page and the `file:line` — never a bare
+  `Error: undefined`. The `try/catch` now covers `Throwable`, not just
+  `Exception`. PHP warnings and notices no longer sink an otherwise-clean build:
+  they surface as `warnings` on the result. `kiri` prints the message, the page,
+  and the tail of the PHP stderr/debug output on failure.
+- **PHPDOC parsing.** A tag value may now wrap onto the following *indented*
+  continuation lines instead of being silently truncated at the first line. And
+  an `@word` written in the block's prose is ignored rather than overwriting a
+  real tag — only lines that *start* with `@` open a tag.
+- **`FS::getBreadcrumb()` / `FS::getChildren()`** are anchored on the page being
+  rendered (`PREPROS::$file`), so they return the right trail / child list when
+  called from a layout include, a partial, or a helper function — not only
+  straight from the template. Pass an explicit path to override.
+- **`{% tag %}` inside a code span or code block stays literal** (`` `{% badge %}` ``
+  renders as text) instead of being expanded — or leaking an unrestored
+  placeholder.
+- **`IMG` never upscales.** A requested size larger than the source is clamped
+  down to the source instead of throwing an opaque encoder error (the AVIF
+  encoder in particular).
+- **Build-time tokens expand at render time.** `###YEAR###`, `###TIMESTAMP###`
+  and `###TODAY###` are substituted when each page is generated, so
+  `kiri build` / `kiri watch` previews show real values, not the literal token
+  (previously only `kiri export` replaced them).
+- **`page_info` hook robustness.** The first built-in callback accepts either the
+  `[$file, $info]` pair the hook fires with or the bare `$info` object a later
+  callback receives, so a custom `page_info` hook can't fatal on the argument
+  shape. See [PREPROS hooks](#prepros-hooks).
 
 ---
 
@@ -415,6 +462,18 @@ Every page starts with a PHP docblock that drives metadata and data loading:
 All annotations are injected as PHP variables (`$name`, `$title`, `$abstract`, …). You can define any custom annotation you need.
 
 Annotations are also available as variables in `before` and `after` PHP included files, so you can write proper metas in the HTML header.
+
+Only lines whose first non-whitespace character (past the `*` gutter) is `@`
+open an annotation — an `@word` written in the prose of the block is left alone.
+A value can wrap onto the following **indented** continuation lines:
+
+```php
+/**
+ * @title       About us
+ * @description A longer blurb that does not fit comfortably
+ *              on a single line and continues here.
+ */
+```
 
 ### Auto-loading data files
 
@@ -1358,7 +1417,7 @@ PREPROS::registerHook(string $hookName, callable $callback): void
 | Hook | When it fires | `$data` type | Expected return |
 |------|---------------|--------------|-----------------|
 | `boot` | Once per process, right after bootstrap (config loaded, `includes` pulled in), before any page renders. Fires for every entrypoint. | `stdClass $config` | ignored |
-| `page_info` | After PHPDOC parsing, before rendering (auto-loads `.yaml`/`.json`/`.md` annotations) | `[$filePath, $pageObject]` | `$pageObject` (modified) |
+| `page_info` | After PHPDOC parsing, before rendering (auto-loads `.yaml`/`.json`/`.md` annotations) | `[$filePath, $pageObject]` — see note | `$pageObject` (modified) |
 | `pre_render` | Before PHP execution | Raw file contents as `string` | `string` |
 | `pre_before` | Just before the `before` include (inside its output buffer — `echo` to prepend to the header) | `before` config path as `string\|null` | ignored |
 | `post_before` | Right after the `before` include, on the captured header | Header `string` | `string` |
@@ -1367,6 +1426,12 @@ PREPROS::registerHook(string $hookName, callable $callback): void
 | `post_render` | After tag processing, before `HTML::format()` | Assembled HTML `string` | `string` |
 
 Multiple callbacks can be registered for the same hook — they are executed in registration order, each receiving the return value of the previous one.
+
+> **`page_info` payload shape.** The hook *fires* with `[$filePath, $pageObject]`,
+> but each callback is expected to return the `$pageObject` alone — so a callback
+> registered after the built-ins receives the bare object, not the pair. Handle
+> both: `$page = is_array($p) ? $p[1] : $p;` (the current page path is always
+> available as `PREPROS::$file`).
 
 ```php
 // Example: inject a last-modified date into every page

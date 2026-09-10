@@ -157,20 +157,57 @@ const run = async (args = [], script = null, mountfiles = []) => {
                 retobj.files[i] = dest;
             }));
         } else {
-            retobj = { success: true, files: [], debug: stdout };
+            // No result file: PHP exited before STD::succeed()/error() — a
+            // parse error, an OOM, a die(), a hard crash. Pull whatever
+            // explanation we can out of the streams instead of a silent pass.
+            const crash = extractPhpError(stderr) || extractPhpError(stdout);
+            retobj = {
+                success: false,
+                files: [],
+                error: crash || 'PHP produced no result (exited early — check the debug output).',
+                debug: stdout,
+                stderr,
+            };
         }
     } catch (e) {
-        retobj = { success: false, error: 'Response parsing error.' + e, debug: stdout, stderr };
+        retobj = { success: false, error: 'Response parsing error: ' + (e?.message || e), debug: stdout, stderr };
     } finally {
         if (await php.fileExists(resultPath)) {
             await php.unlink(resultPath);
         }
     }
+
+    // A fatal that still managed to write a (stale/partial) result file, or
+    // warnings printed to stderr. Only a genuine fatal marker overrides a
+    // result the PHP side reported as a success; plain warnings are attached
+    // as `warnings` so a stray notice doesn't sink an otherwise-clean build.
     if (stderr) {
-        retobj = { success: false, error: stderr, debug: stdout };
+        const fatal = extractPhpError(stderr);
+        if (fatal && (!retobj || retobj.success !== false)) {
+            retobj = { success: false, files: [], error: fatal, debug: stdout, stderr };
+        } else if (retobj && retobj.success && !fatal) {
+            retobj.warnings = stderr.trim();
+        } else if (retobj && retobj.success === false && !retobj.stderr) {
+            retobj.stderr = stderr.trim();
+        }
+    }
+
+    // Never hand back a failure without a usable message.
+    if (retobj && retobj.success === false && !retobj.error) {
+        retobj.error = retobj.message || retobj.stderr || 'Unknown error.';
     }
 
     return retobj;
+}
+
+
+// Pulls the first meaningful PHP error line out of a stdout/stderr blob
+// (fatals, parse errors, uncaught throwables). Returns null when the text
+// holds nothing that looks like a hard error.
+const extractPhpError = (text) => {
+    if (!text) return null;
+    const m = text.match(/^.*\b(?:PHP\s+)?(?:Fatal error|Parse error|Uncaught\s+\w+|Recoverable fatal error)\b.*$/mi);
+    return m ? m[0].trim() : null;
 }
 
 

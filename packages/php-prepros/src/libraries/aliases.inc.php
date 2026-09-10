@@ -110,8 +110,11 @@ function prepros_register_tag(string $tag, callable $clb) { return PREPROS::regi
  * Registers a build hook.
  *
  * Known hooks: `boot` (`stdClass $config`, once per process after bootstrap,
- * before any render — return value ignored), `page_info` (`[$file, stdClass
- * $info]`), `pre_render` (raw template source), `pre_before` / `pre_after`
+ * before any render — return value ignored), `page_info` (fires with
+ * `[$file, stdClass $info]`; each callback returns the `$info` object it wants
+ * to pass on, so a callback registered later receives that bare object — accept
+ * both shapes, e.g. `$page = is_array($p) ? $p[1] : $p;`), `pre_render` (raw
+ * template source), `pre_before` / `pre_after`
  * (the `before` / `after` config path, just before that include — echo here to
  * prepend output, return value ignored), `post_before` / `post_after` (the
  * captured header / footer string, right after the include), `post_render`
@@ -543,12 +546,13 @@ function fs_get_relative_path(string $from, string $to): string { return FS::get
 function fs_php_file_info(string $file): object|bool { return FS::phpFileInfo($file); }
 
 /**
- * Immediate child pages of the calling template, ordered by `@position`
+ * Immediate child pages of the page being rendered, ordered by `@position`
  * ascending (a missing `@position` counts as 999999), then by folder name.
  *
- * Scans the folders directly below the caller's directory, keeps the ones
- * holding an `_index.php`, and returns one `stdClass` per child: the parsed
- * PHPDOC of that `_index.php`, plus a `->file` key with its absolute path.
+ * Scans the folders directly below the current page's directory, keeps the
+ * ones holding an `_index.php`, and returns one `stdClass` per child: the
+ * parsed PHPDOC of that `_index.php`, plus a `->file` key with its absolute
+ * path. Works the same from a template, a layout partial or a helper.
  * Only usable during a render.
  *
  *   foreach (fs_get_children() as $page) { echo $page->title, $page->file; }
@@ -559,22 +563,24 @@ function fs_php_file_info(string $file): object|bool { return FS::phpFileInfo($f
  */
 function fs_get_children(): array
 {
-	// Forward the real caller's path so FS::getChildren() scans the
-	// template's directory, not this wrapper file's.
-	$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
-	return FS::getChildren($trace[0]['file'] ?? '');
+	// Anchored on the page under render (PREPROS::$file), so it behaves the
+	// same whether it's called from the template, a layout partial, or a
+	// helper function.
+	return FS::getChildren();
 }
 
 /**
- * Breadcrumb trail of the calling page: one `stdClass` per ancestor page,
- * ordered from the top-most ancestor down to the nearest parent (the parsed
- * PHPDOC of each `_index.php`, plus a `->file` key with its absolute path).
+ * Breadcrumb trail of the page being rendered: one `stdClass` per ancestor
+ * page, ordered from the top-most ancestor down to the nearest parent (the
+ * parsed PHPDOC of each `_index.php`, plus a `->file` key with its absolute
+ * path).
  *
- * Returns `[]` unless the calling file opts in with `@breadcrumb true` (or
+ * Returns `[]` unless the current page opts in with `@breadcrumb true` (or
  * `1`). The current page is never part of its own trail; the walk climbs the
  * parent folders and stops at the source root, or at the first ancestor
  * `_index.php` with no active `@breadcrumb` tag (that separator page is left
- * out). Only usable during a render.
+ * out). Works the same from a template, a layout partial or a helper.
+ * Only usable during a render.
  *
  *   foreach (fs_get_breadcrumb() as $crumb):
  *     <a href="<?= FS::getRelativePath(__DIR__, dirname($crumb->file)) ?>/"><?= $crumb->title ?></a>
@@ -586,10 +592,10 @@ function fs_get_children(): array
  */
 function fs_get_breadcrumb(): array
 {
-	// Forward the real caller's path so FS::getBreadcrumb() walks from the
-	// template's directory, not this wrapper file's.
-	$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
-	return FS::getBreadcrumb($trace[0]['file'] ?? '');
+	// Anchored on the page under render (PREPROS::$file), so it behaves the
+	// same whether it's called from the template, a layout partial, or a
+	// helper function.
+	return FS::getBreadcrumb();
 }
 
 /**

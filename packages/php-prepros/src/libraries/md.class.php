@@ -568,6 +568,10 @@ class MD {
         // Processed before XSS encoding — re-injected as the very last step.
         // ====================================================================
         $pluginBlocks = [];
+        // Literal, XSS-escaped source of each captured tag, keyed by the same
+        // placeholder. Used to restore a `{% tag %}` that turns out to sit
+        // inside a code span / code block as verbatim text instead of expanding it.
+        $pluginLiterals = [];
 
         /**
          * Parses an argument string into an array.
@@ -596,7 +600,7 @@ class MD {
             // Group 2: inline args (everything on the first line after the name)
             // Group 3: multi-line body (present only for block tags)
             '/\{%\s*([a-zA-Z0-9_-]+)([^\n%]*?)(?:\n([\s\S]*?))?\s*%\}/m',
-            function ($matches) use (&$pluginBlocks, $parseArgs): string {
+            function ($matches) use (&$pluginBlocks, &$pluginLiterals, $parseArgs): string {
                 $name    = strtolower(trim($matches[1]));
                 $args    = $parseArgs(trim($matches[2] ?? ''));
                 // $matches[3] exists only if the tag is multi-line
@@ -609,7 +613,8 @@ class MD {
 
                 $output      = (self::$plugins[$name])($args, $body);
                 $placeholder = "\x02PLG" . count($pluginBlocks) . "\x03";
-                $pluginBlocks[$placeholder] = $output;
+                $pluginBlocks[$placeholder]   = $output;
+                $pluginLiterals[$placeholder] = htmlspecialchars($matches[0], ENT_QUOTES, 'UTF-8');
                 return $placeholder;
             },
             $html
@@ -725,6 +730,16 @@ class MD {
             $inlineCodes[$placeholder] = "<code>{$code}</code>";
             return $placeholder;
         }, $html);
+
+        // A `{% tag %}` sitting inside a code span or code block was captured
+        // by STEP 2 and is now a plugin placeholder embedded in the stored
+        // code. Swap those back for the literal (escaped) tag source so code
+        // shows `{% tag %}` verbatim instead of its rendered output — or a
+        // stray control-char placeholder that never gets restored.
+        if ($pluginLiterals) {
+            foreach ($codeBlocks as $k => $v)  $codeBlocks[$k]  = strtr($v, $pluginLiterals);
+            foreach ($inlineCodes as $k => $v) $inlineCodes[$k] = strtr($v, $pluginLiterals);
+        }
 
 
         // ====================================================================
@@ -1223,3 +1238,11 @@ class MD {
         return $html;
     }
 }
+
+
+// Default Markdown plugins ({% codepen %}, {% youtube %}, {% checklist %},
+// {% callout %}) — "registered out of the box" per the README. Loaded here so
+// every entrypoint (prepros.php, runenv.php, imagebatch.php) gets them without
+// an explicit include. A project can still MD::unregisterPlugin() any of them,
+// or MD::registerPlugin() its own with the same name to override.
+include_once(__DIR__ . '/md.plugins.php');

@@ -24,8 +24,15 @@ try {
         throw new Exception("Invalid target.");
     }
 
-} catch(Exception $e) {
-    STD::error(['message' => $e->getMessage()]);
+} catch(Throwable $e) {
+    // Catch Error/TypeError too, not just Exception, so a fatal in a template
+    // (a bad call, a null arg, …) still comes back as a structured result with
+    // a real message and the page that blew up — never a bare "Error: undefined".
+    STD::error([
+        'error' => $e->getMessage(),
+        'page'  => PREPROS::$file ?: ($argv[1] ?? null),
+        'where' => $e->getFile() . ':' . $e->getLine(),
+    ]);
 }
 
 

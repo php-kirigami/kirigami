@@ -3,7 +3,13 @@
 
 
 // =============================================================================
-// DEFAULT PLUGINS (optional, uncomment what you need)
+// DEFAULT MARKDOWN PLUGINS
+//
+// Auto-loaded from md.class.php, so these are available in every render without
+// any setup ("registered out of the box"). To drop one, call
+// MD::unregisterPlugin('name') (or md_unregister_plugin('name')) from an
+// `includes` file; to change one, MD::registerPlugin() your own under the same
+// name.
 // =============================================================================
 
 // --- CodePen (inline) ---

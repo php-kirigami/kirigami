@@ -32,7 +32,15 @@ PREPROS::registerTag('img', function ($tag, $attrs, $body) {
 
 
 PREPROS::registerHook('page_info', function($info) {
-	list($file, $page) = $info;
+	// The hook fires with [$file, $pageInfo]; every callback then returns just
+	// the (possibly modified) $pageInfo, so a callback registered after this
+	// one receives the bare object. Accept either shape.
+	if (is_array($info)) {
+		[$file, $page] = $info;
+	} else {
+		$page = $info;
+		$file = PREPROS::$file;
+	}
 	foreach($page as $k => $v) {
 		$ext = strtolower(pathinfo($v, PATHINFO_EXTENSION));
 		if(in_array($ext, ['yaml', 'yml', 'json', 'md']) ) {
