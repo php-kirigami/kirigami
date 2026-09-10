@@ -8,7 +8,17 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 - **`<extlink>`** — tag d'authoring HTML qui appelle `SCRAPER` (les `CURL::HEADERS`
   sont déjà à jour, Chrome 131 / Win 11).
-- **Test réel de l'action kiribuild** — un vrai scénario d'intégration, pas juste un smoke.
+- **Test réel de l'action kiribuild** — un vrai scénario d'intégration, pas juste un
+  smoke. kiribuild@v2 est live et les deux `template-*` ont un `.github/workflows/page.yml`
+  (kiribuild@v2 → commit-back → deploy Pages) ; reste à vérifier bout-en-bout qu'un
+  site se déploie vraiment et que le contenu est bon.
+- **Floor `@kirigami/kirigami` des templates** — `package.json` pointe `^1.2.0`. La CI
+  (`npm install`) prend donc `latest` sur npm ; tant que kiri 1.3.3 / php-prepros 1.6.2
+  ne sont pas release, le commit-back du workflow re-bake `###TIMESTAMP###` dans les
+  pages `src/**`. Après release, bumper le floor pour garantir le fix.
+- **Commit-back du workflow encore bruyant** — `git add -A` recommit aussi les dérivés
+  `src/images/` (voulu) et un `package-lock.json` régénéré par `npm install`. Voir si
+  kiribuild devrait faire `npm ci` quand un lockfile existe.
 - **`@highlight false`** (tag PHPDOC) pour sauter une page dans `@kirigami/plugin-highlight`.
 - **`copyButton` sans task esbuild** — dans plugin-highlight, si le projet n'a pas de task
   esbuild le bouton ne marche pas (warn seulement). Voir si un plugin devrait pouvoir

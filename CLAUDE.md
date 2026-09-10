@@ -150,49 +150,65 @@ release script (b48fe5f); `kiri create` wizard + git + metadata (f81862d);
 `<pre><code>` indent — `@kirigami/php-prepros` 1.6.0, `@kirigami/kirigami` 1.3.0
 (0b2f8b5, f7bf67a); `kiri` 1.3.1 schema-loader hotfix (`allOf: []` crash, fe40988);
 `php-prepros` 1.6.1 — `getExportedFiles()` always returns a list (7d5ea65);
-`kiri` 1.3.2 — dep bump to php-prepros 1.6.1 (1.3.1 already shipped pinning 1.6.0).
+`kiri` 1.3.2 — dep bump to php-prepros 1.6.1 (9b22d30); `php-prepros` 1.6.2 —
+render stops baking `###TIMESTAMP###` into committed preview pages + `kiri` 1.3.3
+dep bump (7c986f5).
 
-**npm state:** `sdk` 0.2.0, `canva` 2.3.0 and `plugin-highlight` 0.1.0 are
-published and good. Two bugs, and the partial release that made it messy:
+**npm state:** `sdk` 0.2.0, `canva` 2.3.0, `plugin-highlight` 0.1.0 published and
+good. Everything below is fixed in code on `main` but **not yet released** — run
+`npm run release`:
 
 - `@kirigami/kirigami` 1.3.0 — `allOf: []` schema crash; every `kiri` command
-  fails unless plugin-highlight is installed. Fixed in code by 1.3.1.
+  fails unless plugin-highlight is installed. Fixed by 1.3.1.
 - `@kirigami/php-prepros` 1.6.0 — `getExportedFiles()` emits a JSON object, not
-  an array, when a file is exported twice at non-adjacent positions (e.g.
-  `.cookie.txt` re-exported by every page that does an `@readme`/`@tag http`
-  fetch). Breaks `PREPROS: render-all` with "retobj.files.map is not a
-  function". Fixed in code by 1.6.1.
-- `@kirigami/kirigami` **1.3.1 was published** (from an intermediate commit) and
-  is `latest` — it has the schema fix but still **pins `@kirigami/php-prepros`
-  1.6.0** (the broken one), so `render-all` stays broken for multi-fetch sites.
+  an array, when a file is exported twice at non-adjacent positions (`.cookie.txt`
+  from every `@readme`/`@tag http` page). Breaks `render-all`
+  ("retobj.files.map is not a function"). Fixed by 1.6.1.
+- `@kirigami/php-prepros` 1.6.0–1.6.1 — render expands the `?###TIMESTAMP###`
+  cache-buster `injectHead()` adds, so every `kiri build` rewrites every committed
+  `src/**` preview page (and a CI commit-back recommits them). Fixed by 1.6.2:
+  render does `###YEAR###` / `###TODAY###` only; export (`dist.js`) still
+  substitutes `###TIMESTAMP###`.
+- `@kirigami/kirigami` **1.3.1 is `latest` on npm** (published from an
+  intermediate commit) — has the schema fix but still pins php-prepros 1.6.0, so
+  `render-all` stays broken for multi-fetch sites until the release below.
 
-- `@kirigami/php-prepros` 1.6.0–1.6.1 — `PREPROS::replaceTokens()` expanded
-  `###TIMESTAMP###` at **render**, so the `?###TIMESTAMP###` cache-buster that
-  `injectHead()` (managed `<head>`) puts on every asset ref got a fresh number on
-  every `kiri build` → every committed `src/**` preview page churned, and a CI
-  commit-back step recommits them each run. Fixed in code by **1.6.2**: render
-  expands only `###YEAR###` / `###TODAY###`; `###TIMESTAMP###` stays literal in
-  `src/` and is substituted only by the export copy (`bin/tasks/dist.js`, which
-  already did this for `dist/`).
-
-**Still to release:** `@kirigami/php-prepros` **1.6.2** + `@kirigami/kirigami`
-**1.3.3** (dep bumped to php-prepros 1.6.2; supersedes the never-released 1.6.1 /
-1.3.2) — all committed on `main`, run `npm run release`. Last known-good `kiri`
-before this mess is 1.1.3 (kiribuild CI pins its fixtures there, with a
-non-blocking `latest-canary` scenario to detect when a good release lands).
+**To release:** `@kirigami/php-prepros` **1.6.2** + `@kirigami/kirigami` **1.3.3**
+(pins php-prepros 1.6.2; supersedes the never-released 1.6.1 / 1.3.2). Last
+known-good `kiri` on npm before this mess is 1.1.3 (kiribuild CI pins its fixtures
+there, with a non-blocking `latest-canary` scenario to catch a good release).
 
 **canva is a permanent part of this monorepo — reuse its code rather than
 re-implementing shared helpers per package** (that's why plugin-highlight now
 depends on it).
 
+### kiribuild v2 + template CI
+
+`php-kirigami/kiribuild@v2` is live: the composite action is trimmed to Node 24 +
+`kiri` CLI + `kiri export` (v1's checkout / commit-back / Pages upload-deploy
+moved out to the caller; inputs `lfs` and `commit-message` gone). Both
+`../template-default/` and `../template-demo/` now ship an identical
+`.github/workflows/page.yml`: checkout → `kiribuild@v2` → commit back whatever the
+build regenerated (`git add -A`, `[skip ci]`) → `upload-pages-artifact` →
+`deploy-pages`. The commit-back only stops churning once php-prepros 1.6.2 is
+released — CI installs `@kirigami/kirigami@latest` from npm, so until then it
+still re-bakes `###TIMESTAMP###` into the rendered `src/**` pages.
+
 Recently landed (siblings, their own repos):
 
-- **`../template-default/` rebuilt as a real starter kit** (its own `main`):
-  layout + 2 pages + themeable SCSS (green palette, light/dark) +
-  progressive-enhancement JS + `.vscode` + `package.json` + `.editorconfig`.
-  `template-default` / `template-demo` `header.php` gutted of asset plumbing
-  (managed `<head>` does it now); every `template-*` `CLAUDE.md` re-copied from
-  `docs/template-CLAUDE.md`.
+- **`../template-default/` rebuilt as a real starter kit**: layout + 2 pages +
+  themeable SCSS (green palette, light/dark) + progressive-enhancement JS +
+  `.vscode` + `package.json` + `.editorconfig`. Both templates' `header.php`
+  gutted of asset plumbing (managed `<head>` does it now).
+- **`.github/workflows/page.yml`** added to both templates; both rebuilt so
+  `src/**/*.html` carry the literal `?###TIMESTAMP###` again (undoing an earlier
+  CI commit-back that baked real timestamps in).
+- **READMEs**: every repo README now opens with the `<div align="center">` logo
+  block — `template-*`, the `.github.io` site and `kiribuild` included.
+  `template-demo`'s README is a full feature tour ("Claude.ai Ready"); the site
+  README replaced its bare `Website` stub.
+- every `template-*` `CLAUDE.md` re-copied from `docs/template-CLAUDE.md` (its
+  Deployment section rewritten for kiribuild v2).
 
 Uncommitted:
 

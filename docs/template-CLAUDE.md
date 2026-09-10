@@ -729,6 +729,14 @@ them up". `kiri create` never copies them into a new project. Run
 `kiri cache purge` to delete all three, or `kiri cache purge <mask>` (e.g.
 `meta_*`) to drop only matching keys from the two SQLite stores.
 
+`kiri build` writes each rendered `*.html` next to its `_index.php` under
+`kirigami.root` (so a plain preview server can serve `src/`), and many projects
+commit those. The managed `<head>` gives each asset ref a `?###TIMESTAMP###`
+cache-buster that is **left literal at build time and only expanded on
+`kiri export`** (into `dist/`) — so rebuilding never rewrites the committed page.
+Don't "fix" a `?###TIMESTAMP###` you see in a committed `.html`; a real number
+there means someone committed an export.
+
 ---
 
 ## License
