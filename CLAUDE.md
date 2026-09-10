@@ -28,7 +28,7 @@ Actions.
 | `@kirigami/php-wasm` | 8.5.10-5 | custom PHP 8.5.10 WASM build, JSPI + Node only, fork of WordPress Playground; now includes Imagick (wasm ~22 MB) |
 | `@kirigami/struct-walker` | 1.0.4 | recursive YAML/JSON walker: resolves nested file refs, converts assets to data URIs |
 | `@kirigami/sdk` | 0.1.0 | plugin hook registry (`on`/`run`/`HOOKS`) + `Cache` (SQLite via `node:sqlite`) |
-| `@kirigami/canva` | 1.0.1 | shared Sass/JS design system; published & public like the rest (was private until 2026-09-10); still WIP |
+| `@kirigami/canva` | 1.1.0 | shared Sass/JS design system; published & public like the rest (was private until 2026-09-10); still WIP. 1.1.0 adds optional light/dark theming to `conf` (`$dark` + `$theme: auto\|class\|both`, built-in dark palette from `assets/chart/chart.html`) + `scripts/theme` (`data-theme` toggle, persists to `localStorage`) |
 | `packages/plugin-highlight` | — | WIP first real plugin (`@kirigami/plugin-highlight`): highlight.js SCSS themes. Dir renamed from `plugin-hljs` 2026-09-10 |
 
 ### Licensing

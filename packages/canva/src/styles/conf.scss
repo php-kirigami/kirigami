@@ -1,5 +1,6 @@
 @use "utils" as *;
 @use "sass:map";
+@use "sass:meta";
 
 $bg:                   #f7f8f7 !default;
 $surface:              #ecf1f3 !default;
@@ -12,6 +13,32 @@ $accent-soft:          #f5dfda !default;
 $logo-ink:             #2f3640 !default;
 $logo-fold-light:      #f0f4f6 !default;
 $logo-fold-mid:        #e2eef2 !default;
+
+// ── Dual theme ──────────────────────────────────────────────────────
+// `$dark`  — `false` (single theme, default), `true` (enable the built-in
+//            dark palette below), or a map of palette overrides (merged over
+//            the built-in dark palette, so pass only what changes).
+// `$theme` — how the dark palette is applied:
+//            `auto`  → follows the OS via `prefers-color-scheme`
+//            `class` → only when `<html data-theme="dark">`
+//            `both`  → OS by default, but `data-theme` forces either way.
+$dark:                 false !default;
+$theme:                both !default;
+
+// Built-in dark palette — the counterpart of the light tokens above.
+// Kept as loose variables so a project can override any one of them through
+// `@use ... with (...)` exactly like the light tokens.
+$dark-bg:              #1b2027 !default;
+$dark-surface:         #262d37 !default;
+$dark-surface-2:       #20262e !default;
+$dark-border:          #3a4250 !default;
+$dark-ink:             #edf1f3 !default;
+$dark-ink-muted:       #98a2b0 !default;
+$dark-accent:          #ff6b52 !default;
+$dark-accent-soft:     #402620 !default;
+$dark-logo-ink:        #edf1f3 !default;
+$dark-logo-fold-light: #39424e !default;
+$dark-logo-fold-mid:   #2c333d !default;
 
 $font-base:            26 !default;
 $font-break:           1200 !default;
@@ -42,19 +69,61 @@ $icons-defaults: (
 }
 
 
+// Merge project icons over the defaults once, at module scope.
+$icons: map.merge($icons-defaults, $icons);
+
+// The light and dark palettes as maps. Every key doubles as an SVG
+// placeholder name (`%bg%`, `%logo-ink%`, …) for `apply-colors()`.
+$light-palette: (
+	"bg":              $bg,
+	"surface":         $surface,
+	"surface-2":       $surface-2,
+	"border":          $border,
+	"ink":             $ink,
+	"ink-muted":       $ink-muted,
+	"accent":          $accent,
+	"accent-soft":     $accent-soft,
+	"logo-ink":        $logo-ink,
+	"logo-fold-light": $logo-fold-light,
+	"logo-fold-mid":   $logo-fold-mid,
+);
+
+$dark-palette: (
+	"bg":              $dark-bg,
+	"surface":         $dark-surface,
+	"surface-2":       $dark-surface-2,
+	"border":          $dark-border,
+	"ink":             $dark-ink,
+	"ink-muted":       $dark-ink-muted,
+	"accent":          $dark-accent,
+	"accent-soft":     $dark-accent-soft,
+	"logo-ink":        $dark-logo-ink,
+	"logo-fold-light": $dark-logo-fold-light,
+	"logo-fold-mid":   $dark-logo-fold-mid,
+);
+
+// A `$dark` map means: start from the built-in dark palette, override with
+// the keys the project supplied.
+@if meta.type-of($dark) == "map" {
+	$dark-palette: map.merge($dark-palette, $dark) !global;
+}
+
+// Emit one theme's palette custom properties + its recoloured icon set.
+@mixin palette-props($palette) {
+	@each $name, $value in $palette {
+		--#{$name}: #{$value};
+	}
+	@each $name, $svg in $icons {
+		--icon-#{$name}: #{svg-url(apply-colors($svg, $palette))};
+	}
+}
+
+$dark-enabled: $dark == true or meta.type-of($dark) == "map";
+
+
 :root {
-	--bg:                  #{$bg};
-	--surface:             #{$surface};
-	--surface-2:           #{$surface-2};
-	--border:              #{$border};
-	--ink:                 #{$ink};
-	--ink-muted:           #{$ink-muted};
-	--accent:              #{$accent};
-	--accent-soft:         #{$accent-soft};
-	--logo-ink:            #{$logo-ink};
-	--logo-fold-light:     #{$logo-fold-light};
-	--logo-fold-mid:       #{$logo-fold-mid};
-    
+	@include palette-props($light-palette);
+
 	--font-body:           #{$font-body};
 	--font-heading:        #{$font-heading};
 	--font-base:           #{$font-base}px;
@@ -64,22 +133,26 @@ $icons-defaults: (
 
 	--scroll-top:          #{$scroll-top};
 	--transition-duration: #{$transition-duration};
+}
 
-	$icons: map.merge($icons-defaults, $icons);
-	@each $name, $svg in $icons {
-		--icon-#{$name}: #{svg-url(apply-colors($svg, (
-			"bg":              $bg,
-			"surface":         $surface,
-			"surface-2":       $surface-2,
-			"border":          $border,
-			"ink":             $ink,
-			"ink-muted":       $ink-muted,
-			"accent":          $accent,
-			"accent-soft":     $accent-soft,
-			"logo-ink":        $logo-ink,
-			"logo-fold-light": $logo-fold-light,
-			"logo-fold-mid":   $logo-fold-mid
-		)))};
+
+@if $dark-enabled {
+	@if $theme == auto or $theme == both {
+		// Under `both`, an explicit `data-theme="light"` must win over the OS.
+		$media-selector: ":root";
+		@if $theme == both {
+			$media-selector: ':root:not([data-theme="light"])';
+		}
+		@media (prefers-color-scheme: dark) {
+			#{$media-selector} {
+				@include palette-props($dark-palette);
+			}
+		}
+	}
+	@if $theme == class or $theme == both {
+		:root[data-theme="dark"] {
+			@include palette-props($dark-palette);
+		}
 	}
 }
 

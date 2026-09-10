@@ -1,12 +1,13 @@
 {
   "name": "@kirigami/canva",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Shared Sass and browser-JS design system for Kirigami projects: design tokens, an inline-SVG icon system, pure Sass utilities, and small DOM helpers.",
   "license": "MIT",
   "author": "Maxime Larrivée-Roy",
   "type": "module",
   "sideEffects": [
-    "./dist/scripts/dom.js"
+    "./dist/scripts/dom.js",
+    "./dist/scripts/theme.js"
   ],
   "publishConfig": {
     "access": "public"

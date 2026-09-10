@@ -34,20 +34,35 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 1.1.0
+
+- **Optional light/dark theming in `conf`.** Opt in with `$dark: true` (or a
+  palette map) plus `$theme: auto | class | both`; `conf` then emits the dark
+  palette — custom properties and recoloured icons — under a
+  `prefers-color-scheme` media query, a `data-theme="dark"` rule, or both.
+  See [Dark theme](#dark-theme).
+- **`scripts/theme`** — a small `data-theme` toggle (`toggleTheme` /
+  `setTheme` / `getTheme` / `resolvedTheme`) that persists to `localStorage`.
+
+---
+
 ## Table of contents
 
 - [@kirigami/canva](#kirigamicanva)
   - [Overview](#overview)
+  - [What's new in 1.1.0](#whats-new-in-110)
   - [Table of contents](#table-of-contents)
   - [Installation](#installation)
   - [Package layout](#package-layout)
   - [Styles](#styles)
     - [`styles/conf`](#stylesconf)
+    - [Dark theme](#dark-theme)
     - [`styles/utils`](#stylesutils)
     - [`styles/main`](#stylesmain)
   - [Scripts](#scripts)
     - [`scripts/dom`](#scriptsdom)
     - [`scripts/helpers`](#scriptshelpers)
+    - [`scripts/theme`](#scriptstheme)
     - [`scripts/components/burger`](#scriptscomponentsburger)
   - [Build](#build)
   - [Requirements](#requirements)
@@ -89,6 +104,7 @@ importer also accepts the `styles/` prefix implicitly, so
     ├── scripts/
     │   ├── dom.js             # + dom.js.map, dom.d.ts when present
     │   ├── helpers.js
+    │   ├── theme.js
     │   └── components/
     │       └── burger.js
     └── styles/
@@ -144,6 +160,55 @@ when re-exposing it from a project partial):
 );
 ```
 
+### Dark theme
+
+`conf` is single-theme by default. Opt in through two tokens:
+
+| Token | Values | Effect |
+|---|---|---|
+| `$dark` | `false` *(default)* / `true` / a palette map | `false` emits nothing extra. `true` enables the built-in dark palette. A map starts from that built-in palette and overrides the keys you pass. |
+| `$theme` | `auto` / `class` / `both` *(default)* | `auto` follows the OS (`prefers-color-scheme`). `class` only reacts to `data-theme` on `<html>`. `both` follows the OS but lets `data-theme="light"` / `"dark"` force either way. |
+
+When enabled, `conf` emits a second copy of every palette custom property
+(and every recoloured `--icon-*`) under the dark palette — as a
+`@media (prefers-color-scheme: dark)` block, a `:root[data-theme="dark"]`
+rule, or both, per `$theme`.
+
+The built-in dark palette is exposed as `$dark-*` `!default` variables
+(`$dark-bg`, `$dark-ink`, `$dark-accent`, `$dark-logo-ink`, …), overridable
+like the light tokens:
+
+```scss
+@forward "@kirigami/canva/conf" with (
+    $bg:      #f7f8f7,
+    $ink:     #2f3640,
+    $accent:  #c7402c,
+
+    // simplest: just switch it on
+    $dark:    true,
+
+    // …or tune individual dark tokens
+    $dark: (
+        bg:     #14181b,
+        ink:    #e7ecef,
+        accent: #ff6b52,
+    ),
+);
+```
+
+Pair it with [`scripts/theme`](#scriptstheme) for a manual toggle — that
+needs `$theme: class` or `both`, since the toggle drives `data-theme`. For a
+flash-free first paint, inline this in `<head>` before the stylesheet:
+
+```html
+<script>
+  try {
+    var t = localStorage.getItem('kirigami-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) {}
+</script>
+```
+
 ### `styles/utils`
 
 Dependency-free Sass functions (`@use` with `as *`):
@@ -193,6 +258,25 @@ import { busy, working, preloadImage, documentReady } from '@kirigami/canva/scri
 | `working` | `working(promise \| promise[]) → Promise` | Same, with the `is-working` class. |
 | `preloadImage` | `preloadImage(url) → Promise<'preloaded' \| 'memory-cache'>` | Resolves once the image has loaded (or immediately if already cached), rejects on error. |
 | `documentReady` | `documentReady(cb?) → Promise` | Resolves on `DOMContentLoaded` (or immediately if the document is already parsed); resolves with `cb()`'s return value when a callback is given. |
+
+### `scripts/theme`
+
+```js
+import { toggleTheme, setTheme, getTheme, resolvedTheme } from '@kirigami/canva/scripts/theme';
+```
+
+Manual light/dark switch for the [`conf` dark theme](#dark-theme). Writes
+`data-theme` on `<html>` and persists the choice in `localStorage`
+(`kirigami-theme`). **Side effect:** importing the module re-applies the
+stored preference immediately.
+
+| Export | Signature | Description |
+|---|---|---|
+| `getTheme` | `getTheme() → 'auto' \| 'light' \| 'dark'` | The stored preference (`'auto'` when nothing is set). |
+| `resolvedTheme` | `resolvedTheme() → 'light' \| 'dark'` | The theme actually on screen, resolving `'auto'` against `prefers-color-scheme`. |
+| `setTheme` | `setTheme(pref) → 'light' \| 'dark'` | Persists `pref` (`'auto'` clears the attribute and lets the OS decide) and applies it; returns the now-resolved theme. |
+| `toggleTheme` | `toggleTheme() → 'light' \| 'dark'` | Flips between light and dark from what is currently shown. |
+| `initTheme` | `initTheme() → void` | Re-applies the stored preference (run on import). |
 
 ### `scripts/components/burger`
 
