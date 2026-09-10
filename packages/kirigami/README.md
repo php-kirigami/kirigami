@@ -33,10 +33,25 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 1.1.5
+
+- **Readable task failures.** When a task fails, `kiri` now prints the error
+  message, the page it came from, and the tail of the PHP `stderr` / debug
+  output — instead of `undefined`. PHP warnings and notices from a render no
+  longer fail the build: they are printed under a `Warnings:` heading and the
+  build carries on.
+- Bundles [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirigami/php-prepros)
+  **1.4.0** (see its changelog: `<pre>` formatting, default Markdown plugins,
+  structured render errors, multi-line PHPDOC, breadcrumb/children from a
+  layout, build-time `###YEAR###` expansion, and more).
+
+---
+
 ## Table of contents
 
 - [@kirigami/kirigami](#kirigamikirigami)
   - [Overview](#overview)
+  - [What's new in 1.1.5](#whats-new-in-115)
   - [Table of contents](#table-of-contents)
   - [Installation](#installation)
   - [Quick start](#quick-start)

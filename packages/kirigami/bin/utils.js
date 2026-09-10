@@ -100,6 +100,34 @@ ${c.bold("USAGE")}
 }
 
 
+// ─── Task-failure reporter ─────────────────────────────────────────────────
+/**
+ * Prints a task result whose `success` is false in a readable way: the
+ * message, the page/location it came from, and — folded and dimmed — the raw
+ * PHP stderr and stdout when they carry more detail. Every task result flows
+ * through here so a failure is never just "undefined".
+ */
+export function printTaskError(results = {}) {
+	const msg = results.error || results.message || results.stderr || "Unknown error (no message returned).";
+	console.log(c.red("\n› Error:"));
+	console.log(`  ${msg}`);
+	if (results.page)  console.log(c.dim(`  page:  ${results.page}`));
+	if (results.where) console.log(c.dim(`  at:    ${results.where}`));
+
+	const extra = [];
+	if (results.stderr && results.stderr !== msg) extra.push(["stderr", results.stderr]);
+	if (results.debug && String(results.debug).trim()) extra.push(["debug", results.debug]);
+	for (const [label, body] of extra) {
+		const text = String(body).trim();
+		if (!text) continue;
+		const lines = text.split("\n");
+		const shown = lines.slice(-40).join("\n");
+		console.log(c.dim(`\n  ── ${label}${lines.length > 40 ? ` (last 40 of ${lines.length} lines)` : ""} ──`));
+		console.log(c.dim(shown.replace(/^/gm, "  ")));
+	}
+}
+
+
 export const replaceRoot = (path) => {
 	const __root = process.cwd();
 	return path

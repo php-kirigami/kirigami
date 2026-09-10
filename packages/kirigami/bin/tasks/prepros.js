@@ -1,5 +1,5 @@
 import path from "path";
-import { joinWith, replaceRoot, log, c } from '../utils.js';
+import { joinWith, replaceRoot, log, c, printTaskError } from '../utils.js';
 import { render, sitemap } from "@kirigami/php-prepros";
 
 export const taskname = 'PREPROS';
@@ -43,9 +43,9 @@ export function getWatcher(__root, task) {
 				const results = await build(__root, { target: p, ...task });
 				if(results.success) {
 					results.files.forEach(f => log.step(f));
+					if(results.warnings) log.warn(c.dim(results.warnings));
 				} else {
-					log.error(c.red('Error: '));
-					console.log(results.error);
+					printTaskError(results);
 				}
 			}));
 			console.log("");

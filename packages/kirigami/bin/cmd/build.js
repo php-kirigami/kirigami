@@ -1,6 +1,6 @@
 import path from "path";
 import { fileURLToPath, pathToFileURL } from 'url';
-import { c, log, parseArgs, printCommandHelp } from "../utils.js";
+import { c, log, parseArgs, printCommandHelp, printTaskError } from "../utils.js";
 import { getConfig } from "../config.js";
 import { trigger } from "../libs/triggers.js";
 
@@ -67,10 +67,13 @@ export default async function build(args) {
 		if(results.success) {
 			process.stdout.write(` ${c.green("✔")}\n`);
 			results.files.forEach(file => console.log(`    ${c.gray(file)}`));
+			if(results.warnings) {
+				console.log(c.yellow("\n› Warnings:"));
+				console.log(c.dim(results.warnings));
+			}
 		} else {
 			process.stdout.write(` ${c.red("❌")}\n`);
-			console.log(c.red("\n› Error:"));
-			console.log(results.error);
+			printTaskError(results);
 			process.exit(1);
 		}
 	}
