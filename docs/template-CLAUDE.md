@@ -584,8 +584,12 @@ adds pure helpers: `wash()`, `hex6()`, `hexbin()`, `str-replace()`,
 `url-encode()`, `svg-url()`, `apply-colors()`. (`styles/main` and the `Burger` JS
 component are still stubs.)
 
-Browser JS: `@kirigami/canva/scripts/dom` (`create()`), `.../scripts/helpers`
-(`busy()`, `working()`, `preloadImage()`, `documentReady()`).
+Browser JS (canva ≥ 2.0.0 subpaths, no `scripts/` segment):
+`@kirigami/canva/dom` (`create()`), `@kirigami/canva/helpers` (`busy()`,
+`working()`, `preloadImage()`, `documentReady()`), `@kirigami/canva/theme`
+(`data-theme` toggle), `@kirigami/canva/observer` (`register()` — rewrites
+non-closing authoring tags like `<youtube id="…">`; import for the side effect,
+then register from a plugin).
 
 ### Native Sass functions (every `sass` task)
 

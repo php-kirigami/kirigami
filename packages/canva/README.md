@@ -34,6 +34,22 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 2.0.0
+
+- **Script subpaths dropped the `scripts/` segment.** Scripts are now imported
+  as `@kirigami/canva/<name>` — `@kirigami/canva/dom`, `.../theme`,
+  `.../observer`, `.../components/burger`. The old `@kirigami/canva/scripts/*`
+  paths no longer resolve. Styles are unchanged (`@kirigami/canva/styles/*`,
+  and the bare `@kirigami/canva/<name>` the `sass` task also accepts).
+- **`observer`** — a tiny tag-rewriting engine for "non-closing" authoring
+  tags. `register('youtube', el => …)` and every `<youtube id="…">` already in
+  the page (and every one added later) is handed to the handler and replaced by
+  what it returns. Starts on import, sweeps the current document, then watches
+  for additions via `MutationObserver`. This is the seam plugins hook into. See
+  [`observer`](#observer).
+
+---
+
 ## What's new in 1.1.1
 
 - **The fluid root font-size has a floor.** `--font-size` is now
@@ -61,6 +77,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/canva](#kirigamicanva)
   - [Overview](#overview)
+  - [What's new in 2.0.0](#whats-new-in-200)
   - [What's new in 1.1.1](#whats-new-in-111)
   - [What's new in 1.1.0](#whats-new-in-110)
   - [Table of contents](#table-of-contents)
@@ -72,10 +89,11 @@ Part of the **Kirigami** project ecosystem.
     - [`styles/utils`](#stylesutils)
     - [`styles/main`](#stylesmain)
   - [Scripts](#scripts)
-    - [`scripts/dom`](#scriptsdom)
-    - [`scripts/helpers`](#scriptshelpers)
-    - [`scripts/theme`](#scriptstheme)
-    - [`scripts/components/burger`](#scriptscomponentsburger)
+    - [`dom`](#dom)
+    - [`helpers`](#helpers)
+    - [`theme`](#theme)
+    - [`observer`](#observer)
+    - [`components/burger`](#componentsburger)
   - [Build](#build)
   - [Requirements](#requirements)
   - [License](#license)
@@ -93,8 +111,8 @@ Inside the monorepo it resolves automatically as a workspace dependency.
 Import individual entries by subpath — there is no barrel export:
 
 ```js
-import { create } from '@kirigami/canva/scripts/dom';
-import { documentReady } from '@kirigami/canva/scripts/helpers';
+import { create } from '@kirigami/canva/dom';
+import { documentReady } from '@kirigami/canva/helpers';
 ```
 
 ```scss
@@ -103,8 +121,9 @@ import { documentReady } from '@kirigami/canva/scripts/helpers';
 ```
 
 When the `.scss` is compiled by kirigami-core's `sass` task, its package
-importer also accepts the `styles/` prefix implicitly, so
-`@use '@kirigami/canva/conf'` resolves to the same file.
+importer retries every unresolved subpath with a `styles/` prefix, so
+`@use '@kirigami/canva/conf'` resolves to `styles/conf` — the `styles/`
+segment is optional there (Node's own resolver still needs it).
 
 ---
 
@@ -113,13 +132,14 @@ importer also accepts the `styles/` prefix implicitly, so
 ```
 @kirigami/canva
 └── dist/                      # the only published/consumed directory
-    ├── scripts/
+    ├── scripts/               # exposed as @kirigami/canva/<name>
     │   ├── dom.js             # + dom.js.map, dom.d.ts when present
     │   ├── helpers.js
     │   ├── theme.js
+    │   ├── observer.js
     │   └── components/
     │       └── burger.js
-    └── styles/
+    └── styles/                # exposed as @kirigami/canva/styles/<name>
         ├── conf.scss
         ├── utils.scss
         └── main.scss
@@ -128,6 +148,12 @@ importer also accepts the `styles/` prefix implicitly, so
 `dist/` is generated from `src/` by [`build.js`](./build.js): scripts are
 transpiled one-to-one with esbuild (no bundling), `.d.ts` files are copied
 through, and `styles/` is copied verbatim.
+
+The `exports` map (`{ "./styles/*": …, "./*": "./dist/scripts/*.js" }`) drops
+the `scripts/` segment: `dist/scripts/dom.js` is imported as
+`@kirigami/canva/dom`. Styles keep their `styles/` prefix for Node — but the
+`sass` task's importer makes it optional (see above), and since `./styles/*`
+is matched before the `./*` catch-all, style `@use`s are never shadowed by it.
 
 ---
 
@@ -213,7 +239,7 @@ like the light tokens:
 );
 ```
 
-Pair it with [`scripts/theme`](#scriptstheme) for a manual toggle — that
+Pair it with [`theme`](#theme) for a manual toggle — that
 needs `$theme: class` or `both`, since the toggle drives `data-theme`. For a
 flash-free first paint, inline this in `<head>` before the stylesheet:
 
@@ -248,14 +274,14 @@ Currently an empty entry point, reserved for the shared component styles.
 
 ## Scripts
 
-ESM modules, browser target (`es2022`), exposed under
-`@kirigami/canva/scripts/*`. Each source file compiles to its own dist file —
-import them individually.
+ESM modules, browser target (`es2022`), exposed under `@kirigami/canva/*`
+(the `scripts/` segment is not part of the import path). Each source file
+compiles to its own dist file — import them individually.
 
-### `scripts/dom`
+### `dom`
 
 ```js
-import { create } from '@kirigami/canva/scripts/dom';
+import { create } from '@kirigami/canva/dom';
 ```
 
 | Export | Signature | Description |
@@ -263,10 +289,10 @@ import { create } from '@kirigami/canva/scripts/dom';
 | `create` | `create(tag, classname?, content?, attrs?) → HTMLElement` | Creates an element, optionally setting `className`, `innerHTML`, and attributes from an object. |
 | `HTMLElement.prototype.create` | `el.create(tag, classname?, content?, attrs?) → HTMLElement` | Same as `create()`, but also appends the new element to `el` and returns it. **Side effect:** importing this module patches `HTMLElement.prototype`. |
 
-### `scripts/helpers`
+### `helpers`
 
 ```js
-import { busy, working, preloadImage, documentReady } from '@kirigami/canva/scripts/helpers';
+import { busy, working, preloadImage, documentReady } from '@kirigami/canva/helpers';
 ```
 
 | Export | Signature | Description |
@@ -276,10 +302,10 @@ import { busy, working, preloadImage, documentReady } from '@kirigami/canva/scri
 | `preloadImage` | `preloadImage(url) → Promise<'preloaded' \| 'memory-cache'>` | Resolves once the image has loaded (or immediately if already cached), rejects on error. |
 | `documentReady` | `documentReady(cb?) → Promise` | Resolves on `DOMContentLoaded` (or immediately if the document is already parsed); resolves with `cb()`'s return value when a callback is given. |
 
-### `scripts/theme`
+### `theme`
 
 ```js
-import { toggleTheme, setTheme, getTheme, resolvedTheme } from '@kirigami/canva/scripts/theme';
+import { toggleTheme, setTheme, getTheme, resolvedTheme } from '@kirigami/canva/theme';
 ```
 
 Manual light/dark switch for the [`conf` dark theme](#dark-theme). Writes
@@ -295,7 +321,66 @@ stored preference immediately.
 | `toggleTheme` | `toggleTheme() → 'light' \| 'dark'` | Flips between light and dark from what is currently shown. |
 | `initTheme` | `initTheme() → void` | Re-applies the stored preference (run on import). |
 
-### `scripts/components/burger`
+### `observer`
+
+```js
+import { register } from '@kirigami/canva/observer';
+```
+
+A minimal tag-rewriting engine. Register a custom element name and a handler;
+every matching tag **already in the document** and every one **inserted later**
+is handed to the handler and replaced by whatever it returns. **Side effect:**
+importing the module starts the observer immediately — it sweeps the current
+document, then watches `<html>` for additions with a `MutationObserver`.
+
+It is built for *non-closing* authoring tags. Browsers parse an unknown tag as
+an ordinary element, so anything after a tag left unclosed ends up nested
+*inside* it; with `voidLike` (the default) those stray children are lifted back
+out as siblings before the tag is swapped. So this is enough:
+
+```html
+<youtube id="dQw4w9WgXcQ">
+<p>…and the rest of the page carries on as siblings.</p>
+```
+
+```js
+register('youtube', (el) => `
+	<iframe class="youtube" allowfullscreen loading="lazy"
+		src="https://www.youtube-nocookie.com/embed/${el.getAttribute('id')}">
+	</iframe>`);
+```
+
+Registration order does not matter — a handler registered after the page has
+loaded still catches up on tags already present. This is the seam Kirigami
+plugins use to add authoring shortcuts.
+
+| Export | Signature | Description |
+|---|---|---|
+| `register` | `register(tag, fn, options?) → unregister()` | Registers `fn` for `<tag>`. Returns a function that removes the registration. |
+| `scan` | `scan(root?) → void` | Manually sweeps `root` (default `document`) for registered tags — rarely needed; the observer does this automatically. |
+| `start` | `start() → void` | Starts the observer (idempotent; run on import). |
+| `stop` | `stop() → void` | Disconnects the `MutationObserver`. Registered handlers stay; future insertions are no longer processed. |
+
+`fn(el)` return values:
+
+| Returns | Effect |
+|---|---|
+| HTML string / `Node` / `NodeList` / array of those | The tag is replaced by it. |
+| `null` / `false` / `""` | The tag is removed. |
+| `undefined` (no `return`) | The tag is left in place — for tags that only need a side effect. |
+
+`options.voidLike` (default `true`) — treat the tag as non-closing and lift any
+accidental nested children out as siblings before replacing. Set `false` when
+the tag genuinely wraps content you want to keep inside the replacement.
+
+Each replacement also fires a `canva:observed` `CustomEvent` on `document`
+(`detail: { tag, source, nodes }`).
+
+### `components/burger`
+
+```js
+import Burger from '@kirigami/canva/components/burger';
+```
 
 Empty class stub (`export default class Burger {}`) — placeholder for the
 shared nav-toggle component.
