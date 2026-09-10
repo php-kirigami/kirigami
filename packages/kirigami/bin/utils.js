@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from "path";
 import picomatch from "picomatch";
+import { createInterface } from 'node:readline/promises';
 /**
  * bin/utils.js — Shared helpers used by every subcommand
  */
@@ -25,6 +26,47 @@ export const log = {
 	error: (...a) => console.error(c.red("❌"), ...a),
 	step: (...a) => console.log(c.gray("›"), ...a),
 };
+
+// ─── Interactive prompts (TTY only) ────────────────────────────────────────
+// Small zero-dep wrappers over node:readline/promises. A fresh interface per
+// call keeps them independent — fine for the handful of questions `kiri create`
+// asks. Callers must gate on `isInteractive()` first: in a pipe / CI these
+// would hang.
+export const isInteractive = () => Boolean(process.stdin.isTTY && process.stdout.isTTY);
+
+export async function ask(question, { default: def = '' } = {}) {
+	const rl = createInterface({ input: process.stdin, output: process.stdout });
+	try {
+		const hint = def ? c.dim(` [${def}]`) : '';
+		const answer = (await rl.question(`${c.cyan('?')} ${question}${hint} `)).trim();
+		return answer || def;
+	} finally {
+		rl.close();
+	}
+}
+
+export async function confirm(question, def = true) {
+	const answer = (await ask(`${question} ${c.dim(def ? '(Y/n)' : '(y/N)')}`)).toLowerCase();
+	if (!answer) return def;
+	return answer === 'y' || answer === 'yes';
+}
+
+// choices: [{ value, label, hint? }]. Returns the picked `value`.
+export async function select(question, choices) {
+	const width = String(choices.length).length;
+	console.log(`${c.cyan('?')} ${question}`);
+	choices.forEach((ch, i) => {
+		console.log(`  ${c.cyan(String(i + 1).padStart(width))}  ${ch.label}${ch.hint ? c.dim(`  ${ch.hint}`) : ''}`);
+	});
+	for (;;) {
+		const raw = await ask(`${c.dim(`1-${choices.length} or name`)}`);
+		const n = Number.parseInt(raw, 10);
+		if (n >= 1 && n <= choices.length) return choices[n - 1].value;
+		const named = choices.find((ch) => ch.value === raw);
+		if (named) return named.value;
+		if (raw) log.warn(`"${raw}" — pick a number 1-${choices.length} or a name.`);
+	}
+}
 
 // ─── Minimal argument parser ────────────────────────────────────────────────
 /**

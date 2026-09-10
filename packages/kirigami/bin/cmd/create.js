@@ -8,7 +8,7 @@ import { execSync } from "child_process";
 import { Octokit } from "@octokit/rest";
 import { fileURLToPath } from 'url';
 import { Cache } from "@kirigami/sdk";
-import { c, log, parseArgs, printCommandHelp } from "../utils.js";
+import { c, log, parseArgs, printCommandHelp, isInteractive, ask, confirm, select } from "../utils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -21,18 +21,27 @@ const SKIP = new Set([".cache.db", ".node.db", ".cookie.txt", "package-lock.json
 const HELP = {
 	name: "create",
 	description: "Create a new Kirigami project from an official template.",
-	usage: "<template> [project-name] [options]",
+	usage: "[template] [project-name] [options]",
 	options: [
 		{ flag: "--list, -l", desc: "List available templates (from the php-kirigami org)" },
+		{ flag: "--name <name>", desc: "Project name (package.json name + kirigami.yaml project)" },
+		{ flag: "--description <s>", desc: "Project description" },
+		{ flag: "--author <name>", desc: "Author" },
+		{ flag: "--baseurl <url>", desc: "Site base URL (kirigami.yaml baseurl)" },
+		{ flag: "--yes, -y", desc: "Non-interactive: take defaults, ask nothing" },
+		{ flag: "--no-git", desc: "Don't initialise a git repository" },
+		{ flag: "--no-install", desc: "Don't run \"npm install\" afterwards" },
 		{ flag: "--help, -h", desc: "Show this help section" },
 	],
 	notes: [
 		"Templates are GitHub repositories named \"template-<name>\" under the php-kirigami organization.",
+		"Run with no arguments (in a terminal) for an interactive wizard: it asks for the template, target directory, and project name / description / author / base URL, then writes those into package.json and kirigami.yaml.",
 		"The template list is cached locally for 1 hour to avoid hitting the GitHub API on every call.",
-		"Without a project name the template is extracted into the current directory.",
-		"The target directory must be empty — unless it already holds a package.json, in which case the template's package.json is deep-merged into it (keeping every existing dependency) and \"npm install\" is run.",
+		"Extraction never overwrites: files already in the target are kept as-is, an existing package.json is deep-merged (every existing dependency wins), everything else missing is added — so an existing package.json, .git, README, node_modules, etc. are fine.",
+		"If the template ships no package.json, a starter one is written. Unless --no-git, a git repo is initialised (with one initial commit) when the target isn't already inside one. \"npm install\" runs afterwards unless --no-install.",
 	],
 	examples: [
+		"kiri create",
 		"kiri create --list",
 		"kiri create blog my-blog",
 	],
@@ -248,6 +257,196 @@ async function downloadTemplate(tpl, target) {
 
 
 
+// ─── git ───────────────────────────────────────────────────────────────────
+function hasGit() {
+	try { execSync('git --version', { stdio: 'ignore' }); return true; }
+	catch { return false; }
+}
+
+function insideGitWorktree(dir) {
+	try {
+		return execSync('git rev-parse --is-inside-work-tree', { cwd: dir, stdio: ['ignore', 'pipe', 'ignore'] })
+			.toString().trim() === 'true';
+	} catch { return false; }
+}
+
+// Initialise a repo + one initial commit, unless the target is already inside a
+// worktree (dropping the template into an existing project) or git is missing.
+// A failed commit (no user.name / user.email) is a warning, not a failure.
+async function maybeGitInit(target, templateName, { interactive, flags }) {
+	if (flags['no-git']) return;
+	if (!hasGit()) { log.step(c.dim('git not found — skipped repo init.')); return; }
+	if (insideGitWorktree(target)) { log.step(c.dim('Already inside a git repository — skipped git init.')); return; }
+	if (interactive && !(await confirm('Initialise a git repository?', true))) return;
+
+	try {
+		execSync('git init -q', { cwd: target, stdio: 'ignore' });
+		execSync('git add -A', { cwd: target, stdio: 'ignore' });
+		execSync(`git commit -q -m ${JSON.stringify(`Initial commit from kiri create ${templateName}`)}`,
+			{ cwd: target, stdio: 'ignore' });
+		log.step('Initialised git repository with an initial commit.');
+	} catch (err) {
+		log.warn(`git repo created but the first commit failed — ${String(err.message).split('\n')[0]}`);
+		log.step(c.dim('Set user.name / user.email, then commit manually.'));
+	}
+}
+
+
+// ─── project metadata (package.json + kirigami.yaml) ───────────────────────
+function gitConfig(key) {
+	try {
+		return execSync(`git config ${key}`, { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+	} catch { return ''; }
+}
+
+// A directory name → a valid npm package name.
+function toPackageName(s) {
+	return String(s).trim().toLowerCase()
+		.replace(/[^a-z0-9._~-]+/g, '-')
+		.replace(/^[-_.]+|[-_.]+$/g, '') || 'kirigami-site';
+}
+
+// Reads kiri's own package.json (this file is bin/cmd/create.js) so a generated
+// package.json pins the @kirigami/* versions that match the running CLI.
+function kiriManifest() {
+	return JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf8'));
+}
+
+// Asks (or takes from flags) the four fields the wizard writes into both
+// package.json and kirigami.yaml. An empty answer means "leave the template's".
+async function collectMeta(target, { interactive, flags }) {
+	const dirName = path.basename(target);
+	const meta = {
+		name:        flags.name || '',
+		description: flags.description || '',
+		author:      flags.author || '',
+		baseurl:     flags.baseurl || '',
+	};
+
+	if (interactive) {
+		meta.name        = await ask('Project name', { default: meta.name || dirName });
+		meta.description = await ask('Description', { default: meta.description });
+		meta.author      = await ask('Author', { default: meta.author || gitConfig('user.name') });
+		meta.baseurl     = await ask('Site base URL', { default: meta.baseurl });
+	} else {
+		meta.name ||= dirName;
+	}
+
+	meta.name = meta.name.trim();
+	meta.slug = toPackageName(meta.name);
+	return meta;
+}
+
+// A YAML plain scalar is fine unless it would be misread: empty, a leading
+// indicator char, a `": "` / `" #"` sequence, edge whitespace, a bare bool/null,
+// or something number-like. Then double-quote it.
+function yamlScalar(v) {
+	const bad = v === ''
+		|| /^[\s>|@`"'%!&*?#,[\]{}-]/.test(v)
+		|| /:\s|\s#|^\s|\s$/.test(v)
+		|| /^(true|false|null|yes|no|on|off|~)$/i.test(v)
+		|| /^[-+]?(\d|\.\d)/.test(v);
+	return bad ? JSON.stringify(v) : v;
+}
+
+// Sets a scalar key inside the top-level `kirigami:` block, preserving the rest
+// of the file (comments, other blocks). Replaces the value if the key is there,
+// otherwise appends the key at the end of the block, matching the block's
+// existing "key:   value" column where there is one.
+function setKirigamiKey(yaml, key, value) {
+	const lines = yaml.split('\n');
+	const start = lines.findIndex((l) => /^kirigami:\s*$/.test(l));
+	if (start === -1) return yaml;
+
+	let end = start + 1;
+	while (end < lines.length && (lines[end].trim() === '' || /^\s/.test(lines[end]))) end++;
+
+	const scalar = yamlScalar(value);
+	const at = lines.findIndex((l, i) => i >= start && i < end && new RegExp(`^\\s+${key}:(\\s|$)`).test(l));
+
+	if (at !== -1) {
+		const keyIndent = lines[at].match(/^\s*/)[0].length;
+		const rhs = lines[at].slice(lines[at].indexOf(':') + 1).trim();
+		lines[at] = lines[at].replace(/^(\s+\S+:[ \t]*).*$/, `$1${scalar}`);
+		// `description: >-` and friends: drop the folded/literal continuation.
+		if (/^[|>][+-]?\d*$/.test(rhs)) {
+			let n = at + 1;
+			while (n < lines.length && lines[n].trim() !== '' && lines[n].match(/^\s*/)[0].length > keyIndent) n++;
+			lines.splice(at + 1, n - at - 1);
+		}
+		return lines.join('\n');
+	}
+
+	// New key: copy the indent + value column from a sibling line.
+	const sibling = lines.slice(start + 1, end).find((l) => /^(\s+)\S+:[ \t]+\S/.test(l));
+	const m = sibling && sibling.match(/^(\s+)(\S+:)([ \t]+)/);
+	const indent = m ? m[1] : '  ';
+	const pad = m ? ' '.repeat(Math.max(1, m[2].length + m[3].length - key.length - 1)) : ' ';
+
+	let insert = end;
+	while (insert > start + 1 && lines[insert - 1].trim() === '') insert--;
+	lines.splice(insert, 0, `${indent}${key}:${pad}${scalar}`);
+	return lines.join('\n');
+}
+
+// `fillOnly`: only set keys that are currently missing/empty (used when grafting
+// onto a project that already had its own package.json).
+function applyMeta(target, meta, { fillOnly, created }) {
+	const changed = [];
+
+	const pkgPath = path.join(target, 'package.json');
+	if (fs.existsSync(pkgPath)) {
+		const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+		const set = (k, v) => {
+			if (!v) return;
+			if (fillOnly && pkg[k] && !(created && k === 'name')) return;
+			if (pkg[k] !== v) { pkg[k] = v; changed.push(k); }
+		};
+		set('name', meta.slug);
+		set('description', meta.description);
+		set('author', meta.author);
+		fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+	}
+
+	const yamlPath = path.join(target, 'kirigami.yaml');
+	if (fs.existsSync(yamlPath)) {
+		let yaml = fs.readFileSync(yamlPath, 'utf8');
+		for (const [key, value] of [
+			['project', meta.name], ['baseurl', meta.baseurl],
+			['description', meta.description], ['author', meta.author],
+		]) {
+			if (!value) continue;
+			const next = setKirigamiKey(yaml, key, value);
+			if (next !== yaml) { yaml = next; changed.push(key); }
+		}
+		fs.writeFileSync(yamlPath, yaml);
+	}
+
+	return [...new Set(changed)];
+}
+
+// Written when the template ships no package.json (e.g. template-default).
+function writeMinimalPackageJson(target, meta) {
+	const kiri = kiriManifest();
+	const pkg = {
+		name: meta.slug,
+		version: '1.0.0',
+		description: meta.description || '',
+		author: meta.author || '',
+		license: 'MIT',
+		type: 'module',
+		private: true,
+		engines: { node: '>=24.0.0', npm: '>=10.2.3' },
+		scripts: { build: 'kiri build', watch: 'kiri watch', export: 'kiri export' },
+		devDependencies: {
+			'@kirigami/kirigami': `^${kiri.version}`,
+			'@kirigami/canva': `^${kiri.dependencies['@kirigami/canva']}`,
+		},
+	};
+	fs.writeFileSync(path.join(target, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
+}
+
+
 export default async function create(args) {
 	const { flags, command, subcommand } = parseArgs(args);
 
@@ -261,35 +460,32 @@ export default async function create(args) {
 		return;
 	}
 
+	const interactive = isInteractive() && !flags.yes && !flags.y;
 
 	console.log(`\n${c.bold(c.cyan("kiri"))} — Create Project\n`);
 
-	if (!command) {
+	const templates = await getTemplates();
+	if (!templates.length) {
+		log.error("No templates found — the GitHub API may be unreachable.");
+		console.log();
+		process.exit(1);
+	}
+
+	// ── template ─────────────────────────────────────────────────────────
+	let templateName = command;
+	if (!templateName && interactive) {
+		templateName = await select('Which template?', templates.map(t => ({
+			value: t.template,
+			label: c.cyan(t.template),
+			hint: t.description || '',
+		})));
+	}
+	if (!templateName) {
 		log.error("Missing template name.");
 		console.log(`\nRun ${c.cyan("kiri create --list")} to see available templates.\n`);
 		process.exit(1);
 	}
 
-	const templateName = command;
-	const target = subcommand ? path.resolve(process.cwd(), subcommand) : process.cwd();
-
-	// The target directory must be empty — unless it already holds a
-	// package.json, in which case we graft the template onto the existing
-	// Node project. Local cache/cookie files (SKIP) left by other kiri
-	// commands don't count as "not empty".
-	const existing = fs.existsSync(target) ? fs.readdirSync(target) : [];
-	const hasPkg = existing.includes('package.json');
-	const meaningful = existing.filter(f => !SKIP.has(f));
-	if (meaningful.length > 0 && !hasPkg) {
-		log.error(`Target directory is not empty: ${c.dim(target)}`);
-		console.log();
-		process.exit(1);
-	}
-
-	log.step(`Template : ${c.dim(templateName)}`);
-	log.step(`Target   : ${c.dim(target)}${hasPkg ? c.dim(' (existing Node project)') : ''}`);
-
-	const templates = await getTemplates();
 	const tpl = templates.find(t => t.template === templateName);
 	if (!tpl) {
 		log.error(`Unknown template "${templateName}".`);
@@ -297,13 +493,57 @@ export default async function create(args) {
 		process.exit(1);
 	}
 
+	// ── target directory ─────────────────────────────────────────────────
+	let dirArg = subcommand;
+	if (!dirArg && interactive) {
+		dirArg = await ask('Project directory', { default: '.' });
+	}
+	const target = dirArg && dirArg !== '.'
+		? path.resolve(process.cwd(), dirArg)
+		: process.cwd();
+
+	// Extraction is non-destructive (existing files kept, package.json merged),
+	// so a non-empty target is fine — just say what's already there. `SKIP`
+	// files (local caches / lockfile) don't count.
+	const existing = fs.existsSync(target) ? fs.readdirSync(target) : [];
+	const hasPkg = existing.includes('package.json');
+	const clutter = existing.filter(f => !SKIP.has(f));
+
+	log.step(`Template : ${c.dim(templateName)}`);
+	log.step(`Target   : ${c.dim(target)}${hasPkg ? c.dim(' (existing Node project)') : ''}`);
+	if (clutter.length) {
+		log.step(c.dim(`${clutter.length} item(s) already here — kept as-is; only missing files are added.`));
+	}
+
+	if (interactive && !(await confirm(`Create here?`, true))) {
+		console.log('Aborted.\n');
+		process.exit(1);
+	}
+
+	// ── project metadata ─────────────────────────────────────────────────
+	if (interactive) console.log();
+	const meta = await collectMeta(target, { interactive, flags });
+
+	// ── extract ──────────────────────────────────────────────────────────
+	if (interactive) console.log();
 	const { written, skipped, merged } = await downloadTemplate(tpl, target);
-
 	if (skipped) log.step(`${skipped} existing file(s) left untouched.`);
-	if (merged) log.step(`Merged template package.json into the existing one.`);
+	if (merged) log.step(`Merged the template's package.json into the existing one.`);
 
-	// Pre-existing Node project → (re)install dependencies.
-	if (merged) {
+	// ── apply metadata ───────────────────────────────────────────────────
+	const createdPkg = !fs.existsSync(path.join(target, 'package.json'));
+	if (createdPkg) {
+		writeMinimalPackageJson(target, meta);
+		log.step('Wrote a starter package.json (the template ships none).');
+	}
+	const changed = applyMeta(target, meta, { fillOnly: hasPkg, created: createdPkg });
+	if (changed.length) log.step(`Filled ${changed.join(', ')} in package.json / kirigami.yaml.`);
+
+	// ── git ──────────────────────────────────────────────────────────────
+	await maybeGitInit(target, templateName, { interactive, flags });
+
+	// ── npm install ──────────────────────────────────────────────────────
+	if (!flags['no-install'] && fs.existsSync(path.join(target, 'package.json'))) {
 		console.log();
 		log.step(`Running ${c.dim('npm install')}\n`);
 		try {
@@ -316,9 +556,6 @@ export default async function create(args) {
 	}
 
 	console.log();
-	log.success(c.bold(c.green(` Project created from "${templateName}" — ${written} files.`)));
-	if (!merged && written && fs.existsSync(path.join(target, 'package.json'))) {
-		console.log(`\n  Next: ${c.cyan('npm install')}`);
-	}
+	log.success(c.bold(c.green(` Project created from "${templateName}" — ${written} file(s) written.`)));
 	console.log();
 }

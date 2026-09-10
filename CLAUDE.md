@@ -136,24 +136,32 @@ and editors would otherwise keep the stale copy for up to 12 h. Flags:
 
 ## Current work (as of 2026-09-10, uncommitted on `main`)
 
-The plugin system, `@kirigami/plugin-highlight` v0.1.0, the SDK cache migration,
-the `SCHEMA` class and the `LD` class are all **committed** now (697eb3d and
-earlier). What's uncommitted:
+Committed: the plugin system, `@kirigami/plugin-highlight` v0.1.0, SDK cache
+migration, `SCHEMA` and `LD` classes (697eb3d and earlier); `@kirigami/canva`
+2.2.0 `helpers.dedent(str)` + plugin-highlight consuming it (551dfbf); the
+release script (b48fe5f).
 
-- **`@kirigami/canva` 2.2.0 — `helpers.dedent(str)`.** Pure no-DOM string
-  helper: strips the leading-whitespace prefix common to every non-blank line
-  (relative indent kept; leading blank lines + trailing whitespace trimmed).
-  Same algorithm as php-prepros' `STR::trimIndent`, JS side.
-- **`@kirigami/plugin-highlight` consumes it.** `src/highlight.js` does
-  `import { dedent } from '@kirigami/canva/helpers'` and de-indents every fenced
-  code block before `hljs.highlight()`, so a ```` ``` ```` block indented for
-  readability in the source markdown/PHP renders flush-left (the `<highlight>`
-  tag already did this PHP-side via `STR::trimIndent`). New dependency
-  `@kirigami/canva` (exact `2.2.0`); `packages/kirigami` bumped to match.
-  **canva is a permanent part of this monorepo — reuse its code rather than
-  re-implementing shared helpers per package.**
-- **Next:** a publish script — canva 2.2.0 and plugin-highlight are not on npm
-  yet, and the exact-version pins won't resolve from the registry until they are.
+**canva is a permanent part of this monorepo — reuse its code rather than
+re-implementing shared helpers per package** (that's why plugin-highlight now
+depends on it, exact `2.2.0`).
+
+Uncommitted:
+
+- **`kiri create` — interactive wizard + git + metadata.** No args (in a TTY) →
+  wizard: pick template (`select()`), target dir, then project name /
+  description / author / base URL. Those get written into `package.json` and
+  `kirigami.yaml` (`setKirigamiKey()` — line-level edit, comments preserved,
+  handles `>-` block scalars). Passing a template name skips the prompts;
+  `--yes` / non-TTY takes defaults. Extraction is now **non-destructive and
+  never errors on a non-empty target** (existing files kept, `package.json`
+  deep-merged, missing files added) — an existing `package.json` / `.git` /
+  `node_modules` is fine. If the template ships no `package.json` (e.g.
+  `template-default`), a starter one is written pinning the running kiri's
+  `@kirigami/*` versions. Then `git init` + initial commit (unless already in a
+  worktree or `--no-git`), then `npm install` (unless `--no-install`). New
+  flags: `--name`/`--description`/`--author`/`--baseurl`, `--yes`/`-y`,
+  `--no-git`, `--no-install`. Prompt helpers `isInteractive()` / `ask()` /
+  `confirm()` / `select()` added to `bin/utils.js`.
 - **DX issue logged in `todo.md`, not fixed:** `HTML::format()`
   (`php-prepros/src/libraries/html.class.php`) lowercases element/attribute
   names unconditionally (`:76`, `:166`, `:246`), flattening inline SVG/MathML
@@ -162,7 +170,7 @@ earlier). What's uncommitted:
   at parse — but the serialised source is invalid. Fix: make the serializer
   namespace-aware (keep original case under `<svg>` / MathML).
 
-Still-open `todo.md` items: `kiri create` git check + interactive prompt; an
-`<extlink>` authoring tag (calls `SCRAPER`); a real kiribuild action test;
-`@highlight false` PHPDOC page-skip for plugin-highlight; plugin-declared tasks /
-commands (`kirigami.type` `"task"` / `"command"`).
+Still-open `todo.md` items: an `<extlink>` authoring tag (calls `SCRAPER`); a
+real kiribuild action test; `@highlight false` PHPDOC page-skip for
+plugin-highlight; plugin-declared tasks / commands (`kirigami.type` `"task"` /
+`"command"`).

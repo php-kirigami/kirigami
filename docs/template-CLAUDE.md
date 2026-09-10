@@ -103,7 +103,7 @@ Generic reference — safe to copy verbatim between projects.
 | `npx kiri export` | Production build. Fires `before-export` then `before-build`; forces the `prepros` task, all `tasks`, and a `dist` copy into `export.path`; stamps the banner; fires `after-export`. |
 | `npx kiri watch` | Dev mode: watches files for `esbuild` / `sass` / `prepros` tasks and rebuilds on change (150 ms debounce, batched). `node_modules/`, `.git/`, `dist/` always ignored. `Ctrl+C` to stop. No server. |
 | `npx kiri run <script> [args…]` | Run `scripts/<script>.php` in the Kirigami PHP runtime (full class library, `PREPROS::$config->data` populated). Extra words become `$argv` entries. |
-| `npx kiri create <template> [dir]` | Scaffold from an official `template-*` repo. `--list` / `-l` to list. Target dir must be empty, unless it has a `package.json` (then the template's `package.json` is deep-merged, existing values win, and `npm install` runs). |
+| `npx kiri create [template] [dir]` | Scaffold from an official `template-*` repo (no args → interactive wizard: template, dir, name / description / author / base URL → written into `package.json` + `kirigami.yaml`). `--list` / `-l` to list. Extraction never overwrites (existing files kept, `package.json` deep-merged); then `git init` + initial commit (unless already in a repo or `--no-git`) and `npm install` (unless `--no-install`). |
 | `npx kiri phpinfo` | Print `phpinfo()` from the embedded runtime. `--md` / `--json` for other formats. |
 | `npx kiri --version` | `kiri` version + bundled PHP version. |
 

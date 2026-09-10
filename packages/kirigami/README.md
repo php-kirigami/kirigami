@@ -60,7 +60,7 @@ Part of the **Kirigami** project ecosystem.
     - [`kiri export`](#kiri-export)
     - [`kiri watch`](#kiri-watch)
     - [`kiri run <script>`](#kiri-run-script)
-    - [`kiri create <template>`](#kiri-create-template)
+    - [`kiri create [template]`](#kiri-create-template)
     - [`kiri cache purge`](#kiri-cache-purge)
     - [`kiri phpinfo`](#kiri-phpinfo)
   - [Configuration — `kirigami.yaml`](#configuration--kirigamiyaml)
@@ -136,7 +136,7 @@ prepros:
 | `kiri export` | Compile + export a production-ready static site. |
 | `kiri watch` | Watch project files and rebuild on change. |
 | `kiri run <script>` | Run a PHP script from `scripts/` in the Kirigami runtime. |
-| `kiri create <template>` | Scaffold a new project from an official template. |
+| `kiri create [template]` | Scaffold a new project from an official template (interactive wizard with no args). |
 | `kiri cache purge [mask]` | Purge the local `.node.db` / `.cache.db` / `.cookie.txt` caches. |
 | `kiri phpinfo` | Print `phpinfo()` from the embedded PHP-WASM runtime. |
 
@@ -179,7 +179,7 @@ kiri run convert-images
 kiri run deploy production --force
 ```
 
-### `kiri create <template>`
+### `kiri create [template]`
 
 Scaffolds a project from an official template — a GitHub repository named
 `template-<name>` under the [`php-kirigami`](https://github.com/php-kirigami)
@@ -188,18 +188,32 @@ organization.
 | Flag | Description |
 |---|---|
 | `--list`, `-l` | List available templates (cached 1 h in `~/.config/kirigami/kiri.db`). |
+| `--name`, `--description`, `--author`, `--baseurl` | Metadata to write into `package.json` / `kirigami.yaml`. |
+| `--yes`, `-y` | Non-interactive: take defaults, ask nothing. |
+| `--no-git` | Don't initialise a git repository. |
+| `--no-install` | Don't run `npm install` afterwards. |
 | `--help`, `-h` | Show help. |
 
 ```bash
+kiri create                      # interactive wizard
 kiri create --list
 kiri create blog my-blog
 ```
 
+Run with no arguments in a terminal for a wizard: it asks for the template, the
+target directory, and the project **name / description / author / base URL**,
+then writes those into `package.json` and `kirigami.yaml` (comments preserved).
+Pass a template name to skip straight to extraction.
+
 The template `.tar.gz` is downloaded and unpacked with a zero-dependency tar
-parser (Node has no zip API). The target directory must be empty — **unless** it
-already contains a `package.json`, in which case the template's `package.json`
-is deep-merged into it (existing values always win), and `npm install` is run.
-`.cache.db`, `.node.db`, `.cookie.txt` and `package-lock.json` are never copied.
+parser (Node has no zip API). **Extraction never overwrites**: files already in
+the target are kept as-is, an existing `package.json` is deep-merged (existing
+values win), everything missing is added — so an existing `package.json`, `.git`,
+`README`, `node_modules`, etc. are fine. If the template ships no `package.json`,
+a starter one is written. Then, unless the target is already inside a git
+worktree (or `--no-git`), `git init` + an initial commit; then `npm install`
+unless `--no-install`. `.cache.db`, `.node.db`, `.cookie.txt` and
+`package-lock.json` are never copied from the template.
 
 ### `kiri cache purge`
 

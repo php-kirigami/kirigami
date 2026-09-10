@@ -15,7 +15,9 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 <!-- FAIT: par default, ajouter la font css Jetbrains — @kirigami/plugin-highlight embarque JetBrains Mono (embedFont: true par défaut, @font-face base64 dans assets/_font.scss) -->
 
 
-finir create avec check de git et l'interface interactive
+<!-- FAIT: kiri create — wizard interactif (select template / dir / name / description / author / baseurl → écrits dans package.json + kirigami.yaml, commentaires préservés), extraction non-destructive (jamais d'erreur sur dossier non vide, package.json deep-merge, .git/node_modules OK), starter package.json si le template n'en a pas, git init + commit initial (sauf déjà un repo ou --no-git), npm install (sauf --no-install). Flags --name/--description/--author/--baseurl/--yes/--no-git/--no-install. Helpers ask/confirm/select dans bin/utils.js -->
+<!-- reste create: prompt pour email/keywords/tagline si on veut le set étendu un jour -->
+
 
 <!-- change cwd on render, juste dans le prepros.php OU le faire dans la fonction render de php -->
 <!-- FAIT: FS::getChildren() / fs_get_children(), backtrace + tri @position -->
