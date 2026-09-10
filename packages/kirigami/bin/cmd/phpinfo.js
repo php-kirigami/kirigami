@@ -13,8 +13,8 @@ const HELP = {
 		{ flag: "--help, -h", desc: "Show this help section" },
 	],
 	notes: [
-		"Output is written to stdout, so it can be redirected: kiri phpinfo > phpinfo.md",
-		"Useful to inspect which PHP extensions/version are available inside the sandboxed runtime.",
+		"Writes to stdout — redirect it: kiri phpinfo > phpinfo.md",
+		"Shows the PHP version + extensions available in the sandbox.",
 	],
 	examples: [
 		"kiri phpinfo",

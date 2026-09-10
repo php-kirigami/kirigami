@@ -15,10 +15,10 @@ const HELP = {
 		{ flag: "--help, -h", desc: "Show this help section" },
 	],
 	notes: [
-		"The script file must exist at scripts/<script>.php relative to the project root.",
-		"Any extra words after <script> are forwarded as positional arguments ($argv) to the PHP script.",
-		"Declare a \"scripts\" entry in kirigami.yaml with a matching \"mount\" list to expose extra files/globs to the PHP runtime.",
-		"A script can also run automatically by declaring \"trigger: before-build\" (or before-export / after-export) in kirigami.yaml.",
+		"Needs scripts/<script>.php at the project root.",
+		"Extra words after <script> become $argv for the PHP script.",
+		"Expose more files via a \"scripts:\" entry with a \"mount:\" list in kirigami.yaml.",
+		"A script with \"trigger: before-build\" (or before-/after-export) runs automatically.",
 	],
 	examples: [
 		"kiri run before-export",

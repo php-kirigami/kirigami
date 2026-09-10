@@ -39,8 +39,8 @@ re-copy it into every `../template-*/CLAUDE.md`** (and the site repo).
 
 | Package | Ver | Role |
 |---|---|---|
-| `@kirigami/kirigami` | 1.4.0 | the `kiri` CLI: build / export / watch / run / create / phpinfo. No native deps: the `sass` task's `img-asset()`/`colors()` run through php-prepros `processImages()` (was `sharp`, removed 2026-09-10). 1.1.5: `printTaskError()` — failures show message + page + stderr tail, PHP warnings no longer fail the build. 1.2.0: **plugin loader** (`bin/libs/plugins.js`) — reads `plugins:` from kirigami.yaml, resolves each from the project's node_modules (falls back to kiri's), checks pkg `kirigami.minVersion`, merges options (pkg `kirigami.options` ← yaml), calls the plugin's default export; run at the top of build/export/watch. `esbuild` task gained `before`/`after`/`plugins` (config + `esbuild:*` hooks, synthetic `stdin` entry like sass). `prepros` task pipes each rendered `.html` through the `prepros:html` waterfall hook. Fixed: sass synthetic-entry `url` collided with the real entry ("module loop") — now `__kirigami_entry__.scss`. Fixed: the sass `@use "@scope/pkg/x"` importer (`createPkgImporter`) resolved packages by joining `./node_modules` + `npm root -g` only — now it resolves via Node (`createRequire` from cwd **and** kiri's own location), so `npm link` / global-kiri / pnpm / workspace hoisting all work (root cause of the demo's "custom SCSS palette unreachable" DX issue). 1.3.1: hotfix — `inlinePluginOptionSchemas()` (`bin/config.js`) left `plugins.items.allOf` at `[]` when a first-party plugin's `options.schema.json` `$ref` didn't resolve (plugin absent), and Ajv refuses to compile `allOf: []` → **every `kiri build`/`export`/`watch` crashed with "schema is invalid" on 1.3.0 unless `@kirigami/plugin-highlight` was installed**; now the key is dropped when nothing resolves. 1.3.3: dep bump to `@kirigami/php-prepros` 1.6.2 (render no longer bakes `###TIMESTAMP###` into committed preview pages). 1.4.0: dep bump to `@kirigami/php-prepros` 1.7.0 (`META` class). |
-| `@kirigami/php-prepros` | 1.7.0 | PHP→HTML compiler + PHP class library (PREPROS, MD, HTML, YAML, SCHEMA, LD, META, CACHE, IMG, FS, STR, ARR, CURL, SCRAPER, OBF, STD; + bundled `Normalizer` polyfill). `LD` (new 1.3.0) = schema.org JSON-LD generator; injects `<script type="application/ld+json">` into `<head>`, **opt-in via a top-level `jsonld:` block** (sibling of `kirigami:`; empty `jsonld: {}` enough; then reads the `kirigami:` loose keys too). JS exports: `render`/`sitemap`/`runenv`/`mountPath`/`processImages`. 1.4.0 = DX fix pass: `HTML::format()` keeps `<pre>`/`<textarea>` verbatim; `md.plugins.php` auto-loaded (default `{% %}` plugins on); `catch(Throwable)` + structured errors (`error`/`page`/`where`), warnings non-fatal; PHPDOC multi-line values + prose `@word` ignored; `FS::getBreadcrumb()`/`getChildren()` anchored on `PREPROS::$file` (work from a layout/partial/helper); `{% tag %}` literal inside code spans; `IMG` clamps instead of upscaling; `###YEAR###`/`###TIMESTAMP###`/`###TODAY###` expanded at render (not just export); `page_info` hook accepts `[$file,$info]` or bare `$info`. 1.5.0: `render(file, phpIncludes[])` — extra abs PHP paths mounted under `/plugins/` + `include_once`'d once before any render (via `$config->phpIncludes`, set from `PREPROS::loadConfig`); the seam kiri's `prepros:php` hook feeds so a plugin can `PREPROS::registerTag()` from PHP. 1.6.0: **managed `<head>`** (`PREPROS::injectHead()`, gated on `prepros.head` ≠ false) — injects a theme/FOUC guard as `<head>`'s first child + a `<link>` per `sass` task + a `<script>` (no `defer`, before `</body>`) per `esbuild` task, per-page-relative + `?###TIMESTAMP###`; skips a file already referenced, or a task with `head:false`. `prepros.js` now forwards `config.tasks` into `preprosConfig`. Templates' `header.php` no longer wire assets. Also 1.6.0: `HTML::format()` indents each `<pre><code>` to its nesting depth (`soleCodeChild()`; relative indent kept) for readable source, and `injectHead()` adds a ~250-byte de-indent script before `</body>` (only when `format` on; skips blocks a highlighter flattened — those have child `<span>`s); plugin-highlight's build-time `dedent` covers its case. Bare `<pre>`/`<textarea>` still byte-for-byte. 1.6.1: `PREPROS::getExportedFiles()` wraps `array_unique()` in `array_values()` — a duplicate at a non-tail position (`.cookie.txt` re-exported by every page doing an `@readme`/`@tag http` fetch, interleaved with the `.html`) left a key gap, so `json_encode()` emitted a JSON object and the JS side threw "retobj.files.map is not a function"; `prepros.js` also normalises a non-array `retobj.files` back to a list. 1.6.2: `replaceTokens()` no longer expands `###TIMESTAMP###` at render (only `###YEAR###` / `###TODAY###`) — the `?###TIMESTAMP###` cache-buster `injectHead()` adds stays literal in the rendered `src/**` page and is substituted only on export (`dist.js`), so a plain `kiri build` / `kiri watch` no longer rewrites every committed preview page with a new number (which made a CI commit-back recommit them every run). 1.7.0: **`META`** — `<head>` SEO/social metadata generator, companion to `LD`. **Opt-in via a top-level `meta:` block** (sibling of `kirigami:`/`jsonld:`; empty `meta: {}` enough; `meta: false` / `{auto:false}` stops injection). `page_info` captures the page, `post_render` injects a `<title>` + `<meta name=…>` (description/keywords/robots/language/generator/author/designer/theme-color) + OG + Twitter Card + `<link rel=canonical>` + favicon/apple-touch-icon/humans block right before `</head>`. Sources, precedence order: page PHPDOC (`@meta_*`, falling back to `@title`/`@description`/`@abstract`/`@image`/`@robots`/`@og_type`/`@canonical`), the `meta:` block, then loose `kirigami:` keys + `jsonld:` block (`description`/`keywords`/`author`/`person`/`lang`/`logo`/`image`). Emits only what resolves; a tag the layout already hand-writes is detected (regex probe) and skipped — drops in beside an existing `header.php` with no duplication. `@meta false` skips a page. Manual: `META::tag()`/`link()`/`raw()`/`tags()` + `meta_*` aliases. `prepros.js` forwards `config.meta`; autoloaded `META` (`meta.class.php`); hooks in `prepros.plugins.php` (META before LD in `post_render`). Schema: new top-level `meta` block. |
+| `@kirigami/kirigami` | 1.4.1 | the `kiri` CLI: build / export / watch / run / create / phpinfo. No native deps: the `sass` task's `img-asset()`/`colors()` run through php-prepros `processImages()` (was `sharp`, removed 2026-09-10). 1.1.5: `printTaskError()` — failures show message + page + stderr tail, PHP warnings no longer fail the build. 1.2.0: **plugin loader** (`bin/libs/plugins.js`) — reads `plugins:` from kirigami.yaml, resolves each from the project's node_modules (falls back to kiri's), checks pkg `kirigami.minVersion`, merges options (pkg `kirigami.options` ← yaml), calls the plugin's default export; run at the top of build/export/watch. `esbuild` task gained `before`/`after`/`plugins` (config + `esbuild:*` hooks, synthetic `stdin` entry like sass). `prepros` task pipes each rendered `.html` through the `prepros:html` waterfall hook. Fixed: sass synthetic-entry `url` collided with the real entry ("module loop") — now `__kirigami_entry__.scss`. Fixed: the sass `@use "@scope/pkg/x"` importer (`createPkgImporter`) resolved packages by joining `./node_modules` + `npm root -g` only — now it resolves via Node (`createRequire` from cwd **and** kiri's own location), so `npm link` / global-kiri / pnpm / workspace hoisting all work (root cause of the demo's "custom SCSS palette unreachable" DX issue). 1.3.1: hotfix — `inlinePluginOptionSchemas()` (`bin/config.js`) left `plugins.items.allOf` at `[]` when a first-party plugin's `options.schema.json` `$ref` didn't resolve (plugin absent), and Ajv refuses to compile `allOf: []` → **every `kiri build`/`export`/`watch` crashed with "schema is invalid" on 1.3.0 unless `@kirigami/plugin-highlight` was installed**; now the key is dropped when nothing resolves. 1.3.3: dep bump to `@kirigami/php-prepros` 1.6.2 (render no longer bakes `###TIMESTAMP###` into committed preview pages). 1.4.0: dep bump to `@kirigami/php-prepros` 1.7.0 (`META` class). 1.4.1: dep bump to php-prepros 1.7.1; every `bin/cmd/*.js` `HELP.notes[]` trimmed to one-liners; `developement` typo fixed in `bin/kiri.js`. |
+| `@kirigami/php-prepros` | 1.7.1 | PHP→HTML compiler + PHP class library (PREPROS, MD, HTML, YAML, SCHEMA, LD, META, CACHE, IMG, FS, STR, ARR, CURL, SCRAPER, OBF, STD; + bundled `Normalizer` polyfill). `LD` (new 1.3.0) = schema.org JSON-LD generator; injects `<script type="application/ld+json">` into `<head>`, **opt-in via a top-level `jsonld:` block** (sibling of `kirigami:`; empty `jsonld: {}` enough; then reads the `kirigami:` loose keys too). JS exports: `render`/`sitemap`/`runenv`/`mountPath`/`processImages`. 1.4.0 = DX fix pass: `HTML::format()` keeps `<pre>`/`<textarea>` verbatim; `md.plugins.php` auto-loaded (default `{% %}` plugins on); `catch(Throwable)` + structured errors (`error`/`page`/`where`), warnings non-fatal; PHPDOC multi-line values + prose `@word` ignored; `FS::getBreadcrumb()`/`getChildren()` anchored on `PREPROS::$file` (work from a layout/partial/helper); `{% tag %}` literal inside code spans; `IMG` clamps instead of upscaling; `###YEAR###`/`###TIMESTAMP###`/`###TODAY###` expanded at render (not just export); `page_info` hook accepts `[$file,$info]` or bare `$info`. 1.5.0: `render(file, phpIncludes[])` — extra abs PHP paths mounted under `/plugins/` + `include_once`'d once before any render (via `$config->phpIncludes`, set from `PREPROS::loadConfig`); the seam kiri's `prepros:php` hook feeds so a plugin can `PREPROS::registerTag()` from PHP. 1.6.0: **managed `<head>`** (`PREPROS::injectHead()`, gated on `prepros.head` ≠ false) — injects a theme/FOUC guard as `<head>`'s first child + a `<link>` per `sass` task + a `<script>` (no `defer`, before `</body>`) per `esbuild` task, per-page-relative + `?###TIMESTAMP###`; skips a file already referenced, or a task with `head:false`. `prepros.js` now forwards `config.tasks` into `preprosConfig`. Templates' `header.php` no longer wire assets. Also 1.6.0: `HTML::format()` indents each `<pre><code>` to its nesting depth (`soleCodeChild()`; relative indent kept) for readable source, and `injectHead()` adds a ~250-byte de-indent script before `</body>` (only when `format` on; skips blocks a highlighter flattened — those have child `<span>`s); plugin-highlight's build-time `dedent` covers its case. Bare `<pre>`/`<textarea>` still byte-for-byte. 1.6.1: `PREPROS::getExportedFiles()` wraps `array_unique()` in `array_values()` — a duplicate at a non-tail position (`.cookie.txt` re-exported by every page doing an `@readme`/`@tag http` fetch, interleaved with the `.html`) left a key gap, so `json_encode()` emitted a JSON object and the JS side threw "retobj.files.map is not a function"; `prepros.js` also normalises a non-array `retobj.files` back to a list. 1.6.2: `replaceTokens()` no longer expands `###TIMESTAMP###` at render (only `###YEAR###` / `###TODAY###`) — the `?###TIMESTAMP###` cache-buster `injectHead()` adds stays literal in the rendered `src/**` page and is substituted only on export (`dist.js`), so a plain `kiri build` / `kiri watch` no longer rewrites every committed preview page with a new number (which made a CI commit-back recommit them every run). 1.7.0: **`META`** — `<head>` SEO/social metadata generator, companion to `LD`. **Opt-in via a top-level `meta:` block** (sibling of `kirigami:`/`jsonld:`; empty `meta: {}` enough; `meta: false` / `{auto:false}` stops injection). `page_info` captures the page, `post_render` injects a `<title>` + `<meta name=…>` (description/keywords/robots/language/generator/author/designer/theme-color) + OG + Twitter Card + `<link rel=canonical>` + favicon/apple-touch-icon/humans block right before `</head>`. Sources, precedence order: page PHPDOC (`@meta_*`, falling back to `@title`/`@description`/`@abstract`/`@image`/`@robots`/`@og_type`/`@canonical`), the `meta:` block, then loose `kirigami:` keys + `jsonld:` block (`description`/`keywords`/`author`/`person`/`lang`/`logo`/`image`). Emits only what resolves; a tag the layout already hand-writes is detected (regex probe) and skipped — drops in beside an existing `header.php` with no duplication. `@meta false` skips a page. Manual: `META::tag()`/`link()`/`raw()`/`tags()` + `meta_*` aliases. `prepros.js` forwards `config.meta`; autoloaded `META` (`meta.class.php`); hooks in `prepros.plugins.php` (META before LD in `post_render`). Schema: new top-level `meta` block. 1.7.1: `prepros.js` loads `kirigami.yaml` lazily (`loadConfig()` in `getPHPInstance`/`mountPath`/`render`/`sitemap`) instead of a top-level `await`+`throw` — `import '@kirigami/php-prepros'` is now side-effect-free, so `kiri build/export/run --help` print help instead of crashing "Config file not found". |
 | `@kirigami/php-wasm` | 8.5.10-5 | custom PHP 8.5.10 WASM build, JSPI + Node only, fork of WordPress Playground; now includes Imagick (wasm ~22 MB) |
 | `@kirigami/struct-walker` | 1.0.4 | recursive YAML/JSON walker: resolves nested file refs, converts assets to data URIs |
 | `@kirigami/sdk` | 0.2.0 | plugin hook registry (`on`/`run`/`HOOKS`) + `Cache` (SQLite via `node:sqlite`). 0.2.0: `runWaterfall()` (pipe a value through listeners) + `has()`; new hooks `esbuild:before`/`esbuild:after`/`esbuild:plugins` (mirror the sass ones) and `prepros:html` (waterfall — transform each rendered page's HTML) |
@@ -142,65 +142,37 @@ and editors would otherwise keep the stale copy for up to 12 h. Flags:
 
 ## Current work (as of 2026-09-10)
 
-Committed: the plugin system, `@kirigami/plugin-highlight` v0.1.0, SDK cache
-migration, `SCHEMA` and `LD` classes (697eb3d and earlier); `@kirigami/canva`
-2.2.0 `helpers.dedent(str)` + plugin-highlight consuming it (551dfbf); the
-release script (b48fe5f); `kiri create` wizard + git + metadata (f81862d);
-`@kirigami/canva` 2.3.0 theme-change transition (3fce596); managed `<head>` +
-`<pre><code>` indent — `@kirigami/php-prepros` 1.6.0, `@kirigami/kirigami` 1.3.0
-(0b2f8b5, f7bf67a); `kiri` 1.3.1 schema-loader hotfix (`allOf: []` crash, fe40988);
-`php-prepros` 1.6.1 — `getExportedFiles()` always returns a list (7d5ea65);
-`kiri` 1.3.2 — dep bump to php-prepros 1.6.1 (9b22d30); `php-prepros` 1.6.2 —
-render stops baking `###TIMESTAMP###` into committed preview pages + `kiri` 1.3.3
-dep bump (7c986f5).
+**The big release shipped (commit `00cf575`).** On npm and good: `@kirigami/sdk`
+0.2.0, `@kirigami/canva` **2.4.0**, `@kirigami/php-prepros` **1.7.0**,
+`@kirigami/kirigami` **1.4.0**, `@kirigami/plugin-highlight` **0.1.1**. That
+release carried: the `META` class (`<head>` SEO/social generator, opt-in via a
+top-level `meta:` block, companion to `LD`); canva `styles/prose` (`prose()`
+mixin + `.prose` wrapper) and the `reveal` script, both lifting code the starter
+templates carried inline; and the `###TIMESTAMP###` render fix (finally — kiri
+`latest` on npm is now correct). Both `../template-*/` were updated to
+`@use "@kirigami/canva/prose"` + `import "@kirigami/canva/reveal"`, floored to
+`@kirigami/canva ^2.4.0`, rebuilt against the published packages, and pushed
+(template-default `134ed89`, template-demo `d93246e`) — their CI is unblocked.
 
-Uncommitted on `main`: **`META` class** — `@kirigami/php-prepros` 1.7.0 +
-`@kirigami/kirigami` 1.4.0 (dep bump). `<head>` SEO/social metadata generator,
-opt-in via a top-level `meta:` block, companion to `LD`. New files:
-`packages/php-prepros/src/libraries/meta.class.php`; wired in `utils.inc.php`
-(autoload), `prepros.plugins.php` (`page_info` + `post_render` hooks),
-`prepros.js` (`config.meta` passthrough), `aliases.inc.php` (`meta_*`),
-`kirigami.schema.json` (top-level `meta` block), README + What's-new.
+Uncommitted on `main`: **`kiri` 1.4.1 + `@kirigami/php-prepros` 1.7.1** (dep
+bump). Two things:
+- **`kiri` help notes trimmed** — every `bin/cmd/*.js` `HELP.notes[]` rewritten
+  to one-line fragments (they'd grown into paragraphs); typo `developement` fixed
+  in `bin/kiri.js`.
+- **`prepros.js` no longer loads `kirigami.yaml` at import** — a new `loadConfig()`
+  is called lazily by `getPHPInstance()` / `mountPath()` / `render()` / `sitemap()`
+  instead of the old top-level `await walkFile(...)` + `throw`. That import-time
+  throw is what made `kiri build --help` / `export --help` / `run --help` crash
+  with "Config file not found" instead of printing help (those commands pull in
+  `@kirigami/php-prepros` via `bin/libs/triggers.js` → `bin/cmd/run.js`).
 
-Also uncommitted on `main`: **`@kirigami/canva` 2.4.0** — new `styles/prose`
-partial (`prose()` mixin + `.prose` wrapper) + new `reveal` script, both lifting
-code the starter templates each carried inline. New files
-`packages/canva/src/styles/prose.scss` and `packages/canva/src/scripts/reveal.js`
-(added to `sideEffects`); canva `package.json` 2.3.0 → 2.4.0, README + What's-new.
-Exact-pin cascade: `@kirigami/kirigami` 1.4.0 canva dep `2.3.0` → `2.4.0` (also
-feeds `kiri create`'s scaffold range), and `@kirigami/plugin-highlight` → **0.1.1**
-(canva dep `2.3.0` → `2.4.0`, no behaviour change). Both `../template-*/` now
-`@use "@kirigami/canva/prose"` + `import "@kirigami/canva/reveal"` and dropped
-their inline copies (their canva dep floored to `^2.4.0`) — those template
-builds need canva 2.4.0 on npm.
-
-**npm state:** `sdk` 0.2.0, `canva` 2.3.0, `plugin-highlight` 0.1.0 published and
-good. Everything below is fixed in code on `main` but **not yet released** — run
-`npm run release`:
-
-- `@kirigami/kirigami` 1.3.0 — `allOf: []` schema crash; every `kiri` command
-  fails unless plugin-highlight is installed. Fixed by 1.3.1.
-- `@kirigami/php-prepros` 1.6.0 — `getExportedFiles()` emits a JSON object, not
-  an array, when a file is exported twice at non-adjacent positions (`.cookie.txt`
-  from every `@readme`/`@tag http` page). Breaks `render-all`
-  ("retobj.files.map is not a function"). Fixed by 1.6.1.
-- `@kirigami/php-prepros` 1.6.0–1.6.1 — render expands the `?###TIMESTAMP###`
-  cache-buster `injectHead()` adds, so every `kiri build` rewrites every committed
-  `src/**` preview page (and a CI commit-back recommits them). Fixed by 1.6.2:
-  render does `###YEAR###` / `###TODAY###` only; export (`dist.js`) still
-  substitutes `###TIMESTAMP###`.
-- `@kirigami/kirigami` **1.3.1 is `latest` on npm** (published from an
-  intermediate commit) — has the schema fix but still pins php-prepros 1.6.0, so
-  `render-all` stays broken for multi-fetch sites until the release below.
-
-**To release:** `@kirigami/php-prepros` **1.7.0** + `@kirigami/kirigami` **1.4.0**
-(pins php-prepros 1.7.0; supersedes the never-released 1.6.1–1.6.2 / 1.3.2–1.3.3).
-1.7.0 / 1.4.0 carry both the `###TIMESTAMP###` render fix and the new `META`
-class. Plus **`@kirigami/canva` 2.4.0** (`styles/prose`) and
-**`@kirigami/plugin-highlight` 0.1.1** (canva pin). Publish order (topo): sdk →
-canva → struct-walker → php-prepros → kirigami → plugin-highlight. Last
-known-good `kiri` on npm before this mess is 1.1.3 (kiribuild CI pins its fixtures
-there, with a non-blocking `latest-canary` scenario to catch a good release).
+Release when ready: `npm run release` (publishes php-prepros 1.7.1 + kiri 1.4.1;
+everything else skips). Topo order: sdk → canva → struct-walker → php-prepros →
+kirigami → plugin-highlight. `publish.js` also purges the jsDelivr cache for
+`kirigami.schema.json` + each plugin's `kirigami.optionsSchema`. Heads up: npm's
+registry/CDN + `npm view`'s local cache lag a few minutes after a publish — a
+fresh `npm view <pkg>@<new-ver>` 404 right after `npm run release` is almost
+always propagation, not a failed publish (check the publish log's `✓ published`).
 
 **canva is a permanent part of this monorepo — reuse its code rather than
 re-implementing shared helpers per package** (that's why plugin-highlight now
@@ -214,9 +186,9 @@ moved out to the caller; inputs `lfs` and `commit-message` gone). Both
 `../template-default/` and `../template-demo/` now ship an identical
 `.github/workflows/page.yml`: checkout → `kiribuild@v2` → commit back whatever the
 build regenerated (`git add -A`, `[skip ci]`) → `upload-pages-artifact` →
-`deploy-pages`. The commit-back only stops churning once php-prepros 1.6.2+ is
-released — CI installs `@kirigami/kirigami@latest` from npm, so until then it
-still re-bakes `###TIMESTAMP###` into the rendered `src/**` pages.
+`deploy-pages`. CI installs `@kirigami/kirigami@latest` from npm; with kiri 1.4.0+
+released the `###TIMESTAMP###` re-bake is gone, so the commit-back should now be
+quiet apart from genuinely regenerated assets.
 
 Recently landed (siblings, their own repos):
 

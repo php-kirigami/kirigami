@@ -17,11 +17,10 @@ const HELP = {
 		{ flag: "--help, -h", desc: "Show this help section" },
 	],
 	notes: [
-		"Writes output to \"export:path\" in kirigami.yaml (defaults to \"dist\").",
-		"Runs every task with \"force: true\", so build-only tasks (like \"dist\") also execute.",
-		"If a \"prepros\" section is set, PHP templates are rendered first (added as a forced task).",
-		"Fires the \"before-export\" then \"before-build\" script triggers before the tasks, and \"after-export\" once done (see kiri run --help).",
-		"The banner defined in \"kirigami:banner\" (or an auto-generated one) is stamped on exported files.",
+		"Writes to \"export:path\" (default \"dist\").",
+		"Runs every task with \"force: true\", so build-only tasks (e.g. \"dist\") also run; PHP renders first when \"prepros:\" is set.",
+		"Triggers: \"before-export\" → \"before-build\" before, \"after-export\" after (see kiri run --help).",
+		"Stamps \"kirigami:banner\" (or an auto one) on exported files.",
 	],
 	examples: [
 		"kiri export",

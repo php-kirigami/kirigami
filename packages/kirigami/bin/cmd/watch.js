@@ -19,10 +19,9 @@ const HELP = {
 		{ flag: "--help, -h", desc: "Show this help section" },
 	],
 	notes: [
-		"Only tasks whose type supports watching (esbuild, sass, prepros, etc.) get a file watcher attached.",
-		"Changes are debounced (150ms default) and batched per task before rebuilding.",
-		"node_modules/, .git/ and dist/ are ignored globally in addition to any task-specific ignore rules.",
-		"Press Ctrl+C (SIGINT) to stop watching and close all watchers cleanly.",
+		"Watches only tasks whose type supports it (esbuild, sass, prepros, …).",
+		"Changes are debounced (150ms) and batched per task.",
+		"node_modules/, .git/ and dist/ are always ignored; Ctrl+C stops cleanly.",
 	],
 	examples: [
 		"kiri watch",

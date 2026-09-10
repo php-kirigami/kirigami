@@ -23,10 +23,10 @@ const HELP = {
 		{ flag: "--help, -h", desc: "Show this help section" },
 	],
 	notes: [
-		"kiri cache purge            — delete the .node.db, .cache.db and .cookie.txt files (whichever exist).",
-		"kiri cache purge <mask>     — keep the files but delete every cache key matching <mask> in both dbs.",
-		"A key mask is a glob against the key namespace, e.g. \"meta_*\", \"colors_*\", \"font_*\".",
-		"Runs against the current working directory (the project root).",
+		"kiri cache purge          — delete .node.db, .cache.db, .cookie.txt (whichever exist).",
+		"kiri cache purge <mask>   — keep the files, delete matching keys in both dbs.",
+		"<mask> is a glob over the key namespace, e.g. \"meta_*\", \"colors_*\", \"font_*\".",
+		"Acts on the current directory.",
 	],
 	examples: [
 		"kiri cache purge",

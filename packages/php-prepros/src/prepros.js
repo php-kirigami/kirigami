@@ -12,16 +12,25 @@ const __modules = new Map;
 const __project = process.cwd();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const __configpath = path.join(__project, 'kirigami.yaml');
-let   __root = null;
-let   __php  = null;
+let   __root   = null;
+let   __php    = null;
+let   __config = null;
 
 
-if (!fs.existsSync(__configpath)) throw `Config file not found: ${__configpath}`;
-const config = await walkFile(__configpath);
-if(!config) throw `Invalid config file: ${__configpath}`;
+// Load and cache kirigami.yaml on first use. Deferred (not run at import) so
+// `import '@kirigami/php-prepros'` has no side effects — e.g. `kiri build -h`
+// can pull the module in with no project on disk.
+const loadConfig = async () => {
+    if (__config) return __config;
+    if (!fs.existsSync(__configpath)) throw `Config file not found: ${__configpath}`;
+    __config = await walkFile(__configpath);
+    if (!__config) throw `Invalid config file: ${__configpath}`;
+    return __config;
+}
 
 
 const getPHPInstance = async () => {
+    const config = await loadConfig();
     if(!__php) {
         if(config?.kirigami?.root === undefined) throw `Missing prepros:root property in config file: ${__configpath}`;
         __root = path.join(__project, config.kirigami.root);
@@ -100,6 +109,7 @@ const getPHPInstance = async () => {
 
 
 const mountPath = async (localPath, virtualDir, php) => {
+    const config = await loadConfig();
     php = php || await getPHPInstance();
     if(!path.isAbsolute(localPath)) localPath = path.join(__project, localPath);
     virtualDir = virtualDir || path.posix.join('/project', localPath.replace(__project + path.sep, ''));
@@ -251,6 +261,7 @@ const processImages = async (jobs = []) => {
 
 
 const render = async (file = '.', phpIncludes = []) => {
+    const config = await loadConfig();
     const target = path.resolve(config?.kirigami?.root, file);
     const fsvm = path.join('/project', config?.kirigami?.root, file).replace(/\\/g, '/');
     await mountPath(target);
@@ -278,6 +289,7 @@ const render = async (file = '.', phpIncludes = []) => {
 
 
 const sitemap = async () => {
+    const config = await loadConfig();
     await mountPath(config?.kirigami?.root);
     return run(['sitemap']);
 }

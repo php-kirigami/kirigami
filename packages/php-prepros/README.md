@@ -34,6 +34,7 @@ Part of the **Kirigami** project ecosystem.
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
   - [Overview](#overview)
   - [Table of contents](#table-of-contents)
+  - [What's new in 1.7.1](#whats-new-in-171)
   - [What's new in 1.7.0](#whats-new-in-170)
   - [What's new in 1.6.0](#whats-new-in-160)
   - [What's new in 1.4.0](#whats-new-in-140)
@@ -104,6 +105,16 @@ Part of the **Kirigami** project ecosystem.
   - [Extending the `<markdown>` tag](#extending-the-markdown-tag)
   - [Requirements](#requirements)
   - [License](#license)
+
+---
+
+## What's new in 1.7.1
+
+- **No side effects on import.** `kirigami.yaml` is now loaded on first use
+  (`render()` / `sitemap()` / `runenv()` / `processImages()`), not while the
+  module is being imported. `import '@kirigami/php-prepros'` from a directory
+  with no project no longer throws — which is what made `kiri build --help` /
+  `kiri export --help` / `kiri run --help` crash instead of printing their help.
 
 ---
 

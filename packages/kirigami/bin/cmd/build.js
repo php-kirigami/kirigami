@@ -16,11 +16,10 @@ const HELP = {
 		{ flag: "--help, -h", desc: "Show this help section" },
 	],
 	notes: [
-		"Reads kirigami.yaml and runs every task declared under \"tasks\" (esbuild, sass, etc.) once, in order.",
-		"If a \"prepros\" section is set, PHP templates are also rendered first (added as a forced task).",
-		"Fires the \"before-build\" script trigger (see kiri run --help) before running the tasks.",
-		"Only tasks whose type supports \"build\" run, unless the task sets \"force: true\".",
-		"Output files are written relative to \"kirigami:root\"; use \"kiri export\" to bundle for production instead.",
+		"Runs every task under \"tasks:\" once, in order; PHP templates render first when \"prepros:\" is set.",
+		"Fires the \"before-build\" trigger first (see kiri run --help).",
+		"Skips tasks with no build step unless they set \"force: true\".",
+		"Output goes under \"kirigami:root\" — use kiri export for production.",
 	],
 	examples: [
 		"kiri build",

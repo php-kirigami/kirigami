@@ -11,7 +11,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ─── Available subcommands ─────────────────────────────────────────────────
 const COMMANDS = {
-	build: "Compile project for developement",
+	build: "Compile project for development",
 	export: "Compile and export project for production",
 	watch: "Start dev-mode with hot-reload",
 	run: "Run a PHP command script from the scripts/ folder",

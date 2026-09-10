@@ -34,11 +34,10 @@ const HELP = {
 		{ flag: "--help, -h", desc: "Show this help section" },
 	],
 	notes: [
-		"Templates are GitHub repositories named \"template-<name>\" under the php-kirigami organization.",
-		"Run with no arguments (in a terminal) for an interactive wizard: it asks for the template, target directory, and project name / description / author / base URL, then writes those into package.json and kirigami.yaml.",
-		"The template list is cached locally for 1 hour to avoid hitting the GitHub API on every call.",
-		"Extraction never overwrites: files already in the target are kept as-is, an existing package.json is deep-merged (every existing dependency wins), everything else missing is added — so an existing package.json, .git, README, node_modules, etc. are fine.",
-		"If the template ships no package.json, a starter one is written. Unless --no-git, a git repo is initialised (with one initial commit) when the target isn't already inside one. \"npm install\" runs afterwards unless --no-install.",
+		"Templates are the php-kirigami repos named \"template-<name>\" (list cached 1h).",
+		"No arguments, in a terminal → interactive wizard.",
+		"Never overwrites: existing files are kept, package.json is deep-merged (your deps win).",
+		"Missing package.json gets a starter one; git repo + first commit unless --no-git; npm install unless --no-install.",
 	],
 	examples: [
 		"kiri create",
