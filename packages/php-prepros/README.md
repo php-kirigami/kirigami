@@ -34,6 +34,7 @@ Part of the **Kirigami** project ecosystem.
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
   - [Overview](#overview)
   - [Table of contents](#table-of-contents)
+  - [What's new in 1.2.1](#whats-new-in-121)
   - [What's new in 1.2.0](#whats-new-in-120)
   - [How it works](#how-it-works)
   - [Installation](#installation)
@@ -50,11 +51,13 @@ Part of the **Kirigami** project ecosystem.
     - [PHPDOC header](#phpdoc-header)
     - [Auto-loading data files](#auto-loading-data-files)
     - [`@content` and `@indent`](#content-and-indent)
+    - [Built-in tags](#built-in-tags)
   - [JavaScript API](#javascript-api)
     - [`render(file?)`](#renderfile)
     - [`sitemap()`](#sitemap)
     - [`runenv(script, paths?, ...args)`](#runenvscript-paths-args)
     - [`mountPath(localPath, virtualDir?, php?)`](#mountpathlocalpath-virtualdir-php)
+    - [`processImages(jobs)`](#processimagesjobs)
   - [PHP classes reference](#php-classes-reference)
     - [PREPROS](#prepros)
       - [`PREPROS::render(string $file)`](#preprosrenderstring-file)
@@ -76,6 +79,7 @@ Part of the **Kirigami** project ecosystem.
     - [OBF](#obf)
     - [STD](#std)
     - [Bundled polyfills](#bundled-polyfills)
+    - [Procedural shortcuts (aliases)](#procedural-shortcuts-aliases)
   - [Plugin system](#plugin-system)
     - [PREPROS tags](#prepros-tags)
     - [PREPROS hooks](#prepros-hooks)
@@ -91,6 +95,17 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 1.2.1
+
+- **`processImages()`** JS export — batch resize / palette-extraction through the
+  `IMG` class (`src/imagebatch.php`). `@kirigami/kirigami`'s `sass` task now uses
+  it for `img-asset()` / `colors()`, so the whole toolchain is free of a native
+  image dependency (`sharp` is gone).
+- **`IMG::save()`** takes an optional `$quality` (0-100) for jpg / webp / avif;
+  `null` keeps the per-format default (82).
+
+---
+
 ## What's new in 1.2.0
 
 - **`SCHEMA`** class — a pure-PHP, dependency-free JSON Schema validator
@@ -98,6 +113,8 @@ Part of the **Kirigami** project ecosystem.
 - **`IMG::asset()` / `IMG::palette()`** — static helpers powering kirigami-core's
   `img-asset()` and `colors()` Sass functions: on-demand resize/convert of a
   source image, and cached representative-colour extraction.
+- **`<img asset="…">` tag** — the HTML-side entry point of the image
+  autogenerator, same parameters as `IMG::asset()` (see [Built-in tags](#built-in-tags)).
 - **`IMG` now handles vector and exotic formats** — SVG, EPS, AI, PDF (rasterized
   via Imagick), plus HEIC / TIFF / BMP, on top of GD's JPEG / PNG / GIF / WebP /
   AVIF.
@@ -254,7 +271,7 @@ Options for the PHP → HTML compiler. **Read by `php-prepros`.** Declaring this
 
 ### `image` block
 
-Options for the image autogenerator. **Read by `php-prepros`** — these are what [`IMG::asset()` / `IMG::palette()`](#img) (and kirigami-core's `img-asset()` / `colors()` Sass functions) resolve against. Optional; the defaults below apply even when the block is absent.
+Options for the image autogenerator. **Read by `php-prepros`** — these are what [`IMG::asset()` / `IMG::palette()`](#img), the [`<img asset>` tag](#img-asset), and kirigami-core's `img-asset()` / `colors()` Sass functions all resolve against. Optional; the defaults below apply even when the block is absent.
 
 | Key | Type | Default | Description |
 |-----|------|---------|--------------|
@@ -404,12 +421,65 @@ Two special annotation names change how a page's body is assembled:
  */
 ```
 
+### Built-in tags
+
+Two tags are registered out of the box (`prepros.plugins.php`) and processed
+**after** the PHP runs, on the assembled HTML — no include or plugin needed.
+
+#### `<markdown> … </markdown>`
+
+Converts its inner content from Markdown to HTML, stripping the common leading
+indentation first (via `STR::trimIndent()`) so you can indent it naturally inside
+your template. All registered [MD plugins](#md-plugins) work inside it. See
+[Extending the `<markdown>` tag](#extending-the-markdown-tag) to override it.
+
+```html
+<section>
+    <markdown>
+        ## Who we are
+
+        We are a **student organization** from Québec.
+    </markdown>
+</section>
+```
+
+#### `<img asset="…">`
+
+The HTML-side entry point of the image autogenerator — the exact same feature as
+the [`img-asset()` Sass function](https://www.npmjs.com/package/@kirigami/kirigami#sass-functions)
+and [`IMG::asset()`](#img), with the same parameters. The tag calls `IMG::asset()`
+under the hood, then swaps the `asset` attribute for the generated `src`.
+
+```html
+<!-- in:  resolves assets/images/hero.jpg through IMG::asset('hero.jpg', 800, 0, false) -->
+<img asset="hero.jpg" width="800" alt="Our office" loading="lazy">
+<!-- out: <img src="../images/hero-800w.webp" alt="Our office" loading="lazy"> -->
+```
+
+| Attribute | Maps to `IMG::asset()` arg | Notes |
+|-----------|---------------------------|-------|
+| `asset` | `$path` | **Required.** Path relative to `image.source`. Missing/empty ⇒ the tag is left untouched. |
+| `width` | `$width` | Optional, integer. Omitted ⇒ `0` (keep). |
+| `height` | `$height` | Optional, integer. Omitted ⇒ `0` (keep). |
+| `cover` | `$cover` | Boolean — **presence means `true`** (crop + fill). |
+| *(any other)* | — | `alt`, `class`, `id`, `loading`, … are passed straight through onto the output `<img>`. |
+
+`asset` / `width` / `height` / `cover` are consumed and removed; everything else
+survives. The generated file lands in `image.dest` and is only (re)generated when
+missing or older than the source — see [`IMG`](#img) for the naming convention.
+
+> The Sass `img-asset()` / `colors()` functions, the `<img asset>` tag and
+> `IMG::asset()` all run on the **same engine** — the `IMG` class (GD, with the
+> Imagick fallback) in this package. `@kirigami/kirigami`'s `sass` task routes its
+> image work here through [`processImages()`](#processimagesjobs), so there is no
+> native image dependency in the toolchain.
+
 ---
 
 ## JavaScript API
 
 ```js
-import { render, sitemap, runenv, mountPath } from '@kirigami/php-prepros';
+import { render, sitemap, runenv, mountPath, processImages } from '@kirigami/php-prepros';
 ```
 
 ### `render(file?)`
@@ -493,6 +563,38 @@ Mounting a **directory** only copies files whose extension is one of the default
 
 **Returns** `Promise<void>`.
 
+### `processImages(jobs)`
+
+Run a batch of image jobs — resize/encode, or palette extraction — through the
+[`IMG`](#img) class (GD, with the Imagick fallback). This is the engine
+`@kirigami/kirigami`'s `sass` task uses for its `img-asset()` and `colors()`
+functions, so Sass, `IMG::asset()` and the [`<img asset>` tag](#built-in-tags)
+all share one implementation, one `image:` config and one set of output
+filenames — with no native image dependency.
+
+```js
+import { processImages } from '@kirigami/php-prepros';
+
+const { files, colors } = await processImages([
+  // resize/encode `hero.jpg` (resolved against image.source) to each dest —
+  // absolute virtual paths, already carrying the target extension
+  { op: 'resize', src: 'hero.jpg', width: 1200, height: 0, cover: false, quality: 82,
+    dests: ['/project/src/images/hero-1200w.webp'] },
+
+  // extract a 5-colour palette (cached in .cache.db); returned, not written
+  { op: 'palette', src: 'hero.jpg', count: 5 },
+]);
+
+// files  → ['src/images/hero-1200w.webp']   (also copied back to the host)
+// colors → { 'hero.jpg:5': ['#1e3a5f', '#c8a24b', …] }
+```
+
+- `jobs` — array of `resize` / `palette` jobs (see the shape above). An **empty
+  array is a no-op** and does **not** start the WASM runtime.
+- Staleness is the caller's responsibility: every `resize` job listed is executed.
+
+**Returns** `Promise<PreprosResult & { colors: Record<string, string[]> }>`.
+
 ---
 
 ## PHP classes reference
@@ -511,6 +613,7 @@ PREPROS::$config          // stdClass — full resolved config; ->data is the ki
                           // ->image the image: block, plus before/after/format/… from prepros:
 PREPROS::registerTag(string $tag, callable $callback)
 PREPROS::registerHook(string $hook, callable $callback)
+PREPROS::runHook(string $hook, mixed $data = null)  // fire a hook (built-in or your own), returns the piped $data
 PREPROS::mount(string|array $patterns)
 PREPROS::exportFile(string|array $absolutePath)
 PREPROS::getExportedFiles(): string[]
@@ -524,7 +627,7 @@ Internal method called once per source file. Orchestrates the full pipeline:
 
 1. Resolves PHPDOC metadata and auto-loads data files.
 2. Fires the `pre_render` hook with the raw source contents.
-3. Includes `before.php`, the page body (or `@content`, see [above](#content-and-indent)), and `after.php` into a single string.
+3. Includes `before.php` (wrapped in the `pre_before` / `post_before` hooks), the page body (or `@content`, see [above](#content-and-indent)), and `after.php` (wrapped in `pre_after` / `post_after`) into a single string.
 4. Processes all registered custom HTML tags.
 5. Fires the `post_render` hook on the assembled HTML.
 6. Optionally pretty-prints via `HTML::format()` (when `format: true`).
@@ -747,11 +850,11 @@ $img->height  // int
 
 // Instance methods (resize/save are chainable)
 $img->resize(int $width, int $height = 0, bool $cover = false): self
-$img->save(string $dest): self
+$img->save(string $dest, ?int $quality = null): self       // quality 0-100 for jpg/webp/avif; null = per-format default (82)
 $img->getRepresentativeColors(int $count = 5): string[]   // ['#rrggbb', …]
 
 // Static helpers
-IMG::asset(string $path, int $width = 0, int $height = 0, bool $cover = false): string
+IMG::asset(string $path, int $width = 0, int $height = 0, bool $cover = false): string  // same feature as the <img asset> tag and the img-asset() Sass function
 IMG::palette(string $path, int $colors = 5): string[]
 ```
 
@@ -760,6 +863,7 @@ IMG::palette(string $path, int $colors = 5): string[]
 `save()` infers the output format from the file extension (`.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.avif`) and marks the file as a build output.
 
 ```php
+// Build a 1200×630 cropped Open Graph image next to the original
 (new IMG('/project/src/images/hero.jpg'))
     ->resize(1200, 630, true)
     ->save('/project/src/images/hero-og.jpg');
@@ -771,6 +875,14 @@ and `colors()` Sass functions: they resolve `$path` against `image.source` from
 when missing or stale), or return a `CACHE`-backed list of representative
 colours. Both are equally usable from your own PHP.
 
+`IMG::asset()` is the single implementation behind the [`<img asset>` tag](#built-in-tags)
+too — the tag is just a thin wrapper. Generated files are named after the source
+plus a dimension suffix: `-<W>w`, `-<H>h`, `-<W>x<H>`, or `-<W>x<H>-cover`, with
+the `image.format` extension (e.g. `hero.jpg` + `width="800"` → `hero-800w.webp`).
+`@kirigami/kirigami`'s Sass `img-asset()` / `colors()` functions produce the same
+files from the same config through this same class, via
+[`processImages()`](#processimagesjobs) — one engine, no native dependency.
+
 ---
 
 ### FS
@@ -781,6 +893,8 @@ Filesystem utilities.
 FS::dig(string $glob): iterable          // recursive glob, yields file paths
 FS::getRelativePath(string $from, string $to): string
 FS::phpFileInfo(string $file): object|false  // parse PHPDOC annotations
+FS::getChildren(string $backtrace = ''): object[]  // child _index.php pages, ordered by @position
+FS::getBreadcrumb(string $backtrace = ''): object[]  // ancestor _index.php pages, top-most first (opt-in via @breadcrumb)
 FS::rmdir(string $dir, bool $removeSelf = true): bool
 FS::pathJoin(string ...$parts): string   // URL-aware path join with .. resolution
 ```
@@ -788,6 +902,24 @@ FS::pathJoin(string ...$parts): string   // URL-aware path join with .. resoluti
 `FS::dig()` is the workhorse of directory-wide builds — it recursively walks a glob pattern and yields every matching file path.
 
 `FS::phpFileInfo()` parses the first PHPDOC block of a PHP file and returns its `@tag value` pairs as a `stdClass`. This is used internally to resolve page metadata and data-file annotations.
+
+`FS::getChildren()` (procedural: `fs_get_children()`) — usable only during a render — scans the folders directly below the calling template, keeps the ones that contain an `_index.php`, and returns one `stdClass` per child: the parsed PHPDOC of that `_index.php` plus a `->file` key with its absolute path. Entries are ordered by `@position` ascending (a page with no `@position` sorts as `999999`), then by folder name (natural, case-insensitive). Handy for building a section index or a navigation menu:
+
+```php
+<?php foreach (fs_get_children() as $page): ?>
+  <li><a href="<?= FS::getRelativePath(__DIR__, dirname($page->file)) ?>/"><?= $page->title ?></a></li>
+<?php endforeach ?>
+```
+
+`FS::getBreadcrumb()` (procedural: `fs_get_breadcrumb()`) — also render-only — is the upward counterpart: it returns the calling page's breadcrumb trail. It only produces output when the calling file opts in with `@breadcrumb true` (or `@breadcrumb 1`) in its first PHPDOC block, otherwise it returns `[]`. From the folder **above** the caller's own folder (a page is never part of its own trail), it walks the parent directories upward and collects the `_index.php` of each, stopping at the source root or at the first ancestor `_index.php` that carries no active `@breadcrumb` tag — that page acts as a separator and is left out. Directories without an `_index.php` are skipped without breaking the chain. Entries come back ordered from the top-most ancestor down to the nearest parent, each a `stdClass` (parsed PHPDOC of its `_index.php` plus a `->file` key with its absolute path):
+
+```php
+<nav aria-label="Breadcrumb">
+<?php foreach (fs_get_breadcrumb() as $crumb): ?>
+  <a href="<?= FS::getRelativePath(__DIR__, dirname($crumb->file)) ?>/"><?= $crumb->title ?></a>
+<?php endforeach ?>
+</nav>
+```
 
 ---
 
@@ -923,6 +1055,52 @@ your own code; the polyfill is there so third-party snippets that call
 
 ---
 
+### Procedural shortcuts (aliases)
+
+Every static method of every class above is also exposed as a plain function by
+`src/libraries/aliases.inc.php` (autoloaded — no `require` needed). Each alias is
+named `<lowercase class>_<snake_case method>()` and does nothing but forward its
+arguments, so the classes remain the canonical API. They exist to make page
+templates and `kiri run` scripts read better:
+
+```php
+<?= md_to_html(file_get_contents('CHANGELOG.md')) ?>
+<img src="<?= img_asset('hero.jpg', 1200, 630, true) ?>" alt="">
+```
+
+Every function has a complete PHPDoc block, so editor hover and autocomplete
+surface the signature, parameters, and description.
+
+| Class | Aliases |
+|---|---|
+| `PREPROS` | `prepros_render` · `prepros_sitemap` · `prepros_mount` · `prepros_fstat` · `prepros_export_file` · `prepros_get_exported_files` · `prepros_backtrace_file` · `prepros_register_tag` · `prepros_register_hook` · `prepros_run_hook` |
+| `MD` | `md_to_html` · `md_register_plugin` · `md_unregister_plugin` · `md_get_registered_plugins` · `md_register_emoji` |
+| `HTML` | `html_format` |
+| `YAML` | `yaml_parse` · `yaml_parse_file` · `yaml_load_file` |
+| `SCHEMA` | `schema` (factory) · `schema_validate` |
+| `CACHE` | `cache_get` · `cache_set` · `cache_delete` · `cache_purge` |
+| `IMG` | `img_asset` · `img_palette` |
+| `FS` | `fs_dig` · `fs_get_relative_path` · `fs_php_file_info` · `fs_rmdir` · `fs_path_join` |
+| `STR` | `str_htmlesc` · `str_replace_tags` · `str_parse_html_attributes` · `str_trim_indent` · `str_is_url` · `str_html_entities_decode` · `str_shorthash` · `str_normalize` · `str_slug` |
+| `ARR` | `arr_find_key` |
+| `CURL` | `curl_url_exists` · `curl_get_info` · `curl_get_contents` |
+| `SCRAPER` | `scraper_get` |
+| `OBF` | `obf_encode` · `obf_decode` |
+| `STD` | `std_succeed` · `std_error` |
+
+Notes:
+
+- `register_tag()` / `register_hook()` are kept as unprefixed aliases of
+  `prepros_register_tag()` / `prepros_register_hook()`.
+- `img_asset()` resolves the generated URL relative to the file that calls it,
+  exactly like `IMG::asset()`.
+- `schema_validate(array $schema, mixed $data, ?array &$errors = null): bool`
+  fills `$errors` with the validation messages.
+- `yaml_parse()` / `yaml_parse_file()` are only defined when the PECL `yaml`
+  extension isn't already providing them.
+
+---
+
 ## Plugin system
 
 `@kirigami/php-prepros` has two complementary plugin layers: **PREPROS** (HTML-tag level, operates on the assembled page) and **MD** (shortcode level, operates inside Markdown content).
@@ -962,7 +1140,8 @@ The callback receives:
 | `$attrs` | `array` | Parsed HTML attributes as an associative array |
 | `$body` | `string` | Inner content between opening and closing tags |
 
-The built-in `<markdown>` tag is registered this way (see below).
+The built-in [`<markdown>` and `<img asset>` tags](#built-in-tags) are registered
+this way.
 
 ---
 
@@ -976,8 +1155,13 @@ PREPROS::registerHook(string $hookName, callable $callback): void
 
 | Hook | When it fires | `$data` type | Expected return |
 |------|---------------|--------------|-----------------|
+| `boot` | Once per process, right after bootstrap (config loaded, `includes` pulled in), before any page renders. Fires for every entrypoint. | `stdClass $config` | ignored |
 | `page_info` | After PHPDOC parsing, before rendering (auto-loads `.yaml`/`.json`/`.md` annotations) | `[$filePath, $pageObject]` | `$pageObject` (modified) |
 | `pre_render` | Before PHP execution | Raw file contents as `string` | `string` |
+| `pre_before` | Just before the `before` include (inside its output buffer — `echo` to prepend to the header) | `before` config path as `string\|null` | ignored |
+| `post_before` | Right after the `before` include, on the captured header | Header `string` | `string` |
+| `pre_after` | Just before the `after` include (inside its output buffer — `echo` to prepend to the footer) | `after` config path as `string\|null` | ignored |
+| `post_after` | Right after the `after` include, on the captured footer | Footer `string` | `string` |
 | `post_render` | After tag processing, before `HTML::format()` | Assembled HTML `string` | `string` |
 
 Multiple callbacks can be registered for the same hook — they are executed in registration order, each receiving the return value of the previous one.
@@ -1071,7 +1255,10 @@ Read a book
 
 ## Extending the `<markdown>` tag
 
-The `<markdown>` tag is registered as a PREPROS tag out of the box. It converts its inner content from Markdown to HTML and strips common leading indentation so you can write cleanly inside your PHP templates:
+The `<markdown>` tag is one of the [built-in tags](#built-in-tags) (alongside
+`<img asset>`), registered as a PREPROS tag out of the box. It converts its inner
+content from Markdown to HTML and strips common leading indentation so you can
+write cleanly inside your PHP templates:
 
 ```html
 <section class="about">

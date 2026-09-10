@@ -183,6 +183,20 @@ const runenv = async (script, paths = [], ...args) => {
 }
 
 
+// Run a batch of image jobs (resize / palette) through /prepros/imagebatch.php,
+// i.e. the IMG class (GD + Imagick). Used by @kirigami/kirigami's `sass` task so
+// that img-asset() / colors() and the PHP IMG::asset() / <img asset> tag share
+// one engine. `jobs` is the list documented in imagebatch.php; the result is a
+// PreprosResult plus a `colors` map ({ "<src>:<count>": ["#rrggbb", …] }).
+const processImages = async (jobs = []) => {
+    if (!Array.isArray(jobs) || !jobs.length) return { success: true, files: [], colors: {} };
+    const result = await run(['imagebatch', JSON.stringify(jobs)], '/prepros/imagebatch.php');
+    if (!result.colors) result.colors = {};
+    if (!result.files) result.files = [];
+    return result;
+}
+
+
 const render = async (file = '.') => {
     const target = path.resolve(config?.kirigami?.root, file);
     const fsvm = path.join('/project', config?.kirigami?.root, file).replace(/\\/g, '/');
@@ -199,4 +213,4 @@ const sitemap = async () => {
 }
 
 
-export { runenv, render, sitemap, mountPath };
+export { runenv, render, sitemap, mountPath, processImages };

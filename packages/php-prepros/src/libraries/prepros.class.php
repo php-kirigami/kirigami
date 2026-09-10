@@ -30,8 +30,12 @@ final class PREPROS
         if(!$file = realpath($file)) return false;
         self::$file = $file;
         
-        // to review = add the baseurl path
-        $absurl = str_replace('//', '/', str_replace('\\', '/', pathinfo(str_replace(realpath(self::$root), '', $file), PATHINFO_DIRNAME)) . '/');
+        // absolute URL path of the page's dir, prefixed with the baseurl's
+        // subpath (if any) so it stays valid when the site is deployed under a
+        // subfolder, e.g. https://kirigami.github.io/template/
+        $basepath = rtrim((string)parse_url(self::$config->data->baseurl, PHP_URL_PATH), '/');
+        $reldir = str_replace('\\', '/', pathinfo(str_replace(realpath(self::$root), '', $file), PATHINFO_DIRNAME));
+        $absurl = preg_replace('#/+#', '/', $basepath . '/' . trim($reldir, '/') . '/');
         
         $relroot = FS::getRelativePath($dir, self::$root);
         $page = self::processHook('page_info', [$file, FS::phpFileInfo($file)]);
@@ -42,8 +46,9 @@ final class PREPROS
         self::processHook('pre_render', file_get_contents($file));
 
         ob_start();
+        self::processHook('pre_before', self::$config->before);
         if (self::$config->before) include(realpath(self::$root . self::$config->before));
-        $header = ob_get_clean();
+        $header = self::processHook('post_before', ob_get_clean());
 
         if(empty($content)) {
             ob_start();
@@ -58,8 +63,9 @@ final class PREPROS
         }
 
         ob_start();
+        self::processHook('pre_after', self::$config->after);
         if (self::$config->after) include(realpath(self::$root . self::$config->after));
-        $footer = ob_get_clean();
+        $footer = self::processHook('post_after', ob_get_clean());
 
         $contents = $header . $body . $footer;
         $contents = self::processTags($contents);
@@ -171,6 +177,12 @@ final class PREPROS
     public static function registerHook(string $hook, callable $clb)
     {
         self::$hooks[$hook][] = $clb;
+    }
+
+
+    public static function runHook(string $hook, $data = null)
+    {
+        return self::processHook($hook, $data);
     }
 
 

@@ -23,8 +23,8 @@ Actions.
 
 | Package | Ver | Role |
 |---|---|---|
-| `@kirigami/kirigami` | 1.1.3 | the `kiri` CLI: build / export / watch / run / create / phpinfo |
-| `@kirigami/php-prepros` | 1.2.0 | PHP→HTML compiler + PHP class library (PREPROS, MD, HTML, YAML, SCHEMA, CACHE, IMG, FS, STR, ARR, CURL, SCRAPER, OBF, STD; + bundled `Normalizer` polyfill) |
+| `@kirigami/kirigami` | 1.1.4 | the `kiri` CLI: build / export / watch / run / create / phpinfo. No native deps: the `sass` task's `img-asset()`/`colors()` run through php-prepros `processImages()` (was `sharp`, removed 2026-09-10) |
+| `@kirigami/php-prepros` | 1.2.1 | PHP→HTML compiler + PHP class library (PREPROS, MD, HTML, YAML, SCHEMA, CACHE, IMG, FS, STR, ARR, CURL, SCRAPER, OBF, STD; + bundled `Normalizer` polyfill). JS exports: `render`/`sitemap`/`runenv`/`mountPath`/`processImages` |
 | `@kirigami/php-wasm` | 8.5.10-5 | custom PHP 8.5.10 WASM build, JSPI + Node only, fork of WordPress Playground; now includes Imagick (wasm ~22 MB) |
 | `@kirigami/struct-walker` | 1.0.4 | recursive YAML/JSON walker: resolves nested file refs, converts assets to data URIs |
 | `@kirigami/sdk` | 0.1.0 | plugin hook registry (`on`/`run`/`HOOKS`) + `Cache` (SQLite via `node:sqlite`) |
@@ -61,8 +61,10 @@ Match these when writing code in this repo.
   `node:sqlite` (not better-sqlite3); the PHP JSON-schema validator is pure PHP
   (not ajv); `kiri create` extracts tarballs with a hand-rolled tar parser +
   `node:zlib` rather than a zip lib, and shells out to `npm install` via
-  `execSync` rather than adding `@npmcli/arborist`. When a task needs a lib,
-  first check whether a `node:` builtin or ~30 lines of code covers it.
+  `execSync` rather than adding `@npmcli/arborist`; image resize/encode for the
+  `sass` task goes through the WASM `IMG` class (php-prepros `processImages()`),
+  not `sharp`. When a task needs a lib, first check whether a `node:` builtin or
+  ~30 lines of code covers it.
 - **Dev machine is Windows** (PowerShell primary); watch for path separators —
   helpers normalize `path.sep` to `/` in many spots.
 

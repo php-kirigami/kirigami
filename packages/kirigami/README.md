@@ -46,6 +46,7 @@ Part of the **Kirigami** project ecosystem.
     - [`kiri watch`](#kiri-watch)
     - [`kiri run <script>`](#kiri-run-script)
     - [`kiri create <template>`](#kiri-create-template)
+    - [`kiri cache purge`](#kiri-cache-purge)
     - [`kiri phpinfo`](#kiri-phpinfo)
   - [Configuration — `kirigami.yaml`](#configuration--kirigamiyaml)
     - [`kirigami:`](#kirigami)
@@ -121,6 +122,7 @@ prepros:
 | `kiri watch` | Watch project files and rebuild on change. |
 | `kiri run <script>` | Run a PHP script from `scripts/` in the Kirigami runtime. |
 | `kiri create <template>` | Scaffold a new project from an official template. |
+| `kiri cache purge [mask]` | Purge the local `.node.db` / `.cache.db` / `.cookie.txt` caches. |
 | `kiri phpinfo` | Print `phpinfo()` from the embedded PHP-WASM runtime. |
 
 Every command has its own `--help`.
@@ -183,6 +185,30 @@ parser (Node has no zip API). The target directory must be empty — **unless** 
 already contains a `package.json`, in which case the template's `package.json`
 is deep-merged into it (existing values always win), and `npm install` is run.
 `.cache.db`, `.node.db`, `.cookie.txt` and `package-lock.json` are never copied.
+
+### `kiri cache purge`
+
+Clears the working caches Kirigami leaves at the project root: `.node.db`
+(kirigami-core's cache — `@kirigami/sdk`, `node:sqlite`), `.cache.db` (the PHP
+`CACHE` class) and `.cookie.txt` (the `CURL` / `SCRAPER` cookie jar).
+
+| Invocation | Effect |
+|---|---|
+| `kiri cache purge` | Deletes the `.node.db`, `.cache.db` and `.cookie.txt` files (whichever exist). |
+| `kiri cache purge <mask>` | Keeps the files, but deletes every cache **key** matching `<mask>` in both SQLite stores. |
+
+`<mask>` is a glob against the key namespace (`meta_*`, `colors_*`, `font_*`, …).
+Runs against the current working directory.
+
+```bash
+kiri cache purge
+kiri cache purge meta_*
+kiri cache purge "colors_*"
+```
+
+| Flag | Description |
+|---|---|
+| `--help`, `-h` | Show help. |
 
 ### `kiri phpinfo`
 
@@ -285,9 +311,11 @@ build/export/watch.
 
 ### `image:`
 
-Options for the built-in image autogenerator used by the `img-asset()` and
-`colors()` Sass functions. Optional — defaults apply even when the block is
-absent.
+Options for the built-in image autogenerator. The same config drives every entry
+point into it: the `img-asset()` / `colors()` Sass functions (below), and — on
+the PHP side — [`IMG::asset()` / `IMG::palette()`](https://www.npmjs.com/package/@kirigami/php-prepros#img)
+and the `<img asset="…">` tag in page templates. Optional — defaults apply even
+when the block is absent.
 
 | Key | Default | Description |
 |---|---|---|
@@ -391,7 +419,7 @@ Available in every `sass` task, in addition to anything contributed through the
 | Function | Returns | Description |
 |---|---|---|
 | `inline-file($path)` | `url(...)` | Base64 data-URI of a file (relative to `cwd()`), cached per compile. |
-| `img-asset($path, $width: null, $height: null, $cover: false)` | `url(...)` | Registers a source image for the autogenerator and returns the generated asset's URL. |
+| `img-asset($path, $width: null, $height: null, $cover: false)` | `url(...)` | Registers a source image for the autogenerator and returns the generated asset's URL. Resize/encode runs through `@kirigami/php-prepros` (`processImages()` → the `IMG` class, GD/Imagick) — the same engine, config and output filenames as the PHP `IMG::asset()` / `<img asset>` tag. No native image dependency. |
 | `colors($path, $count: 5)` | comma list of colors | Extracts `$count` representative colors from an image (median-cut in Lab space), cached in `.node.db`. |
 | `font-weight-range($path)` | e.g. `100 900` | `font-weight` range of a (variable) font. |
 | `font-stretch-range($path)` | e.g. `75% 125%` | `font-stretch` range. |
@@ -437,14 +465,14 @@ jobs:
 | Package | Role |
 |---|---|
 | [`@kirigami/canva`](https://www.npmjs.com/package/@kirigami/canva) | Shared Sass/JS design system, resolved by the `sass` task's package importer. |
-| [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirigami/php-prepros) | PHP → HTML compiler, `sitemap()`, `runenv()`. |
+| [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirigami/php-prepros) | PHP → HTML compiler, `sitemap()`, `runenv()`, `processImages()` (the `img-asset()` / `colors()` engine). |
 | [`@kirigami/php-wasm`](https://www.npmjs.com/package/@kirigami/php-wasm) | Embedded PHP runtime (via php-prepros; used directly for `kiri phpinfo` / `--version`). |
 | [`@kirigami/sdk`](https://www.npmjs.com/package/@kirigami/sdk) | Hook registry + `Cache` (`.node.db`). |
 | [`@kirigami/struct-walker`](https://www.npmjs.com/package/@kirigami/struct-walker) | Loads and resolves `kirigami.yaml`. |
 | [`ajv`](https://ajv.js.org/) | `kirigami.yaml` schema validation. |
 | [`sass`](https://sass-lang.com/) · [`csso`](https://github.com/css/csso) | Sass compilation + CSS minification. |
 | [`esbuild`](https://esbuild.github.io/) | JS/TS bundling. |
-| [`sharp`](https://sharp.pixelplumbing.com/) · [`fontkit`](https://github.com/foliojs/fontkit) | Image generation + font metadata for the Sass functions. |
+| [`fontkit`](https://github.com/foliojs/fontkit) | Font metadata for the `font-*()` Sass functions. |
 | [`chokidar`](https://github.com/paulmillr/chokidar) · [`picomatch`](https://github.com/micromatch/picomatch) · [`ignore`](https://github.com/kaelzhang/node-ignore) | File watching / glob matching / export exclusions. |
 | [`@octokit/rest`](https://github.com/octokit/rest.js) | Template listing for `kiri create`. |
 

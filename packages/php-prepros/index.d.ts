@@ -25,6 +25,12 @@
  *
  * // Mount a local file/directory into the sandbox before rendering
  * await mountPath('assets/data/team.yaml');
+ *
+ * // Resize images / extract palettes through the IMG class (GD + Imagick)
+ * const { files, colors } = await processImages([
+ *   { op: 'resize', src: 'hero.jpg', width: 1200, dests: ['/project/src/images/hero-1200w.webp'] },
+ *   { op: 'palette', src: 'hero.jpg', count: 5 },
+ * ]);
  * ```
  */
 
@@ -180,3 +186,67 @@ export function runenv(script: string, paths?: string[], ...args: string[]): Pro
  *             singleton instance (creating it if needed).
  */
 export function mountPath(localPath: string, virtualDir?: string, php?: unknown): Promise<void>;
+
+
+/**
+ * A single unit of work for {@link processImages}.
+ *
+ * - **`resize`** — decode `src` (resolved against `image.source`), optionally
+ *   resize it, and encode a copy to every path in `dests` (each an absolute
+ *   virtual path, e.g. `/project/src/images/hero-800w.webp`, already carrying
+ *   the target extension). Omitting both `width` and `height` re-encodes at the
+ *   source size. Staleness must be decided by the caller — every job passed in
+ *   is executed.
+ * - **`palette`** — extract `count` representative colours from `src` via
+ *   `IMG::palette()` (cached in `.cache.db`); returned in `colors`, not written.
+ */
+export type ImageJob =
+  | {
+      op: "resize";
+      /** Source path, relative to `image.source` in `kirigami.yaml`. */
+      src: string;
+      /** Target width in px. `0`/omitted = derive from height (or keep). */
+      width?: number;
+      /** Target height in px. `0`/omitted = derive from width (or keep). */
+      height?: number;
+      /** Crop to fill instead of fitting inside `width`×`height`. */
+      cover?: boolean;
+      /** Encoder quality (0-100) for lossy formats. Defaults to 82. */
+      quality?: number;
+      /** Absolute virtual destination paths to write the encoded image to. */
+      dests: string[];
+    }
+  | {
+      op: "palette";
+      /** Source path, relative to `image.source` in `kirigami.yaml`. */
+      src: string;
+      /** Number of colours to extract. Defaults to 5. */
+      count?: number;
+    };
+
+
+/**
+ * Result of {@link processImages}: a {@link PreprosResult} whose `files` lists
+ * every image written back to the host, plus the palettes that were requested.
+ */
+export interface ImageBatchResult extends PreprosResult {
+  /** Extracted palettes, keyed `"<src>:<count>"`, each a list of `#rrggbb`. */
+  colors: Record<string, string[]>;
+}
+
+
+/**
+ * Run a batch of image jobs through the same `IMG` class (GD, with the Imagick
+ * fallback) used by `IMG::asset()` and the `<img asset>` tag.
+ *
+ * This is the engine behind `@kirigami/kirigami`'s Sass `img-asset()` and
+ * `colors()` functions: one implementation, one `image:` config, one set of
+ * output filenames across Sass, PHP and HTML — no native image dependency.
+ *
+ * @param jobs List of {@link ImageJob}s. An empty list is a no-op (the WASM
+ *             runtime is not started).
+ *
+ * @returns An {@link ImageBatchResult}. Resized files are also copied to the
+ *          host at the project-relative equivalent of each `dests` entry.
+ */
+export function processImages(jobs?: ImageJob[]): Promise<ImageBatchResult>;

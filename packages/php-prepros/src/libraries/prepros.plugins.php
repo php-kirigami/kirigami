@@ -36,13 +36,18 @@ PREPROS::registerHook('page_info', function($info) {
 	foreach($page as $k => $v) {
 		$ext = strtolower(pathinfo($v, PATHINFO_EXTENSION));
 		if(in_array($ext, ['yaml', 'yml', 'json', 'md']) ) {
-			if(preg_match('#^https?:#i', $v)) $filename = $v;
+			$isUrl = STR::is_url($v);
+			if($isUrl) $filename = $v;
 			else $filename = pathinfo(realpath($file), PATHINFO_DIRNAME) . '/' . $v;
-			if(is_file($filename) || preg_match('#^https?:#i', $v)) {
+			if($isUrl || is_file($filename)) {
+				// Remote URLs always go through CURL::getContents — never
+				// file_get_contents, which this PHP build can't use for http(s).
+				$raw = $isUrl ? CURL::getContents($filename) : file_get_contents($filename);
+				if($raw === false) continue;
 				$page->{$k} = match ($ext) {
-					'yml', 'yaml' => YAML::parseFile($filename),
-					'json'        => json_decode(file_get_contents($filename)),
-					'md'          => MD::toHtml(file_get_contents($filename)),
+					'yml', 'yaml' => YAML::parse($raw),
+					'json'        => json_decode($raw),
+					'md'          => MD::toHtml($raw),
 					default       => $filename,
 				};
 			}

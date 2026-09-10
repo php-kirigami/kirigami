@@ -40,10 +40,19 @@ spl_autoload_register(function ($class) {
 }, true, true);
 
 
+
 $argv = array_merge(['prepros.php'], json_decode(getenv('PREPROS_ARGS'), true));
 $config = json_decode(getenv('PREPROS_CONFIG'));
 date_default_timezone_set($config->timezone);
 chdir('/project');
 
+require_once(__DIR__ . '/libraries/aliases.inc.php');
 
 PREPROS::loadConfig($config);
+
+// Bootstrap is done: config loaded, `includes` pulled in, aliases available.
+// Fires once per process, before any page renders, for every entrypoint
+// (prepros.php, runenv.php, imagebatch.php). A plugin registered from an
+// `includes` file (or prepros.plugins.php) can hook here to pull in extra
+// PHP files or wire itself up.
+PREPROS::runHook('boot', $config);

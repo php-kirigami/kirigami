@@ -397,17 +397,25 @@ class IMG
 	}
 
 
-	public function save(string $dest): self
+	/**
+	 * Encodes the current image to $dest, the format taken from the file
+	 * extension (jpg/jpeg, png, gif, webp, avif).
+	 *
+	 * $quality (0-100) applies to the lossy formats (jpg, webp, avif); it is
+	 * ignored for png (whose second arg is a 0-9 compression level) and gif.
+	 * When null, each format keeps its own default (82 for jpg/webp/avif).
+	 */
+	public function save(string $dest, ?int $quality = null): self
 	{
 		$ext = strtolower(pathinfo($dest, PATHINFO_EXTENSION));
 		$dir = pathinfo($dest, PATHINFO_DIRNAME);
 		if (!is_dir($dir) && !@mkdir($dir, 0777, true)) throw new Exception("Invalid destination.");
 		$ok = match ($ext) {
-			'jpg', 'jpeg' => imagejpeg($this->im, $dest, 82),
+			'jpg', 'jpeg' => imagejpeg($this->im, $dest, $quality ?? 82),
 			'png'         => imagepng($this->im, $dest, 6),
 			'gif'         => imagegif($this->im, $dest),
-			'webp'        => (function_exists('imagewebp') ? imagewebp($this->im, $dest, 82) : false),
-			'avif'        => (function_exists('imageavif') ? $this->encodeAvif($this->im, $dest, 82) : false),
+			'webp'        => (function_exists('imagewebp') ? imagewebp($this->im, $dest, $quality ?? 82) : false),
+			'avif'        => (function_exists('imageavif') ? $this->encodeAvif($this->im, $dest, $quality ?? 82) : false),
 			default       => throw new Exception("Invalid output file type.")
 		};
 		if (!$ok) throw new Exception("Failed to encode image as '{$ext}'.");

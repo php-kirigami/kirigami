@@ -48,6 +48,126 @@ class FS
 	}
 
 
+	/**
+	 * Lists the immediate child pages of the calling template.
+	 *
+	 * Scans the directories directly below the folder of the file that
+	 * called this function, keeps the ones that hold an `_index.php`, parses
+	 * that file's first PHPDOC block via {@see FS::phpFileInfo()} and returns
+	 * the pages ordered by `@position` ascending (a missing `@position`
+	 * counts as 999999), then by folder name.
+	 *
+	 * Only usable while a render is in progress (`PREPROS::$file` set).
+	 *
+	 * @param  string $backtrace Path of the caller's file; defaults to the
+	 *                           file that invoked this method. The
+	 *                           `fs_get_children()` wrapper forwards the real
+	 *                           caller here.
+	 * @return object[]          One `stdClass` per child: the parsed PHPDOC
+	 *                           of its `_index.php`, plus a `->file` key
+	 *                           holding that file's absolute path.
+	 * @throws \Exception        When called outside of a render.
+	 */
+	public static function getChildren(string $backtrace = ''): array
+	{
+		if (PREPROS::$file === '') throw new Exception('FS::getChildren() can only be called during a render.');
+		if (!$backtrace) $backtrace = PREPROS::backtraceFile();
+		if (!$backtrace || !$dir = realpath(pathinfo($backtrace, PATHINFO_DIRNAME))) return [];
+
+		$children = [];
+		foreach (glob($dir . '/*', GLOB_ONLYDIR) as $subdir) {
+			$index = $subdir . '/_index.php';
+			if (!is_file($index)) continue;
+			$info = FS::phpFileInfo($index) ?: new stdClass;
+			$info = clone $info;
+			$info->file = realpath($index);
+			$position = (isset($info->position) && is_numeric($info->position)) ? (int) $info->position : 999999;
+			$children[] = ['position' => $position, 'name' => pathinfo($subdir, PATHINFO_BASENAME), 'info' => $info];
+		}
+
+		usort($children, fn($a, $b) => ($a['position'] <=> $b['position']) ?: strnatcasecmp($a['name'], $b['name']));
+
+		return array_column($children, 'info');
+	}
+
+
+	/**
+	 * Builds the breadcrumb trail of the calling page.
+	 *
+	 * Only runs when the calling file opts in with `@breadcrumb true` (or
+	 * `@breadcrumb 1`) in its first PHPDOC block; otherwise returns `[]`.
+	 *
+	 * Starting from the folder *above* the caller's own folder (the current
+	 * page is never part of its own trail), it walks the parent directories
+	 * upward, collecting the `_index.php` of each one via
+	 * {@see FS::phpFileInfo()}. The walk stops at the source root, or at the
+	 * first ancestor `_index.php` that does not carry an active `@breadcrumb`
+	 * tag — that page is a pure separator and is left out of the result.
+	 * Directories with no `_index.php` are skipped without breaking the chain.
+	 *
+	 * Only usable while a render is in progress (`PREPROS::$file` set).
+	 *
+	 * @param  string $backtrace Path of the caller's file; defaults to the
+	 *                           file that invoked this method. The
+	 *                           `fs_get_breadcrumb()` wrapper forwards the
+	 *                           real caller here.
+	 * @return object[]          One `stdClass` per ancestor page, ordered from
+	 *                           the top-most ancestor down to the nearest
+	 *                           parent: the parsed PHPDOC of its `_index.php`,
+	 *                           plus a `->file` key holding that file's
+	 *                           absolute path.
+	 * @throws \Exception        When called outside of a render.
+	 */
+	public static function getBreadcrumb(string $backtrace = ''): array
+	{
+		if (PREPROS::$file === '') throw new Exception('FS::getBreadcrumb() can only be called during a render.');
+		if (!$backtrace) $backtrace = PREPROS::backtraceFile();
+		if (!$backtrace || !$dir = realpath(pathinfo($backtrace, PATHINFO_DIRNAME))) return [];
+
+		$self = FS::phpFileInfo($backtrace) ?: new stdClass;
+		if (!self::truthy($self->breadcrumb ?? null)) return [];
+
+		if (!$root = realpath(PREPROS::$config->root)) return [];
+		$root = rtrim(str_replace('\\', '/', $root), '/');
+		$dir  = rtrim(str_replace('\\', '/', $dir), '/');
+
+		$trail = [];
+		while (true) {
+			$parent = str_replace('\\', '/', dirname($dir));
+			if ($parent === $dir) break;                                      // filesystem root
+			$dir = $parent;
+			if (strncmp($dir . '/', $root . '/', strlen($root) + 1) !== 0) break; // above the source root
+
+			$index = $dir . '/_index.php';
+			if (is_file($index)) {
+				$info = FS::phpFileInfo($index) ?: new stdClass;
+				if (!self::truthy($info->breadcrumb ?? null)) break;          // separator page: stop, exclude it
+				$info = clone $info;
+				$info->file = realpath($index);
+				$trail[] = $info;
+			}
+
+			if ($dir === $root) break;
+		}
+
+		return array_reverse($trail);
+	}
+
+
+	/**
+	 * Loose truthiness test for a PHPDOC tag value (`true` / `1` / `yes` /
+	 * `on`, case-insensitive). PHPDOC values always come through as strings,
+	 * but bool/int are handled too for callers that pass a raw value.
+	 */
+	private static function truthy(mixed $v): bool
+	{
+		if (is_bool($v)) return $v;
+		if (is_int($v))  return $v === 1;
+		if (!is_string($v)) return false;
+		return in_array(strtolower(trim($v)), ['1', 'true', 'yes', 'on'], true);
+	}
+
+
 	public static function phpFileInfo(string $file): object|bool
 	{
 		static $files = [];

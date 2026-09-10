@@ -8,8 +8,36 @@ import { execSync } from 'child_process';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { replaceRoot, joinWith, log, c } from '../utils.js';
-import { getRepresentativeColors, imgasset } from '../libs/image.js';
 import { run as runHook, HOOKS, Cache } from '@kirigami/sdk';
+
+
+// @kirigami/php-prepros is loaded lazily (dynamic import) the first time an
+// image job actually needs it: a pure-CSS sass task with no img-asset()/colors()
+// call never starts the PHP/WASM runtime.
+let _prepros;
+async function getPrepros() {
+	if (!_prepros) _prepros = await import('@kirigami/php-prepros');
+	return _prepros;
+}
+
+// img-asset()/colors() encoder quality per output format — kept here (one place)
+// and forwarded to IMG::save() on the PHP side.
+const IMG_QUALITY = { webp: 82, avif: 50 };
+
+// Output filename for a generated image: source name + a dimension suffix +
+// the target extension. Must stay identical to IMG::asset() on the PHP side.
+function imageOutName(srcRelPath, { width, height, cover }, format) {
+	let suffix = '';
+	if (width && height) suffix = cover ? `-${width}x${height}-cover` : `-${width}x${height}`;
+	else if (width) suffix = `-${width}w`;
+	else if (height) suffix = `-${height}h`;
+	const { dir: subDir, name } = path.parse(srcRelPath);
+	return (subDir ? `${subDir}/` : '') + `${name}${suffix}.${format}`;
+}
+
+function toVirtualPath(absPath) {
+	return '/project/' + path.relative(process.cwd(), absPath).split(path.sep).join('/');
+}
 
 
 const __dirname = process.cwd();
@@ -71,13 +99,43 @@ export default async function build(__root, task, exportPath = null) {
 	const imgConfig = config.image || {};
 	const imgFormat = imgConfig.format === 'avif' ? 'avif' : 'webp';
 	const imgSourceRoot = path.resolve(process.cwd(), imgConfig.source || './assets/images/');
-	const images = imgasset({
-		format: imgFormat,
-		sourceRoot: imgSourceRoot,
-		destRoot: path.resolve(exportPath || __root, imgConfig.dest || './images/'),
-		destRootSource: exportPath ? path.resolve(__root, imgConfig.dest || './images/') : null,
-		outDir: dir,
-	});
+	const imgDestRoot = path.resolve(exportPath || __root, imgConfig.dest || './images/');
+	// On export the images are written straight into the dist tree (the `dist`
+	// task already ran) AND back into the source tree, so it stays current for
+	// the next incremental build / watch.
+	const imgDestRootSource = exportPath ? path.resolve(__root, imgConfig.dest || './images/') : null;
+
+	// img-asset() collects its work here (deduped by output path); the actual
+	// resize/encode runs once, after compilation, through @kirigami/php-prepros
+	// (the IMG class — GD + Imagick — same engine as IMG::asset()/<img asset>).
+	const imageJobs = new Map();
+
+	// Resolve every collected job to a stale-only resize job list and run the
+	// batch. Returns the project-relative paths of the files actually written.
+	async function processCollectedImages() {
+		const jobs = [];
+		for (const job of imageJobs.values()) {
+			const srcAbs = path.resolve(imgSourceRoot, job.srcRelPath);
+			if (!fs.existsSync(srcAbs)) throw new Error(`img-asset: source file not found: ${srcAbs}`);
+			const srcMtime = fs.statSync(srcAbs).mtimeMs;
+			const staleDests = job.dests.filter((d) => !fs.existsSync(d) || fs.statSync(d).mtimeMs < srcMtime);
+			if (!staleDests.length) continue; // every destination already up to date
+			jobs.push({
+				op: 'resize',
+				src: job.srcRelPath,
+				width: job.width || 0,
+				height: job.height || 0,
+				cover: !!job.cover,
+				quality: IMG_QUALITY[imgFormat] ?? 82,
+				dests: staleDests.map(toVirtualPath),
+			});
+		}
+		if (!jobs.length) return [];
+		const { processImages } = await getPrepros();
+		const result = await processImages(jobs);
+		if (!result.success) throw new Error(result.error || 'img-asset: image processing failed');
+		return (result.files || []).filter((f) => !f.endsWith('.db'));
+	}
 
 	try {
 		const cache = new Map();
@@ -140,7 +198,7 @@ export default async function build(__root, task, exportPath = null) {
 				},
 
 				'img-asset($path, $width: null, $height: null, $cover: false)': (args) => {
-					const srcRelPath = args[0].assertString('path').text;
+					const srcRelPath = args[0].assertString('path').text.replace(/\\/g, '/');
 					const widthArg = args[1];
 					const heightArg = args[2];
 					const cover = args[3].isTruthy;
@@ -148,24 +206,43 @@ export default async function build(__root, task, exportPath = null) {
 					const width = widthArg !== sass.sassNull ? Math.round(widthArg.assertNumber('width').value) : null;
 					const height = heightArg !== sass.sassNull ? Math.round(heightArg.assertNumber('height').value) : null;
 
-					// Output naming and source collection live in imgasset()
-					// (see libs/image.js); here we just forward the params and
-					// wrap the returned path in a CSS url(...) value.
-					const url = images.ref(srcRelPath, { width, height, cover });
+					// Predict the output name synchronously (same rule as
+					// IMG::asset()), record the job, and return the CSS url().
+					// The encode runs later in processCollectedImages().
+					const outRel = imageOutName(srcRelPath, { width, height, cover }, imgFormat);
+					const destAbs = path.join(imgDestRoot, outRel);
+					if (!imageJobs.has(destAbs)) {
+						const destAbsSource = imgDestRootSource ? path.join(imgDestRootSource, outRel) : null;
+						imageJobs.set(destAbs, {
+							srcRelPath,
+							width,
+							height,
+							cover,
+							dests: [destAbs, destAbsSource].filter(Boolean),
+						});
+					}
+					const url = path.relative(dir, destAbs).split(path.sep).join('/');
 					return new sass.SassString(`url("${url}")`, { quotes: false });
 				},
 
 				'colors($path, $count: 5)': async (args) => {
-					const srcRelPath = args[0].assertString('path').text;
+					const srcRelPath = args[0].assertString('path').text.replace(/\\/g, '/');
 					const count = Math.round(args[1].assertNumber('count').value);
 
 					const absPath = path.resolve(imgSourceRoot, srcRelPath);
+					if (!fs.existsSync(absPath)) throw new Error(`colors: source file not found: ${absPath}`);
 					const mtime = fs.statSync(absPath).mtimeMs;
 					const cacheKey = `colors_${absPath}:${mtime}:${count}`;
 
 					let hexColors = CACHE.get(cacheKey);
 					if (!hexColors) {
-						hexColors = await getRepresentativeColors(absPath, { numColors: count });
+						// Cache miss: extract the palette through IMG::palette()
+						// (GD, same engine as everything else). The PHP runtime
+						// boots here only if it wasn't already needed.
+						const { processImages } = await getPrepros();
+						const result = await processImages([{ op: 'palette', src: srcRelPath, count }]);
+						if (!result.success) throw new Error(result.error || `colors: palette extraction failed for ${srcRelPath}`);
+						hexColors = result.colors[`${srcRelPath}:${count}`] || [];
 						CACHE.set(cacheKey, hexColors);
 					}
 
@@ -189,7 +266,7 @@ export default async function build(__root, task, exportPath = null) {
 			)
 			: await sass.compileAsync(entry, compileOptions);
 
-		const newImages = await images.process();
+		const newImages = await processCollectedImages();
 
 		if(exportPath) {
 			const minified = minify(compiled.css, { restructure: false });

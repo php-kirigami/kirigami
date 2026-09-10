@@ -16,6 +16,7 @@ const COMMANDS = {
 	watch: "Start dev-mode with hot-reload",
 	run: "Run a PHP command script from the scripts/ folder",
 	create: "Create a new project from an official template",
+	cache: "Purge the local caches (.node.db / .cache.db / .cookie.txt)",
 	phpinfo: "Print phpinfo() from the embedded PHP-WASM runtime",
 };
 
@@ -49,6 +50,7 @@ ${c.bold("EXAMPLES")}
   ${c.dim("kiri watch")}
   ${c.dim("kiri run convert-images")}
   ${c.dim("kiri create --list")}
+  ${c.dim("kiri cache purge")}
 
 ${c.dim("Type `kiri <command> --help` for detailed help on a command.")}
 `);

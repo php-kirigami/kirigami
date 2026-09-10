@@ -131,6 +131,7 @@ npx kiri export
 | `kiri watch` | Starts dev mode: watches project files and rebuilds automatically on change. |
 | `kiri run <script>` | Runs a PHP command script from the `scripts/` folder inside the Kirigami runtime. |
 | `kiri create <template>` | Creates a new project from an official template. |
+| `kiri cache purge [mask]` | Purges the local `.node.db` / `.cache.db` / `.cookie.txt` caches (or just the keys matching `mask`). |
 | `kiri phpinfo` | Prints `phpinfo()` from the embedded PHP-WASM runtime. |
 
 Every command comes with its own detailed help: `kiri <command> --help`.
@@ -244,7 +245,12 @@ Just declaring this block (even empty) automatically prepends a forced `prepros`
 
 ### `image:` — image autogenerator
 
-Options for the built-in image autogenerator behind the `img-asset()` and `colors()` Sass functions. Optional — the defaults below apply even when the block is absent.
+Options for the built-in image autogenerator. One feature, four entry points that
+share this config, one engine and the same output files: the `img-asset()` and
+`colors()` Sass functions, the PHP `IMG::asset()` / `IMG::palette()` helpers, and
+the `<img asset="…">` tag in page templates — all resize/encode through the `IMG`
+class (GD/Imagick) in the WASM runtime, so there is no native image dependency.
+Optional — the defaults below apply even when the block is absent.
 
 | Key | Description |
 |---|---|

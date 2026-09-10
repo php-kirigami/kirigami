@@ -7,18 +7,30 @@ if(!boolval(PREPROS::$config->network ?? false)) STD::error("CURL Error: Network
 
 class CURL {
 
+	// Mimics a Google Chrome (stable) browser on Windows 11, desktop, requesting
+	// a top-level document. Windows 11 still reports "Windows NT 10.0" in the UA
+	// string; the real version is only exposed through the Sec-CH-UA-Platform-Version
+	// client hint ("15.0.0"). Accept advertises every image format modern Chrome
+	// supports, AVIF included.
 	const HEADERS = [
-		'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-		'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+		'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+		'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
 		'Accept-Language: fr-CA,fr;q=0.9,en-US;q=0.8,en;q=0.7',
-		'Sec-Ch-Ua: "Not_A Brand";v="99", "Google Chrome";v="109", "Chromium";v="109"',
+		// Accept-Encoding is intentionally left to CURLOPT_ENCODING so curl only
+		// advertises what it can actually transparently decode.
+		'Sec-Ch-Ua: "Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
 		'Sec-Ch-Ua-Mobile: ?0',
 		'Sec-Ch-Ua-Platform: "Windows"',
+		'Sec-Ch-Ua-Platform-Version: "15.0.0"',
+		'Sec-Ch-Ua-Arch: "x86"',
+		'Sec-Ch-Ua-Bitness: "64"',
+		'Sec-Ch-Ua-Full-Version-List: "Google Chrome";v="131.0.6778.86", "Chromium";v="131.0.6778.86", "Not_A Brand";v="24.0.0.0"',
 		'Sec-Fetch-Dest: document',
 		'Sec-Fetch-Mode: navigate',
 		'Sec-Fetch-Site: none',
 		'Sec-Fetch-User: ?1',
 		'Upgrade-Insecure-Requests: 1',
+		'Priority: u=0, i',
 	];
 
     
