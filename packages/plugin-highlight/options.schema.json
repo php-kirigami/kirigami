@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/plugin-highlight/options.schema.json",
+  "title": "@kirigami/plugin-highlight options",
+  "description": "Options for the `@kirigami/plugin-highlight` entry under `plugins:` in kirigami.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "languages": {
+      "description": "Languages to register with highlight.js. Either an explicit list of language names, or the string \"all\" for the full build (~190 languages, slower). Unknown names are skipped with a warning.",
+      "default": ["php", "javascript", "typescript", "bash", "json", "yaml", "css", "scss", "xml", "markdown", "sql", "python"],
+      "oneOf": [
+        {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        { "const": "all" }
+      ]
+    },
+    "theme": {
+      "description": "Which theme stylesheet to append to every sass task. \"auto\" = light baseline + dark under prefers-color-scheme/[data-theme]. \"none\" appends nothing (you @use the mixin yourself).",
+      "type": "string",
+      "enum": ["auto", "dark", "light", "none"],
+      "default": "auto"
+    },
+    "autodetect": {
+      "description": "Guess the language of code blocks that have no language- class, restricted to the registered set.",
+      "type": "boolean",
+      "default": true
+    },
+    "embedFont": {
+      "description": "Append the embedded JetBrains Mono @font-face (~39 KB base64 woff2) to every sass task.",
+      "type": "boolean",
+      "default": true
+    },
+    "copyButton": {
+      "description": "Add a hover \"Copy\" button to every code block. Bundles a small script into every esbuild task (needs one) and appends the button styles to every sass task.",
+      "type": "boolean",
+      "default": true
+    },
+    "tag": {
+      "description": "Register the <highlight lang=\"…\">…</highlight> authoring tag (PHP-side, via the prepros:php hook). It emits <pre><code class=\"language-…\">; the highlighting itself still happens in the prepros:html pass.",
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

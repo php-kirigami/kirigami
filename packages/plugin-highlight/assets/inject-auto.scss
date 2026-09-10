@@ -1,0 +1,16 @@
+// Injected by @kirigami/plugin-highlight when `theme: auto`.
+// Light by default; dark under an explicit [data-theme="dark"] or the OS
+// preference — the same model as @kirigami/canva's theming.
+@use "highlight" as hljs;
+
+@include hljs.light();
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		@include hljs.dark();
+	}
+}
+
+[data-theme="dark"] {
+	@include hljs.dark();
+}

@@ -1,0 +1,5 @@
+// Injected by @kirigami/plugin-highlight when `copyButton` is on: the
+// theme-independent copy-button layout (colours come from the theme mixin).
+@use "highlight" as hljs;
+
+@include hljs.copystructure;

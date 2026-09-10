@@ -147,10 +147,7 @@ export default async function build(__root, task, exportPath = null) {
 			loadPaths: [path.resolve(process.cwd(), "./node_modules")],
 			importers: [
 				new sass.NodePackageImporter(),
-				createPkgImporter([
-					path.resolve(process.cwd(), "./node_modules"),
-					getGlobalRoot()
-				])
+				createPkgImporter()
 			],
 			functions: {
 				// Functions added by plugins (the 'sass:functions' hook).
@@ -259,10 +256,15 @@ export default async function build(__root, task, exportPath = null) {
 			...params
 		};
 
+		// The synthetic entry lives (virtually) in the real entry's directory
+		// so its relative @use "./entry.scss" resolves — but under its own
+		// filename, otherwise Sass sees the entry @use'ing itself ("module
+		// loop: already being loaded").
+		const syntheticUrl = pathToFileURL(path.join(path.dirname(entry), '__kirigami_entry__.scss'));
 		const compiled = (beforeFiles.length || afterFiles.length)
 			? await sass.compileStringAsync(
 				buildSyntheticEntrySource(entry, beforeFiles, afterFiles),
-				{ url: pathToFileURL(entry), ...compileOptions }
+				{ url: syntheticUrl, ...compileOptions }
 			)
 			: await sass.compileAsync(entry, compileOptions);
 
@@ -361,7 +363,37 @@ function buildSyntheticEntrySource(entryAbsPath, beforeFiles, afterFiles) {
 }
 
 
-function createPkgImporter(roots) {
+// ---------------------------------------------------------------------------
+// Resolves the directory of an npm package by name, the way Node itself would
+// (so symlinks / npm link / pnpm / workspace hoisting all work), trying both
+// the project's resolution and kiri's own — the latter catches a globally
+// installed kiri whose plugins are global siblings. Falls back to a plain
+// join against ./node_modules and `npm root -g`.
+// ---------------------------------------------------------------------------
+function resolvePackageDir(pkgName) {
+	for (const from of [path.join(process.cwd(), "index.js"), import.meta.url]) {
+		try {
+			const req = createRequire(from);
+			// Prefer the manifest entry (every package that ships styles via
+			// `exports` exposes ./package.json too); fall back to the main entry.
+			let pkgJson;
+			try {
+				pkgJson = req.resolve(`${pkgName}/package.json`);
+			} catch {
+				pkgJson = path.join(req.resolve(pkgName), "..", "package.json");
+			}
+			if (fs.existsSync(pkgJson)) return path.dirname(pkgJson);
+		} catch { /* try the next resolution base */ }
+	}
+	for (const root of [path.resolve(process.cwd(), "./node_modules"), getGlobalRoot()]) {
+		const dir = path.join(root, pkgName);
+		if (fs.existsSync(path.join(dir, "package.json"))) return dir;
+	}
+	return null;
+}
+
+
+function createPkgImporter() {
 	return {
 		findFileUrl(url) {
 			const match = url.match(/^(@[^/]+\/[^/]+)\/(.+)$/)
@@ -370,39 +402,29 @@ function createPkgImporter(roots) {
 
 			const [, pkgName, subPath] = match;
 
-			for (const root of roots) {
-				const pkgDir = path.join(root, pkgName);
-				const pkgJsonPath = path.join(pkgDir, "package.json");
+			const pkgDir = resolvePackageDir(pkgName);
+			if (!pkgDir) return null;
 
-				if (!fs.existsSync(pkgJsonPath)) continue; // try the next root
+			const pkgJson = JSON.parse(fs.readFileSync(path.join(pkgDir, "package.json"), "utf8"));
+			const exportsMap = pkgJson.exports;
+			if (!exportsMap) return null;
 
-				const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, "utf8"));
-				const exportsMap = pkgJson.exports;
-				if (!exportsMap) continue;
+			// candidates to try, in order: the subPath as-is, then the same
+			// subPath prefixed with "styles/" (so "@scope/pkg/init" works as
+			// well as "@scope/pkg/styles/init")
+			const candidates = [subPath, `styles/${subPath}`];
 
-				// candidates to try, in order: the subPath as-is, then the
-				// same subPath prefixed with "styles/" (to support imports
-				// like "@scope/pkg/init" in addition to
-				// "@scope/pkg/styles/init")
-				const candidates = [subPath, `styles/${subPath}`];
-
-				let found = null;
-				for (const [pattern, target] of Object.entries(exportsMap)) {
-					const patternRe = new RegExp(
-						"^" + pattern.replace("*", "(.+)").replace("./", "\\./") + "$"
-					);
-					for (const candidate of candidates) {
-						const m = ("./" + candidate).match(patternRe);
-						if (m) {
-							const resolved = target.replace("*", m[1]);
-							found = path.join(pkgDir, resolved);
-							break;
-						}
+			for (const [pattern, target] of Object.entries(exportsMap)) {
+				if (typeof target !== "string") continue;
+				const patternRe = new RegExp(
+					"^" + pattern.replace("*", "(.+)").replace("./", "\\./") + "$"
+				);
+				for (const candidate of candidates) {
+					const m = ("./" + candidate).match(patternRe);
+					if (m) {
+						const resolved = target.replace("*", m[1] ?? "");
+						return new URL("file://" + path.join(pkgDir, resolved).replace(/\\/g, "/"));
 					}
-					if (found) break;
-				}
-				if (found) {
-					return new URL("file://" + found.replace(/\\/g, "/"));
 				}
 			}
 			return null;

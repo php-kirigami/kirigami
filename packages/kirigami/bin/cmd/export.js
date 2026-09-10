@@ -3,6 +3,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { c, log, parseArgs, printCommandHelp, printTaskError } from "../utils.js";
 import { getConfig } from "../config.js";
 import { trigger } from "../libs/triggers.js";
+import { loadPlugins } from "../libs/plugins.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const __root = process.cwd();
@@ -50,6 +51,8 @@ export default async function exportDist(args) {
 	log.step(`Base URL  : ${c.dim(config.kirigami.baseurl)}`);
 	log.step(`Root      : ${c.dim(config.root)}`);
 	log.step(`Export    : ${c.dim(__dist)}`);
+
+	await loadPlugins();
 
 	console.log(`\n\n${c.bold('Tasks:')}`);
 

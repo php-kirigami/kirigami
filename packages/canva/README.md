@@ -34,6 +34,18 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 2.1.0
+
+- **`theme` — declarative toggles.** Mark up any control with
+  `[data-theme-toggle]` (bare = flip light ⇄ dark, or `="dark|light|auto"` to
+  force a preference) and importing `@kirigami/canva/theme` wires it — no click
+  handler to write. Toggles reflect state via `data-theme-state` /
+  `aria-pressed`, a `canva:themechange` event fires on `window`, and an OS
+  switch re-syncs everything while in `auto`. New export `bindToggles()`. See
+  [`theme`](#theme).
+
+---
+
 ## What's new in 2.0.0
 
 - **Script subpaths dropped the `scripts/` segment.** Scripts are now imported
@@ -77,6 +89,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/canva](#kirigamicanva)
   - [Overview](#overview)
+  - [What's new in 2.1.0](#whats-new-in-210)
   - [What's new in 2.0.0](#whats-new-in-200)
   - [What's new in 1.1.1](#whats-new-in-111)
   - [What's new in 1.1.0](#whats-new-in-110)
@@ -310,8 +323,9 @@ import { toggleTheme, setTheme, getTheme, resolvedTheme } from '@kirigami/canva/
 
 Manual light/dark switch for the [`conf` dark theme](#dark-theme). Writes
 `data-theme` on `<html>` and persists the choice in `localStorage`
-(`kirigami-theme`). **Side effect:** importing the module re-applies the
-stored preference immediately.
+(`kirigami-theme`). **Side effect:** importing the module re-applies the stored
+preference immediately, then (on `DOMContentLoaded`) wires every
+`[data-theme-toggle]` control.
 
 | Export | Signature | Description |
 |---|---|---|
@@ -320,6 +334,29 @@ stored preference immediately.
 | `setTheme` | `setTheme(pref) → 'light' \| 'dark'` | Persists `pref` (`'auto'` clears the attribute and lets the OS decide) and applies it; returns the now-resolved theme. |
 | `toggleTheme` | `toggleTheme() → 'light' \| 'dark'` | Flips between light and dark from what is currently shown. |
 | `initTheme` | `initTheme() → void` | Re-applies the stored preference (run on import). |
+| `bindToggles` | `bindToggles(target = document) → void` | Wires every `[data-theme-toggle]` under `target` (idempotent; run on import). Call again after injecting toggles later. |
+
+#### Declarative toggle
+
+No wiring needed — just import the module and mark up a control:
+
+```html
+<button data-theme-toggle aria-label="Toggle theme">🌗</button>   <!-- flips light ⇄ dark -->
+<button data-theme-toggle="dark">Dark</button>                    <!-- forces a preference -->
+<button data-theme-toggle="light">Light</button>
+<button data-theme-toggle="auto">System</button>
+```
+
+Each toggle receives `data-theme-state="light|dark"` (the resolved theme) and,
+when it's a real control, `aria-pressed` (`true` while dark) — style them from
+those. Every change (click **or** an OS switch while in `auto`) fires a
+`canva:themechange` CustomEvent on `window`:
+
+```js
+addEventListener('canva:themechange', (e) => {
+	e.detail; // { theme: 'light' | 'dark', preference: 'auto' | 'light' | 'dark' }
+});
+```
 
 ### `observer`
 

@@ -20,6 +20,11 @@ final class PREPROS
             if (!is_file(realpath(self::$root . $path))) continue;
             else include_once(realpath(self::$root . $path));
         }
+        // Plugin-contributed PHP (kiri 'prepros:php' hook): absolute virtual
+        // paths, mounted outside the project by @kirigami/php-prepros.
+        if (!empty($config->phpIncludes)) foreach ($config->phpIncludes as $path) {
+            if (is_file($path)) include_once($path);
+        }
     }
 
 

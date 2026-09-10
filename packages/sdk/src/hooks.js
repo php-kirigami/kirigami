@@ -25,6 +25,13 @@ export function off(hookName, fn) {
 }
 
 
+// True if at least one listener is registered for a hook. Lets a task skip
+// expensive setup (reading files, booting a runtime) when nothing hooks in.
+export function has(hookName) {
+	return !!listeners.get(hookName)?.size;
+}
+
+
 // Runs every listener of a hook, in registration order, and flattens their
 // results. A listener may return undefined/null (ignored), a single value, or
 // an array of values.
@@ -39,4 +46,22 @@ export async function run(hookName, ...args) {
 		results.push(...(Array.isArray(value) ? value : [value]));
 	}
 	return results;
+}
+
+
+// Pipes `value` through every listener of a hook, in registration order: each
+// listener receives (value, ...args) and, unless it returns null/undefined,
+// its return value becomes the input for the next one. Mirrors the PHP-side
+// PREPROS::runHook() waterfall — the shape a task wants when a hook transforms
+// a single artefact (an HTML string, a config object) rather than collecting
+// contributions like run() does.
+export async function runWaterfall(hookName, value, ...args) {
+	const fns = listeners.get(hookName);
+	if (!fns || !fns.size) return value;
+
+	for (const fn of fns) {
+		const next = await fn(value, ...args);
+		if (next != null) value = next;
+	}
+	return value;
 }

@@ -1,0 +1,58 @@
+{
+  "name": "@kirigami/plugin-highlight",
+  "version": "0.1.0",
+  "description": "highlight.js syntax highlighting for Kirigami — applied at build time, zero runtime JavaScript shipped.",
+  "keywords": [
+    "kirigami",
+    "kirigami-plugin",
+    "plugin",
+    "highlight.js",
+    "highlightjs",
+    "syntax-highlighting",
+    "code",
+    "prism-alternative"
+  ],
+  "license": "MIT",
+  "author": "Maxime Larrivée-Roy",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "src/",
+    "assets/",
+    "php/",
+    "options.schema.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./highlight": "./assets/_highlight.scss",
+    "./styles/*": "./assets/*.scss",
+    "./package.json": "./package.json"
+  },
+  "kirigami": {
+    "type": "plugin",
+    "minVersion": "1.2.0",
+    "optionsSchema": "./options.schema.json"
+  },
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=10.2.3"
+  },
+  "dependencies": {
+    "@kirigami/sdk": "0.2.0",
+    "highlight.js": "^11.11.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/php-kirigami/kirigami.git"
+  },
+  "homepage": "https://github.com/php-kirigami/kirigami/tree/main/packages/plugin-highlight#readme",
+  "bugs": {
+    "url": "https://github.com/php-kirigami/kirigami/issues"
+  }
+}

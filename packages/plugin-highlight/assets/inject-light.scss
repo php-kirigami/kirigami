@@ -1,0 +1,4 @@
+// Injected by @kirigami/plugin-highlight when `theme: light`.
+@use "highlight" as hljs;
+
+@include hljs.light();

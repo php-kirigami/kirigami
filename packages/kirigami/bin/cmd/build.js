@@ -3,6 +3,7 @@ import { fileURLToPath, pathToFileURL } from 'url';
 import { c, log, parseArgs, printCommandHelp, printTaskError } from "../utils.js";
 import { getConfig } from "../config.js";
 import { trigger } from "../libs/triggers.js";
+import { loadPlugins } from "../libs/plugins.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -41,6 +42,8 @@ export default async function build(args) {
 	log.step(`Project   : ${c.dim(config.kirigami.project)}`);
 	log.step(`Base URL  : ${c.dim(config.kirigami.baseurl)}`);
 	log.step(`Root      : ${c.dim(config.root)}`);
+	await loadPlugins();
+
 	console.log(`\n\n${c.bold('Tasks:')}`);
 
 	await trigger('before-build');

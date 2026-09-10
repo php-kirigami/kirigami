@@ -1,0 +1,41 @@
+// ---------------------------------------------------------------------------
+// Copy-button layout — the theme-independent half. Emit once (the inject-*.scss
+// entries do it via `hljs.copystructure()`); the per-palette colours live in
+// the `theme()` mixin in _highlight.scss.
+// ---------------------------------------------------------------------------
+
+@mixin structure {
+	.hljs-copy-wrap {
+		position: relative;
+	}
+
+	.hljs-copy {
+		position: absolute;
+		top: 0.55rem;
+		right: 0.55rem;
+		z-index: 1;
+
+		padding: 0.28rem 0.62rem;
+		border: 0;
+		border-radius: 6px;
+
+		font-family: inherit;
+		font-size: 0.72rem;
+		font-weight: 600;
+		line-height: 1;
+		letter-spacing: 0.02em;
+
+		cursor: pointer;
+		opacity: 0;
+		transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+	}
+
+	.hljs-copy-wrap:hover .hljs-copy,
+	.hljs-copy:focus-visible {
+		opacity: 1;
+	}
+
+	@media (hover: none) {
+		.hljs-copy { opacity: 1; }
+	}
+}

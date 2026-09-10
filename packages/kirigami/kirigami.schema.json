@@ -286,11 +286,25 @@
           },
           "options": {
             "type": "object",
-            "description": "Free-form plugin options. The structure depends on the plugin.",
+            "description": "Plugin options. Free-form here; each plugin also ships its own JSON Schema (package.json `kirigami.optionsSchema`) which `kiri` validates at build time. Official @kirigami/plugin-* packages have their schema wired in below, so this block gets full editor completion/validation once `name` is set.",
             "additionalProperties": true,
             "default": {}
           }
-        }
+        },
+        "allOf": [
+          {
+            "$comment": "One block per first-party plugin: when `name` matches, point `options` at that package's options.schema.json (resolved relative to this file's location — a sibling package in the monorepo / on jsdelivr). Third-party plugins keep the free-form `options` above and are validated only at build time.",
+            "if": {
+              "required": ["name"],
+              "properties": { "name": { "const": "@kirigami/plugin-highlight" } }
+            },
+            "then": {
+              "properties": {
+                "options": { "$ref": "../plugin-highlight/options.schema.json" }
+              }
+            }
+          }
+        ]
       },
       "default": []
     },

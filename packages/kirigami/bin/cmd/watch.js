@@ -4,6 +4,7 @@ import picomatch from "picomatch";
 import { fileURLToPath, pathToFileURL } from 'url';
 import { c, log, parseArgs, printCommandHelp } from "../utils.js";
 import { getConfig } from "../config.js";
+import { loadPlugins } from "../libs/plugins.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const __root = process.cwd();
@@ -50,6 +51,8 @@ export default async function watch(args) {
 	log.step(`Root      : ${c.dim(config.root)}`);
 	console.log("\n");
 	log.info('Waiting for file change...\n');
+
+	await loadPlugins();
 
 	if(config.prepros) {
 		const task = {

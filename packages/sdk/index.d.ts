@@ -20,11 +20,25 @@ export declare function on(hookName: string, fn: HookListener): () => void;
 export declare function off(hookName: string, fn: HookListener): void;
 
 /**
+ * True when at least one listener is registered for a hook. Lets a task skip
+ * work (reading files, booting a runtime) when nothing hooks in.
+ */
+export declare function has(hookName: string): boolean;
+
+/**
  * Runs every listener registered for a named hook, in registration order,
  * awaiting each in turn and flattening their results into a single array.
  * Listeners returning null/undefined contribute nothing.
  */
 export declare function run(hookName: string, ...args: unknown[]): Promise<unknown[]>;
+
+/**
+ * Pipes `value` through every listener of a hook, in registration order: each
+ * listener receives `(value, ...args)` and, unless it returns null/undefined,
+ * its return value becomes the input for the next one. The shape a task wants
+ * when a hook transforms a single artefact rather than collecting values.
+ */
+export declare function runWaterfall<T>(hookName: string, value: T, ...args: unknown[]): Promise<T>;
 
 /**
  * Hook names exposed by @kirigami/kirigami's built-in tasks. Prefer these
@@ -34,6 +48,11 @@ export declare const HOOKS: {
 	readonly SASS_BEFORE: 'sass:before';
 	readonly SASS_AFTER: 'sass:after';
 	readonly SASS_FUNCTIONS: 'sass:functions';
+	readonly ESBUILD_BEFORE: 'esbuild:before';
+	readonly ESBUILD_AFTER: 'esbuild:after';
+	readonly ESBUILD_PLUGINS: 'esbuild:plugins';
+	readonly PREPROS_HTML: 'prepros:html';
+	readonly PREPROS_PHP: 'prepros:php';
 };
 
 /**

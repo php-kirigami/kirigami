@@ -1,0 +1,351 @@
+// ---------------------------------------------------------------------------
+// @kirigami/plugin-highlight — theme mixin
+//
+// Styles the highlight.js markup the plugin injects at build time
+// (`.hljs`, `.hljs-keyword`, …). Nothing is emitted until you @include it:
+//
+//   @use "@kirigami/plugin-highlight/highlight" as hljs;
+//
+//   @include hljs.dark();                 // built-in dark palette
+//   @include hljs.light((accent: #06f));  // light palette, one override
+//   @include hljs.theme((                 // a palette of your own
+//     bg: #10131a, surface: #171b24, surface-2: #141821, border: #2b3140,
+//     ink: #e8ecf1, ink-muted: #93a0b4, accent: #7cc4ff, accent-soft: #1d2b3a,
+//   ));
+//
+// `theme:` in kirigami.yaml (`auto` / `dark` / `light`) does the @use +
+// @include for you via one of the inject-*.scss entries next to this file.
+// The stand-alone `theme-dark.scss` / `theme-light.scss` files are copy-me
+// examples, not part of this API.
+// ---------------------------------------------------------------------------
+
+@use "sass:color";
+@use "sass:map";
+@use "font";
+@use "copy";
+
+
+// Font stack for code. Override before @include if you don't want JetBrains
+// Mono to win: `@use "…/highlight" with ($code-font: (Consolas, monospace));`
+$code-font: (
+	"JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace
+) !default;
+
+
+// Emits the embedded JetBrains Mono @font-face. Call once (the inject-*.scss
+// entries do it for you when `embedFont` is on).
+@mixin fontface {
+	@include font.face;
+}
+
+
+// Emits the theme-independent copy-button layout. Call once (the inject-*.scss
+// entries do it when `copyButton` is on); the per-palette colours are emitted
+// by `theme()`.
+@mixin copystructure {
+	@include copy.structure;
+}
+
+
+// Built-in palettes — the same values as theme-dark.scss / theme-light.scss.
+$presets: (
+	dark: (
+		bg:          #1B2027,
+		surface:     #262D37,
+		surface-2:   #20262E,
+		border:      #3A4250,
+		ink:         #EDF1F3,
+		ink-muted:   #98A2B0,
+		accent:      #FF6B52,
+		accent-soft: #402620,
+	),
+	light: (
+		bg:          #F7F8F7,
+		surface:     #ECF1F3,
+		surface-2:   #FFFFFF,
+		border:      #D7DEE4,
+		ink:         #2F3640,
+		ink-muted:   #6B7480,
+		accent:      #C7402C,
+		accent-soft: #F5DFDA,
+	),
+) !default;
+
+
+@function _need($palette, $key) {
+	@if not map.has-key($palette, $key) {
+		@error "plugin-highlight: palette is missing the `#{$key}` key.";
+	}
+	@return map.get($palette, $key);
+}
+
+// Derived token: an explicit key in the palette map wins, otherwise it is
+// computed from the base colours.
+@function _token($palette, $key, $fallback) {
+	$value: map.get($palette, $key);
+	@if $value == null {
+		@return $fallback;
+	}
+	@return $value;
+}
+
+
+// The eight base colours a palette must define:
+//   bg surface surface-2 border ink ink-muted accent accent-soft
+// Optional overrides for any derived token (keyword, string, number, title,
+// built-in, type, variable, attr, symbol, meta, punctuation) may sit in the
+// same map.
+@mixin theme($palette) {
+	$bg:          _need($palette, bg);
+	$surface:     _need($palette, surface);
+	$surface-2:   _need($palette, surface-2);
+	$border:      _need($palette, border);
+	$ink:         _need($palette, ink);
+	$ink-muted:   _need($palette, ink-muted);
+	$accent:      _need($palette, accent);
+	$accent-soft: _need($palette, accent-soft);
+
+	$comment:     _token($palette, comment,     $ink-muted);
+	$keyword:     _token($palette, keyword,     $accent);
+	$string:      _token($palette, string,      color.adjust($accent, $lightness: 8%));
+	$number:      _token($palette, number,      color.adjust($accent, $lightness: -5%, $saturation: -10%));
+	$title:       _token($palette, title,       color.adjust($accent, $lightness: 5%));
+	$built-in:    _token($palette, built-in,    color.adjust($ink, $lightness: -5%));
+	$type:        _token($palette, type,        color.adjust($ink, $lightness: -2%));
+	$variable:    _token($palette, variable,    $ink);
+	$attr:        _token($palette, attr,        color.adjust($accent, $lightness: -3%));
+	$symbol:      _token($palette, symbol,      color.adjust($accent, $lightness: 10%));
+	$meta:        _token($palette, meta,        $ink-muted);
+	$punctuation: _token($palette, punctuation, color.mix($ink, $surface-2, 55%));
+
+	.hljs {
+		display: block;
+		overflow-x: auto;
+		padding: 1.25rem 1.5rem;
+
+		color: $ink;
+		background: $surface-2;
+
+		border: 1px solid $border;
+		border-radius: 0.5rem;
+
+		font-family: $code-font;
+		font-size: 0.875rem;
+		line-height: 1.65;
+
+		-webkit-font-smoothing: antialiased;
+		tab-size: 2;
+	}
+
+	pre {
+		margin: 1.5rem 0;
+	}
+
+	pre > code.hljs {
+		background: $surface-2;
+	}
+
+	// Inline code (not inside a highlighted block).
+	:not(pre) > code,
+	code:not(.hljs) {
+		padding: 0.15em 0.4em;
+
+		color: $accent;
+		background: $accent-soft;
+
+		border: 1px solid color.adjust($accent-soft, $lightness: 5%);
+		border-radius: 0.25em;
+
+		font-family: $code-font;
+		font-size: 0.875em;
+	}
+
+	// Comments
+	.hljs-comment,
+	.hljs-quote {
+		color: $comment;
+		font-style: italic;
+	}
+
+	// Keywords / control flow
+	.hljs-keyword,
+	.hljs-selector-tag,
+	.hljs-subst {
+		color: $keyword;
+		font-weight: 600;
+	}
+
+	.hljs-selector-id,
+	.hljs-selector-class {
+		color: $keyword;
+	}
+
+	// Strings
+	.hljs-string,
+	.hljs-regexp,
+	.hljs-template-tag,
+	.hljs-template-variable {
+		color: $string;
+	}
+
+	// Numbers / literals
+	.hljs-number,
+	.hljs-literal {
+		color: $number;
+	}
+
+	// Functions / classes
+	.hljs-title,
+	.hljs-title.class_,
+	.hljs-title.class_.inherited__,
+	.hljs-title.function_ {
+		color: $title;
+		font-weight: 600;
+	}
+
+	.hljs-function {
+		color: $ink;
+	}
+
+	.hljs-params {
+		color: $variable;
+	}
+
+	// Types / built-ins
+	.hljs-type,
+	.hljs-built_in,
+	.hljs-built_in.class_ {
+		color: $type;
+		font-weight: 500;
+	}
+
+	.hljs-variable,
+	.hljs-variable.language_ {
+		color: $variable;
+	}
+
+	// Attributes / properties
+	.hljs-attr,
+	.hljs-attribute,
+	.hljs-property {
+		color: $attr;
+	}
+
+	// Symbols
+	.hljs-symbol,
+	.hljs-bullet {
+		color: $symbol;
+	}
+
+	// Meta
+	.hljs-meta,
+	.hljs-meta .hljs-keyword {
+		color: $meta;
+	}
+
+	.hljs-meta .hljs-string {
+		color: $string;
+	}
+
+	// Punctuation / operators
+	.hljs-punctuation {
+		color: $punctuation;
+	}
+
+	.hljs-operator {
+		color: $ink;
+	}
+
+	// HTML / XML
+	.hljs-tag {
+		color: $ink;
+	}
+
+	.hljs-name {
+		color: $keyword;
+		font-weight: 600;
+	}
+
+	.hljs-tag .hljs-attr {
+		color: $attr;
+	}
+
+	.hljs-tag .hljs-string {
+		color: $string;
+	}
+
+	// CSS
+	.hljs-selector-attr,
+	.hljs-selector-pseudo {
+		color: $keyword;
+	}
+
+	// Markdown
+	.hljs-section {
+		color: $title;
+		font-weight: 700;
+	}
+
+	.hljs-emphasis {
+		font-style: italic;
+	}
+
+	.hljs-strong {
+		font-weight: 700;
+	}
+
+	// Diff
+	.hljs-addition {
+		display: inline-block;
+		width: 100%;
+
+		color: $ink;
+		background: color.adjust($accent-soft, $lightness: 5%);
+	}
+
+	.hljs-deletion {
+		display: inline-block;
+		width: 100%;
+
+		color: color.adjust($accent, $lightness: 5%);
+		background: $accent-soft;
+	}
+
+	// Links
+	.hljs-link {
+		color: $symbol;
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+
+	// Copy button (layout comes from `copystructure`, added by copy.js).
+	.hljs-copy {
+		color: $ink-muted;
+		background: color.mix($ink, $surface-2, 12%);
+
+		&:hover {
+			color: $ink;
+			background: color.mix($ink, $surface-2, 22%);
+		}
+
+		&[data-copied] {
+			color: $accent;
+		}
+	}
+}
+
+
+@mixin preset($name, $overrides: ()) {
+	@if not map.has-key($presets, $name) {
+		@error "plugin-highlight: unknown preset `#{$name}` (expected: #{map.keys($presets)}).";
+	}
+	@include theme(map.merge(map.get($presets, $name), $overrides));
+}
+
+@mixin dark($overrides: ()) {
+	@include preset(dark, $overrides);
+}
+
+@mixin light($overrides: ()) {
+	@include preset(light, $overrides);
+}

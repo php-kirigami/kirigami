@@ -41,7 +41,8 @@ export async function getConfig() {
 // ---------------------------------------------------------------------------
 function validateAgainstSchema(_config) {
 	if (!schemaValidator) {
-		const schema = require('../kirigami.schema.json');
+		const schema = structuredClone(require('../kirigami.schema.json'));
+		inlinePluginOptionSchemas(schema);
 		const ajv = new Ajv({ allErrors: true, strict: false, validateFormats: false });
 		schemaValidator = ajv.compile(schema);
 	}
@@ -52,6 +53,37 @@ function validateAgainstSchema(_config) {
 			.join('\n');
 		throwConfigError(__configpath, `Schema validation failed:\n${details}`);
 	}
+}
+
+
+// ---------------------------------------------------------------------------
+// The published schema points each first-party plugin's `options` at that
+// package's own options.schema.json via a relative `$ref` (see
+// `properties.plugins.items.allOf`) — great for editors, but Ajv here can't
+// follow a bare relative file ref. Resolve those refs from disk (relative to
+// the schema file) and inline them; drop the conditional when the plugin
+// isn't installed. `kiri`'s plugin loader still validates options against the
+// real installed schema too — this is just so `kiri build` doesn't choke on
+// the ref and gives an early hint.
+// ---------------------------------------------------------------------------
+function inlinePluginOptionSchemas(schema) {
+	const items = schema?.properties?.plugins?.items;
+	if (!Array.isArray(items?.allOf)) return;
+
+	const schemaDir = path.dirname(require.resolve('../kirigami.schema.json'));
+	items.allOf = items.allOf.flatMap((entry) => {
+		const ref = entry?.then?.properties?.options?.$ref;
+		if (typeof ref !== 'string') return [entry];
+		try {
+			const target = JSON.parse(fs.readFileSync(path.resolve(schemaDir, ref), 'utf8'));
+			delete target.$id;
+			delete target.$schema;
+			entry.then.properties.options = target;
+			return [entry];
+		} catch {
+			return []; // plugin not installed in this project — skip its schema
+		}
+	});
 }
 
 

@@ -1,13 +1,17 @@
+// Example dark theme — copy this into your project and tweak the palette.
+// It is NOT wired up automatically (that's `theme: dark` in kirigami.yaml,
+// which uses the parametric mixin in _highlight.scss instead).
+// For the embedded JetBrains Mono @font-face: @use "@kirigami/plugin-highlight/styles/font" and @include font.face;
 @use "sass:color";
 
-$bg:          #f7f8f7 !default;
-$surface:     #ecf1f3 !default;
-$surface-2:   #ffffff !default;
-$border:      #d7dee4 !default;
-$ink:         #2f3640 !default;
-$ink-muted:   #6b7480 !default;
-$accent:      #c7402c !default;
-$accent-soft: #f5dfda !default;
+$bg:          #1B2027 !default;
+$surface:     #262D37 !default;
+$surface-2:   #20262E !default;
+$border:      #3A4250 !default;
+$ink:         #EDF1F3 !default;
+$ink-muted:   #98A2B0 !default;
+$accent:      #FF6B52 !default;
+$accent-soft: #402620 !default;
 
 
 // -----------------------------------------------------------------------------
@@ -15,24 +19,22 @@ $accent-soft: #f5dfda !default;
 // -----------------------------------------------------------------------------
 
 // Derived palette
-$hljs-comment: color.adjust($ink-muted, $lightness: 4%);
+$hljs-comment: $ink-muted;
+
 $hljs-keyword: $accent;
 $hljs-string: color.adjust($accent, $lightness: 8%);
-$hljs-number: color.adjust($accent, $saturation: -10%, $lightness: -5%);
+$hljs-number: color.adjust($accent, $lightness: -5%, $saturation: -10%);
 
-$hljs-title: color.adjust($accent, $lightness: -8%);
-$hljs-built-in: color.adjust($ink, $lightness: 8%);
-$hljs-type: color.adjust($ink, $lightness: 2%);
+$hljs-title: color.adjust($accent, $lightness: 5%);
+$hljs-built-in: color.adjust($ink, $lightness: -5%);
+$hljs-type: color.adjust($ink, $lightness: -2%);
 
 $hljs-variable: $ink;
-$hljs-attr: color.adjust($accent, $lightness: -5%);
-$hljs-symbol: color.adjust($accent, $lightness: 4%);
+$hljs-attr: color.adjust($accent, $lightness: -3%);
+$hljs-symbol: color.adjust($accent, $lightness: 10%);
 
 $hljs-meta: $ink-muted;
-$hljs-punctuation: color.adjust($ink, $lightness: 18%);
-
-$hljs-addition: color.adjust($accent-soft, $lightness: -8%);
-$hljs-deletion: color.adjust($accent-soft, $lightness: -2%);
+$hljs-punctuation: color.adjust($ink, $lightness: -25%);
 
 
 // -----------------------------------------------------------------------------
@@ -51,6 +53,7 @@ $hljs-deletion: color.adjust($accent-soft, $lightness: -2%);
   border-radius: 0.5rem;
 
   font-family:
+    "JetBrains Mono",
     "SFMono-Regular",
     Consolas,
     "Liberation Mono",
@@ -267,15 +270,15 @@ $hljs-deletion: color.adjust($accent-soft, $lightness: -2%);
   display: inline-block;
   width: 100%;
 
-  color: color.adjust($accent, $lightness: -5%);
-  background: color.adjust($accent-soft, $lightness: 3%);
+  color: $ink;
+  background: color.adjust($accent-soft, $lightness: 5%);
 }
 
 .hljs-deletion {
   display: inline-block;
   width: 100%;
 
-  color: color.adjust($accent, $lightness: -15%);
+  color: color.adjust($accent, $lightness: 5%);
   background: $accent-soft;
 }
 
@@ -285,6 +288,41 @@ $hljs-deletion: color.adjust($accent-soft, $lightness: -2%);
 // -----------------------------------------------------------------------------
 
 .hljs-link {
+  color: $hljs-symbol;
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+
+// -----------------------------------------------------------------------------
+// Inline code
+// -----------------------------------------------------------------------------
+
+:not(pre) > code,
+code:not(.hljs) {
+  padding: 0.15em 0.4em;
+
+  color: $accent;
+  background: $accent-soft;
+
+  border: 1px solid color.adjust($accent-soft, $lightness: 5%);
+  border-radius: 0.25em;
+
+  font-family:
+    "JetBrains Mono",
+    "SFMono-Regular",
+    Consolas,
+    "Liberation Mono",
+    Menlo,
+    monospace;
+
+  font-size: 0.875em;
+}
+
+pre {
+  margin: 1.5rem 0;
+}
+
+pre > code.hljs {
+  background: $surface-2;
 }

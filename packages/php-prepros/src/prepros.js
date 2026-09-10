@@ -235,12 +235,29 @@ const processImages = async (jobs = []) => {
 }
 
 
-const render = async (file = '.') => {
+const render = async (file = '.', phpIncludes = []) => {
     const target = path.resolve(config?.kirigami?.root, file);
     const fsvm = path.join('/project', config?.kirigami?.root, file).replace(/\\/g, '/');
     await mountPath(target);
     if(config?.prepros?.before) await mountPath(path.resolve(config?.kirigami?.root, config?.prepros?.before));
     if(config?.prepros?.after) await mountPath(path.resolve(config?.kirigami?.root, config?.prepros?.after));
+
+    // Extra PHP files contributed by plugins (the kiri 'prepros:php' hook):
+    // mounted outside /project and include_once'd once, before any page
+    // renders, so they can PREPROS::registerTag()/registerHook() from PHP.
+    if (Array.isArray(phpIncludes) && phpIncludes.length) {
+        const php = await getPHPInstance();
+        const mounted = [];
+        for (let i = 0; i < phpIncludes.length; i++) {
+            const abs = path.resolve(phpIncludes[i]);
+            if (!fs.existsSync(abs)) continue;
+            const virt = `/plugins/${i}_${path.basename(abs)}`;
+            await mountPath(abs, virt, php);
+            mounted.push(virt);
+        }
+        php.preprosConfig.phpIncludes = mounted;
+    }
+
     return run([fsvm]);
 }
 

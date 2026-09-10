@@ -31,10 +31,24 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 0.2.0
+
+- `esbuild:before` / `esbuild:after` / `esbuild:plugins` hooks — the esbuild
+  task now has the same extension points as sass, so a plugin can inject
+  client-side JavaScript.
+- `prepros:html` hook — transform the final HTML of each rendered page;
+  `prepros:php` hook — contribute a PHP file to the prepros runtime (register
+  authoring tags / hooks from PHP). Both used by `@kirigami/plugin-highlight`.
+- `runWaterfall()` — pipe a value through listeners (vs. `run()`, which
+  collects), and `has()` — check whether a hook has any listener.
+
+---
+
 ## Table of contents
 
 - [@kirigami/sdk](#kirigamisdk)
   - [Overview](#overview)
+  - [What's new in 0.2.0](#whats-new-in-020)
   - [Table of contents](#table-of-contents)
   - [Installation](#installation)
   - [Usage in a plugin](#usage-in-a-plugin)
@@ -43,6 +57,8 @@ Part of the **Kirigami** project ecosystem.
     - [`on(hookName, fn)`](#onhookname-fn)
     - [`off(hookName, fn)`](#offhookname-fn)
     - [`run(hookName, ...args)`](#runhookname-args)
+    - [`runWaterfall(hookName, value, ...args)`](#runwaterfallhookname-value-args)
+    - [`has(hookName)`](#hashookname)
     - [`HOOKS`](#hooks)
   - [Cache](#cache)
   - [Requirements](#requirements)
@@ -75,6 +91,12 @@ on(HOOKS.SASS_FUNCTIONS, () => ({
 		// ...
 	},
 }));
+
+// Inject a client-side script into every esbuild bundle.
+on(HOOKS.ESBUILD_AFTER, () => path.join(pluginDir, 'client/init.js'));
+
+// Rewrite the rendered HTML of every page (waterfall — return the new string).
+on(HOOKS.PREPROS_HTML, (html, { file }) => html.replaceAll('<table>', '<table class="striped">'));
 ```
 
 A listener can return:
@@ -94,19 +116,29 @@ Each hook below is fired with a single argument, `hookContext`, shaped as
 `{ __root, task, exportPath, config }` (the same values `build()` receives
 for the current task, plus the resolved kirigami.yaml config).
 
-| Hook | Task | Expected return value |
-|---|---|---|
-| `HOOKS.SASS_BEFORE` | sass | `.scss` file path(s), compiled before the entry |
-| `HOOKS.SASS_AFTER` | sass | `.scss` file path(s), compiled after the entry |
-| `HOOKS.SASS_FUNCTIONS` | sass | object(s) `{ 'signature($arg)': (args) => SassValue }`, in the same shape as the Sass API's `functions` option |
+| Hook | Task | Fired with | Expected return value |
+|---|---|---|---|
+| `HOOKS.SASS_BEFORE` | sass | `hookContext` | `.scss` file path(s), compiled before the entry |
+| `HOOKS.SASS_AFTER` | sass | `hookContext` | `.scss` file path(s), compiled after the entry |
+| `HOOKS.SASS_FUNCTIONS` | sass | `hookContext` | object(s) `{ 'signature($arg)': (args) => SassValue }`, in the same shape as the Sass API's `functions` option |
+| `HOOKS.ESBUILD_BEFORE` | esbuild | `hookContext` | `.js`/`.ts` file path(s), bundled (as side-effect imports) before the entry |
+| `HOOKS.ESBUILD_AFTER` | esbuild | `hookContext` | `.js`/`.ts` file path(s), bundled (as side-effect imports) after the entry |
+| `HOOKS.ESBUILD_PLUGINS` | esbuild | `hookContext` | esbuild plugin object(s), same shape as the API's `plugins` option |
+| `HOOKS.PREPROS_HTML` | prepros | `(html, { file, abs, exportPath, config })` | the modified HTML string — a **waterfall** hook (run with `runWaterfall`), so return the new string or `null`/`undefined` to leave it untouched |
+| `HOOKS.PREPROS_PHP` | prepros | `({ __root, config })` | absolute path(s) of `.php` file(s) to `include_once` in the prepros runtime once, before any page renders — for a plugin to `PREPROS::registerTag()` / `registerHook()` from PHP |
 
-For `SASS_BEFORE`/`SASS_AFTER`, prefer an absolute path resolved from the
-plugin itself (as in the example above) — a relative path would be resolved
-from the `cwd()` of the project using kirigami, not from the plugin.
+For `*_BEFORE`/`*_AFTER`, prefer an absolute path resolved from the plugin
+itself (as in the example above) — a relative path would be resolved from the
+`cwd()` of the project using kirigami, not from the plugin. `esbuild:before` /
+`esbuild:after` files are bundled as bare side-effect `import`s, so their order
+is preserved: before → entry → after.
 
 For `SASS_FUNCTIONS`, if the signature collides with one of kirigami's native
 functions (`inline-file`, `img-asset`, `colors`, `font-*`), the native one
 wins.
+
+`PREPROS_HTML` fires once per rendered `.html` file. If no plugin registers a
+listener, kirigami-core doesn't even read the files back.
 
 ---
 
@@ -126,6 +158,18 @@ Unregisters a listener previously added with `on()`.
 Runs every listener registered for a hook, in registration order, and
 flattens their results into a single array. Used internally by
 kirigami-core — a plugin normally doesn't need to call `run()` itself.
+
+### `runWaterfall(hookName, value, ...args)`
+
+Pipes `value` through every listener in registration order: each receives
+`(value, ...args)` and, unless it returns `null`/`undefined`, its return value
+becomes the input for the next. The shape kirigami-core uses for hooks that
+transform a single artefact (`prepros:html`) rather than collect contributions.
+
+### `has(hookName)`
+
+`true` when at least one listener is registered for a hook — lets a task skip
+setup work when nothing hooks in.
 
 ### `HOOKS`
 
