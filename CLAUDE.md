@@ -24,7 +24,7 @@ Actions.
 | Package | Ver | Role |
 |---|---|---|
 | `@kirigami/kirigami` | 1.1.4 | the `kiri` CLI: build / export / watch / run / create / phpinfo. No native deps: the `sass` task's `img-asset()`/`colors()` run through php-prepros `processImages()` (was `sharp`, removed 2026-09-10) |
-| `@kirigami/php-prepros` | 1.2.1 | PHP→HTML compiler + PHP class library (PREPROS, MD, HTML, YAML, SCHEMA, CACHE, IMG, FS, STR, ARR, CURL, SCRAPER, OBF, STD; + bundled `Normalizer` polyfill). JS exports: `render`/`sitemap`/`runenv`/`mountPath`/`processImages` |
+| `@kirigami/php-prepros` | 1.3.0 | PHP→HTML compiler + PHP class library (PREPROS, MD, HTML, YAML, SCHEMA, LD, CACHE, IMG, FS, STR, ARR, CURL, SCRAPER, OBF, STD; + bundled `Normalizer` polyfill). `LD` (new 1.3.0) = schema.org JSON-LD generator; injects `<script type="application/ld+json">` into `<head>`, **opt-in via a top-level `jsonld:` block** (sibling of `kirigami:`; empty `jsonld: {}` enough; then reads the `kirigami:` loose keys too). JS exports: `render`/`sitemap`/`runenv`/`mountPath`/`processImages` |
 | `@kirigami/php-wasm` | 8.5.10-5 | custom PHP 8.5.10 WASM build, JSPI + Node only, fork of WordPress Playground; now includes Imagick (wasm ~22 MB) |
 | `@kirigami/struct-walker` | 1.0.4 | recursive YAML/JSON walker: resolves nested file refs, converts assets to data URIs |
 | `@kirigami/sdk` | 0.1.0 | plugin hook registry (`on`/`run`/`HOOKS`) + `Cache` (SQLite via `node:sqlite`) |
@@ -122,7 +122,29 @@ canva's README carries a WIP note (`styles/main.scss` and `Burger` are stubs).
 - **`SCHEMA` class** (new, `php-prepros/src/libraries/schema.class.php`) — a
   pure-PHP, dependency-free JSON Schema validator (Draft-7-ish, Ajv-like API:
   `isValid()` / `validate()` / `getErrors()`). Replaces the "validate schemas
-  with ajv" todo. Next todo item: a system to generate JSON-LD schemas.
+  with ajv" todo.
+- **`LD` class** (new, `php-prepros/src/libraries/ld.class.php`, php-prepros
+  1.3.0) — schema.org JSON-LD generator. Accumulates nodes during a render and
+  injects one `<script type="application/ld+json">` `@graph` into `<head>` via a
+  `post_render` hook. **Automatic injection is opt-in**: it fires only when
+  `kirigami.yaml` has a **top-level `jsonld:` block** (sibling of `kirigami:`,
+  passed through by `prepros.js` as `PREPROS::$config->jsonld`; empty
+  `jsonld: {}` is enough) — that block, plus the `kirigami:` loose keys
+  `person`/`jobtitle`/`area`/`knowsabout`/`keywords`/social URLs, feeds an
+  `Organization`+`Person`+`WebSite`+`WebPage`+
+  `BreadcrumbList` graph. No block → nothing injected (but explicit
+  `LD::add()` calls from templates still emit). Config-aware builders
+  (`organization`/`person`/`website`/`webPage`/`breadcrumb`/`faqPage`) + every
+  schema.org type via `__callStatic` (`LD::recipe([...])`). The `BreadcrumbList`
+  is built from the `_index.php` ancestor trail for every non-home page (no
+  `@breadcrumb` opt-in — that stays a separate FS feature). Per-page PHPDOC
+  tags: `@ld false`, `@ld_type <Type>` (AboutPage / Article / Service / …),
+  `@ld_title`, `@ld_description`, `@ld_image`, `@ld_published`, `@ld_modified`,
+  `@ld_breadcrumb false`. Opt out globally: drop the block, `jsonld: false`,
+  `jsonld: { auto: false }`. Aliases `ld_*()`. Side changes: `FS::phpFileInfo()`
+  regex now allows `_` in tag names (for `@ld_*`); fixed a latent
+  `STR::is_url()` `strtolower(null)` deprecation. Closes the "système pour créer
+  des schemas json+ld" todo.
 - Recent commits ("Schema + sdk", "Ajv", "The good $id", "Bon là je l'ai") are
   all around `$id` / regex handling in the schema work.
 

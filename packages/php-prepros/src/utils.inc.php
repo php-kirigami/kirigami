@@ -23,6 +23,7 @@ spl_autoload_register(function ($class) {
 		'FS'              => 'fs.class.php',
         'HTML'            => 'html.class.php',
         'IMG'             => 'img.class.php',
+        'LD'              => 'ld.class.php',
         'MD'              => 'md.class.php',
         'NORM'            => 'norm.class.php',
         'OBF'             => 'obf.class.php',

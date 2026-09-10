@@ -55,3 +55,16 @@ PREPROS::registerHook('page_info', function($info) {
 	}
 	return $page;
 });
+
+
+// LD — capture the page under render, then inject the automatic
+// schema.org JSON-LD `<script>` into its `<head>` once the HTML is assembled.
+// Registered after the data-loading hook above so `$page` arrives resolved.
+PREPROS::registerHook('page_info', function($page) {
+	LD::capture($page);
+	return $page;
+});
+
+PREPROS::registerHook('post_render', function($html) {
+	return LD::inject($html);
+});

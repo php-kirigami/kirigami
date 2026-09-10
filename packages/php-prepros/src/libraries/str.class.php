@@ -78,7 +78,7 @@ class STR
 
 	public static function is_url(string $str): bool
 	{
-		if (!$sheme = strtolower(@parse_url($str, PHP_URL_SCHEME))) return false;
+		if (!$sheme = strtolower((string) @parse_url($str, PHP_URL_SCHEME))) return false;
 		return in_array($sheme, ['http', 'https', 'itunes', 'ftp', 'ftps', 'ssh', 'ssl', 'sftp']);
 	}
 

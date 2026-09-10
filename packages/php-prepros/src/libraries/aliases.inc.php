@@ -308,6 +308,121 @@ function schema_validate(array $schema, mixed $data, ?array &$errors = null): bo
 
 
 // ===========================================================================
+// LD — schema.org JSON-LD generator
+// ===========================================================================
+
+/**
+ * Builds a node and registers it in the page's JSON-LD `@graph`. Any
+ * schema.org type is also reachable as `LD::typeName([...])`.
+ *
+ *   ld_add('Recipe', ['name' => 'Tarte', 'recipeYield' => '6']);
+ *
+ * @param  string|string[]     $type
+ * @param  array<string,mixed> $props
+ * @param  string|null         $id   Stable `@id` (repeat calls merge).
+ * @return array<string,mixed>       The stored node.
+ * @see    LD::add()
+ */
+function ld_add(string|array $type, array $props = [], ?string $id = null): array { return LD::add($type, $props, $id); }
+
+/**
+ * Builds a bare node (`@type` + pruned `$props`) without touching the graph.
+ *
+ * @param  string|string[]     $type
+ * @param  array<string,mixed> $props
+ * @return array<string,mixed>
+ * @see    LD::node()
+ */
+function ld_node(string|array $type, array $props = []): array { return LD::node($type, $props); }
+
+/**
+ * `['@id' => …]` reference to another node (`#organization`, `#website`, …).
+ *
+ * @param  string $id Fragment or absolute URL.
+ * @return array{@id:string}
+ * @see    LD::ref()
+ */
+function ld_ref(string $id): array { return LD::ref($id); }
+
+/**
+ * Adds the site's main entity (`Organization`, or `jsonld.type`) to the graph.
+ *
+ * @param  array<string,mixed> $overrides
+ * @return array<string,mixed>
+ * @see    LD::organization()
+ */
+function ld_organization(array $overrides = []): array { return LD::organization($overrides); }
+
+/**
+ * Adds the `Person` behind the site, linked to the `Organization`.
+ *
+ * @param  array<string,mixed> $overrides
+ * @return array<string,mixed>
+ * @see    LD::person()
+ */
+function ld_person(array $overrides = []): array { return LD::person($overrides); }
+
+/**
+ * Adds the `WebSite` node.
+ *
+ * @param  array<string,mixed> $overrides
+ * @return array<string,mixed>
+ * @see    LD::website()
+ */
+function ld_website(array $overrides = []): array { return LD::website($overrides); }
+
+/**
+ * Adds the current page's `WebPage` node, built from its PHPDOC.
+ *
+ * @param  array<string,mixed> $overrides
+ * @return array<string,mixed>
+ * @see    LD::webPage()
+ */
+function ld_web_page(array $overrides = []): array { return LD::webPage($overrides); }
+
+/**
+ * Adds a `BreadcrumbList`. With no `$items` it is derived from the page's
+ * ancestor trail (needs `@breadcrumb true`).
+ *
+ * @param  array<int,array{name?:string,url?:string}>|null $items
+ * @param  array<string,mixed>                             $overrides
+ * @return array<string,mixed>
+ * @see    LD::breadcrumb()
+ */
+function ld_breadcrumb(?array $items = null, array $overrides = []): array { return LD::breadcrumb($items, $overrides); }
+
+/**
+ * Adds an `FAQPage` from a `question => answer` map.
+ *
+ * @param  array<string,string|array<string,mixed>> $qa
+ * @param  array<string,mixed>                      $overrides
+ * @return array<string,mixed>
+ * @see    LD::faqPage()
+ */
+function ld_faq_page(array $qa, array $overrides = []): array { return LD::faqPage($qa, $overrides); }
+
+/**
+ * The `<script type="application/ld+json">…</script>` block for the current
+ * graph, or `''`. Calling this from a template places the block by hand and
+ * disables the automatic injection.
+ *
+ * @param  bool $pretty
+ * @return string
+ * @see    LD::script()
+ */
+function ld_script(bool $pretty = true): string { return LD::script($pretty); }
+
+/**
+ * The JSON-LD document as a string (no `<script>` wrapper).
+ *
+ * @param  bool $pretty
+ * @return string
+ * @see    LD::json()
+ */
+function ld_json(bool $pretty = true): string { return LD::json($pretty); }
+
+
+// ===========================================================================
 // CACHE — persistent key/value (SQLite, `.cache.db` at the project root)
 // ===========================================================================
 

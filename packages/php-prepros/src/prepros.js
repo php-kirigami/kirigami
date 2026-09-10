@@ -37,6 +37,7 @@ const getPHPInstance = async () => {
         preprosConfig.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         preprosConfig.root = joinWith('/project/', config?.kirigami?.root);
         preprosConfig.data = config.kirigami || {};
+        preprosConfig.jsonld = config.jsonld ?? null;
 
         __php = await (preprosConfig.network ? getPHPRuntimeWithNetwork() : getPHPRuntime());
         __php.setSpawnHandler((command, args, options) => spawn(command, args, options));

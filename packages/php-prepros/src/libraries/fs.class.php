@@ -182,7 +182,7 @@ class FS
 				}
 			}
 			if (empty($block)) return new stdClass;
-			if (!preg_match_all('#@([a-z0-9]+)[\s\t]+([^\n]+)#msi', $block, $m)) $files[$file] = new stdClass;
+			if (!preg_match_all('#@([a-z0-9_]+)[\s\t]+([^\n]+)#msi', $block, $m)) $files[$file] = new stdClass;
 			else {
 				$info = [];
 				foreach ($m[1] as $k => $v) $info[trim($v)] = trim($m[2][$k]);

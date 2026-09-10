@@ -34,12 +34,14 @@ Part of the **Kirigami** project ecosystem.
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
   - [Overview](#overview)
   - [Table of contents](#table-of-contents)
+  - [What's new in 1.3.0](#whats-new-in-130)
   - [What's new in 1.2.1](#whats-new-in-121)
   - [What's new in 1.2.0](#whats-new-in-120)
   - [How it works](#how-it-works)
   - [Installation](#installation)
   - [Configuration — `kirigami.yaml`](#configuration--kirigamiyaml)
     - [`kirigami` block](#kirigami-block)
+    - [`jsonld` block](#jsonld-block)
     - [`prepros` block](#prepros-block)
     - [`image` block](#image-block)
     - [`plugins` block](#plugins-block)
@@ -69,6 +71,10 @@ Part of the **Kirigami** project ecosystem.
     - [HTML](#html)
     - [YAML](#yaml)
     - [SCHEMA](#schema)
+    - [LD](#ld)
+      - [Automatic mode](#automatic-mode)
+      - [Explicit builders](#explicit-builders)
+      - [`jsonld` config](#jsonld-config)
     - [CACHE](#cache)
     - [IMG](#img)
     - [FS](#fs)
@@ -92,6 +98,30 @@ Part of the **Kirigami** project ecosystem.
   - [Extending the `<markdown>` tag](#extending-the-markdown-tag)
   - [Requirements](#requirements)
   - [License](#license)
+
+---
+
+## What's new in 1.3.0
+
+- **`LD`** class — a schema.org JSON-LD generator. Collects structured-data
+  nodes during a render and emits them as a single
+  `<script type="application/ld+json">` `@graph` in every page's `<head>`.
+  - Automatic injection is **opt-in**: add a top-level `jsonld:` block to
+    `kirigami.yaml` (even empty, `jsonld: {}`) and an `Organization` (+ `Person`, `WebSite`,
+    `WebPage`, `BreadcrumbList`) graph is derived from that block plus the loose
+    keys projects already carry (`person`, `jobtitle`, `email`, `area`,
+    `knowsabout`, `keywords`, `facebook`, …). No `jsonld:` block → nothing is
+    injected.
+  - Turn it back off with `jsonld: false` / `jsonld: { auto: false }`, or per
+    page with `@ld false`; per-page `@ld_type` / `@ld_title` / `@ld_image` / …
+    tags feed the page node, and a `BreadcrumbList` is built from the
+    `_index.php` ancestor trail with no opt-in.
+  - Explicit builders for everything else: `LD::add()`, `LD::article()`,
+    `LD::faqPage()`, `LD::breadcrumb()`, `LD::ref()`, and every schema.org type
+    via `LD::typeName([...])`. Procedural aliases: `ld_add()`, `ld_organization()`,
+    `ld_script()`, …
+  - A page that already hand-writes an `application/ld+json` script is left
+    untouched.
 
 ---
 
@@ -168,7 +198,7 @@ npm install @kirigami/php-prepros
 
 Every project **must** have a `kirigami.yaml` at its root. The preprocessor reads it at startup and throws if it is absent or invalid.
 
-`@kirigami/php-prepros` itself only acts on three blocks — **`kirigami:`**, **`prepros:`**, and **`image:`**. The remaining blocks (**`plugins:`**, **`esbuild:`**, **`sass:`**, **`export:`**, **`scripts:`**, **`tasks:`**) are consumed by the [`kiri`](https://www.npmjs.com/package/@kirigami/kirigami) CLI that drives the build; they are documented here for completeness because everything lives in the one file. The full file is validated against [`kirigami.schema.json`](https://github.com/php-kirigami/kirigami/blob/main/packages/kirigami/kirigami.schema.json), also served for editor autocompletion:
+`@kirigami/php-prepros` itself only acts on four blocks — **`kirigami:`**, **`jsonld:`**, **`prepros:`**, and **`image:`**. The remaining blocks (**`plugins:`**, **`esbuild:`**, **`sass:`**, **`export:`**, **`scripts:`**, **`tasks:`**) are consumed by the [`kiri`](https://www.npmjs.com/package/@kirigami/kirigami) CLI that drives the build; they are documented here for completeness because everything lives in the one file. The full file is validated against [`kirigami.schema.json`](https://github.com/php-kirigami/kirigami/blob/main/packages/kirigami/kirigami.schema.json), also served for editor autocompletion:
 
 ```yaml
 # yaml-language-server: $schema=https://cdn.jsdelivr.net/npm/@kirigami/kirigami/kirigami.schema.json
@@ -195,6 +225,10 @@ kirigami:
   keywords:
     - keyword one
     - keyword two
+
+jsonld:                         # Presence turns on the LD schema.org JSON-LD generator.
+  type: Organization            # `jsonld: {}` alone is enough; see the jsonld block below.
+  logo: assets/logo.png
 
 prepros:
   before:  _layouts/header.php  # Included before every page body.
@@ -254,7 +288,17 @@ Core project settings. **Read by `php-prepros`.** The entire block is extracted 
 | `baseurl` | ✅ | Root URL of the deployed site, no trailing slash. Used to build absolute `<loc>` entries in `sitemap.xml`; exposed as `$baseurl`. |
 | `root` | ✅ | Path (relative to the project root) to the directory containing your `_*.php` source pages. Build fails immediately if missing or if the path doesn't exist. |
 | `banner` | — | Path (relative to the project root) to a text file stamped as a license/copyright banner on exported `.js`/`.css`/`.html` files during `kiri export`. May contain the `###DATE###` token, replaced with today's date. Falls back to an auto-generated banner. |
-| *anything else* | — | Free-form key/value pairs (strings, numbers, booleans, lists, nested maps — anything valid YAML). Every key is extracted as a PHP variable (`$author`, `$gtag`, …). Use this for contact info, social links, analytics IDs, SEO keywords, or any project data you want available everywhere. |
+| *anything else* | — | Free-form key/value pairs (strings, numbers, booleans, lists, nested maps — anything valid YAML). Every key is extracted as a PHP variable (`$author`, `$gtag`, …). Use this for contact info, social links, analytics IDs, SEO keywords, or any project data you want available everywhere. When the top-level `jsonld` block is present, [`LD`](#ld) also reads some of these by convention: `person`, `jobtitle`, `email`, `area`, `knowsabout`, `keywords`, and social-network URL keys (`facebook`, `instagram`, …). |
+
+### `jsonld` block
+
+Top-level, optional. Its **presence** switches on the [`LD`](#ld) schema.org
+JSON-LD generator — an `application/ld+json` graph is then injected into every
+page's `<head>`. An empty `jsonld: {}` is enough; its keys refine what `LD`
+otherwise infers from the `kirigami` block and each page's PHPDOC. `jsonld: false`
+(or `jsonld: { auto: false }`) keeps the config values but stops the injection;
+no block at all means nothing is injected. Full key reference and per-page
+`@ld_*` tags: [`LD` → `jsonld` config](#jsonld-config).
 
 ### `prepros` block
 
@@ -810,6 +854,163 @@ if (!$validator->isValid($data)) {
 
 ---
 
+### LD
+
+A **schema.org JSON-LD generator**. `LD` accumulates structured-data nodes for
+the page under render and emits them as one
+`<script type="application/ld+json">` block — with an `@graph` when there is more
+than one node — in the `<head>`.
+
+#### Automatic mode
+
+Opt in by adding a top-level `jsonld:` block to `kirigami.yaml` (a sibling of
+`kirigami:`, not nested under it) — an empty `jsonld: {}` is enough. A
+`post_render` hook then injects a graph built from that block, the loose keys of
+the `kirigami` block, and the current page's PHPDOC:
+
+- an `Organization` node (`@id` `#organization`) — `name`/`url`/`description`
+  from `project`/`baseurl`/`description`, `sameAs` gathered from every
+  recognised social-network URL key (`facebook`, `instagram`, `linkedin`,
+  `github`, `youtube`, `mastodon`, …), plus `email`, `telephone`, `areaServed`
+  (← `area`), `knowsAbout` (← `knowsabout`), `address`, `logo`, and `founder` →
+  the Person node when there is one. `@type` comes from `jsonld.type`;
+- a `Person` node (`#person`) when `person` is set — `name` + `jobTitle`
+  (← `jobtitle`) + `email` + `url`, linked to the Organization via `worksFor`;
+- a `WebSite` node (`#website`) — `publisher` → Organization, `inLanguage`,
+  `keywords` (← `keywords`), and a `SearchAction` when `jsonld.search` is set;
+- a `WebPage` node for the page — see the per-page tags below;
+- a `BreadcrumbList` for every non-home page, derived from the `_index.php`
+  ancestor trail (home → each parent section → this page). No `@breadcrumb`
+  opt-in needed — it is always attempted while the `jsonld:` block is on.
+  Disable it for one page with `@ld_breadcrumb false`.
+
+Remove the `jsonld:` block (or set `jsonld: false` / `jsonld: { auto: false }`)
+to stop the automatic pass. A page whose rendered `<head>` already contains an
+`application/ld+json` script is never touched, so hand-rolled markup keeps
+working.
+
+**Per-page PHPDOC tags** — these feed the page node (and override the generic
+`@title` / `@description` / `@datePublished` fallbacks):
+
+| Tag | Effect |
+|-----|--------|
+| `@ld false` | Skip JSON-LD for this page entirely (`@ld_ignore true` also works). |
+| `@ld_type <Type>` | `@type` of the page node — `AboutPage`, `ContactPage`, `CollectionPage`, `ProfilePage`, or a content type like `Article`, `Service`, `Recipe`, … (default `WebPage`). Types containing “Page” also get `primaryImageOfPage` + a `breadcrumb` link; others get a plain `image`. |
+| `@ld_title <text>` | Page node `name` (default: `@title`). |
+| `@ld_description <text>` | Page node `description` (default: `@description`). |
+| `@ld_image <path>` | Page image, absolute or relative to `baseurl` (default: `@image` / `@ogimage`). |
+| `@ld_published <date>` | `datePublished` (default: `@datePublished` / `@published` / `@date`). |
+| `@ld_modified <date>` | `dateModified` (default: `@dateModified` / `@modified` / `@updated`). |
+| `@ld_breadcrumb false` | No `BreadcrumbList` for this page. |
+
+```php
+/**
+ * @title            À propos
+ * @ld_type          AboutPage
+ * @ld_title         À propos de Humain Humain
+ * @ld_description   Notre approche ethnographique de la consultation.
+ */
+```
+
+#### Explicit builders
+
+Call these from a page template or from a `prepros.includes` file. Nodes added
+this way are always emitted — with or without a `jsonld:` block — and share the
+graph the automatic pass uses, so the two combine; a node with a stable `@id` is
+merged on repeat calls.
+
+```php
+LD::add(string|array $type, array $props = [], ?string $id = null): array  // build + register a node
+LD::node(string|array $type, array $props = []): array                      // build only, no register
+LD::push(array $node): array                                                // register a ready-made node
+LD::ref(string $id): array                                                  // ['@id' => …]  ('#person' → the Person node)
+LD::remove(string $id): void
+LD::graph(): array
+LD::reset(): void
+
+LD::organization(array $overrides = []): array   // config-aware, @id #organization
+LD::person(array $overrides = []): array          // config-aware, @id #person
+LD::website(array $overrides = []): array          // config-aware, @id #website
+LD::webPage(array $overrides = []): array           // current-page-aware, @id …#webpage
+LD::breadcrumb(?array $items = null, array $overrides = []): array   // items: [['name'=>…,'url'=>…], …]
+LD::faqPage(array $qa, array $overrides = []): array                 // qa: ['Question ?' => 'Answer.', …]
+
+LD::address(array|string $a): array
+LD::image(string $url, ?string $id = null, ?int $w = null, ?int $h = null): array
+LD::geo(float $lat, float $lng): array
+LD::rating(int|float $value, ?int $count = null, $best = 5, $worst = 1): array
+LD::offer(array $o): array
+LD::contactPoint(array $c): array
+LD::searchAction(string $urlTemplate): array
+
+LD::script(bool $pretty = true): string   // <script>…</script>, and disables auto-injection
+LD::json(bool $pretty = true): string     // the document, no wrapper
+```
+
+Every other schema.org type is reachable through `__callStatic` — the method
+name is upper-cased to form the `@type`:
+
+```php
+LD::recipe([ 'name' => 'Tarte aux pommes', 'recipeYield' => '6', 'prepTime' => 'PT30M' ]);
+LD::event([ 'name' => 'Vernissage', 'startDate' => '2026-10-01T18:00' ]);
+LD::softwareApplication([ 'name' => 'Kirigami', 'applicationCategory' => 'DeveloperApplication' ]);
+
+LD::article([
+    'headline'      => $title,
+    'datePublished' => '2026-09-01',
+    'author'        => LD::ref('#person'),
+    'image'         => LD::image('images/cover.webp'),
+    'publisher'     => LD::ref('#organization'),
+]);
+```
+
+Same API from procedural code: `ld_add()`, `ld_node()`, `ld_ref()`,
+`ld_organization()`, `ld_person()`, `ld_website()`, `ld_web_page()`,
+`ld_breadcrumb()`, `ld_faq_page()`, `ld_script()`, `ld_json()`.
+
+#### `jsonld` config
+
+`jsonld:` is a **top-level** block of `kirigami.yaml` (a sibling of `kirigami:`,
+`prepros:`, …), and its presence is what **switches automatic injection on**. An
+empty `jsonld: {}` is enough — everything is then derived from the `kirigami`
+block's loose keys. Adding keys overrides those inferences; all are optional.
+
+```yaml
+kirigami:
+  project:  Humain Humain
+  baseurl:  https://humainhumain.com
+  person:   Méralie Murray-Hall
+  jobtitle: Anthropologue
+  facebook: https://www.facebook.com/humainhumainconsultation.ethnographie/
+
+jsonld:                                   # top-level; the block being present is
+  type: ProfessionalService               #   the switch — `jsonld: {}` also works
+  lang: fr-CA                              # inLanguage on WebSite / WebPage (default: en)
+  logo: assets/logo.png                    # absolute, or relative to baseurl
+  knowsAbout: [Ethnographie, Recherche qualitative]
+  address:
+    addressLocality: Québec
+    addressCountry:  CA
+  search: https://humainhumain.com/?q={search_term_string}
+```
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `auto` | `bool` | Inject the `<script>` automatically. Default `true` **once the `jsonld:` block exists**. Set `auto: false` (or `jsonld: false`) to keep the block for its config values but stop the automatic injection — `LD::script()` / `ld_script()` can still place it by hand. |
+| `type` | `string` | `@type` for the main entity — `Organization`, `ProfessionalService`, `LocalBusiness`, … |
+| `name` / `url` / `description` | `string` | Main-entity / WebSite fields. Default to `project` / `baseurl` / `description`. |
+| `logo` / `image` | `string` | Absolute URL or path relative to `baseurl`. `image` defaults to `logo`. |
+| `sameAs` | `string[]` | Profile URLs, merged with the social-network URL keys found loose in the block. |
+| `email` / `telephone` | `string` | Default to the loose `email` / `telephone` keys. |
+| `address` | `map` | `PostalAddress` properties. |
+| `areaServed` | `string` | Defaults to the loose `area` key. |
+| `knowsAbout` / `keywords` | `string[]` | Default to the loose `knowsabout` / `keywords` keys. |
+| `person` | `string` \| `map` | The `#person` node. A string is the name; a map takes any `Person` property. Defaults to `person` + `jobtitle` + `email`. |
+| `lang` | `string` | BCP-47 tag for `inLanguage`. Default `en`. |
+| `search` | `string` | URL template for a sitelinks `SearchAction`; must contain `{search_term_string}`. |
+
+---
+
 ### CACHE
 
 Persistent SQLite-backed key-value cache. Survives across incremental builds via `.cache.db` at the project root.
@@ -1078,6 +1279,7 @@ surface the signature, parameters, and description.
 | `HTML` | `html_format` |
 | `YAML` | `yaml_parse` · `yaml_parse_file` · `yaml_load_file` |
 | `SCHEMA` | `schema` (factory) · `schema_validate` |
+| `LD` | `ld_add` · `ld_node` · `ld_ref` · `ld_organization` · `ld_person` · `ld_website` · `ld_web_page` · `ld_breadcrumb` · `ld_faq_page` · `ld_script` · `ld_json` |
 | `CACHE` | `cache_get` · `cache_set` · `cache_delete` · `cache_purge` |
 | `IMG` | `img_asset` · `img_palette` |
 | `FS` | `fs_dig` · `fs_get_relative_path` · `fs_php_file_info` · `fs_rmdir` · `fs_path_join` |
