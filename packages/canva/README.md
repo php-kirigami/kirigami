@@ -34,6 +34,17 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 1.1.1
+
+- **The fluid root font-size has a floor.** `--font-size` is now
+  `clamp(var(--font-min), var(--font-resp), var(--font-base))` — previously a
+  bare `min(--font-resp, --font-base)` with no lower bound, which let a narrow
+  viewport collapse the root font (and every `rem` measured against it). Tune
+  the bounds with the new `$font-min` (default `17`) and the existing
+  `$font-base`. See [`styles/conf`](#stylesconf).
+
+---
+
 ## What's new in 1.1.0
 
 - **Optional light/dark theming in `conf`.** Opt in with `$dark: true` (or a
@@ -50,6 +61,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/canva](#kirigamicanva)
   - [Overview](#overview)
+  - [What's new in 1.1.1](#whats-new-in-111)
   - [What's new in 1.1.0](#whats-new-in-110)
   - [Table of contents](#table-of-contents)
   - [Installation](#installation)
@@ -140,6 +152,11 @@ Sass variables, then:
 - ships a minimal reset (`* { margin: 0; box-sizing: border-box }`), smooth
   scrolling with `scroll-padding-top: var(--scroll-top)`, a responsive
   `font-size`, and `.is-busy` / `.is-working` cursor-lock states on `<html>`.
+
+The root `font-size` is fluid and bounded both ways:
+`clamp(var(--font-min), var(--font-resp), var(--font-base))`, where
+`--font-resp` scales with the viewport (`$font-base * 100 / $font-break` vw) and
+`$font-min` (default `17`) keeps a narrow screen from collapsing every `rem`.
 
 Override any token through `@use ... with (...)` (or `@forward ... with (...)`
 when re-exposing it from a project partial):

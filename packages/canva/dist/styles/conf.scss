@@ -41,6 +41,7 @@ $dark-logo-fold-light: #39424e !default;
 $dark-logo-fold-mid:   #2c333d !default;
 
 $font-base:            26 !default;
+$font-min:             17 !default;
 $font-break:           1200 !default;
 $font-resp:            calc($font-base * 100 / $font-break);
 $font-body:            -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !default;
@@ -127,9 +128,13 @@ $dark-enabled: $dark == true or meta.type-of($dark) == "map";
 	--font-body:           #{$font-body};
 	--font-heading:        #{$font-heading};
 	--font-base:           #{$font-base}px;
+	--font-min:            #{$font-min}px;
 	--font-break:          #{$font-break}px;
 	--font-resp:           #{$font-resp}vw;
-	--font-size:           min(var(--font-resp), var(--font-base));
+	// Fluid, but bounded both ways: never below --font-min (so a narrow phone
+	// doesn't collapse the root — and every rem with it), never above
+	// --font-base. Override $font-min / $font-base to retune.
+	--font-size:           clamp(var(--font-min), var(--font-resp), var(--font-base));
 
 	--scroll-top:          #{$scroll-top};
 	--transition-duration: #{$transition-duration};
