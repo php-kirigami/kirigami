@@ -64,13 +64,19 @@ export default async function serve(args) {
 	log.info('Waiting for file change...\n');
 
 	// Same rules `kiri watch` builds — a rebuild just also tells open tabs to
-	// reload, on top of whatever it already does to files on disk.
+	// reload, on top of whatever it already does to files on disk. A `sass`
+	// rebuild swaps stylesheets in place (no reload); anything else (esbuild,
+	// prepros) still does a full reload — safe either way, just not as smooth.
 	const rules = await buildWatchRules(config, __dirname);
 	const watchers = rules.map((rule) => ({
 		...rule,
 		callback: async (...cbArgs) => {
 			await rule.callback(...cbArgs);
-			devserver.broadcastReload();
+			if (rule.type === "sass") {
+				devserver.broadcastCssReload();
+			} else {
+				devserver.broadcastReload();
+			}
 		},
 	}));
 

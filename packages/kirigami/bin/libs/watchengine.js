@@ -29,7 +29,12 @@ export async function buildWatchRules(config, __dirname) {
 			const taskPath = path.resolve(__dirname, "../tasks", `${task.type}.js`);
 			modules[task.type] = await import(pathToFileURL(taskPath).href);
 		}
-		if (modules[task.type].canwatch) watchers.push(modules[task.type].getWatcher(config.root, task));
+		if (modules[task.type].canwatch) {
+			// `type` isn't part of what a task's own getWatcher() returns — attached
+			// here so callers (kiri serve's hot-reload) can tell a sass rule apart
+			// from esbuild/prepros without each task module repeating the field.
+			watchers.push({ ...modules[task.type].getWatcher(config.root, task), type: task.type });
+		}
 	}
 	return watchers;
 }

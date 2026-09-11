@@ -40,11 +40,31 @@ const RELOAD_PATH = "/__kiri_reload__";
 
 // Appended before `</body>` (or at the end, if there's none) of every HTML
 // response. Reconnects on its own if the server restarts mid-session.
+//
+// Two channels: the default (unnamed) SSE event is a full page reload, as
+// before; a "css" named event instead swaps every <link rel=stylesheet>'s
+// href for a cache-busted copy — new link inserted, old one removed only
+// once the new one has loaded, so there's no flash of unstyled content —
+// and skips the reload entirely, keeping scroll position and form state.
+// Only a `sass` task's rebuild fires "css"; esbuild/prepros still do a full
+// reload, since swapping JS or re-rendered HTML in place isn't safe/useful.
 const RELOAD_SCRIPT = `
 <script>
 (function () {
+	function swapStylesheets() {
+		document.querySelectorAll('link[rel="stylesheet"]').forEach(function (link) {
+			var url = new URL(link.href, location.href);
+			url.searchParams.set("_kirireload", Date.now());
+			var next = link.cloneNode();
+			next.href = url.href;
+			next.onload = function () { link.remove(); };
+			next.onerror = function () { next.remove(); };
+			link.parentNode.insertBefore(next, link.nextSibling);
+		});
+	}
 	var es = new EventSource("${RELOAD_PATH}");
 	es.onmessage = function () { location.reload(); };
+	es.addEventListener("css", swapStylesheets);
 	es.onerror = function () { es.close(); setTimeout(function () { location.reload(); }, 500); };
 })();
 </script>`;
@@ -82,8 +102,11 @@ function resolveFile(root, pathname) {
  * fallback (served as-is if present, otherwise a minimal built-in page) and a
  * hot-reload channel every HTML response is wired to automatically.
  *
- * Returns `{ url, broadcastReload(), close() }`. `broadcastReload()` is safe
- * to call with zero connected clients (a no-op).
+ * Returns `{ url, broadcastReload(), broadcastCssReload(), close() }`.
+ * `broadcastReload()` triggers a full page reload; `broadcastCssReload()`
+ * swaps every `<link rel=stylesheet>` in place instead (no reload, scroll
+ * position and form state kept) — use it when only CSS changed. Both are
+ * safe to call with zero connected clients (a no-op).
  */
 export async function createDevServer({ root, port = 4321, host = "127.0.0.1" }) {
 	const clients = new Set();
@@ -139,6 +162,9 @@ export async function createDevServer({ root, port = 4321, host = "127.0.0.1" })
 		url: `http://${host}:${port}/`,
 		broadcastReload() {
 			for (const res of clients) res.write("data: reload\n\n");
+		},
+		broadcastCssReload() {
+			for (const res of clients) res.write("event: css\ndata: reload\n\n");
 		},
 		close() {
 			for (const res of clients) res.end();
