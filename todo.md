@@ -23,6 +23,9 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 - **`homepage` des packages** — pointer le champ `homepage` de chaque
   `package.json` (`packages/*`) vers https://php-kirigami.github.io au lieu
   d'où il pointe actuellement (repo GitHub).
+- **Mentionner le site web dans les `README.md` des packages** — un lien vers
+  https://php-kirigami.github.io quelque part dans chaque README (pas juste
+  le champ `homepage` de package.json).
 - **Faire le OG:image** — une vraie image `og:image`/`twitter:image` (générée
   ou statique) pour le site et/ou par page, au lieu de rien/placeholder.
 - **Rendre `kirigami.schema.json` officiel sur SchemaStore** — soumettre le
