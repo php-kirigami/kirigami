@@ -6,6 +6,15 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 ## Ouvert
 
+- **plugin-highlight : `languages: [html]` devrait-il ajouter `xml` (et
+  vice-versa) à la liste effective ?** — à vérifier avant de coder quoi que
+  ce soit : `ensureLanguage()` enregistre déjà le module sous les deux noms
+  au niveau du moteur hljs (`registered.add(name); registered.add(moduleName)`),
+  donc un bloc explicite `` ```xml `` marche déjà même si seul `html` est
+  configuré. Ce qui n'est *peut-être* pas couvert : la liste `usable`
+  retournée (candidats pour l'autodétection) ne contient que le nom tel que
+  tapé, jamais les deux. À confirmer par un vrai test avant de juger que
+  c'est cassé.
 - **`template-react`** — un nouveau template officiel avec un vrai pipeline
   JSX/TSX intégré (esbuild le supporte déjà nativement — reste à scoper :
   build-time only (SSR-ish, rendu en HTML statique comme le reste de
@@ -27,6 +36,9 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 - **Action/script officiel Google Docs → Markdown** — un webservice qui prend un
   Google Doc et le convertit en `.md` (pour alimenter un `_data/` ou une page
   Kirigami), packagé comme une action/script officiel.
+- **Action/script officiel Excel → JSON** — même idée que Google Docs →
+  Markdown ci-dessus, mais pour un fichier Excel/`.xlsx` vers `.json` (pour
+  alimenter un `_data/`).
 - **Faire le OG:image** — une vraie image `og:image`/`twitter:image` (générée
   ou statique) pour le site et/ou par page, au lieu de rien/placeholder.
 - **Rendre `kirigami.schema.json` officiel sur SchemaStore** — soumettre le
@@ -44,11 +56,6 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   « je veux les exports / appeler `setTheme()` ». Coût : le contrat (clé `kirigami-theme`,
   event `canva:themechange`, attr `data-theme`) vit alors dans canva **et** dans une string
   PHP de php-prepros — garder le snippet injecté minimal, canva/theme.js fait foi.
-- **plugin-highlight : promouvoir le warning en erreur de build ?** — reste ouvert
-  après le fix de l'alias (`html`→`xml` etc., voir CLAUDE.md) : un vrai nom
-  highlight.js inconnu (typo) passe toujours en warning silencieux, build vert
-  quand même. `options.schema.json` ne peut pas valider ça (enum fermée
-  impossible, ce sont les noms internes de highlight.js).
 - **Générateur de favicon.ico / apple-touch-icon.png depuis une image de `assets/`** —
   une image source → les deux fichiers, via `runenv` pour pouvoir appeler
   Imagick (GD seul ne fait pas de multi-résolution `.ico`). Piste : une nouvelle

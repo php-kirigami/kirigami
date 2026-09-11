@@ -17,7 +17,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { on, HOOKS } from '@kirigami/sdk';
-import { highlightHtml } from './src/highlight.js';
+import { highlightHtml, validateLanguages } from './src/highlight.js';
 
 const pluginDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -39,8 +39,13 @@ const js = (name) => path.join(pluginDir, 'assets', `${name}.js`);
 const php = (name) => path.join(pluginDir, 'php', `${name}.php`);
 
 
-export default function register(options = {}, { config } = {}) {
+export default async function register(options = {}, { config } = {}) {
 	const opts = { ...DEFAULTS, ...options };
+
+	// Eager, so a typo in `languages:` fails the build immediately — not only
+	// once some page happens to render a fenced code block (see the comment
+	// on validateLanguages()).
+	if (opts.languages !== 'all') await validateLanguages(opts.languages);
 
 	on(HOOKS.PREPROS_HTML, (html) => highlightHtml(html, opts));
 

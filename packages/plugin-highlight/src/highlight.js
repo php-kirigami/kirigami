@@ -90,6 +90,33 @@ async function ensureLanguage(name, engine) {
 }
 
 
+// Resolves + validates an explicit `languages:` list against highlight.js,
+// throwing if any name doesn't resolve to a real module (a typo, or a name
+// that's only ever an alias highlight.js doesn't expose as its own file).
+// Exported so index.js's register() can call this *eagerly*, once per build,
+// regardless of page content — highlightHtml() itself only ever runs (and
+// so only ever validated) when a page happens to contain a <pre> block, so a
+// typo in a project with none yet would build green forever. Populates the
+// shared `registered` cache either way, so the later real call below is a
+// cache hit, not a second import attempt.
+export async function validateLanguages(languages) {
+	const wanted = [].concat(languages || []).map(String).map(s => s.toLowerCase());
+	const usable = [];
+	const unknown = [];
+	for (const name of wanted) {
+		if (await ensureLanguage(name, hljs)) usable.push(name);
+		else unknown.push(name);
+	}
+	if (unknown.length) {
+		throw new Error(
+			`[plugin-highlight] unknown language${unknown.length > 1 ? 's' : ''} in kirigami.yaml's ` +
+			`plugin-highlight options.languages: ${unknown.map(n => `"${n}"`).join(', ')}. ` +
+			`Check for a typo, or that highlight.js ships a module for it.`
+		);
+	}
+	return usable;
+}
+
 // Resolves the highlight.js engine + the set of usable language names for this
 // run, honouring `options.languages` (an explicit list, or the string "all").
 async function prepareEngine(options) {
@@ -98,11 +125,7 @@ async function prepareEngine(options) {
 		return { engine: fullBuild, languages: fullBuild.listLanguages() };
 	}
 
-	const wanted = [].concat(options.languages || []).map(String).map(s => s.toLowerCase());
-	const usable = [];
-	for (const name of wanted) {
-		if (await ensureLanguage(name, hljs)) usable.push(name);
-	}
+	const usable = await validateLanguages(options.languages);
 	return { engine: hljs, languages: usable };
 }
 
