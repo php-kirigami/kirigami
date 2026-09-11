@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/plugin-embed",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "<youtube>/<vimeo> video embed cards for Kirigami — oEmbed-backed, localStorage-cached, cover thumbnail + play button, powered by @kirigami/canva's observer.",
   "keywords": [
     "kirigami",
@@ -39,7 +39,7 @@
     "npm": ">=10.2.3"
   },
   "dependencies": {
-    "@kirigami/canva": "2.5.0",
+    "@kirigami/canva": "2.5.1",
     "@kirigami/sdk": "0.2.0"
   },
   "publishConfig": {

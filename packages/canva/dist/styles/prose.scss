@@ -96,10 +96,17 @@ $emit-class: true !default;
 	}
 
 	// ── Code ────────────────────────────────────────────
-	// Standalone defaults. @kirigami/plugin-highlight ships a fuller theme
-	// (embedded font + `.hljs-*` colours) appended through its `sass:after`
-	// hook; those rules land after these and take over.
-	code, kbd, samp, pre {
+	// Standalone defaults for code with no build-time highlighter. Every
+	// `code` selector below is `:not(.hljs)` on purpose: `.hljs` (one class)
+	// has the same or lower specificity than these compound selectors, so
+	// without the exclusion a highlighted block's own theme (plugin-
+	// highlight's `sass:after` rules, `.hljs { font-family; padding; … }`)
+	// loses here in light mode / no-theme-attribute, and only wins once
+	// `[data-theme="dark"] .hljs` happens to add enough specificity — a
+	// real, confirmed bug (block grows/reflows on every theme toggle).
+	// Relying on "these rules land first, highlighter rules land after and
+	// win" is not enough on its own; the exclusion is required.
+	code:not(.hljs), kbd, samp, pre {
 		font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 		font-size: .9em;
 	}
@@ -116,7 +123,7 @@ $emit-class: true !default;
 		line-height: 1.5;
 		overflow-x: auto;
 
-		code {
+		code:not(.hljs) {
 			padding: 0;
 			background: none;
 			box-shadow: none;

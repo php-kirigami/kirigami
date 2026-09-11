@@ -17,6 +17,12 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   sous-commande `kiri`, et leur loading. (`"plugin"` est déjà en place.)
 - **`prepros:before-render`** — hook JS avant rendu, à évaluer (le `prepros:html`
   post-render existe déjà).
+- **Action/script officiel Google Docs → Markdown** — un webservice qui prend un
+  Google Doc et le convertit en `.md` (pour alimenter un `_data/` ou une page
+  Kirigami), packagé comme une action/script officiel.
+- **`homepage` des packages** — pointer le champ `homepage` de chaque
+  `package.json` (`packages/*`) vers https://php-kirigami.github.io au lieu
+  d'où il pointe actuellement (repo GitHub).
 - **esbuild importer** — lui donner la même résolution Node que l'importer Sass si un jour
   c'est nécessaire (pour l'instant il bundle des chemins absolus fournis par les hooks, donc OK).
 - **Theme toggle sans build (Layer 2)** — `injectHead()` injecte déjà le guard FOUC en
