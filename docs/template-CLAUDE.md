@@ -44,8 +44,8 @@ content generic, commit no secrets, and assume anyone may clone it.
 - The `kiri` CLI is provided by the `@kirigami/kirigami` dev dependency; run it
   as `npx kiri <command>`.
 - `kiri watch` only **rebuilds** on change — it runs no HTTP server and no
-  browser live-reload. Use an editor preview server (e.g. VS Code Live Server on
-  `src/`) if you want a live browser.
+  browser live-reload. Use `kiri serve` instead (or an editor preview server,
+  e.g. VS Code Live Server on `src/`) if you want a live browser.
 
 ---
 
@@ -102,6 +102,7 @@ Generic reference — safe to copy verbatim between projects.
 | `npx kiri build` | Run every `tasks` entry once, in order, for development (no minify/export). If `prepros:` is set, renders all pages + `sitemap.xml` first. Fires the `before-build` trigger. Output written next to each entry under `kirigami.root`. |
 | `npx kiri export` | Production build. Fires `before-export` then `before-build`; forces the `prepros` task, all `tasks`, and a `dist` copy into `export.path`; stamps the banner; fires `after-export`. |
 | `npx kiri watch` | Dev mode: watches files for `esbuild` / `sass` / `prepros` tasks and rebuilds on change (150 ms debounce, batched). `node_modules/`, `.git/`, `dist/` always ignored. `Ctrl+C` to stop. No server. |
+| `npx kiri serve` | Same as `kiri watch`, plus a local static server over `kirigami.root` and browser hot-reload (Server-Sent Events — a tab reloads once a batch finishes rebuilding). `--port` (default `4321`) / `--host` (default `127.0.0.1`). Zero-dependency: `node:http` + `node:fs`, no live-reload framework. |
 | `npx kiri run <script> [args…]` | Run `scripts/<script>.php` in the Kirigami PHP runtime (full class library, `PREPROS::$config->data` populated). Extra words become `$argv` entries. |
 | `npx kiri create [template] [dir]` | Scaffold from an official `template-*` repo (no args → interactive wizard: template, dir, name / description / author / base URL → written into `package.json` + `kirigami.yaml`). `--list` / `-l` to list. Extraction never overwrites (existing files kept, `package.json` deep-merged); then `git init` + initial commit (unless already in a repo or `--no-git`) and `npm install` (unless `--no-install`). |
 | `npx kiri phpinfo` | Print `phpinfo()` from the embedded runtime. `--md` / `--json` for other formats. |

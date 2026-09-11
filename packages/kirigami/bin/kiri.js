@@ -14,6 +14,7 @@ const COMMANDS = {
 	build: "Compile project for development",
 	export: "Compile and export project for production",
 	watch: "Start dev-mode with hot-reload",
+	serve: "Dev-mode with hot-reload, served locally in a browser",
 	run: "Run a PHP command script from the scripts/ folder",
 	create: "Create a new project from an official template",
 	cache: "Purge the local caches (.node.db / .cache.db / .cookie.txt)",
@@ -48,6 +49,7 @@ ${c.bold("EXAMPLES")}
   ${c.dim("kiri build")}
   ${c.dim("kiri export")}
   ${c.dim("kiri watch")}
+  ${c.dim("kiri serve")}
   ${c.dim("kiri run convert-images")}
   ${c.dim("kiri create --list")}
   ${c.dim("kiri cache purge")}

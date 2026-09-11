@@ -53,24 +53,10 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   (actuellement on suit le fork tel quel). Gros chantier, pas de plan détaillé
   encore — à scoper séparément (quelles extensions garder, quelle version PHP
   cible, comment on reproduit le build Docker de Playground).
-- **Désactiver `short_open_tag` dans le php.ini de prepros** — objectif : rendre
-  un `<?` bare inerte dans un fichier `.php` de site (protège contre un texte
-  d'exemple/documentation qui commence accidentellement par `<?`). ⚠️ Ne couvre
-  qu'une partie du risque : `short_open_tag` ne gouverne que le tag court nu
-  `<?` — `<?=` (short echo) est **toujours actif** depuis PHP 5.4, quel que
-  soit ce réglage, et `<?php` n'est de toute façon jamais affecté. Trouvé
-  concrètement en écrivant le tutoriel du site : un `<?= img_asset(...) ?>`
-  tapé comme texte d'exemple s'est exécuté pour de vrai (`img_asset(...)` est
-  du first-class-callable PHP 8.1, d'où un fatal "Closure to string"). Si
-  l'objectif est vraiment de neutraliser les tags PHP dans du contenu
-  d'exemple, il faudrait un mécanisme différent (un tag `<phpblock>` d'échappement,
-  ou documenter la règle plutôt que la forcer par l'ini).
-- **Mode `kiri serve` avec hot reload** — `kiri watch` ne fait que régénérer
-  les fichiers sur disque, aucun serveur HTTP, aucun refresh navigateur. Un
-  vrai mode dev voudrait : un petit serveur statique local + un reload
-  (WebSocket ou SSE) au lieu de rouvrir l'onglet à la main. À voir si ça
-  reste "lite" (pas de dépendance lourde style browser-sync) — un serveur
-  `node:http` + un tout petit script client suffirait probablement.
+- **`kiri serve` : promouvoir le warning en erreur si le port est déjà pris ?**
+  — pour l'instant `createDevServer()` rejette la promesse d'écoute (l'erreur
+  `EADDRINUSE` remonte telle quelle) ; un message plus clair ("essaie
+  `--port`") serait plus sympa. Mineur.
 
 
 ## Ailleurs

@@ -135,6 +135,7 @@ prepros:
 | `kiri build` | Compile the project for development (run every task once). |
 | `kiri export` | Compile + export a production-ready static site. |
 | `kiri watch` | Watch project files and rebuild on change. |
+| `kiri serve` | `kiri watch`, plus a local server and browser hot-reload. |
 | `kiri run <script>` | Run a PHP script from `scripts/` in the Kirigami runtime. |
 | `kiri create [template]` | Scaffold a new project from an official template (interactive wizard with no args). |
 | `kiri cache purge [mask]` | Purge the local `.node.db` / `.cache.db` / `.cookie.txt` caches. |
@@ -164,6 +165,22 @@ Dev mode. Attaches a file watcher to every task whose type supports watching
 (`esbuild`, `sass`, `prepros`). Changes are debounced (150 ms) and batched per
 task. `node_modules/`, `.git/` and `dist/` are always ignored. `Ctrl+C` closes
 every watcher cleanly.
+
+### `kiri serve`
+
+Everything `kiri watch` does, plus a static file server over `kirigami.root`
+and a hot-reload channel (Server-Sent Events — no WebSocket dependency): every
+open tab reloads once a batch finishes rebuilding. Zero-dependency
+(`node:http`, `node:fs`); no live-reload framework bundled in.
+
+```bash
+kiri serve                # http://127.0.0.1:4321/
+kiri serve --port 5000
+kiri serve --host 0.0.0.0 # reachable from other devices on the network
+```
+
+Use `kiri watch` instead when you don't need a browser tab — CI, or an
+editor's own preview server.
 
 ### `kiri run <script>`
 

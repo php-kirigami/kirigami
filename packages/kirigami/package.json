@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/kirigami",
-  "version": "1.4.3",
+  "version": "1.5.0",
   "description": "Tools to build static website with PHP",
   "license": "MIT",
   "author": "Maxime Larrivée-Roy",
