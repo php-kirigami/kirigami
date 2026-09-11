@@ -31,6 +31,16 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 - **Action/script officiel Excel → JSON** — même idée que Google Docs →
   Markdown ci-dessus, mais pour un fichier Excel/`.xlsx` vers `.json` (pour
   alimenter un `_data/`).
+- **Un pont pour faire des requêtes DB, façon Navicat (HTTP tunnel)** —
+  idée inspirée du mécanisme de tunnel HTTP de Navicat (pas de code
+  emprunté, juste le concept) : un système/script Kirigami qui permet de
+  requêter une base de données à travers un pont HTTP, pour alimenter
+  un `_data/` ou une page à partir de vraies données live plutôt que d'un
+  export statique.
+- **Une classe pour aller chercher des posts (et autres) via le REST API de
+  WordPress** — même esprit que `SCRAPER` : une classe PHP dédiée pour
+  requêter un site WordPress (`/wp-json/wp/v2/posts`, etc.) et alimenter
+  une page/`_data/` Kirigami avec du vrai contenu WordPress.
 - **Faire le OG:image** — une vraie image `og:image`/`twitter:image` (générée
   ou statique) pour le site et/ou par page, au lieu de rien/placeholder.
 - **Rendre `kirigami.schema.json` officiel sur SchemaStore** — soumettre le
