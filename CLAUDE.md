@@ -227,12 +227,15 @@ kiribuild (its own repo, unrelated to this npm release): `main` at `efddf62`,
 `npm ci`-when-lockfile-committed fix, `v2.0.5` tagged (`v2` moved onto it), now
 published on the GitHub Marketplace.
 
-**Not yet released: `@kirigami/plugin-extlink` 0.1.0** — new package, the
-`<extlink>` todo item, built + verified end-to-end this session (see the
-package row above for the mechanics). Not yet consumed by any site or
-template; `npm run release` will publish it once ready (new package, so
-nothing to skip — it just needs `npm login` rights, already confirmed this
-session).
+**`@kirigami/plugin-extlink` 0.1.0 released and live in `template-demo`**
+(see the package row above for the mechanics). `/features/tags/` gained "A
+tag from a plugin" — an `<extlink>` card sitting right after the hand-rolled
+`register_tag()` example, as the contrast: a real installable plugin doing
+the same kind of thing. `_data/extlink/` + `assets/images/extlink/` committed
+there too. `template-demo`'s other deps floored to match while touching the
+file anyway: `@kirigami/canva ^2.5.0`, `@kirigami/kirigami ^1.5.0`,
+`@kirigami/plugin-highlight ^0.1.3`. `template-default` not touched — no
+obvious spot for an external-link demo in the minimal starter.
 
 **canva is a permanent part of this monorepo — reuse its code rather than
 re-implementing shared helpers per package** (that's why plugin-highlight now
