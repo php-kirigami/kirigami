@@ -33,17 +33,41 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
-## What's new in 1.1.5
+## What's new in 1.5.3
 
-- **Readable task failures.** When a task fails, `kiri` now prints the error
-  message, the page it came from, and the tail of the PHP `stderr` / debug
-  output — instead of `undefined`. PHP warnings and notices from a render no
-  longer fail the build: they are printed under a `Warnings:` heading and the
-  build carries on.
-- Bundles [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirigami/php-prepros)
-  **1.4.0** (see its changelog: `<pre>` formatting, default Markdown plugins,
-  structured render errors, multi-line PHPDOC, breadcrumb/children from a
-  layout, build-time `###YEAR###` expansion, and more).
+- **`kiri serve`** (1.5.0) — everything `kiri watch` does, plus a static file
+  server over `kirigami.root` and browser hot-reload over Server-Sent Events
+  (zero-dependency — no live-reload framework bundled). See
+  [`kiri serve`](#kiri-serve).
+- **`kiri install <plugin>`** (1.5.0) — installs a plugin (`npm install`,
+  devDependency by default) and prints the `plugins:` entry to paste into
+  `kirigami.yaml`, built from the plugin's own `kirigami.optionsSchema`. A
+  bare name (`highlight`) resolves against the `@kirigami/plugin-*` /
+  `kirigami-plugin-*` conventions. See [`kiri install`](#kiri-install-plugin).
+- **Plugin loader** (1.2.0) — `plugins:` in `kirigami.yaml` resolves each
+  entry from the project's `node_modules` (falling back to kiri's own),
+  checks the plugin's `kirigami.minVersion`, merges its options, and calls
+  its default export at the top of every build/export/watch. Three official
+  first-party plugins now exist:
+  [`@kirigami/plugin-highlight`](https://www.npmjs.com/package/@kirigami/plugin-highlight)
+  (build-time syntax highlighting),
+  [`@kirigami/plugin-extlink`](https://www.npmjs.com/package/@kirigami/plugin-extlink)
+  (external link preview cards) and
+  [`@kirigami/plugin-embed`](https://www.npmjs.com/package/@kirigami/plugin-embed)
+  (YouTube/Vimeo oEmbed cards).
+- **Banner from a template** (1.4.2) — the banner text has its `### ###`
+  tokens (`###DATE###`, `###YEAR###`, `###PROJECT###`, `###AUTHOR###`,
+  `###EMAIL###`, `###REPO###`, `###BASEURL###`) filled from the `kirigami:`
+  block on every build/export, not just at export time; a bundled ASCII
+  template is used when no `banner:` file is set. `kiri create` also gained
+  `--email` / `--repo` and drops a starter `banner.txt`.
+- Readable task failures (1.1.5): a failing task prints the error message,
+  the page it came from, and the tail of PHP `stderr` — instead of
+  `undefined`. PHP warnings/notices no longer fail the build.
+- Ongoing dependency bumps to
+  [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirigami/php-prepros)
+  — now at **1.9.1**; see its own changelog for `META`/`LD`/managed `<head>`/
+  the `{% img-asset %}` Markdown plugin and more.
 
 ---
 
@@ -51,7 +75,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/kirigami](#kirigamikirigami)
   - [Overview](#overview)
-  - [What's new in 1.1.5](#whats-new-in-115)
+  - [What's new in 1.5.3](#whats-new-in-153)
   - [Table of contents](#table-of-contents)
   - [Installation](#installation)
   - [Quick start](#quick-start)
@@ -59,8 +83,10 @@ Part of the **Kirigami** project ecosystem.
     - [`kiri build`](#kiri-build)
     - [`kiri export`](#kiri-export)
     - [`kiri watch`](#kiri-watch)
+    - [`kiri serve`](#kiri-serve)
     - [`kiri run <script>`](#kiri-run-script)
     - [`kiri create [template]`](#kiri-create-template)
+    - [`kiri install <plugin...>`](#kiri-install-plugin)
     - [`kiri cache purge`](#kiri-cache-purge)
     - [`kiri phpinfo`](#kiri-phpinfo)
   - [Configuration — `kirigami.yaml`](#configuration--kirigamiyaml)
@@ -138,6 +164,7 @@ prepros:
 | `kiri serve` | `kiri watch`, plus a local server and browser hot-reload. |
 | `kiri run <script>` | Run a PHP script from `scripts/` in the Kirigami runtime. |
 | `kiri create [template]` | Scaffold a new project from an official template (interactive wizard with no args). |
+| `kiri install <plugin...>` | Install a plugin and print the `plugins:` entry to paste into `kirigami.yaml`. |
 | `kiri cache purge [mask]` | Purge the local `.node.db` / `.cache.db` / `.cookie.txt` caches. |
 | `kiri phpinfo` | Print `phpinfo()` from the embedded PHP-WASM runtime. |
 
@@ -234,6 +261,29 @@ every time. Then, unless the target is already inside a git worktree (or
 `--no-git`), `git init` + an initial commit; then `npm install` unless
 `--no-install`. `.cache.db`, `.node.db`, `.cookie.txt` and `package-lock.json`
 are never copied from the template.
+
+### `kiri install <plugin...>`
+
+Installs a plugin (`npm install`, devDependency by default — `--save` for a
+regular one) and prints the `plugins:` entry to paste into `kirigami.yaml`,
+built from the plugin's own `kirigami.optionsSchema`. **Never touches
+`kirigami.yaml` itself** — you paste the printed block in.
+
+A bare name (`highlight`) is resolved against the `@kirigami/plugin-*` /
+`kirigami-plugin-*` conventions and checked on npm; a full package name is
+used as-is. Already installed → checks npm for a newer version and updates
+if there is one.
+
+```bash
+kiri install highlight
+kiri install @kirigami/plugin-highlight
+kiri install highlight @kirigami/plugin-svg   # multiple at once
+```
+
+| Flag | Description |
+|---|---|
+| `--save` | Install as a regular dependency (default: devDependency). |
+| `--help`, `-h` | Show help. |
 
 ### `kiri cache purge`
 
@@ -504,22 +554,47 @@ A line whose value(s) come out empty is dropped (`Author: Foo <>` →
 ## Continuous deployment
 
 Kirigami ships an official reusable GitHub Action,
-[`php-kirigami/kiribuild`](https://github.com/php-kirigami/kiribuild), that runs
-`kiri export` and deploys — typically to GitHub Pages — on every push:
+[`php-kirigami/kiribuild`](https://github.com/php-kirigami/kiribuild)
+(**v2**): it checks out nothing itself — the caller does — installs Node +
+`kiri`, and runs `kiri export`. Everything else (committing back whatever the
+build regenerated, uploading the Pages artifact, deploying) is wired by the
+caller's own workflow, so it's explicit and easy to adapt:
 
 ```yaml
-# .github/workflows/deploy.yml
+# .github/workflows/page.yml
 name: Build & Deploy
 on:
   push: { branches: [main] }
-permissions: { contents: read, pages: write, id-token: write }
+permissions: { contents: write, pages: write, id-token: write }
+concurrency: { group: pages, cancel-in-progress: true }
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    environment: { name: github-pages, url: ${{ steps.deployment.outputs.page_url }} }
     steps:
-      - uses: actions/checkout@v4
-      - uses: php-kirigami/kiribuild@v1
+      - uses: actions/checkout@v7
+
+      - uses: php-kirigami/kiribuild@v2
+        with:
+          node-version: "24"
+
+      - name: Commit regenerated files
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name  "kirigami[bot]"
+            git config user.email "kirigami-bot@users.noreply.github.com"
+            git add -A && git commit -m "chore: update generated files [skip ci]" && git push
+          fi
+
+      - uses: actions/upload-pages-artifact@v5
+        with: { path: dist }
+
+      - id: deployment
+        uses: actions/deploy-pages@v5
 ```
+
+Every official template (`kiri create`) ships this workflow already, at
+`.github/workflows/page.yml` — copy it from there rather than retyping it.
 
 ---
 

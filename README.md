@@ -69,6 +69,9 @@ This repository is an npm workspaces monorepo, organized as follows:
 | [`packages/struct-walker`](./packages/struct-walker) | Recursively walks YAML/JSON structures, resolving relative file references and converting assets to data URIs. |
 | [`packages/sdk`](./packages/sdk) | Shared runtime for plugins: the hook registry and the on-disk `Cache`. |
 | [`packages/canva`](./packages/canva) | Shared Sass/JS design system reused across Kirigami projects. |
+| [`packages/plugin-highlight`](./packages/plugin-highlight) | Official plugin: build-time syntax highlighting (highlight.js), 0 runtime JS. |
+| [`packages/plugin-extlink`](./packages/plugin-extlink) | Official plugin: external link preview cards, `SCRAPER`-backed, cached to disk. |
+| [`packages/plugin-embed`](./packages/plugin-embed) | Official plugin: YouTube/Vimeo oEmbed video cards, resolved client-side. |
 
 ---
 
@@ -132,6 +135,7 @@ npx kiri export
 | `kiri serve` | Same as `kiri watch`, plus a local server and browser hot-reload (Server-Sent Events, no server framework). |
 | `kiri run <script>` | Runs a PHP command script from the `scripts/` folder inside the Kirigami runtime. |
 | `kiri create <template>` | Creates a new project from an official template. |
+| `kiri install <plugin...>` | Installs a plugin and prints the `plugins:` entry to paste into `kirigami.yaml`. |
 | `kiri cache purge [mask]` | Purges the local `.node.db` / `.cache.db` / `.cookie.txt` caches (or just the keys matching `mask`). |
 | `kiri phpinfo` | Prints `phpinfo()` from the embedded PHP-WASM runtime. |
 
@@ -298,37 +302,56 @@ An ordered list of build tasks, run in array order — on top of the implicit `p
 |---|---|---|
 | `esbuild` | Bundles/minifies a JS or TS entry point. Supports build & watch. | `name`, `entry` |
 | `sass` | Compiles a `.scss`/`.sass` entry point, minified with csso on export. Supports build & watch. | `name`, `entry` |
+| `prepros` | Renders pages + `sitemap.xml`. Watch only on a plain `kiri build`/`watch` — the implicit task added by the `prepros:` block is always forced. | `name` |
+| `dist` | Copies `kirigami.root` into the export output dir. Implicit/forced only, added automatically by `kiri export`. | `name`, `path` |
 
 ---
 
 ## Continuous deployment
 
-Kirigami ships an official reusable GitHub Action, [`php-kirigami/kiribuild`](https://github.com/php-kirigami/kiribuild), to build and deploy your site straight from CI — typically to GitHub Pages, on every push. Set it up once, and every push to `main` ships a fresh, fully rebuilt site.
-
-A minimal workflow looks like this:
+Kirigami ships an official reusable GitHub Action, [`php-kirigami/kiribuild`](https://github.com/php-kirigami/kiribuild)
+(**v2**). The action itself only installs Node + `kiri` and runs `kiri export`
+— checkout, committing back whatever the build regenerated, and the actual
+Pages upload/deploy are wired by the caller's own workflow steps, so the full
+flow stays explicit:
 
 ```yaml
-# .github/workflows/deploy.yml
+# .github/workflows/page.yml
 name: Build & Deploy
-
 on:
-  push:
-    branches: [main]
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
+  push: { branches: [main] }
+permissions: { contents: write, pages: write, id-token: write }
+concurrency: { group: pages, cancel-in-progress: true }
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    environment: { name: github-pages, url: ${{ steps.deployment.outputs.page_url }} }
     steps:
-      - uses: actions/checkout@v4
-      - uses: php-kirigami/kiribuild@v1
+      - uses: actions/checkout@v7
+
+      - uses: php-kirigami/kiribuild@v2
+        with:
+          node-version: "24"
+
+      - name: Commit regenerated files
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name  "kirigami[bot]"
+            git config user.email "kirigami-bot@users.noreply.github.com"
+            git add -A && git commit -m "chore: update generated files [skip ci]" && git push
+          fi
+
+      - uses: actions/upload-pages-artifact@v5
+        with: { path: dist }
+
+      - id: deployment
+        uses: actions/deploy-pages@v5
 ```
 
-Check the [action's own documentation](https://github.com/php-kirigami/kiribuild) for the full list of inputs (export path, GitHub Pages deployment options, etc.).
+Every official template (`kiri create`) already ships this workflow at
+`.github/workflows/page.yml` — copy it from there. Check the
+[action's own documentation](https://github.com/php-kirigami/kiribuild) for
+its inputs.
 
 ---
 
