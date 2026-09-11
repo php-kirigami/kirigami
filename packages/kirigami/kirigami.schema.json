@@ -43,9 +43,10 @@
         },
         "banner": {
           "type": "string",
-          "description": "Path, relative to the project root, to a text file used as the license/copyright banner stamped on every exported .js/.css/.html file (and on sitemap.xml) during `kiri export`. Optional — if omitted, an auto-generated banner \"Exported by Kirigami: <date>\" is used instead. If provided, the file's content may contain the literal token ###DATE###, which is replaced with today's date formatted in French (e.g. \"3 septembre 2026\") at load time. Build fails if the referenced file does not exist.",
+          "description": "Path, relative to the project root, to a text file stamped as a comment header on every exported .js / .css / .html file (and sitemap.xml) during `kiri export`. Optional — with no file set, kiri uses its bundled ASCII banner template instead. Either way the file keeps its placeholder tokens on disk; kiri fills them from this `kirigami` block on every build/export: ###DATE### (today, in French), ###YEAR###, ###PROJECT###, ###AUTHOR###, ###EMAIL###, ###REPO### (falls back to the repo derived from a *.github.io baseurl), ###BASEURL###. A line whose value(s) resolve empty is dropped (\"Author: Foo <>\" becomes \"Author: Foo\"). `kiri create` writes a starter banner.txt to the project root. Build fails only if a `banner` path is set and the file is missing.",
           "default": null,
           "examples": [
+            "banner.txt",
             "assets/banner.txt"
           ]
         },

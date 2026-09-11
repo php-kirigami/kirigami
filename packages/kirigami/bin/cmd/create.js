@@ -8,6 +8,7 @@ import { execSync } from "child_process";
 import { Octokit } from "@octokit/rest";
 import { fileURLToPath } from 'url';
 import { Cache } from "@kirigami/sdk";
+import { deriveRepo } from "../config.js";
 import { c, log, parseArgs, printCommandHelp, isInteractive, ask, confirm, select } from "../utils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -27,7 +28,9 @@ const HELP = {
 		{ flag: "--name <name>", desc: "Project name (package.json name + kirigami.yaml project)" },
 		{ flag: "--description <s>", desc: "Project description" },
 		{ flag: "--author <name>", desc: "Author" },
+		{ flag: "--email <email>", desc: "Author email (kirigami.yaml email)" },
 		{ flag: "--baseurl <url>", desc: "Site base URL (kirigami.yaml baseurl)" },
+		{ flag: "--repo <url>", desc: "Git repository URL (kirigami.yaml repo; default: derived from baseurl)" },
 		{ flag: "--yes, -y", desc: "Non-interactive: take defaults, ask nothing" },
 		{ flag: "--no-git", desc: "Don't initialise a git repository" },
 		{ flag: "--no-install", desc: "Don't run \"npm install\" afterwards" },
@@ -37,7 +40,8 @@ const HELP = {
 		"Templates are the php-kirigami repos named \"template-<name>\" (list cached 1h).",
 		"No arguments, in a terminal → interactive wizard.",
 		"Never overwrites: existing files are kept, package.json is deep-merged (your deps win).",
-		"Missing package.json gets a starter one; git repo + first commit unless --no-git; npm install unless --no-install.",
+		"Missing package.json / banner.txt get a starter one; git repo + first commit unless --no-git; npm install unless --no-install.",
+		"The banner keeps its ### ### tokens on disk — kiri fills them (date, author, repo, …) on every build/export.",
 	],
 	examples: [
 		"kiri create",
@@ -319,16 +323,21 @@ async function collectMeta(target, { interactive, flags }) {
 		name:        flags.name || '',
 		description: flags.description || '',
 		author:      flags.author || '',
+		email:       flags.email || '',
 		baseurl:     flags.baseurl || '',
+		repo:        flags.repo || '',
 	};
 
 	if (interactive) {
 		meta.name        = await ask('Project name', { default: meta.name || dirName });
 		meta.description = await ask('Description', { default: meta.description });
 		meta.author      = await ask('Author', { default: meta.author || gitConfig('user.name') });
+		meta.email       = await ask('Author email', { default: meta.email || gitConfig('user.email') });
 		meta.baseurl     = await ask('Site base URL', { default: meta.baseurl });
+		meta.repo        = await ask('Git repository URL', { default: meta.repo || deriveRepo(meta.baseurl) });
 	} else {
 		meta.name ||= dirName;
+		meta.repo ||= deriveRepo(meta.baseurl);
 	}
 
 	meta.name = meta.name.trim();
@@ -413,6 +422,7 @@ function applyMeta(target, meta, { fillOnly, created }) {
 		for (const [key, value] of [
 			['project', meta.name], ['baseurl', meta.baseurl],
 			['description', meta.description], ['author', meta.author],
+			['email', meta.email], ['repo', meta.repo],
 		]) {
 			if (!value) continue;
 			const next = setKirigamiKey(yaml, key, value);
@@ -443,6 +453,28 @@ function writeMinimalPackageJson(target, meta) {
 		},
 	};
 	fs.writeFileSync(path.join(target, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
+}
+
+// Written when the template ships no banner.txt. The ### ### tokens are left in
+// place — `kiri build` / `kiri export` fill them (date, project, author, email,
+// repo, base URL) from the config every time.
+function writeStarterBanner(target) {
+	const dest = path.join(target, 'banner.txt');
+	if (fs.existsSync(dest)) return false;
+	const tpl = path.join(__dirname, '..', '..', 'assets', 'banner-template.txt');
+	if (!fs.existsSync(tpl)) return false;
+
+	fs.writeFileSync(dest, fs.readFileSync(tpl, 'utf8'));
+
+	// Point kirigami.yaml at it, unless a `banner:` key is already there.
+	const yamlPath = path.join(target, 'kirigami.yaml');
+	if (fs.existsSync(yamlPath)) {
+		const yaml = fs.readFileSync(yamlPath, 'utf8');
+		if (!/^[ \t]+banner:/m.test(yaml)) {
+			fs.writeFileSync(yamlPath, setKirigamiKey(yaml, 'banner', 'banner.txt'));
+		}
+	}
+	return true;
 }
 
 
@@ -537,6 +569,10 @@ export default async function create(args) {
 	}
 	const changed = applyMeta(target, meta, { fillOnly: hasPkg, created: createdPkg });
 	if (changed.length) log.step(`Filled ${changed.join(', ')} in package.json / kirigami.yaml.`);
+
+	if (writeStarterBanner(target)) {
+		log.step('Wrote a starter banner.txt (kiri fills its ### ### tokens on build).');
+	}
 
 	// ── git ──────────────────────────────────────────────────────────────
 	await maybeGitInit(target, templateName, { interactive, flags });

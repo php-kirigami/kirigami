@@ -15,6 +15,7 @@
   "files": [
     "index.js",
     "bin/",
+    "assets/",
     "LICENSE",
     "README.md",
     "kirigami.schema.json"

@@ -33,6 +33,11 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 - **`@kirigami/canva` `styles/main.scss`** — encore un stub. `styles/prose` couvre le
   markdown ; `main.scss` reste réservé aux styles de composants partagés (WIP dans le
   README canva).
+- **`kiri install <plugin>`** — commande calquée sur `create`, pour les plugins
+  (`plugin-*`) : `npm install` le package, puis explique à l'utilisateur quoi ajouter
+  dans `kirigami.yaml` (entrée `plugins:` + options) à partir du `kirigami.optionsSchema`
+  déclaré dans le `package.json` du plugin. Si déjà installé : détecte une nouvelle
+  version et l'installe.
 
 
 ## DX — `HTML::format()` écrase la casse du SVG/MathML inline (pas commité)
@@ -66,3 +71,4 @@ dans template-demo, qui n'a que `viewBox` sur ses 8 icônes de toggle).
 - **template-demo** a son propre `todo.md` : `C:\projects\kirigami\template-demo\todo.md`.
   Toggle de thème : tranché — les deux templates font `import "@kirigami/canva/theme"`
   (plus de réimplémentation inline). Reste ouvert là-bas : réactiver `prepros.format`.
+

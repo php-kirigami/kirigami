@@ -110,13 +110,19 @@ async function validateConfig(config) {
 	if (!fs.existsSync(__root)) throwConfigError(__configpath, `Invalid "kirigami:root" property.`);
 	config.root = __root;
 
-	// Verify banner
+	// Verify banner. A `kirigami:banner` file is filled from the config; with no
+	// file set, the bundled ASCII template is used the same way. `###DATE###`
+	// (and the rest) are resolved here, on every build/export — the committed
+	// banner.txt keeps its placeholders.
 	if(config.kirigami.banner) {
 		const bannerFile = path.join(__project, config.kirigami.banner);
 		if (!fs.existsSync(bannerFile)) throwConfigError(__configpath, `Invalid "kirigami:banner" property.`);
-		config.kirigami.banner = fs.readFileSync(config.kirigami.banner, 'utf8').replace(/###DATE###/, formatFrDate());
+		config.kirigami.banner = fillBanner(fs.readFileSync(bannerFile, 'utf8'), config.kirigami);
 	} else {
-		config.kirigami.banner = `Exported by Kirigami: ${formatFrDate()}`;
+		const tpl = path.join(__dirname, '..', 'assets', 'banner-template.txt');
+		config.kirigami.banner = fs.existsSync(tpl)
+			? fillBanner(fs.readFileSync(tpl, 'utf8'), config.kirigami)
+			: `Exported by Kirigami: ${formatFrDate()}`;
 	}
 
 	// Verify image section
@@ -149,4 +155,42 @@ async function validateConfig(config) {
 
 function throwConfigError(__configpath, msg) {
 	throw `Invalid config file: ${__configpath}\n  ${msg}`;
+}
+
+
+// A GitHub Pages base URL → the repo it is served from.
+//   https://user.github.io/project  →  https://github.com/user/project
+//   https://user.github.io          →  https://github.com/user/user.github.io
+// Anything else (custom domain, non-GitHub host) → '' (caller keeps the token
+// empty and the line is dropped). Also used by `kiri create` for its wizard
+// default.
+export function deriveRepo(baseurl) {
+	if (!baseurl) return '';
+	const m = String(baseurl).match(/^https?:\/\/([^./]+)\.github\.io(?:\/([^/?#]+))?/i);
+	if (!m) return '';
+	return `https://github.com/${m[1]}/${m[2] || `${m[1]}.github.io`}`;
+}
+
+
+// Fills the ### ### placeholders of a banner from the `kirigami:` config, then
+// tidies any line whose value(s) came out empty ("Author:  Foo <>" → "Author:
+// Foo"; a bare "Label:" line is dropped).
+function fillBanner(text, k) {
+	const map = {
+		'###DATE###':    formatFrDate(),
+		'###YEAR###':    String(new Date().getFullYear()),
+		'###PROJECT###': k.project || '',
+		'###AUTHOR###':  k.author || '',
+		'###EMAIL###':   k.email || '',
+		'###REPO###':    k.repo || deriveRepo(k.baseurl),
+		'###BASEURL###': k.baseurl || '',
+	};
+	let out = text;
+	for (const [token, value] of Object.entries(map)) out = out.split(token).join(value);
+
+	return out
+		.split('\n')
+		.map((line) => line.replace(/\s*<\s*>\s*$/, '').replace(/[ \t]+$/, ''))
+		.filter((line) => !/^\s*[A-Za-z][\w .-]*:\s*$/.test(line))
+		.join('\n');
 }

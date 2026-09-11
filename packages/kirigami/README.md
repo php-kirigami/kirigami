@@ -188,7 +188,7 @@ organization.
 | Flag | Description |
 |---|---|
 | `--list`, `-l` | List available templates (cached 1 h in `~/.config/kirigami/kiri.db`). |
-| `--name`, `--description`, `--author`, `--baseurl` | Metadata to write into `package.json` / `kirigami.yaml`. |
+| `--name`, `--description`, `--author`, `--email`, `--baseurl`, `--repo` | Metadata to write into `package.json` / `kirigami.yaml`. `--repo` defaults to the repo derived from a `*.github.io` base URL. |
 | `--yes`, `-y` | Non-interactive: take defaults, ask nothing. |
 | `--no-git` | Don't initialise a git repository. |
 | `--no-install` | Don't run `npm install` afterwards. |
@@ -201,19 +201,22 @@ kiri create blog my-blog
 ```
 
 Run with no arguments in a terminal for a wizard: it asks for the template, the
-target directory, and the project **name / description / author / base URL**,
-then writes those into `package.json` and `kirigami.yaml` (comments preserved).
-Pass a template name to skip straight to extraction.
+target directory, and the project **name / description / author / email / base
+URL / repo**, then writes those into `package.json` and `kirigami.yaml`
+(comments preserved). Pass a template name to skip straight to extraction.
 
 The template `.tar.gz` is downloaded and unpacked with a zero-dependency tar
 parser (Node has no zip API). **Extraction never overwrites**: files already in
 the target are kept as-is, an existing `package.json` is deep-merged (existing
 values win), everything missing is added — so an existing `package.json`, `.git`,
-`README`, `node_modules`, etc. are fine. If the template ships no `package.json`,
-a starter one is written. Then, unless the target is already inside a git
-worktree (or `--no-git`), `git init` + an initial commit; then `npm install`
-unless `--no-install`. `.cache.db`, `.node.db`, `.cookie.txt` and
-`package-lock.json` are never copied from the template.
+`README`, `node_modules`, etc. are fine. If the template ships no `package.json`
+or `banner.txt`, a starter one is written — the banner keeps its `### ###` tokens
+(`###DATE###`, `###PROJECT###`, `###AUTHOR###`, `###EMAIL###`, `###REPO###`,
+`###BASEURL###`), which `kiri build` / `kiri export` fill from `kirigami.yaml`
+every time. Then, unless the target is already inside a git worktree (or
+`--no-git`), `git init` + an initial commit; then `npm install` unless
+`--no-install`. `.cache.db`, `.node.db`, `.cookie.txt` and `package-lock.json`
+are never copied from the template.
 
 ### `kiri cache purge`
 
@@ -321,7 +324,8 @@ tasks:
 | `project` | ✅ | Site name. Printed in the CLI banner, exposed as `$project`. |
 | `baseurl` | ✅ | Deployed root URL, no trailing slash (stripped if present). Used for absolute `<loc>` entries in `sitemap.xml`, exposed as `$baseurl`. |
 | `root` | ✅ | Directory (relative to the project root) holding your `_*.php` pages. All task `entry` paths and prepros rendering are relative to it. Build fails if it doesn't exist. |
-| `banner` | – | Path to a text file stamped as a license/copyright banner on exported `.js`/`.css`/`.html`. May contain the `###DATE###` token (→ French-formatted date). Falls back to an auto-generated banner. |
+| `banner` | – | Path to a text file stamped as a comment header on exported `.js`/`.css`/`.html`. Keeps its `### ###` tokens on disk (`###DATE###`, `###PROJECT###`, `###AUTHOR###`, `###EMAIL###`, `###REPO###`, `###BASEURL###`) — kiri fills them each build. With no file set, a bundled template is used. See [The banner](#the-banner). |
+| `author`, `email`, `repo` | – | Free-form, but read by the banner (and `email` / `author` by the `META` / `LD` classes). `kiri create` fills these; `repo` also auto-derives from a `*.github.io` base URL. |
 | *(anything else)* | – | Free-form data (string, number, boolean, list, map). Every key becomes a PHP variable of the same name in page templates, `before`/`after`, and `prepros.includes` files. |
 
 ### `prepros:`
@@ -460,10 +464,23 @@ Available in every `sass` task, in addition to anything contributed through the
 
 ## The banner
 
-The banner text (from `kirigami.banner` or the auto-generated fallback
-`Exported by Kirigami: <date>`) is stamped on exported `.js`, `.css` and `.html`
-files. In the banner **file**, the token `###DATE###` is replaced with today's
-date formatted in French (e.g. `Mardi le 9 septembre 2026 à 14 h 30`).
+A text file — `kirigami.banner` if set, otherwise kiri's **bundled ASCII
+template** — is stamped as a comment header on every exported `.js`, `.css` and
+`.html` file (and `sitemap.xml`). The file keeps its placeholder tokens on disk;
+kiri fills them from the `kirigami` block on every build / export:
+
+| Token | Value |
+|---|---|
+| `###DATE###` | today, formatted in French (`Mardi le 9 septembre 2026 à 14 h 30`) |
+| `###YEAR###` | current year |
+| `###PROJECT###` | `kirigami.project` |
+| `###AUTHOR###` / `###EMAIL###` | `kirigami.author` / `kirigami.email` |
+| `###REPO###` | `kirigami.repo`, or the repo derived from a `*.github.io` base URL |
+| `###BASEURL###` | `kirigami.baseurl` |
+
+A line whose value(s) come out empty is dropped (`Author: Foo <>` →
+`Author: Foo`; a bare `Github:` line disappears). `kiri create` drops a starter
+`banner.txt` at the project root so you can edit the layout.
 
 ---
 
