@@ -304,6 +304,21 @@ build regenerated (`git add -A`, `[skip ci]`) → `upload-pages-artifact` →
 released the `###TIMESTAMP###` re-bake is gone, so the commit-back should now be
 quiet apart from genuinely regenerated assets.
 
+**Real end-to-end deployment verified (2026-09-11), not just a green workflow
+run.** This session pushed dozens of real commits to `../php-kirigami.github.io/`,
+`../template-demo/` and `../template-default/`'s `main` branches — every one
+triggered a real `Build & Deploy` run via `kiribuild@v2`. Checked the actual
+live public URLs afterward, not just `gh run list`'s ✓: `https://php-kirigami.github.io/`
+(org site), `/template-demo/` and `/template-default/` (both real project
+Pages under the org site, confirmed live at those paths) all return 200 and
+serve content matching the latest source — spot-checked the Marketplace
+mention on `/templates/`, the `.reqs`/`.steps` mobile CSS fix's `min-width:0`
+in the compiled stylesheet, and `plugin-extlink`/`plugin-embed` usage on
+`template-demo`'s `/features/tags/`. `sitemap.xml`'s `<lastmod>` and the
+response `Last-Modified` header both matched the actual push timestamp. Closes
+the "real kiribuild test" todo item — this wasn't one staged scenario but the
+action's genuine, repeated, real-world usage all session.
+
 Recently landed (siblings, their own repos):
 
 - **`../template-default/` rebuilt as a real starter kit**: layout + 2 pages +

@@ -17,10 +17,6 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   `--lightswitch-rotate`, fond ciel jour/nuit). Offrir ça en option dans
   `@kirigami/canva`'s `theme`, en plus du simple swap d'icône soleil/lune
   actuel (`_layouts/header.php` du site, `.theme-toggle__sun`/`__moon`).
-- **Test réel de l'action kiribuild** — un vrai scénario d'intégration, pas juste un
-  smoke. kiribuild@v2 est live et les deux `template-*` ont un `.github/workflows/page.yml`
-  (kiribuild@v2 → commit-back → deploy Pages) ; reste à vérifier bout-en-bout qu'un
-  site se déploie vraiment et que le contenu est bon.
 - **`copyButton` sans task esbuild** — dans plugin-highlight, si le projet n'a pas de task
   esbuild le bouton ne marche pas (warn seulement). Voir si un plugin devrait pouvoir
   déclarer sa propre task / bundle JS auto.
