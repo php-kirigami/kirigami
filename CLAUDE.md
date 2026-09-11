@@ -137,7 +137,14 @@ and every plugin's `kirigami.optionsSchema` — they're served from GitHub `@mai
 and editors would otherwise keep the stale copy for up to 12 h. Flags:
 `--dry-run`, `--no-purge`, `--purge-only`, `--only <name>`, `--otp <code>`,
 `--yes` (skip the "is HEAD pushed?" preflight). Needs `npm login` with
-`@kirigami` publish rights.
+`@kirigami` publish rights. If npm's account has 2FA on, `npm publish` errors
+`EOTP` and prints a browser-auth URL — that browser flow only works when the
+command runs in an interactive TTY; from a non-interactive shell (e.g. an
+agent driving the terminal) it fails immediately instead of polling, so pass
+`--otp <code>` explicitly. After a publish, npm's registry/CDN + `npm view`'s
+local cache lag a few minutes — a fresh `npm view <pkg>@<new-ver>` still
+showing the old version right after `npm run release` is almost always
+propagation, not a failed publish (check the publish log's `✓ published`).
 
 ### Push / release order (always)
 
@@ -151,7 +158,7 @@ Whenever a change spans several repos, ship them in this order:
 
 ---
 
-## Current work (as of 2026-09-10)
+## Current work (as of 2026-09-11)
 
 **The big release shipped (commit `00cf575`).** On npm and good: `@kirigami/sdk`
 0.2.0, `@kirigami/canva` **2.4.0**, `@kirigami/php-prepros` **1.7.0**,
@@ -173,84 +180,50 @@ load — `import '@kirigami/php-prepros'` is side-effect-free; fixes
 `@kirigami/kirigami ^1.4.0` / `@kirigami/plugin-highlight ^0.1.1`, and both
 now commit a `package-lock.json` (`npm ci`-ready).
 
-**Not yet released** (run `npm run release` — publishes just these):
-- **`@kirigami/canva` 2.5.0** — `styles/main` no longer a stub (`.breadcrumb`,
-  `.docs-toc`, `.table`/`.table-wrap`, `.badge`/`.badge--muted`, `.palette`) +
-  `conf` themed scrollbars. See the package row. `@kirigami/kirigami` and
-  `@kirigami/plugin-highlight`'s pinned dep bumped to match, lockfile
-  refreshed. Not yet consumed by `../php-kirigami.github.io/` — its own
-  `_main.scss`/`_conf.scss` still carry the duplicated originals these were
-  lifted from; migrating it over is a follow-up once 2.5.0 is actually on npm.
-- **`@kirigami/plugin-highlight` 0.1.3** — `@highlight false` page opt-out +
-  `nohighlight` / `language-plaintext` per-block opt-out; **clean HTML**: the
-  highlighted `<pre><code>` markup is re-indented to match `HTML::format()`
-  instead of landing flush-left (see the package row). Also fixed today
-  (2026-09-10), uncommitted: **`languages: [html]` (and `js`/`ts`/`md`/`yml`/
-  `sh`/`py`) silently failed to highlight** — highlight.js ships those as
-  aliases baked into another module's file (`html`→`xml.js` etc.), so
-  `import('highlight.js/lib/languages/html')` 404'd and the build fell back to
-  a warning + no coloring. `ensureLanguage()` (`src/highlight.js`) now maps the
-  requested name to the real module file via a small `MODULE_ALIASES` table
-  before importing; hljs's own alias table then resolves the original short
-  name automatically. Verified against the real `highlight.js` package
-  (workspace root). Still open: promote an actually-unknown name from warning
-  to build error (see `todo.md`).
-- **`@kirigami/php-prepros` 1.7.2** — span-safe de-indent script in
-  `injectHead()` (flattens highlighted `<pre><code>` before first paint, on
-  `innerHTML`, no `children.length` skip); `<markdown prose>` opt-in `.prose`
-  wrapper. See the package row. Also fixed today (2026-09-10), uncommitted:
-  (a) **severe PHPDOC bug** — `fs.class.php` `parseDocBlock()`'s tag regex
-  accepted leading whitespace, so an indented hanging-indent continuation line
-  starting with `@word` was read as a new tag; when that word was `@content`
-  the whole rendered page silently vanished, replaced by the stray fragment.
-  Fixed by anchoring the regex to column 0. (b) **GFM alerts had no inline
-  markdown** — `md.class.php`'s `> [!NOTE]` handling ran `htmlspecialchars()`
-  on the alert body instead of `self::toHtml()` like the standard blockquote
-  right below it, so `**bold**`/`` `code` ``/`[links](url)` came out literal.
-  Fixed to call `toHtml()` (and drop the now-redundant manual `<p>` wrap, since
-  `toHtml()` already emits one). (c) **`HTML::format()` no longer lowercases
-  SVG/MathML** — it unconditionally `strtolower()`'d element/attribute names,
-  flattening foreign-content camelCase (`viewBox`, `linearGradient`, …) even
-  though Lexbor already restored correct case at parse time. Now namespace-aware
-  (`isHtmlNamespace()`/`tagName()` helpers): only HTML-namespace names are
-  lowercased; SVG/MathML names are emitted verbatim. All three verified by hand
-  with local PHP 8.5 (`php -l` + isolated repro scripts) **and** re-verified
-  end-to-end against the real WASM runtime (2026-09-10): `npm link`ed into
-  `../php-kirigami.github.io/`, rebuilt for real (`kiri build`), all four
-  confirmed fixed in the actual rendered output — the `@content` continuation
-  no longer eats the page, `> [!NOTE]` renders bold/links/code, `languages:
-  [html]` highlights, `viewBox`/`preserveAspectRatio`/`linearGradient` keep
-  their case. No test harness exists in this package yet.
-- **`@kirigami/kirigami` 1.5.0** — banner-from-template (1.4.2, see the package
-  row): `config.js` fills all `### ###` tokens in the banner from the
-  `kirigami:` block every build (not just `###DATE###`, which is now English);
-  bundled `assets/banner-template.txt` fallback (`files` gained `assets/`);
-  `kiri create` `--email` / `--repo` + writes a starter `banner.txt`. Both
-  `../template-*/banner.txt` swapped to the token version. 1.4.3 dep-bumps
-  `@kirigami/php-prepros` to 1.7.2. **1.5.0: `kiri serve`** — see the package
-  row; also added a `kiri:serve` task (manual-run only, no `runOn:
-  folderOpen`) to `../template-*/.vscode/tasks.json` and
-  `../php-kirigami.github.io/.vscode/tasks.json`. **1.5.0: `kiri install`** — see
-  the package row.
-- **kiribuild** (its own repo, `main` at `efddf62`): the "Install project
-  dependencies" step now uses
-  `npm ci` when a `package-lock.json` is committed (leaves it untouched, so the
-  workflow's `git add -A` commit-back has nothing to pick up); `npm install`
-  fallback otherwise. New `lockfile` test scenario; the `templates` test job
-  drops any committed lockfile after pinning `KIRI_GOOD`. `v2.0.5` tagged +
-  `v2` moved onto it (2026-09-10), and the repo is now **published on the
-  GitHub Marketplace** (release `v2.0.5`, `action.yml`'s existing
-  `branding.icon: package` / `branding.color: purple` used as-is — Marketplace
-  only accepts a Feather-icon name + fixed color, not the Kirigami logo).
+**Third release shipped** (commit `8e36913`, released 2026-09-11). On npm and
+good: `@kirigami/canva` **2.5.0**, `@kirigami/php-prepros` **1.7.2**,
+`@kirigami/kirigami` **1.5.0**, `@kirigami/plugin-highlight` **0.1.3**
+(`sdk`/`struct-walker`/`php-wasm` unchanged, skipped by the release script).
+That release carried:
+- **canva 2.5.0** — `styles/main` no longer a stub (`.breadcrumb`, `.docs-toc`,
+  `.table`/`.table-wrap`, `.badge`/`.badge--muted`, `.palette`) + `conf` themed
+  scrollbars. See the package row. Not yet consumed by
+  `../php-kirigami.github.io/` — its own `_main.scss`/`_conf.scss` still carry
+  the duplicated originals these were lifted from; migrating it over to
+  `@use "@kirigami/canva/main"` (now that 2.5.0 is actually on npm) is a
+  follow-up, tracked in `todo.md`.
+- **plugin-highlight 0.1.3** — `@highlight false` page opt-out +
+  `nohighlight` / `language-plaintext` per-block opt-out; clean HTML (the
+  highlighted `<pre><code>` markup re-indented to match `HTML::format()`
+  instead of landing flush-left); the `languages: [html]` (and `js`/`ts`/`md`/
+  `yml`/`sh`/`py`) alias fix — highlight.js ships those as aliases baked into
+  another module's file (`html`→`xml.js` etc.), so `ensureLanguage()`
+  (`src/highlight.js`) now maps the requested name to the real module file via
+  a `MODULE_ALIASES` table before importing. Still open: promote an
+  actually-unknown language name from warning to build error (see `todo.md`).
+- **php-prepros 1.7.2** — span-safe de-indent script in `injectHead()`
+  (flattens highlighted `<pre><code>` before first paint, on `innerHTML`, no
+  `children.length` skip); `<markdown prose>` opt-in `.prose` wrapper; three
+  fixes verified end-to-end against the real WASM runtime (`npm link`ed into
+  `../php-kirigami.github.io/`, rebuilt for real): (a) a severe PHPDOC bug
+  where an indented hanging-indent continuation line starting with `@word`
+  (`fs.class.php` `parseDocBlock()`) was read as a new tag — when that word
+  was `@content` the whole rendered page silently vanished; fixed by anchoring
+  the tag regex to column 0. (b) GFM `> [!NOTE]` alerts now render inline
+  markdown (`toHtml()` instead of `htmlspecialchars()`) like the standard
+  blockquote does. (c) `HTML::format()` no longer lowercases SVG/MathML
+  foreign-content names (`viewBox`, `linearGradient`, …) — namespace-aware via
+  `isHtmlNamespace()`/`tagName()`.
+- **kirigami 1.5.0** — banner-from-template (`config.js` fills all `### ###`
+  tokens from the `kirigami:` block every build); bundled
+  `assets/banner-template.txt` fallback; `kiri create --email`/`--repo` +
+  starter `banner.txt`; **`kiri serve`** (watch + local server + hot-reload);
+  **`kiri install`** (installs + prints a `plugins:` entry for a plugin). Both
+  `../template-*/` got a `kiri:serve` VS Code task.
 
-Release when ready: `npm run release` (publishes canva 2.5.0 + php-prepros 1.7.2 +
-kiri 1.5.0 + plugin-highlight 0.1.3; everything else skips). Topo order: sdk → canva →
-struct-walker → php-prepros → kirigami → plugin-highlight. `publish.js` also purges the jsDelivr
-cache for `kirigami.schema.json` + each plugin's `kirigami.optionsSchema`. Heads
-up: npm's
-registry/CDN + `npm view`'s local cache lag a few minutes after a publish — a
-fresh `npm view <pkg>@<new-ver>` 404 right after `npm run release` is almost
-always propagation, not a failed publish (check the publish log's `✓ published`).
+kiribuild (its own repo, unrelated to this npm release): `main` at `efddf62`,
+`npm ci`-when-lockfile-committed fix, `v2.0.5` tagged (`v2` moved onto it), now
+published on the GitHub Marketplace.
 
 **canva is a permanent part of this monorepo — reuse its code rather than
 re-implementing shared helpers per package** (that's why plugin-highlight now
@@ -284,17 +257,10 @@ Recently landed (siblings, their own repos):
 - every `template-*` `CLAUDE.md` re-copied from `docs/template-CLAUDE.md` (its
   Deployment section rewritten for kiribuild v2).
 
-Uncommitted:
-
-- **DX issue logged in `todo.md`, not fixed:** `HTML::format()`
-  (`php-prepros/src/libraries/html.class.php`) lowercases element/attribute
-  names unconditionally (`:76`, `:166`, `:246`), flattening inline SVG/MathML
-  foreign-content camelCase (`viewBox` → `viewbox`, `linearGradient`, …) on
-  output. Not a render bug — the browser's foreign-content adjustment re-maps it
-  at parse — but the serialised source is invalid. Fix: make the serializer
-  namespace-aware (keep original case under `<svg>` / MathML).
+The `HTML::format()` SVG/MathML lowercasing DX issue and plugin-highlight's
+`@highlight false` PHPDOC page-skip are now fixed, released in php-prepros
+1.7.2 / plugin-highlight 0.1.3 (see "Current work" above).
 
 Still-open `todo.md` items: an `<extlink>` authoring tag (calls `SCRAPER`); a
-real kiribuild action test; `@highlight false` PHPDOC page-skip for
-plugin-highlight; plugin-declared tasks / commands (`kirigami.type` `"task"` /
-`"command"`).
+real kiribuild action test; plugin-declared tasks / commands (`kirigami.type`
+`"task"` / `"command"`).

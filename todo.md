@@ -30,9 +30,6 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   « je veux les exports / appeler `setTheme()` ». Coût : le contrat (clé `kirigami-theme`,
   event `canva:themechange`, attr `data-theme`) vit alors dans canva **et** dans une string
   PHP de php-prepros — garder le snippet injecté minimal, canva/theme.js fait foi.
-- **`@kirigami/canva` `styles/main.scss`** — encore un stub. `styles/prose` couvre le
-  markdown ; `main.scss` reste réservé aux styles de composants partagés (WIP dans le
-  README canva).
 - **plugin-highlight : promouvoir le warning en erreur de build ?** — reste ouvert
   après le fix de l'alias (`html`→`xml` etc., voir CLAUDE.md) : un vrai nom
   highlight.js inconnu (typo) passe toujours en warning silencieux, build vert
@@ -52,13 +49,12 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   — pour l'instant `createDevServer()` rejette la promesse d'écoute (l'erreur
   `EADDRINUSE` remonte telle quelle) ; un message plus clair ("essaie
   `--port`") serait plus sympa. Mineur.
-- **Migrer `../php-kirigami.github.io/` vers `@kirigami/canva` 2.5.0** — le
-  site a encore ses propres copies de `.breadcrumb`/`.docs-toc`/`.pkg-table`/
-  `.badge`/palette-swatches/scrollbar dans `_main.scss`/`_conf.scss`; ces
-  idées ont été rapatriées dans `canva` `styles/main` (2026-09-11, voir
-  CLAUDE.md). Une fois 2.5.0 publié, remplacer les copies du site par
-  `@use "@kirigami/canva/main"` et retirer le CSS dupliqué (comme fait pour
-  `styles/prose` / `reveal` en 2.4.0).
+- **Migrer `../php-kirigami.github.io/` vers `@kirigami/canva` 2.5.0** — 2.5.0
+  est publié (release du 2026-09-11) ; le site a encore ses propres copies de
+  `.breadcrumb`/`.docs-toc`/`.pkg-table`/`.badge`/palette-swatches/scrollbar
+  dans `_main.scss`/`_conf.scss`. Remplacer par `@use "@kirigami/canva/main"`
+  et retirer le CSS dupliqué (comme fait pour `styles/prose` / `reveal` en
+  2.4.0).
 
 
 ## Ailleurs
@@ -69,7 +65,7 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 
 
-plugin-embed, pour mapper les tags <youtube> <vimeo> et d'autres avec le protocol oembed pour aller chercher le titre, l'image, les dimensions pour ensuite calculer la proportion et utilisé l'image fournis comme cover du video dont il aura un bouton play par dessus (un svg qui va utiliser la variable $accent) que je vais fournir avec le plugin. Donc quand on passe sur le play in scale 1.1 environ et on change le cursor pis toute. tk on verra rendu là
+plugin-embed, pour mapper les tags <youtube> <vimeo> et d'autres avec le protocol oembed pour aller chercher le titre, l'image, les dimensions pour ensuite calculer la proportion et utilisé l'image fournis comme cover du video dont il aura un bouton play par dessus (un svg qui va utiliser la variable $accent) que je vais fournir avec le plugin. Donc quand on passe sur le play in scale 1.1 environ et on change le cursor pis toute. tk on verra rendu là - Aller voir dans le projet action-quebec.github.io, je veux le même principe avec l'observer.
 
 
 
