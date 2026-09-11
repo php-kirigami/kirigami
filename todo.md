@@ -49,12 +49,6 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   — pour l'instant `createDevServer()` rejette la promesse d'écoute (l'erreur
   `EADDRINUSE` remonte telle quelle) ; un message plus clair ("essaie
   `--port`") serait plus sympa. Mineur.
-- **Migrer `../php-kirigami.github.io/` vers `@kirigami/canva` 2.5.0** — 2.5.0
-  est publié (release du 2026-09-11) ; le site a encore ses propres copies de
-  `.breadcrumb`/`.docs-toc`/`.pkg-table`/`.badge`/palette-swatches/scrollbar
-  dans `_main.scss`/`_conf.scss`. Remplacer par `@use "@kirigami/canva/main"`
-  et retirer le CSS dupliqué (comme fait pour `styles/prose` / `reveal` en
-  2.4.0).
 
 
 ## Ailleurs
