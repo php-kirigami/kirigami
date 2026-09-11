@@ -6,6 +6,40 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 ## Ouvert
 
+- **Bug confirmé, sévère — une ligne de continuation PHPDOC commençant par
+  `@mot` est prise pour une nouvelle annotation, silencieusement** — trouvé en
+  écrivant le tutoriel de `php-kirigami.github.io` (phase 2 du plan du site).
+  `packages/php-prepros/src/libraries/fs.class.php`, `parseDocBlock()` (~ligne
+  212) : la regex de détection de tag est `'/^[ \t]*@([A-Za-z0-9_]+)[ \t]*(.*)$/'`
+  — le `[ \t]*` initial accepte n'importe quel indentation, donc elle matche
+  aussi bien une vraie nouvelle annotation qu'une ligne de continuation à
+  indentation suspendue (hanging-indent) qui commence, par accident, par un mot
+  précédé de `@`. Le commentaire au-dessus de la fonction dit pourtant
+  explicitement l'inverse ("Only lines whose first non-whitespace character...
+  is an `@` start a tag" — vrai seulement si "whitespace" voulait dire "aucune",
+  ce qui n'est pas ce que fait la regex). Repro exact rencontré :
+  ```
+  /**
+   * @abstract Markdown in a page, a YAML data file for a listing, and
+   *           @content for a page that's pure prose.
+   */
+  ```
+  La deuxième ligne (continuation indentée de `@abstract`) est lue comme une
+  **nouvelle** annotation `@content` = `"for a page that's pure prose."`. Comme
+  `@content` a un sens spécial (si `$content` est non-vide, il remplace le corps
+  de page entier et le PHP n'est **pas exécuté**), le résultat n'est pas une
+  simple valeur erronée : **toute la page rendue disparaît**, remplacée par ce
+  seul fragment de texte, sans warning ni erreur — silencieux, donc facile à ne
+  pas remarquer en review. Confirmé par isolation : reformuler pour qu'aucune
+  ligne de continuation ne commence par `@` corrige immédiatement.
+  Fix : ancrer la regex de détection à la colonne 0 après le gutter
+  (`'/^@([A-Za-z0-9_]+)[ \t]*(.*)$/'`, sans `[ \t]*` en tête) — une ligne
+  indentée ne pourra alors jamais démarrer un tag, seulement continuer le
+  précédent, ce qui correspond à ce que le commentaire de la fonction décrit
+  déjà. Vérifier aussi si un test couvre ce cas (mot réservé — `@content`,
+  `@indent` — en continuation indentée d'une autre annotation) ; sinon en
+  ajouter un, ce bug est trop silencieux pour ne pas avoir de garde.
+
 - **Bug confirmé — les alertes GFM (`> [!NOTE]` etc.) n'appliquent aucun markdown
   inline** — trouvé en construisant `php-kirigami.github.io` (phase 0 du plan du
   site). `packages/php-prepros/src/libraries/md.class.php:803-822`
@@ -111,3 +145,11 @@ dans template-demo, qui n'a que `viewBox` sur ses 8 icônes de toggle).
 
 
 une fonctionnalité pour créer un favicon.ico et le apple-machin-truc.png à partir d'une image dans asset. Utiliser runenv pour pouvoir générer le ico avec Imagick
+
+
+
+
+Créer notre propre php-wasm-builder à partir de comment fonctionne le playground. On veut pouvoir mettre à jour plus facilement nos verisons de librairies extensions etc, 
+
+
+Forcer le disable du php shortag <?= ?> dans le php_ini de prepros
