@@ -11,6 +11,7 @@ External link preview cards for the **Kirigami** static site generator.
 [![npm version](https://img.shields.io/npm/v/@kirigami/plugin-extlink)](https://www.npmjs.com/package/@kirigami/plugin-extlink)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![Node.js >=24.0.0](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](https://nodejs.org)
+[![Website](https://img.shields.io/badge/website-php--kirigami.github.io-1f6b4a)](https://php-kirigami.github.io)
 
 </div>
 

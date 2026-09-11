@@ -13,6 +13,7 @@ Built for the **[Kirigami](https://github.com/php-kirigami)** static site genera
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-yellow)](./LICENSE)
 [![Node.js >=24.0.0](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](https://nodejs.org)
 [![PHP 8.5.10](https://img.shields.io/badge/php-8.5.10-777bb4)](https://www.php.net/releases/8.5/)
+[![Website](https://img.shields.io/badge/website-php--kirigami.github.io-1f6b4a)](https://php-kirigami.github.io)
 
 </div>
 

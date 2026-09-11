@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/plugin-highlight",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "highlight.js syntax highlighting for Kirigami — applied at build time, zero runtime JavaScript shipped.",
   "keywords": [
     "kirigami",
@@ -41,8 +41,8 @@
     "npm": ">=10.2.3"
   },
   "dependencies": {
-    "@kirigami/canva": "2.5.1",
-    "@kirigami/sdk": "0.2.0",
+    "@kirigami/canva": "2.5.2",
+    "@kirigami/sdk": "0.2.1",
     "highlight.js": "^11.11.1"
   },
   "publishConfig": {
@@ -52,7 +52,7 @@
     "type": "git",
     "url": "git+https://github.com/php-kirigami/kirigami.git"
   },
-  "homepage": "https://github.com/php-kirigami/kirigami/tree/main/packages/plugin-highlight#readme",
+  "homepage": "https://php-kirigami.github.io",
   "bugs": {
     "url": "https://github.com/php-kirigami/kirigami/issues"
   }

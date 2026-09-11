@@ -16,7 +16,7 @@
     "curl",
     "kirigami"
   ],
-  "homepage": "https://github.com/php-kirigami/kirigami/tree/main/packages/php-wasm#readme",
+  "homepage": "https://php-kirigami.github.io",
   "bugs": {
     "url": "https://github.com/php-kirigami/kirigami/issues"
   },

@@ -6,6 +6,10 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 ## Ouvert
 
+- **Parler plus explicitement de `kiribuild` comme action GitHub, publiée
+  sur le Marketplace** — actuellement mentionné en passant ; mettre en
+  avant que c'est une vraie action GitHub Actions installable depuis le
+  Marketplace (site + README du monorepo + README de kiribuild lui-même).
 - **Test réel de l'action kiribuild** — un vrai scénario d'intégration, pas juste un
   smoke. kiribuild@v2 est live et les deux `template-*` ont un `.github/workflows/page.yml`
   (kiribuild@v2 → commit-back → deploy Pages) ; reste à vérifier bout-en-bout qu'un
@@ -20,12 +24,6 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 - **Action/script officiel Google Docs → Markdown** — un webservice qui prend un
   Google Doc et le convertit en `.md` (pour alimenter un `_data/` ou une page
   Kirigami), packagé comme une action/script officiel.
-- **`homepage` des packages** — pointer le champ `homepage` de chaque
-  `package.json` (`packages/*`) vers https://php-kirigami.github.io au lieu
-  d'où il pointe actuellement (repo GitHub).
-- **Mentionner le site web dans les `README.md` des packages** — un lien vers
-  https://php-kirigami.github.io quelque part dans chaque README (pas juste
-  le champ `homepage` de package.json).
 - **Faire le OG:image** — une vraie image `og:image`/`twitter:image` (générée
   ou statique) pour le site et/ou par page, au lieu de rien/placeholder.
 - **Rendre `kirigami.schema.json` officiel sur SchemaStore** — soumettre le

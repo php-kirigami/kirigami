@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/sdk",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Shared runtime for kirigami plugins: the hook registry (and related constants) used to extend kirigami's build tasks.",
   "license": "MIT",
   "author": "Maxime Larrivée-Roy",
@@ -41,7 +41,7 @@
     "type": "git",
     "url": "git+https://github.com/php-kirigami/kirigami.git"
   },
-  "homepage": "https://github.com/php-kirigami/kirigami/tree/main/packages/sdk#readme",
+  "homepage": "https://php-kirigami.github.io",
   "bugs": {
     "url": "https://github.com/php-kirigami/kirigami/issues"
   }

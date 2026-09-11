@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/plugin-extlink",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "<extlink> authoring tag for Kirigami — a SCRAPER-backed external link preview card, cached to disk so a rebuild never re-crawls a resolved URL.",
   "keywords": [
     "kirigami",
@@ -36,7 +36,7 @@
     "npm": ">=10.2.3"
   },
   "dependencies": {
-    "@kirigami/sdk": "0.2.0"
+    "@kirigami/sdk": "0.2.1"
   },
   "publishConfig": {
     "access": "public"
@@ -45,7 +45,7 @@
     "type": "git",
     "url": "git+https://github.com/php-kirigami/kirigami.git"
   },
-  "homepage": "https://github.com/php-kirigami/kirigami/tree/main/packages/plugin-extlink#readme",
+  "homepage": "https://php-kirigami.github.io",
   "bugs": {
     "url": "https://github.com/php-kirigami/kirigami/issues"
   }
