@@ -6,6 +6,11 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 ## Ouvert
 
+- **Injection CSS à chaud dans `kiri serve`, façon Live Server** — au lieu
+  d'un reload complet de la page à chaque changement, injecter le
+  `.min.css` mis à jour directement (remplace le `<link>` / son contenu)
+  quand seul du CSS a changé, en gardant l'état de la page (scroll,
+  formulaires) — reload complet réservé aux vrais changements HTML/JS.
 - **`template-react`** — un nouveau template officiel avec un vrai pipeline
   JSX/TSX intégré (esbuild le supporte déjà nativement — reste à scoper :
   build-time only (SSR-ish, rendu en HTML statique comme le reste de
@@ -63,10 +68,6 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   (actuellement on suit le fork tel quel). Gros chantier, pas de plan détaillé
   encore — à scoper séparément (quelles extensions garder, quelle version PHP
   cible, comment on reproduit le build Docker de Playground).
-- **`kiri serve` : promouvoir le warning en erreur si le port est déjà pris ?**
-  — pour l'instant `createDevServer()` rejette la promesse d'écoute (l'erreur
-  `EADDRINUSE` remonte telle quelle) ; un message plus clair ("essaie
-  `--port`") serait plus sympa. Mineur.
 
 
 ## Ailleurs

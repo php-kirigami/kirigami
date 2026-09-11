@@ -125,7 +125,13 @@ export async function createDevServer({ root, port = 4321, host = "127.0.0.1" })
 	});
 
 	await new Promise((resolve, reject) => {
-		server.once("error", reject);
+		server.once("error", (err) => {
+			if (err.code === "EADDRINUSE") {
+				reject(new Error(`Port ${port} on ${host} is already in use — try a different one with --port <n>.`));
+			} else {
+				reject(err);
+			}
+		});
 		server.listen(port, host, resolve);
 	});
 
