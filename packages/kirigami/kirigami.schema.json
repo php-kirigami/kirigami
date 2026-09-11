@@ -50,139 +50,26 @@
             "assets/banner.txt"
           ]
         },
-        "jsonld": false
+        "jsonld": false,
+        "seo": false
       },
       "patternProperties": {
-        "^(?!project$|baseurl$|root$|banner$|jsonld$).*$": {
-          "description": "Any additional key is free-form project data (string, number, boolean, list, or nested map — anything valid YAML). Every key is extracted as a PHP variable of the same name (e.g. `author:` becomes $author) and is available in page templates, before.php, after.php, and any PHP file listed under prepros.includes. Common examples used across Kirigami projects: author, person, jobtitle, email, facebook (or other social links), area, gtag, description, knowsabout (list), keywords (list). The @kirigami/php-prepros LD class reads some of these by convention when the top-level `jsonld` block is present."
+        "^(?!project$|baseurl$|root$|banner$|jsonld$|seo$).*$": {
+          "description": "Any additional key is free-form project data (string, number, boolean, list, or nested map — anything valid YAML). Every key is extracted as a PHP variable of the same name (e.g. `author:` becomes $author) and is available in page templates, before.php, after.php, and any PHP file listed under prepros.includes. Common examples used across Kirigami projects: author, person, jobtitle, email, facebook (or other social links), area, gtag, description, knowsabout (list), keywords (list). The @kirigami/php-prepros META/LD classes read some of these by convention when the top-level `seo` block is present."
         }
       }
     },
-    "jsonld": {
+    "seo": {
       "type": [
         "object",
         "boolean"
       ],
-      "description": "Top-level block. Configuration for @kirigami/php-prepros' LD class, which generates schema.org JSON-LD and injects it as a <script type=\"application/ld+json\"> block into every page's <head>. Automatic injection is OPT-IN: it happens only when this block is present. An empty map (`jsonld: {}`) is enough to turn it on, deriving everything from the loose keys of the `kirigami` block (project, baseurl, description, person, jobtitle, email, area, knowsabout, keywords, and any social-network URL keys such as facebook); the keys below override those inferences. Omit the block entirely and nothing is injected (explicit LD::add()/ld_add() calls from templates still emit). Set to `false`, or `{ \"auto\": false }`, to keep the config values but stop the automatic injection. A BreadcrumbList is built for every non-home page from the _index.php ancestor trail (no @breadcrumb opt-in). Per-page PHPDOC tags on a template: @ld false (skip the page), @ld_type <Type> (page node @type, e.g. AboutPage / Article / Service), @ld_title, @ld_description, @ld_image, @ld_published, @ld_modified, @ld_breadcrumb false.",
+      "description": "Top-level block. The unified SEO surface: configuration for @kirigami/php-prepros' META class (standard SEO / social <meta> and <link> tags — description, keywords, robots, author, generator, Open Graph, Twitter Card, canonical, favicon, …), plus a nested `jsonld` sub-block (below) for the LD class (schema.org JSON-LD). Replaces the old separate top-level `meta:`/`jsonld:` blocks — one block, one mental model for a project's whole SEO setup. META's automatic injection is OPT-IN: it happens only when this block is present. An empty map (`seo: {}`) is enough to turn it on, deriving everything from the loose keys of the `kirigami` block and each page's PHPDOC (@title, @description / @abstract, @keywords, @image, @robots, @og_type). JSON-LD is a separate, independent opt-in nested under `jsonld` (a project can have one without the other). A tag/script the page's layout already hand-writes is left untouched either way. Omit the block entirely and nothing is injected (explicit META::tag()/meta_tag() and LD::add()/ld_add() calls from templates still emit). Set to `false`, or `{ \"auto\": false }`, to keep the config values but stop META's automatic injection — `jsonld.auto` controls JSON-LD independently. Per-page PHPDOC tags: @meta false (skip the page, or @meta_ignore true), @meta_title, @meta_description, @meta_keywords, @meta_image, @meta_robots, @meta_type, @canonical <url> — plus LD's own @ld_* tags, see `jsonld` below.",
       "additionalProperties": true,
       "properties": {
         "auto": {
           "type": "boolean",
-          "description": "Whether to automatically inject the generated <script type=\"application/ld+json\"> into each page's <head>. Defaults to true once this block exists; set false to keep the block for its config values while placing the script by hand with LD::script()/ld_script(). A page that already hand-writes an application/ld+json script is never touched.",
-          "default": true
-        },
-        "type": {
-          "type": "string",
-          "description": "schema.org @type for the site's main entity node (@id '#organization').",
-          "default": "Organization",
-          "examples": [
-            "Organization",
-            "ProfessionalService",
-            "LocalBusiness",
-            "Corporation",
-            "NGO"
-          ]
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the main entity / WebSite. Defaults to `project`."
-        },
-        "url": {
-          "type": "string",
-          "format": "uri",
-          "description": "Canonical site URL. Defaults to `baseurl`."
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the main entity / WebSite. Defaults to the loose `description` key."
-        },
-        "logo": {
-          "type": "string",
-          "description": "Organization logo, absolute URL or a path relative to `baseurl`. Emitted as an ImageObject (@id '#logo')."
-        },
-        "image": {
-          "type": "string",
-          "description": "Default social/preview image, absolute URL or a path relative to `baseurl`. Defaults to `logo`."
-        },
-        "sameAs": {
-          "type": "array",
-          "description": "Profile URLs for the main entity (schema.org sameAs). Merged with any recognised social-network URL keys found loose in the `kirigami` block (facebook, instagram, linkedin, github, youtube, mastodon, …).",
-          "items": {
-            "type": "string",
-            "format": "uri"
-          },
-          "default": []
-        },
-        "email": {
-          "type": "string",
-          "description": "Contact email for the main entity. Defaults to the loose `email` key."
-        },
-        "telephone": {
-          "type": "string",
-          "description": "Contact phone for the main entity. Defaults to the loose `telephone`/`phone` key."
-        },
-        "address": {
-          "type": "object",
-          "description": "PostalAddress properties for the main entity (streetAddress, addressLocality, addressRegion, postalCode, addressCountry, …).",
-          "additionalProperties": true
-        },
-        "areaServed": {
-          "type": "string",
-          "description": "Geographic area served by the main entity. Defaults to the loose `area` key."
-        },
-        "knowsAbout": {
-          "type": "array",
-          "description": "Topics the main entity is knowledgeable about. Defaults to the loose `knowsabout` key.",
-          "items": {
-            "type": "string"
-          },
-          "default": []
-        },
-        "keywords": {
-          "type": "array",
-          "description": "Keywords for the WebSite node. Defaults to the loose `keywords` key.",
-          "items": {
-            "type": "string"
-          },
-          "default": []
-        },
-        "person": {
-          "type": [
-            "object",
-            "string"
-          ],
-          "description": "The key Person behind the site (@id '#person'), linked to the Organization via worksFor/founder. A bare string is taken as the person's name; an object accepts any schema.org Person property (name, jobTitle, email, url, sameAs, …). Defaults to the loose `person` + `jobtitle` + `email` keys.",
-          "additionalProperties": true
-        },
-        "lang": {
-          "type": "string",
-          "description": "BCP-47 language tag emitted as inLanguage on the WebSite/WebPage nodes. Defaults to the loose `lang`/`language` key, then to `en`.",
-          "default": "en",
-          "examples": [
-            "en",
-            "fr-CA"
-          ]
-        },
-        "search": {
-          "type": "string",
-          "description": "URL template for a WebSite sitelinks search box (schema.org SearchAction). Must contain the literal token {search_term_string}.",
-          "examples": [
-            "https://example.com/?q={search_term_string}"
-          ]
-        }
-      }
-    },
-    "meta": {
-      "type": [
-        "object",
-        "boolean"
-      ],
-      "description": "Top-level block. Configuration for @kirigami/php-prepros' META class, which builds the standard SEO / social <meta> and <link> tags (description, keywords, robots, author, generator, Open Graph, Twitter Card, canonical, favicon, …) and injects them into every page's <head>. Automatic injection is OPT-IN: it happens only when this block is present. An empty map (`meta: {}`) is enough to turn it on, deriving everything from the loose keys of the `kirigami` block, the `jsonld` block, and each page's PHPDOC (@title, @description / @abstract, @keywords, @image, @robots, @og_type). A tag the page's layout already hand-writes is left untouched. Omit the block entirely and nothing is injected (explicit META::tag() / meta_tag() calls from templates still emit). Set to `false`, or `{ \"auto\": false }`, to keep the config values but stop the automatic injection. Per-page PHPDOC tags: @meta false (skip the page, or @meta_ignore true), @meta_title, @meta_description, @meta_keywords, @meta_image, @meta_robots, @meta_type, @canonical <url>.",
-      "additionalProperties": true,
-      "properties": {
-        "auto": {
-          "type": "boolean",
-          "description": "Whether to automatically inject the generated tags into each page's <head>. Defaults to true once this block exists; set false to keep the block for its config values while placing tags by hand with META::tags() / meta_tags().",
+          "description": "Whether to automatically inject META's generated tags into each page's <head>. Defaults to true once this block exists; set false to keep the block for its config values while placing tags by hand with META::tags() / meta_tags(). Independent of `jsonld.auto`.",
           "default": true
         },
         "titleFormat": {
@@ -201,14 +88,14 @@
         },
         "description": {
           "type": "string",
-          "description": "Default site description, used on pages that declare no @description / @abstract of their own. Defaults to the `jsonld` description, then the loose `description` key."
+          "description": "Default site description, used on pages that declare no @description / @abstract of their own. Defaults to `jsonld.description`, then the loose `description` key."
         },
         "keywords": {
           "type": [
             "array",
             "string"
           ],
-          "description": "Default <meta name=\"keywords\"> content. A list or a comma-separated string. Defaults to the `jsonld` keywords, then the loose `keywords` key. A page's @keywords overrides it.",
+          "description": "Default <meta name=\"keywords\"> content. A list or a comma-separated string. Defaults to `jsonld.keywords`, then the loose `keywords` key. A page's @keywords overrides it.",
           "items": {
             "type": "string"
           }
@@ -224,7 +111,7 @@
         },
         "language": {
           "type": "string",
-          "description": "BCP-47 language tag emitted as <meta name=\"language\"> and, with the dash turned into an underscore, as og:locale. Defaults to the `jsonld` lang, then the loose `lang` / `language` key, then `en`.",
+          "description": "BCP-47 language tag emitted as <meta name=\"language\"> and, with the dash turned into an underscore, as og:locale. Defaults to `jsonld.lang`, then the loose `lang` / `language` key, then `en`.",
           "examples": [
             "en",
             "fr-CA"
@@ -240,7 +127,7 @@
         },
         "author": {
           "type": "string",
-          "description": "<meta name=\"author\"> content. Defaults to the loose `author` key, then the `jsonld` person's name."
+          "description": "<meta name=\"author\"> content. Defaults to the loose `author` key, then `jsonld.person`'s name."
         },
         "designer": {
           "type": "string",
@@ -255,7 +142,7 @@
         },
         "image": {
           "type": "string",
-          "description": "Default og:image / twitter:image — an absolute URL or a path relative to `baseurl`. Defaults to the `jsonld` image, then its logo, then the loose `image` / `ogimage` key. A page's @image overrides it."
+          "description": "Default og:image / twitter:image — an absolute URL or a path relative to `baseurl`. Defaults to `jsonld.image`, then `jsonld.logo`, then the loose `image` / `ogimage` key. A page's @image overrides it."
         },
         "ogType": {
           "type": "string",
@@ -314,6 +201,120 @@
             "boolean"
           ],
           "description": "<link rel=\"author\" type=\"text/plain\">. Same resolution as `favicon`; default file `humans.txt`."
+        },
+        "jsonld": {
+          "type": [
+            "object",
+            "boolean"
+          ],
+          "description": "Sub-block. Configuration for @kirigami/php-prepros' LD class, which generates schema.org JSON-LD and injects it as a <script type=\"application/ld+json\"> block into every page's <head>. Automatic injection is a separate OPT-IN from the rest of `seo:`: it happens only when this sub-block is present. An empty map (`seo: { jsonld: {} }`) is enough to turn it on, deriving everything from the loose keys of the `kirigami` block (project, baseurl, description, person, jobtitle, email, area, knowsabout, keywords, and any social-network URL keys such as facebook) and the rest of the `seo:` block (description, keywords, image, language); the keys below override those inferences. Omit the sub-block entirely and nothing is injected (explicit LD::add()/ld_add() calls from templates still emit). Set to `false`, or `{ \"auto\": false }`, to keep the config values but stop the automatic injection — independent of `seo.auto`. A BreadcrumbList is built for every non-home page from the _index.php ancestor trail (no @breadcrumb opt-in). Per-page PHPDOC tags on a template: @ld false (skip the page), @ld_type <Type> (page node @type, e.g. AboutPage / Article / Service), @ld_title, @ld_description, @ld_image, @ld_published, @ld_modified, @ld_breadcrumb false.",
+          "additionalProperties": true,
+          "properties": {
+            "auto": {
+              "type": "boolean",
+              "description": "Whether to automatically inject the generated <script type=\"application/ld+json\"> into each page's <head>. Defaults to true once this sub-block exists; set false to keep it for its config values while placing the script by hand with LD::script()/ld_script(). A page that already hand-writes an application/ld+json script is never touched.",
+              "default": true
+            },
+            "type": {
+              "type": "string",
+              "description": "schema.org @type for the site's main entity node (@id '#organization').",
+              "default": "Organization",
+              "examples": [
+                "Organization",
+                "ProfessionalService",
+                "LocalBusiness",
+                "Corporation",
+                "NGO"
+              ]
+            },
+            "name": {
+              "type": "string",
+              "description": "Name of the main entity / WebSite. Defaults to `project`."
+            },
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "description": "Canonical site URL. Defaults to `baseurl`."
+            },
+            "description": {
+              "type": "string",
+              "description": "Description of the main entity / WebSite. Defaults to the sibling `seo.description`, then the loose `description` key."
+            },
+            "logo": {
+              "type": "string",
+              "description": "Organization logo, absolute URL or a path relative to `baseurl`. Emitted as an ImageObject (@id '#logo')."
+            },
+            "image": {
+              "type": "string",
+              "description": "Default social/preview image, absolute URL or a path relative to `baseurl`. Defaults to `logo`."
+            },
+            "sameAs": {
+              "type": "array",
+              "description": "Profile URLs for the main entity (schema.org sameAs). Merged with any recognised social-network URL keys found loose in the `kirigami` block (facebook, instagram, linkedin, github, youtube, mastodon, …).",
+              "items": {
+                "type": "string",
+                "format": "uri"
+              },
+              "default": []
+            },
+            "email": {
+              "type": "string",
+              "description": "Contact email for the main entity. Defaults to the loose `email` key."
+            },
+            "telephone": {
+              "type": "string",
+              "description": "Contact phone for the main entity. Defaults to the loose `telephone`/`phone` key."
+            },
+            "address": {
+              "type": "object",
+              "description": "PostalAddress properties for the main entity (streetAddress, addressLocality, addressRegion, postalCode, addressCountry, …).",
+              "additionalProperties": true
+            },
+            "areaServed": {
+              "type": "string",
+              "description": "Geographic area served by the main entity. Defaults to the loose `area` key."
+            },
+            "knowsAbout": {
+              "type": "array",
+              "description": "Topics the main entity is knowledgeable about. Defaults to the loose `knowsabout` key.",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "keywords": {
+              "type": "array",
+              "description": "Keywords for the WebSite node. Defaults to the sibling `seo.keywords`, then the loose `keywords` key.",
+              "items": {
+                "type": "string"
+              },
+              "default": []
+            },
+            "person": {
+              "type": [
+                "object",
+                "string"
+              ],
+              "description": "The key Person behind the site (@id '#person'), linked to the Organization via worksFor/founder. A bare string is taken as the person's name; an object accepts any schema.org Person property (name, jobTitle, email, url, sameAs, …). Defaults to the loose `person` + `jobtitle` + `email` keys.",
+              "additionalProperties": true
+            },
+            "lang": {
+              "type": "string",
+              "description": "BCP-47 language tag emitted as inLanguage on the WebSite/WebPage nodes. Defaults to the loose `lang`/`language` key, then to `en`.",
+              "default": "en",
+              "examples": [
+                "en",
+                "fr-CA"
+              ]
+            },
+            "search": {
+              "type": "string",
+              "description": "URL template for a WebSite sitelinks search box (schema.org SearchAction). Must contain the literal token {search_term_string}.",
+              "examples": [
+                "https://example.com/?q={search_term_string}"
+              ]
+            }
+          }
         }
       }
     },

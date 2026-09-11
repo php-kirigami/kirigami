@@ -10,9 +10,9 @@ declare(strict_types=1);
  * precedence:
  *
  *   1. the page's own PHPDOC block (`@title`, `@description`, `@image`, …),
- *   2. the top-level `meta:` block of `kirigami.yaml` (config + overrides),
- *   3. the loose keys of the `kirigami:` block and the top-level `jsonld:`
- *      block (`description`, `keywords`, `author`, `person`, `lang`, `logo`,
+ *   2. the top-level `seo:` block of `kirigami.yaml` (config + overrides),
+ *   3. the loose keys of the `kirigami:` block and the `seo.jsonld` sub-block
+ *      (`description`, `keywords`, `author`, `person`, `lang`, `logo`,
  *      `image`, …) — the same values `LD` already reads.
  *
  * It only ever emits what it can resolve: a tag with no value is skipped, and a
@@ -20,11 +20,13 @@ declare(strict_types=1);
  * `<link rel="canonical">`, …) is left untouched — so it slots in next to an
  * existing `header.php` without doubling anything up.
  *
- * Automatic injection is **opt-in**: it needs a top-level `meta:` block (an
- * empty map, `meta: {}`, is enough). `meta: false` (or `meta: { auto: false }`)
+ * Automatic injection is **opt-in**: it needs a top-level `seo:` block (an
+ * empty map, `seo: {}`, is enough). `seo: false` (or `seo: { auto: false }`)
  * keeps the config values but stops the injection; no block at all means
  * nothing is injected — an explicit `META::tag()` call from a template still
- * emits.
+ * emits. `LD`'s schema.org JSON-LD lives right alongside it, under `seo.jsonld`
+ * — one block, one on/off switch for the whole SEO surface, `jsonld` toggled
+ * independently within it (see `LD`'s own docblock).
  *
  * Per-page PHPDOC tags, each falling back to the generic page tag:
  *
@@ -37,7 +39,7 @@ declare(strict_types=1);
  *   @meta_type <type>      og:type                              (default @og_type)
  *   @canonical <url>       <link rel="canonical">               (default: derived from the file path + baseurl)
  *
- * Manual use from a template or an `includes` file — always emitted, `meta:`
+ * Manual use from a template or an `includes` file — always emitted, `seo:`
  * block or not, and still de-duplicated against the page:
  *
  *   META::tag('twitter:image', 'https://…/card.png');   // name= or property= picked from the key
@@ -64,8 +66,8 @@ final class META
     // -----------------------------------------------------------------------
 
     /**
-     * Resolved metadata configuration, merging the `meta:` block with the loose
-     * keys of the `kirigami:` block and the `jsonld:` block.
+     * Resolved metadata configuration, merging the `seo:` block with the loose
+     * keys of the `kirigami:` block and the `seo.jsonld` sub-block.
      */
     public static function config(): object
     {
@@ -76,7 +78,7 @@ final class META
         $m    = is_object($raw) ? $raw : new stdClass;
         $ld   = self::jsonld();
 
-        // Opt-in: needs a top-level `meta:` block (an empty map counts).
+        // Opt-in: needs a top-level `seo:` block (an empty map counts).
         $enabled = is_object($raw) || $raw === true;
         if ($enabled && isset($m->auto) && !self::truthy($m->auto)) $enabled = false;
 
@@ -188,7 +190,7 @@ final class META
         /** @var array<int,array{0:string,1:string}> [probe regex, tag html] */
         $lines = [];
 
-        // The auto block only builds when the `meta:` block opted in; an
+        // The auto block only builds when the `seo:` block opted in; an
         // explicit META::tag() call still lands through self::$extra below.
         if ($c->enabled) {
             $relroot  = self::relroot();
@@ -366,16 +368,17 @@ final class META
         return new stdClass;
     }
 
-    /** The raw top-level `meta:` block: object, `false`, `true`, or `null`. */
+    /** The raw top-level `seo:` block: object, `false`, `true`, or `null`. */
     private static function metaRaw(): mixed
     {
-        return (isset(PREPROS::$config) && is_object(PREPROS::$config)) ? (PREPROS::$config->meta ?? null) : null;
+        return (isset(PREPROS::$config) && is_object(PREPROS::$config)) ? (PREPROS::$config->seo ?? null) : null;
     }
 
-    /** The top-level `jsonld:` block as an object (empty when absent / disabled). */
+    /** The `seo.jsonld` sub-block as an object (empty when absent / disabled). */
     private static function jsonld(): object
     {
-        $raw = (isset(PREPROS::$config) && is_object(PREPROS::$config)) ? (PREPROS::$config->jsonld ?? null) : null;
+        $seo = self::metaRaw();
+        $raw = is_object($seo) ? ($seo->jsonld ?? null) : null;
         return is_object($raw) ? $raw : new stdClass;
     }
 

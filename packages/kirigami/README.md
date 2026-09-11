@@ -34,6 +34,21 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 2.0.0
+
+- **Breaking: `kirigami.schema.json` now requires `seo:` instead of the old
+  `meta:` / `jsonld:` blocks** (bumped for
+  [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirigami/php-prepros)
+  **2.0.0**'s matching config merge — see its own changelog for the full
+  migration note and rationale). The `kiri` CLI itself is unchanged; this is a
+  major bump because upgrading validates any existing `kirigami.yaml` still
+  using `meta:`/`jsonld:` as an unrecognised property and fails the build —
+  a real break for real projects, even though no CLI code moved. Migration:
+  rename `meta:` to `seo:`, and move `jsonld:`'s content under it as
+  `seo.jsonld:`.
+
+---
+
 ## What's new in 1.5.7
 
 - Cascade dependency bump to
@@ -108,6 +123,7 @@ Dependency bumps: [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirig
 
 - [@kirigami/kirigami](#kirigamikirigami)
   - [Overview](#overview)
+  - [What's new in 2.0.0](#whats-new-in-200)
   - [What's new in 1.5.7](#whats-new-in-157)
   - [What's new in 1.5.6](#whats-new-in-156)
   - [What's new in 1.5.5 / 1.5.4](#whats-new-in-155--154)

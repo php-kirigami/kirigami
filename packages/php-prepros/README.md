@@ -35,6 +35,7 @@ Part of the **Kirigami** project ecosystem.
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
   - [Overview](#overview)
   - [Table of contents](#table-of-contents)
+  - [What's new in 2.0.0](#whats-new-in-200)
   - [What's new in 1.9.3](#whats-new-in-193)
   - [What's new in 1.9.2](#whats-new-in-192)
   - [What's new in 1.9.1](#whats-new-in-191)
@@ -52,8 +53,7 @@ Part of the **Kirigami** project ecosystem.
   - [Installation](#installation)
   - [Configuration — `kirigami.yaml`](#configuration--kirigamiyaml)
     - [`kirigami` block](#kirigami-block)
-    - [`jsonld` block](#jsonld-block)
-    - [`meta` block](#meta-block)
+    - [`seo` block](#seo-block)
     - [`prepros` block](#prepros-block)
     - [`image` block](#image-block)
     - [`plugins` block](#plugins-block)
@@ -112,6 +112,40 @@ Part of the **Kirigami** project ecosystem.
   - [Extending the `<markdown>` tag](#extending-the-markdown-tag)
   - [Requirements](#requirements)
   - [License](#license)
+
+---
+
+## What's new in 2.0.0
+
+- **Breaking: `meta:` and `jsonld:` merged into one top-level `seo:` block.**
+  The two used to be independent siblings of `kirigami:` that happened to
+  share fallback data; they're now one block, one mental model for a
+  project's whole SEO/social surface — `META`'s own keys live directly under
+  `seo:`, and `jsonld` is nested inside it as its own sub-block:
+
+  ```yaml
+  # before (1.x)
+  meta:
+    favicon: favicon.png
+  jsonld: {}
+
+  # after (2.0.0)
+  seo:
+    favicon: favicon.png
+    jsonld: {}
+  ```
+
+  The two stay **independently toggled** exactly as before — a project can
+  have META's tags without JSON-LD, or vice versa; `seo: { jsonld: false }`
+  (or `{ auto: false }`) stops just the JSON-LD injection, `seo: false` (or
+  `{ auto: false }` at the top level) stops just META's. Every fallback chain
+  (a page's PHPDOC → the block → the loose `kirigami:` keys) is unchanged,
+  including `jsonld`'s own keys still feeding META's defaults (`jsonld.image`,
+  `jsonld.lang`, `jsonld.person`, …) — only *where the two blocks live* in
+  `kirigami.yaml` changed, not how resolution works. **Migration**: rename
+  `meta:` to `seo:` and move the `jsonld:` block's content under it as
+  `seo.jsonld:`. See [`seo` block](#seo-block) / [`meta` config](#meta-config)
+  / [`jsonld` config](#jsonld-config).
 
 ---
 
@@ -402,7 +436,7 @@ npm install @kirigami/php-prepros
 
 Every project **must** have a `kirigami.yaml` at its root. The preprocessor reads it at startup and throws if it is absent or invalid.
 
-`@kirigami/php-prepros` itself only acts on four blocks — **`kirigami:`**, **`jsonld:`**, **`prepros:`**, and **`image:`**. The remaining blocks (**`plugins:`**, **`esbuild:`**, **`sass:`**, **`export:`**, **`scripts:`**, **`tasks:`**) are consumed by the [`kiri`](https://www.npmjs.com/package/@kirigami/kirigami) CLI that drives the build; they are documented here for completeness because everything lives in the one file. The full file is validated against [`kirigami.schema.json`](https://github.com/php-kirigami/kirigami/blob/main/packages/kirigami/kirigami.schema.json), also served for editor autocompletion:
+`@kirigami/php-prepros` itself only acts on four blocks — **`kirigami:`**, **`seo:`**, **`prepros:`**, and **`image:`**. The remaining blocks (**`plugins:`**, **`esbuild:`**, **`sass:`**, **`export:`**, **`scripts:`**, **`tasks:`**) are consumed by the [`kiri`](https://www.npmjs.com/package/@kirigami/kirigami) CLI that drives the build; they are documented here for completeness because everything lives in the one file. The full file is validated against [`kirigami.schema.json`](https://github.com/php-kirigami/kirigami/blob/main/packages/kirigami/kirigami.schema.json), also served for editor autocompletion:
 
 ```yaml
 # yaml-language-server: $schema=https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigami.schema.json
@@ -430,9 +464,10 @@ kirigami:
     - keyword one
     - keyword two
 
-jsonld:                         # Presence turns on the LD schema.org JSON-LD generator.
-  type: Organization            # `jsonld: {}` alone is enough; see the jsonld block below.
-  logo: assets/logo.png
+seo:                            # Presence turns on the META <head> tags generator.
+  jsonld:                       # Nested, independent opt-in for the LD JSON-LD generator.
+    type: Organization          # `jsonld: {}` alone is enough; see the seo block below.
+    logo: assets/logo.png
 
 prepros:
   before:  _layouts/header.php  # Included before every page body.
@@ -492,30 +527,31 @@ Core project settings. **Read by `php-prepros`.** The entire block is extracted 
 | `baseurl` | ✅ | Root URL of the deployed site, no trailing slash. Used to build absolute `<loc>` entries in `sitemap.xml`; exposed as `$baseurl`. |
 | `root` | ✅ | Path (relative to the project root) to the directory containing your `_*.php` source pages. Build fails immediately if missing or if the path doesn't exist. |
 | `banner` | — | Path (relative to the project root) to a text file stamped as a license/copyright banner on exported `.js`/`.css`/`.html` files during `kiri export`. May contain the `###DATE###` token, replaced with today's date. Falls back to an auto-generated banner. |
-| *anything else* | — | Free-form key/value pairs (strings, numbers, booleans, lists, nested maps — anything valid YAML). Every key is extracted as a PHP variable (`$author`, `$gtag`, …). Use this for contact info, social links, analytics IDs, SEO keywords, or any project data you want available everywhere. When the top-level `jsonld` block is present, [`LD`](#ld) also reads some of these by convention: `person`, `jobtitle`, `email`, `area`, `knowsabout`, `keywords`, and social-network URL keys (`facebook`, `instagram`, …). |
+| *anything else* | — | Free-form key/value pairs (strings, numbers, booleans, lists, nested maps — anything valid YAML). Every key is extracted as a PHP variable (`$author`, `$gtag`, …). Use this for contact info, social links, analytics IDs, SEO keywords, or any project data you want available everywhere. When the top-level `seo` block is present, [`LD`](#ld) also reads some of these by convention: `person`, `jobtitle`, `email`, `area`, `knowsabout`, `keywords`, and social-network URL keys (`facebook`, `instagram`, …). |
 
-### `jsonld` block
+### `seo` block
 
-Top-level, optional. Its **presence** switches on the [`LD`](#ld) schema.org
-JSON-LD generator — an `application/ld+json` graph is then injected into every
-page's `<head>`. An empty `jsonld: {}` is enough; its keys refine what `LD`
-otherwise infers from the `kirigami` block and each page's PHPDOC. `jsonld: false`
-(or `jsonld: { auto: false }`) keeps the config values but stops the injection;
-no block at all means nothing is injected. Full key reference and per-page
-`@ld_*` tags: [`LD` → `jsonld` config](#jsonld-config).
+Top-level, optional. The unified SEO surface — replaces the old separate
+`meta:`/`jsonld:` blocks (**breaking in 2.0.0**, see
+[What's new in 2.0.0](#whats-new-in-200)). Its **presence** switches on the
+[`META`](#meta) generator — the standard SEO / social `<meta>` and `<link>`
+tags are then built for every page and injected into its `<head>`. An empty
+`seo: {}` is enough; everything is derived from the `kirigami` block and each
+page's PHPDOC (`@title`, `@description` / `@abstract`, `@keywords`, `@image`,
+`@robots`, `@og_type`, `@canonical`). A tag the layout already hand-writes is
+left untouched. `seo: false` (or `seo: { auto: false }`) keeps the config
+values but stops the injection; no block at all means nothing is injected
+(explicit `META::tag()` / `meta_tag()` calls still emit). Full key reference
+and per-page `@meta_*` tags: [`META` → `seo` config](#meta-config).
 
-### `meta` block
-
-Top-level, optional. Its **presence** switches on the [`META`](#meta) generator —
-the standard SEO / social `<meta>` and `<link>` tags are then built for every
-page and injected into its `<head>`. An empty `meta: {}` is enough; everything is
-derived from the `kirigami` block, the `jsonld` block, and each page's PHPDOC
-(`@title`, `@description` / `@abstract`, `@keywords`, `@image`, `@robots`,
-`@og_type`, `@canonical`). Keys refine those inferences. A tag the layout already
-hand-writes is left untouched. `meta: false` (or `meta: { auto: false }`) keeps
-the config values but stops the injection; no block at all means nothing is
-injected (explicit `META::tag()` / `meta_tag()` calls still emit). Full key
-reference and per-page `@meta_*` tags: [`META` → `meta` config](#meta-config).
+Nested inside it, `seo.jsonld` is its own **independent** opt-in — a project
+can have META's tags without JSON-LD, or vice versa. Its presence switches on
+the [`LD`](#ld) schema.org JSON-LD generator — an `application/ld+json` graph
+is then injected into every page's `<head>`. An empty `seo: { jsonld: {} }` is
+enough; its keys refine what `LD` otherwise infers from the rest of `seo:`,
+the `kirigami` block, and each page's PHPDOC. `seo: { jsonld: false }` (or
+`{ auto: false }`) keeps the config values but stops the injection. Full key
+reference and per-page `@ld_*` tags: [`LD` → `jsonld` config](#jsonld-config).
 
 ### `prepros` block
 
@@ -1100,10 +1136,11 @@ than one node — in the `<head>`.
 
 #### Automatic mode
 
-Opt in by adding a top-level `jsonld:` block to `kirigami.yaml` (a sibling of
-`kirigami:`, not nested under it) — an empty `jsonld: {}` is enough. A
-`post_render` hook then injects a graph built from that block, the loose keys of
-the `kirigami` block, and the current page's PHPDOC:
+Opt in by adding a `jsonld` sub-block under `seo:` in `kirigami.yaml` (nested
+inside the same block [`META`](#meta) reads, independent of the rest of it) —
+an empty `seo: { jsonld: {} }` is enough. A `post_render` hook then injects a
+graph built from that sub-block, the loose keys of the `kirigami` block, and
+the current page's PHPDOC:
 
 - an `Organization` node (`@id` `#organization`) — `name`/`url`/`description`
   from `project`/`baseurl`/`description`, `sameAs` gathered from every
@@ -1118,13 +1155,14 @@ the `kirigami` block, and the current page's PHPDOC:
 - a `WebPage` node for the page — see the per-page tags below;
 - a `BreadcrumbList` for every non-home page, derived from the `_index.php`
   ancestor trail (home → each parent section → this page). No `@breadcrumb`
-  opt-in needed — it is always attempted while the `jsonld:` block is on.
+  opt-in needed — it is always attempted while the `jsonld` sub-block is on.
   Disable it for one page with `@ld_breadcrumb false`.
 
-Remove the `jsonld:` block (or set `jsonld: false` / `jsonld: { auto: false }`)
-to stop the automatic pass. A page whose rendered `<head>` already contains an
-`application/ld+json` script is never touched, so hand-rolled markup keeps
-working.
+Remove the `jsonld` sub-block (or set `seo: { jsonld: false }` /
+`{ jsonld: { auto: false } }`) to stop the automatic pass — the rest of `seo:`
+(META's tags) keeps working either way. A page whose rendered `<head>` already
+contains an `application/ld+json` script is never touched, so hand-rolled
+markup keeps working.
 
 **Per-page PHPDOC tags** — these feed the page node (and override the generic
 `@title` / `@description` / `@datePublished` fallbacks):
@@ -1152,9 +1190,9 @@ working.
 #### Explicit builders
 
 Call these from a page template or from a `prepros.includes` file. Nodes added
-this way are always emitted — with or without a `jsonld:` block — and share the
-graph the automatic pass uses, so the two combine; a node with a stable `@id` is
-merged on repeat calls.
+this way are always emitted — with or without a `jsonld` sub-block — and share
+the graph the automatic pass uses, so the two combine; a node with a stable
+`@id` is merged on repeat calls.
 
 ```php
 LD::add(string|array $type, array $props = [], ?string $id = null): array  // build + register a node
@@ -1207,10 +1245,12 @@ Same API from procedural code: `ld_add()`, `ld_node()`, `ld_ref()`,
 
 #### `jsonld` config
 
-`jsonld:` is a **top-level** block of `kirigami.yaml` (a sibling of `kirigami:`,
-`prepros:`, …), and its presence is what **switches automatic injection on**. An
-empty `jsonld: {}` is enough — everything is then derived from the `kirigami`
-block's loose keys. Adding keys overrides those inferences; all are optional.
+`jsonld` is a sub-block of the **top-level** `seo:` block of `kirigami.yaml`
+(nested alongside [`META`](#meta)'s own keys), and its presence is what
+**switches automatic injection on** — independently of the rest of `seo:`. An
+empty `seo: { jsonld: {} }` is enough — everything is then derived from the
+`kirigami` block's loose keys. Adding keys overrides those inferences; all are
+optional.
 
 ```yaml
 kirigami:
@@ -1220,20 +1260,21 @@ kirigami:
   jobtitle: Anthropologue
   facebook: https://www.facebook.com/humainhumainconsultation.ethnographie/
 
-jsonld:                                   # top-level; the block being present is
-  type: ProfessionalService               #   the switch — `jsonld: {}` also works
-  lang: fr-CA                              # inLanguage on WebSite / WebPage (default: en)
-  logo: assets/logo.png                    # absolute, or relative to baseurl
-  knowsAbout: [Ethnographie, Recherche qualitative]
-  address:
-    addressLocality: Québec
-    addressCountry:  CA
-  search: https://humainhumain.com/?q={search_term_string}
+seo:
+  jsonld:                                  # nested; the sub-block being present
+    type: ProfessionalService              #   is the switch — `{}` also works
+    lang: fr-CA                             # inLanguage on WebSite / WebPage (default: en)
+    logo: assets/logo.png                   # absolute, or relative to baseurl
+    knowsAbout: [Ethnographie, Recherche qualitative]
+    address:
+      addressLocality: Québec
+      addressCountry:  CA
+    search: https://humainhumain.com/?q={search_term_string}
 ```
 
 | Key | Type | Description |
 |-----|------|-------------|
-| `auto` | `bool` | Inject the `<script>` automatically. Default `true` **once the `jsonld:` block exists**. Set `auto: false` (or `jsonld: false`) to keep the block for its config values but stop the automatic injection — `LD::script()` / `ld_script()` can still place it by hand. |
+| `auto` | `bool` | Inject the `<script>` automatically. Default `true` **once the `jsonld` sub-block exists**. Set `auto: false` (or `seo: { jsonld: false }`) to keep the sub-block for its config values but stop the automatic injection — `LD::script()` / `ld_script()` can still place it by hand. |
 | `type` | `string` | `@type` for the main entity — `Organization`, `ProfessionalService`, `LocalBusiness`, … |
 | `name` / `url` / `description` | `string` | Main-entity / WebSite fields. Default to `project` / `baseurl` / `description`. |
 | `logo` / `image` | `string` | Absolute URL or path relative to `baseurl`. `image` defaults to `logo`. |
@@ -1256,12 +1297,13 @@ tags a browser and a link-preview crawler read: `<title>`, `<meta name="…">`,
 `<meta property="og:…">`, `<meta name="twitter:…">`, and a handful of `<link>`s.
 
 It draws on the same sources, in this order of precedence: the page's PHPDOC, the
-top-level `meta:` block, then the loose `kirigami:` keys and the `jsonld:` block.
-Every tag is emitted **only when it can be resolved** — no value, no tag — and a
-tag the page's layout already writes by hand is detected and skipped, so it drops
-in beside an existing `header.php` without duplicating anything.
+top-level `seo:` block, then the loose `kirigami:` keys and the `seo.jsonld`
+sub-block. Every tag is emitted **only when it can be resolved** — no value, no
+tag — and a tag the page's layout already writes by hand is detected and
+skipped, so it drops in beside an existing `header.php` without duplicating
+anything.
 
-**Automatic mode** is opt-in: the top-level `meta:` block (empty `meta: {}` is
+**Automatic mode** is opt-in: the top-level `seo:` block (empty `seo: {}` is
 enough) turns on injection into every page's `<head>`, right before `</head>`.
 
 ```yaml
@@ -1273,10 +1315,10 @@ kirigami:
   keywords:    [ethnographie, consultation publique, sciences sociales]
   author:      Maxime Larrivée-Roy
 
-jsonld:  {}                       # META reads its logo / image / lang / person too
-meta:                             # top-level; the block being present is the switch
+seo:                              # top-level; the block being present is the switch
   twitter: "@humainhumain"
   themeColor: "#0b7285"
+  jsonld: {}                      # independent opt-in — META reads its logo / image / lang / person too
 ```
 
 Per-page, from the PHPDOC block — each falls back to the generic page tag:
@@ -1286,13 +1328,13 @@ Per-page, from the PHPDOC block — each falls back to the generic page tag:
 | `@meta false` | skip metadata for this page entirely | — (`@meta_ignore true` also works) |
 | `@meta_title` | `<title>`, `og:title`, `twitter:title` | `@title` |
 | `@meta_description` | `description`, `og:description`, `twitter:description` | `@description` / `@abstract` / `@excerpt` / `@summary`, then the site `description` |
-| `@meta_keywords` | `<meta name="keywords">` | `@keywords`, then `meta.keywords` |
-| `@meta_image` | `og:image`, `twitter:image` | `@image` / `@ogimage`, then `meta.image` |
-| `@meta_robots` | `<meta name="robots">` | `@robots`, then `meta.robots` |
-| `@meta_type` | `og:type` | `@og_type`, then `meta.ogType` |
+| `@meta_keywords` | `<meta name="keywords">` | `@keywords`, then `seo.keywords` |
+| `@meta_image` | `og:image`, `twitter:image` | `@image` / `@ogimage`, then `seo.image` |
+| `@meta_robots` | `<meta name="robots">` | `@robots`, then `seo.robots` |
+| `@meta_type` | `og:type` | `@og_type`, then `seo.ogType` |
 | `@canonical` | `<link rel="canonical">` | derived from the file path + `baseurl` |
 
-**Manual builders** — always emitted (with or without a `meta:` block), still
+**Manual builders** — always emitted (with or without a `seo:` block), still
 de-duplicated against the page:
 
 ```php
@@ -1314,20 +1356,22 @@ Same API from procedural code: `meta_tag()`, `meta_link()`, `meta_raw()`,
 
 #### `meta` config
 
-`meta:` is a **top-level** block of `kirigami.yaml` (a sibling of `kirigami:`,
-`jsonld:`, `prepros:`, …). All keys are optional.
+These keys live directly under the **top-level** `seo:` block of
+`kirigami.yaml` (a sibling of `kirigami:`, `prepros:`, …) — `jsonld` is the one
+sub-block among them, documented separately in [`LD` → `jsonld` config](#jsonld-config).
+All keys are optional.
 
 | Key | Type | Description |
 |-----|------|-------------|
-| `auto` | `bool` | Inject the tags automatically. Default `true` **once the `meta:` block exists**. `auto: false` (or `meta: false`) keeps the block for its values but stops the injection — `META::tags()` / `meta_tags()` can place them by hand. |
+| `auto` | `bool` | Inject the tags automatically. Default `true` **once the `seo:` block exists**. `auto: false` (or `seo: false`) keeps the block for its values but stops the injection — `META::tags()` / `meta_tags()` can place them by hand. Independent of `jsonld.auto`. |
 | `titleFormat` | `string` | `<title>` template for a normal page. Tokens `{title}`, `{project}`, `{tagline}`. Dangling separators from an empty token are trimmed. Default `{title} — {project}`. |
 | `titleFormatHome` | `string` | Title template when the page has no `@title` (home / section landings). Default `{project} — {tagline}`. |
-| `description` | `string` | Default description for pages with no `@description` / `@abstract`. Defaults to the `jsonld` / loose `description`. |
-| `keywords` | `string[]` \| `string` | Default `keywords` content (list or comma string). Defaults to the `jsonld` / loose `keywords`. |
+| `description` | `string` | Default description for pages with no `@description` / `@abstract`. Defaults to `jsonld.description` / loose `description`. |
+| `keywords` | `string[]` \| `string` | Default `keywords` content (list or comma string). Defaults to `jsonld.keywords` / loose `keywords`. |
 | `robots` | `string` | Default robots directive. Default `index, follow`. `robots: false` omits the tag. |
 | `language` | `string` | BCP-47 tag → `<meta name="language">` and, dash→underscore, `og:locale`. Defaults to `jsonld.lang` / loose `lang` / `language`, then `en`. |
 | `generator` | `string` \| `false` | `<meta name="generator">`. Default `Kirigami`; `false` omits it. |
-| `author` / `designer` | `string` | Default to the loose `author` / `designer` keys (author also falls back to the `jsonld` person's name). `designer` is not emitted unless set. |
+| `author` / `designer` | `string` | Default to the loose `author` / `designer` keys (author also falls back to `jsonld.person`'s name). `designer` is not emitted unless set. |
 | `themeColor` | `string` | `<meta name="theme-color">`. Not emitted unless set. |
 | `image` | `string` | Default `og:image` / `twitter:image` — absolute URL or path relative to `baseurl`. Defaults to `jsonld.image` → `jsonld.logo` → loose `image` / `ogimage`. |
 | `ogType` | `string` | Default `og:type`. Default `website`. |
@@ -1335,6 +1379,7 @@ Same API from procedural code: `meta_tag()`, `meta_link()`, `meta_raw()`,
 | `twitter` | `string` \| `map` | Handle for `twitter:site` / `twitter:creator`. A bare string (with/without `@`, or a profile URL) fills both; a map takes `site` / `creator` separately. |
 | `canonical` | `bool` | Emit `<link rel="canonical">`. Default `true`. |
 | `favicon` / `appleTouchIcon` / `humans` | `string` \| `bool` | `<link rel="icon">` / `rel="apple-touch-icon"` / `rel="author"`. A path sets it (page-relative when a bare filename); `true` forces the default file (`favicon.ico` / `apple-touch-icon.png` / `humans.txt`); omitted, the default file is auto-detected on disk at the source root; `false` disables it. |
+| `jsonld` | `object` \| `bool` | Sub-block for `LD`'s schema.org JSON-LD — its own independent opt-in. See [`LD` → `jsonld` config](#jsonld-config). |
 
 ---
 

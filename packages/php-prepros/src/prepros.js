@@ -46,8 +46,9 @@ const getPHPInstance = async () => {
         preprosConfig.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         preprosConfig.root = joinWith('/project/', config?.kirigami?.root);
         preprosConfig.data = config.kirigami || {};
-        preprosConfig.jsonld = config.jsonld ?? null;
-        preprosConfig.meta = config.meta ?? null;
+        // The unified SEO block — META reads it directly; LD reads its own
+        // `jsonld` sub-key (see META/LD's docblocks). One block, one toggle.
+        preprosConfig.seo = config.seo ?? null;
         // META auto-detects favicon / apple-touch-icon / humans.txt at the
         // source root; those extensions aren't mounted into the sandbox, so the
         // presence check is done here on the real filesystem instead.

@@ -6,6 +6,22 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 ## Ouvert
 
+- **`FS::phpFileInfo()` en cascade** — permettre à une page d'hériter des
+  tags PHPDOC d'un `_index.php` ancêtre (au lieu de ne lire que le fichier
+  lui-même), pour définir une valeur une fois au niveau d'une section plutôt
+  que de la répéter sur chaque page enfant.
+- **Support Composer pour PHP** — permettre d'utiliser des dépendances PHP
+  via Composer (vendor/autoload.php) dans un projet Kirigami, en plus du
+  système de classes/plugins JS actuel — à scoper (mount du dossier vendor/
+  dans le runtime WASM, compatibilité des packages avec l'environnement
+  sandboxé, etc.).
+- **UI Electron + extension VS Code** — une interface graphique (Electron)
+  et/ou une extension VS Code pour piloter `kiri` (build/export/serve,
+  gestion de plugins, édition de `kirigami.yaml`) sans passer par le
+  terminal.
+- **Intégration automatique de Google Analytics (gtag)** — une option de
+  config dans le bloc `seo:` unifié qui injecte le script gtag.js
+  automatiquement quand un ID de mesure est fourni.
 - **Système de fichiers de langue** — un mécanisme pour externaliser les
   chaînes de texte (façon i18n) plutôt que codées en dur dans les pages PHP.
   Première étape vers le multilingue (à explorer plus tard : routing/URLs
