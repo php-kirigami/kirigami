@@ -26,11 +26,12 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   `--lightswitch-rotate`, fond ciel jour/nuit). Offrir ça en option dans
   `@kirigami/canva`'s `theme`, en plus du simple swap d'icône soleil/lune
   actuel (`_layouts/header.php` du site, `.theme-toggle__sun`/`__moon`).
-- **`copyButton` sans task esbuild** — dans plugin-highlight, si le projet n'a pas de task
-  esbuild le bouton ne marche pas (warn seulement). Voir si un plugin devrait pouvoir
-  déclarer sa propre task / bundle JS auto.
 - **`kirigami.type` `"task"` / `"command"`** — packages qui ajoutent un type de task ou une
-  sous-commande `kiri`, et leur loading. (`"plugin"` est déjà en place.)
+  sous-commande `kiri`, et leur loading. (`"plugin"` est déjà en place.) Le bug
+  réel de `copyButton` sans task esbuild est fixé (voir CLAUDE.md) — ce qui
+  reste ouvert ici, c'est l'idée plus large : un plugin qui pourrait déclarer
+  sa propre task / bundler son JS lui-même, sans dépendre d'une task esbuild
+  du projet.
 - **`prepros:before-render`** — hook JS avant rendu, à évaluer (le `prepros:html`
   post-render existe déjà).
 - **Action/script officiel Google Docs → Markdown** — un webservice qui prend un

@@ -54,12 +54,23 @@ export default async function register(options = {}, { config } = {}) {
 	// tag, which emits <pre><code class="language-…"> for the pass above.
 	on(HOOKS.PREPROS_PHP, () => opts.tag ? [php('page'), php('highlight')] : php('page'));
 
+	// copyButton needs an esbuild task to actually ship its click handler —
+	// without one, emitting the button's CSS anyway would put a styled,
+	// hoverable, entirely non-functional button in front of visitors. Treat
+	// it as off in that case (the warning says why) rather than shipping
+	// dead UI; `opts.copyButton` itself is untouched so callers reading it
+	// back still see what was asked for.
+	const copyButtonActive = opts.copyButton && hasEsbuildTask(config);
+	if (opts.copyButton && !copyButtonActive) {
+		console.warn('\x1b[33m⚠\x1b[0m [plugin-highlight] copyButton is on but kirigami.yaml has no esbuild task — skipping it (it would otherwise ship a button with no click handler). Add an esbuild task, or set copyButton: false to silence this.');
+	}
+
 	// Sass: theme colours + font @font-face + copy-button layout, each appended
 	// after the project's entry. `theme: none` skips the palette (you @use the
 	// mixin yourself) but still emits the font / copy-button structure.
 	const sassFiles = [];
 	if (opts.embedFont) sassFiles.push(scss('inject-font'));
-	if (opts.copyButton) sassFiles.push(scss('inject-copy'));
+	if (copyButtonActive) sassFiles.push(scss('inject-copy'));
 	if (opts.theme && opts.theme !== 'none') {
 		if (!THEMES.has(opts.theme)) {
 			throw `[plugin-highlight] invalid theme "${opts.theme}" (expected: auto, dark, light, none).`;
@@ -69,10 +80,7 @@ export default async function register(options = {}, { config } = {}) {
 	if (sassFiles.length) on(HOOKS.SASS_AFTER, () => sassFiles);
 
 	// esbuild: the copy-button script, bundled into every JS entry.
-	if (opts.copyButton) {
-		if (!hasEsbuildTask(config)) {
-			console.warn('\x1b[33m⚠\x1b[0m [plugin-highlight] copyButton is on but kirigami.yaml has no esbuild task — the button script has nowhere to go. Add one, or set copyButton: false.');
-		}
+	if (copyButtonActive) {
 		on(HOOKS.ESBUILD_AFTER, () => js('copy'));
 	}
 }
