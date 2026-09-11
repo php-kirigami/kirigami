@@ -6,6 +6,17 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 ## Ouvert
 
+- **`template-react`** — un nouveau template officiel avec un vrai pipeline
+  JSX/TSX intégré (esbuild le supporte déjà nativement — reste à scoper :
+  build-time only (SSR-ish, rendu en HTML statique comme le reste de
+  Kirigami) vs hydration client, et comment ça s'articule avec les pages
+  PHP existantes).
+- **Un style de theme-toggle "interrupteur" animé pour `canva/theme`** —
+  inspiration : `_lightswitch.scss` du propre projet `action-quebec.github.io`
+  de l'utilisateur (pin qui glisse/tourne via `--lightswitch-translate`/
+  `--lightswitch-rotate`, fond ciel jour/nuit). Offrir ça en option dans
+  `@kirigami/canva`'s `theme`, en plus du simple swap d'icône soleil/lune
+  actuel (`_layouts/header.php` du site, `.theme-toggle__sun`/`__moon`).
 - **Test réel de l'action kiribuild** — un vrai scénario d'intégration, pas juste un
   smoke. kiribuild@v2 est live et les deux `template-*` ont un `.github/workflows/page.yml`
   (kiribuild@v2 → commit-back → deploy Pages) ; reste à vérifier bout-en-bout qu'un
