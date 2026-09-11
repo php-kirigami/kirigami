@@ -10,6 +10,16 @@
       "description": "Append the default `.embed` card styles to every sass task. Set false to write your own on top of the markup.",
       "type": "boolean",
       "default": true
+    },
+    "maxWidth": {
+      "description": "Caps how wide (and, via aspect-ratio, how tall) an `.embed` card can get — any CSS length, or \"none\" to remove the cap. Ignored when `style` is false (write your own `--embed-max-width` or width rule instead).",
+      "type": "string",
+      "default": "40rem"
+    },
+    "forcedAspectRatio": {
+      "description": "Pin every `.embed` card to one shape (e.g. \"16 / 9\", \"1 / 1\") instead of each video's own real aspect-ratio — handy for a uniform grid of cards. Empty (the default) uses each video's real ratio. Ignored when `style` is false.",
+      "type": "string",
+      "default": ""
     }
   }
 }

@@ -15,6 +15,8 @@
 	align-items: center;
 	justify-content: center;
 	width: 100%;
+	max-width: var(--embed-max-width, 40rem); // a full-bleed 16∶9 box reads as huge on a wide page — capped, not stretched
+	margin-inline: auto;
 	aspect-ratio: 16 / 9; // overwritten inline once the real oEmbed size resolves
 	background-color: var(--surface-2);
 	background-position: center;

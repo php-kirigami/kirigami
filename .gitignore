@@ -1,3 +1,7 @@
 /node_modules/
 *.tgz
 /packs/
+
+# plugin-embed regenerates this at every build (register() bridging a JS
+# option into a static SCSS file) — see packages/plugin-embed/index.js
+packages/plugin-embed/.generated-vars.scss

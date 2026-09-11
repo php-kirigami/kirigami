@@ -75,9 +75,11 @@ ships to the browser.
 
 ### Options
 
-| Option  | Type    | Default | Description |
+| Option              | Type    | Default   | Description |
 |---|---|---|---|
-| `style` | boolean | `true`  | Append the default `.embed` card styles to every `sass` task. Set `false` to write your own. |
+| `style`             | boolean | `true`    | Append the default `.embed` card styles to every `sass` task. Set `false` to write your own. |
+| `maxWidth`          | string  | `"40rem"` | Caps how wide (and, via aspect-ratio, how tall) a card can get — any CSS length, or `"none"` to remove the cap. Ignored when `style` is `false`. |
+| `forcedAspectRatio` | string  | `""`      | Pin every card to one shape (`"16 / 9"`, `"1 / 1"`, …) instead of each video's own real ratio — handy for a uniform grid. Empty uses each video's real ratio. Ignored when `style` is `false`. |
 
 ---
 
@@ -126,11 +128,12 @@ bundled.
    this id, or fetched from the provider's oEmbed endpoint otherwise and
    cached for next time.
 4. Once that resolves, the thumbnail and title are patched into the same
-   placeholder, and the aspect-ratio is updated to the video's real ratio —
-   **floored at 16∶9**, so a narrower source (4∶3, square, portrait, a Short)
-   never makes the card taller than widescreen; the real player still shows
-   at its own ratio once clicked, pillarboxed within that box rather than
-   stretched.
+   placeholder, and the aspect-ratio is updated to the video's own real
+   ratio (4∶3, square, portrait, a Short — whatever it actually is). It's
+   the card's `max-width` (`maxWidth`, default `40rem`) that keeps a
+   narrower video from ever looking oversized, not a distorted ratio — the
+   real player, once clicked, shows at that same real ratio too, nothing
+   is ever stretched.
 5. Clicking the play button swaps the placeholder's content for the real
    player `<iframe>` — nothing loads (or autoplays) before that click.
 

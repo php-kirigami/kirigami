@@ -93,17 +93,12 @@ function embedTag(provider) {
 
 		getOembed(provider, id).then((data) => {
 			if (data.thumbnail_url) wrapper.style.backgroundImage = `url("${data.thumbnail_url}")`;
+			// The card's own `max-width` (assets/_embed.scss, `--embed-max-width`)
+			// is what keeps a 4∶3/portrait/square video from ever looking
+			// oversized — with that capped, the box can safely show the
+			// video's real aspect ratio instead of a fixed guess.
 			if (data.width && data.height) {
-				// Never let the card get taller than 16∶9, no matter how
-				// narrow the source video's own ratio is (4∶3, square,
-				// portrait, …) — a much taller card would dominate a page
-				// otherwise laid out around wide cards. The real player
-				// isn't stretched to fit: YouTube's and Vimeo's own iframe
-				// UIs pillarbox narrower content within whatever box they're
-				// given, so capping the box only adds side letterboxing —
-				// it never distorts the video.
-				const ratio = Math.max(data.width / data.height, 16 / 9);
-				wrapper.style.aspectRatio = String(ratio);
+				wrapper.style.aspectRatio = `${data.width} / ${data.height}`;
 			}
 			if (data.title) {
 				wrapper.dataset.title = data.title;
