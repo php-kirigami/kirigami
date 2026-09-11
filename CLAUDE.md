@@ -242,8 +242,12 @@ default Markdown plugin `{% img-asset %}` (`md.plugins.php`, alongside
 `codepen`/`youtube`/`checklist`/`callout`) — same pipeline as `<img asset>`,
 positional `path [width [height [cover]]]`. Verified against the real WASM
 runtime in the same scratch project as plugin-extlink (plain / width-only /
-square-cover / missing-path-fallback, all four correct). Not yet consumed by
-any site or template.
+square-cover / missing-path-fallback, all four correct). `template-default`,
+`template-demo` and `../php-kirigami.github.io/` all floored to
+`@kirigami/kirigami ^1.5.1` (+ `template-default` also to
+`@kirigami/canva ^2.5.0`, the one still on the pre-2.5.0 floor) and rebuilt —
+no `{% img-asset %}` demo added anywhere yet, this was just the dep-floor
+pass.
 
 **canva is a permanent part of this monorepo — reuse its code rather than
 re-implementing shared helpers per package** (that's why plugin-highlight now
