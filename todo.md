@@ -6,9 +6,6 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 ## Ouvert
 
-- **Dire dans l'aide (`kiri create --help` / README) que les templates
-  sont « Claude Ready » avec leur `CLAUDE.md`** — actuellement pas
-  mentionné dans le CLI, seulement dans les repos des templates eux-mêmes.
 - **`template-react`** — un nouveau template officiel avec un vrai pipeline
   JSX/TSX intégré (esbuild le supporte déjà nativement — reste à scoper :
   build-time only (SSR-ish, rendu en HTML statique comme le reste de

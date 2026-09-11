@@ -42,6 +42,7 @@ const HELP = {
 		"Never overwrites: existing files are kept, package.json is deep-merged (your deps win).",
 		"Missing package.json / banner.txt get a starter one; git repo + first commit unless --no-git; npm install unless --no-install.",
 		"The banner keeps its ### ### tokens on disk — kiri fills them (date, author, repo, …) on every build/export.",
+		"Every template ships a CLAUDE.md, ready for Claude Code out of the box.",
 	],
 	examples: [
 		"kiri create",

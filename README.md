@@ -134,7 +134,7 @@ npx kiri export
 | `kiri watch` | Starts dev mode: watches project files and rebuilds automatically on change. |
 | `kiri serve` | Same as `kiri watch`, plus a local server and browser hot-reload (Server-Sent Events, no server framework). |
 | `kiri run <script>` | Runs a PHP command script from the `scripts/` folder inside the Kirigami runtime. |
-| `kiri create <template>` | Creates a new project from an official template. |
+| `kiri create <template>` | Creates a new project from an official template — ships its own `CLAUDE.md`, Claude Ready out of the box. |
 | `kiri install <plugin...>` | Installs a plugin and prints the `plugins:` entry to paste into `kirigami.yaml`. |
 | `kiri cache purge [mask]` | Purges the local `.node.db` / `.cache.db` / `.cookie.txt` caches (or just the keys matching `mask`). |
 | `kiri phpinfo` | Prints `phpinfo()` from the embedded PHP-WASM runtime. |

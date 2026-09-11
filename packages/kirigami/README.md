@@ -263,6 +263,10 @@ every time. Then, unless the target is already inside a git worktree (or
 `--no-install`. `.cache.db`, `.node.db`, `.cookie.txt` and `package-lock.json`
 are never copied from the template.
 
+Every official template ships its own `CLAUDE.md` at the project root, copied
+along with everything else — a fresh `kiri create` is **Claude Ready** out of
+the box, no setup needed to start a Claude Code session in it.
+
 ### `kiri install <plugin...>`
 
 Installs a plugin (`npm install`, devDependency by default — `--save` for a
