@@ -212,7 +212,7 @@ class FS
 			$line = preg_replace('#\s*\*/\s*$#', '', $line);
 			$line = preg_replace('#^[ \t]*\*[ \t]?#', '', $line, 1);
 
-			if (preg_match('/^[ \t]*@([A-Za-z0-9_]+)[ \t]*(.*)$/', $line, $m)) {
+			if (preg_match('/^@([A-Za-z0-9_]+)[ \t]*(.*)$/', $line, $m)) {
 				$current = trim($m[1]);
 				$info[$current] = trim($m[2]);
 			} elseif (trim($line) === '') {

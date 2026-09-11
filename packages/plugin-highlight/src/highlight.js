@@ -52,15 +52,33 @@ function langFromClass(cls) {
 }
 
 
+// highlight.js ships one file per canonical language name; some names authors
+// naturally type in kirigami.yaml are only *aliases* baked into another
+// module (e.g. "html"/"svg" live inside xml.js, "js" inside javascript.js) —
+// import() needs the real file. Once that module registers, hljs picks up its
+// own `aliases` list automatically, so `engine.getLanguage('html')` resolves
+// without any bookkeeping on our side.
+const MODULE_ALIASES = {
+	html: 'xml', htm: 'xml', svg: 'xml',
+	js: 'javascript', jsx: 'javascript',
+	ts: 'typescript', tsx: 'typescript',
+	md: 'markdown',
+	yml: 'yaml',
+	sh: 'bash', zsh: 'bash',
+	py: 'python',
+};
+
 async function ensureLanguage(name, engine) {
 	if (registered.has(name) || engine.getLanguage(name)) {
 		registered.add(name);
 		return true;
 	}
+	const moduleName = MODULE_ALIASES[name] || name;
 	try {
-		const mod = await import(`highlight.js/lib/languages/${name}`);
-		engine.registerLanguage(name, mod.default);
+		const mod = await import(`highlight.js/lib/languages/${moduleName}`);
+		engine.registerLanguage(moduleName, mod.default);
 		registered.add(name);
+		registered.add(moduleName);
 		return true;
 	} catch {
 		if (!warned.has(name)) {

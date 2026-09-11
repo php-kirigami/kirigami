@@ -807,11 +807,11 @@ class MD {
                 $label   = htmlspecialchars($matches[2], ENT_QUOTES, 'UTF-8');
                 $content = preg_replace('/^>\s?\[!(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\n?/m', '', $matches[1]);
                 $content = preg_replace('/^>[ \t]?/m', '', $content);
-                $content = htmlspecialchars(trim($content), ENT_QUOTES, 'UTF-8');
+                $content = self::toHtml(trim($content));
                 $placeholder = "\x02BQ" . count($blockquotes) . "\x03";
                 $blockquotes[$placeholder] = "<div class=\"markdown-alert markdown-alert-{$type}\">"
                     . "<p class=\"markdown-alert-title\">{$label}</p>"
-                    . "<p>{$content}</p></div>";
+                    . "{$content}</div>";
                 // The trailing \n consumed by the regex is re-injected after
                 // the placeholder so the following blank line doesn't merge
                 // with the placeholder's line (which would break, for example,

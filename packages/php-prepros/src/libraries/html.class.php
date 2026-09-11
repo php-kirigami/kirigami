@@ -27,6 +27,10 @@ class HTML
         'span', 'strong', 'sub', 'sup', 'textarea', 'time', 'tt', 'u', 'var',
     ];
 
+    // The HTML namespace URI Lexbor assigns to plain HTML elements (foreign
+    // content — SVG, MathML — gets its own namespace URI instead).
+    private const HTML_NS = 'http://www.w3.org/1999/xhtml';
+
     private const RAW  = ['script', 'style'];
     // Whitespace-significant elements: their text content is emitted byte for
     // byte, never re-indented or collapsed (a code block must keep its line
@@ -71,13 +75,32 @@ class HTML
         };
     }
 
+    // Whether $node sits in the HTML namespace (as opposed to foreign content —
+    // SVG, MathML — whose element/attribute names carry meaningful case that
+    // Lexbor already restored while parsing).
+    private static function isHtmlNamespace(Dom\Node $node): bool
+    {
+        $ns = $node->namespaceURI ?? null;
+        return $ns === null || $ns === self::HTML_NS;
+    }
+
+    // The name to emit for $node: lowercase in the HTML namespace, verbatim
+    // (parser-adjusted) case in foreign content — e.g. `viewBox`, not `viewbox`.
+    private static function tagName(Dom\Node $node): string
+    {
+        return static::isHtmlNamespace($node) ? strtolower($node->nodeName) : $node->nodeName;
+    }
+
     private static function renderElement(Dom\Node $node, int $depth): string
     {
-        $tag    = strtolower($node->nodeName);
+        // VOID/RAW/VERBATIM/INLINE are HTML-only concepts — always look them up
+        // by the lowercase name, independent of the case emitted for $tag.
+        $lookup = strtolower($node->nodeName);
+        $tag    = static::tagName($node);
         $pad    = str_repeat(' ', $depth * self::INDENT);
         $attrs  = static::renderAttrs($node);
-        $isVoid = in_array($tag, self::VOID, true);
-        $isRaw  = in_array($tag, self::RAW,  true);
+        $isVoid = in_array($lookup, self::VOID, true);
+        $isRaw  = in_array($lookup, self::RAW,  true);
 
         if ($isVoid) {
             return "{$pad}<{$tag}{$attrs}>\n";
@@ -114,7 +137,7 @@ class HTML
         // Whitespace-significant: emit the inner HTML exactly as parsed, so a
         // bare <pre>/<textarea> keeps its line breaks and indentation. Only the
         // opening tag is padded to the current depth.
-        if (in_array($tag, self::VERBATIM, true)) {
+        if (in_array($lookup, self::VERBATIM, true)) {
             /** @var DOMElement $node */
             $token = "\x01VERB" . count(self::$verbatim) . "\x01";
             self::$verbatim[$token] = $node->innerHTML;
@@ -191,9 +214,10 @@ class HTML
             if ($child->nodeType !== XML_ELEMENT_NODE) {
                 continue;
             }
-            $tag   = strtolower($child->nodeName);
-            $attrs = static::renderAttrs($child);
-            if (in_array($tag, self::VOID, true)) {
+            $tag    = static::tagName($child);
+            $lookup = strtolower($child->nodeName);
+            $attrs  = static::renderAttrs($child);
+            if (in_array($lookup, self::VOID, true)) {
                 $out .= "<{$tag}{$attrs}>";
             } else {
                 $out .= "<{$tag}{$attrs}>" . static::renderInline($child) . "</{$tag}>";
@@ -283,13 +307,16 @@ class HTML
     private static function renderAttrs(Dom\Node $node): string
     {
         $out = '';
-        /** @var DOMElement $node */
+        /** @var DOMElement|DOM\Node $node */
         if (!$node->hasAttributes()) {
             return $out;
         }
+        $isHtml = static::isHtmlNamespace($node);
         foreach ($node->attributes as $attr) {
-            $name = strtolower(trim((string) $attr->name));
-            if (in_array($name, self::BOOLEAN_ATTRS, true)) {
+            $raw    = trim((string) $attr->name);
+            $lookup = strtolower($raw);
+            $name   = $isHtml ? $lookup : $raw;
+            if (in_array($lookup, self::BOOLEAN_ATTRS, true)) {
                 $out .= ' ' . $name;
             } else {
                 $out .= ' ' . $name . '="' . htmlspecialchars((string) $attr->value, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '"';

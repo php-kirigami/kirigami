@@ -177,11 +177,38 @@ now commit a `package-lock.json` (`npm ci`-ready).
 - **`@kirigami/plugin-highlight` 0.1.3** — `@highlight false` page opt-out +
   `nohighlight` / `language-plaintext` per-block opt-out; **clean HTML**: the
   highlighted `<pre><code>` markup is re-indented to match `HTML::format()`
-  instead of landing flush-left (see the package row).
+  instead of landing flush-left (see the package row). Also fixed today
+  (2026-09-10), uncommitted: **`languages: [html]` (and `js`/`ts`/`md`/`yml`/
+  `sh`/`py`) silently failed to highlight** — highlight.js ships those as
+  aliases baked into another module's file (`html`→`xml.js` etc.), so
+  `import('highlight.js/lib/languages/html')` 404'd and the build fell back to
+  a warning + no coloring. `ensureLanguage()` (`src/highlight.js`) now maps the
+  requested name to the real module file via a small `MODULE_ALIASES` table
+  before importing; hljs's own alias table then resolves the original short
+  name automatically. Verified against the real `highlight.js` package
+  (workspace root). Still open: promote an actually-unknown name from warning
+  to build error (see `todo.md`).
 - **`@kirigami/php-prepros` 1.7.2** — span-safe de-indent script in
   `injectHead()` (flattens highlighted `<pre><code>` before first paint, on
   `innerHTML`, no `children.length` skip); `<markdown prose>` opt-in `.prose`
-  wrapper. See the package row.
+  wrapper. See the package row. Also fixed today (2026-09-10), uncommitted:
+  (a) **severe PHPDOC bug** — `fs.class.php` `parseDocBlock()`'s tag regex
+  accepted leading whitespace, so an indented hanging-indent continuation line
+  starting with `@word` was read as a new tag; when that word was `@content`
+  the whole rendered page silently vanished, replaced by the stray fragment.
+  Fixed by anchoring the regex to column 0. (b) **GFM alerts had no inline
+  markdown** — `md.class.php`'s `> [!NOTE]` handling ran `htmlspecialchars()`
+  on the alert body instead of `self::toHtml()` like the standard blockquote
+  right below it, so `**bold**`/`` `code` ``/`[links](url)` came out literal.
+  Fixed to call `toHtml()` (and drop the now-redundant manual `<p>` wrap, since
+  `toHtml()` already emits one). (c) **`HTML::format()` no longer lowercases
+  SVG/MathML** — it unconditionally `strtolower()`'d element/attribute names,
+  flattening foreign-content camelCase (`viewBox`, `linearGradient`, …) even
+  though Lexbor already restored correct case at parse time. Now namespace-aware
+  (`isHtmlNamespace()`/`tagName()` helpers): only HTML-namespace names are
+  lowercased; SVG/MathML names are emitted verbatim. All three verified by hand
+  with local PHP 8.5 (`php -l` + isolated repro scripts), no test harness exists
+  in this package yet.
 - **`@kirigami/kirigami` 1.4.3** — banner-from-template: `config.js` fills all
   `### ###` tokens in the banner from the `kirigami:` block every build (not just
   `###DATE###`, which is now English); bundled `assets/banner-template.txt`

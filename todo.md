@@ -6,56 +6,6 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 ## Ouvert
 
-- **Bug confirmé, sévère — une ligne de continuation PHPDOC commençant par
-  `@mot` est prise pour une nouvelle annotation, silencieusement** — trouvé en
-  écrivant le tutoriel de `php-kirigami.github.io` (phase 2 du plan du site).
-  `packages/php-prepros/src/libraries/fs.class.php`, `parseDocBlock()` (~ligne
-  212) : la regex de détection de tag est `'/^[ \t]*@([A-Za-z0-9_]+)[ \t]*(.*)$/'`
-  — le `[ \t]*` initial accepte n'importe quel indentation, donc elle matche
-  aussi bien une vraie nouvelle annotation qu'une ligne de continuation à
-  indentation suspendue (hanging-indent) qui commence, par accident, par un mot
-  précédé de `@`. Le commentaire au-dessus de la fonction dit pourtant
-  explicitement l'inverse ("Only lines whose first non-whitespace character...
-  is an `@` start a tag" — vrai seulement si "whitespace" voulait dire "aucune",
-  ce qui n'est pas ce que fait la regex). Repro exact rencontré :
-  ```
-  /**
-   * @abstract Markdown in a page, a YAML data file for a listing, and
-   *           @content for a page that's pure prose.
-   */
-  ```
-  La deuxième ligne (continuation indentée de `@abstract`) est lue comme une
-  **nouvelle** annotation `@content` = `"for a page that's pure prose."`. Comme
-  `@content` a un sens spécial (si `$content` est non-vide, il remplace le corps
-  de page entier et le PHP n'est **pas exécuté**), le résultat n'est pas une
-  simple valeur erronée : **toute la page rendue disparaît**, remplacée par ce
-  seul fragment de texte, sans warning ni erreur — silencieux, donc facile à ne
-  pas remarquer en review. Confirmé par isolation : reformuler pour qu'aucune
-  ligne de continuation ne commence par `@` corrige immédiatement.
-  Fix : ancrer la regex de détection à la colonne 0 après le gutter
-  (`'/^@([A-Za-z0-9_]+)[ \t]*(.*)$/'`, sans `[ \t]*` en tête) — une ligne
-  indentée ne pourra alors jamais démarrer un tag, seulement continuer le
-  précédent, ce qui correspond à ce que le commentaire de la fonction décrit
-  déjà. Vérifier aussi si un test couvre ce cas (mot réservé — `@content`,
-  `@indent` — en continuation indentée d'une autre annotation) ; sinon en
-  ajouter un, ce bug est trop silencieux pour ne pas avoir de garde.
-
-- **Bug confirmé — les alertes GFM (`> [!NOTE]` etc.) n'appliquent aucun markdown
-  inline** — trouvé en construisant `php-kirigami.github.io` (phase 0 du plan du
-  site). `packages/php-prepros/src/libraries/md.class.php:803-822`
-  (`STEP 3e: GFM ALERTS AND BLOCKQUOTES`) fait
-  `htmlspecialchars(trim($content), ENT_QUOTES, 'UTF-8')` sur le contenu de
-  l'alerte (`:810`) puis le colle tel quel dans `<p>{$content}</p>` (`:812-814`) —
-  contrairement au blockquote standard juste en dessous (`:827-834`) qui rappelle
-  `self::toHtml()` récursivement sur son contenu (`:830`). Résultat : `**gras**`,
-  `` `code` `` et `[lien](url)` à l'intérieur d'un `> [!NOTE]` ressortent tels
-  quels (crochets/astérisques littéraux), même sur une seule ligne — pas juste un
-  problème de retour à la ligne. Repro isolé (4 lignes, une alerte contre un
-  blockquote normal) confirme : blockquote → lien converti ; alerte → lien
-  littéral. Fix : remplacer la ligne `810` par un appel à `self::toHtml(trim($content))`
-  comme `:830`, garder `htmlspecialchars()` seulement sur `$label` (déjà fait,
-  `:807`). Contournement côté site : éviter markdown inline dans les `[!NOTE]`
-  en attendant.
 - **`<extlink>`** — tag d'authoring HTML qui appelle `SCRAPER` (les `CURL::HEADERS`
   sont déjà à jour, Chrome 131 / Win 11).
 - **Test réel de l'action kiribuild** — un vrai scénario d'intégration, pas juste un
@@ -88,46 +38,11 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   dans `kirigami.yaml` (entrée `plugins:` + options) à partir du `kirigami.optionsSchema`
   déclaré dans le `package.json` du plugin. Si déjà installé : détecte une nouvelle
   version et l'installe.
-- **plugin-highlight : `languages: [html]` échoue silencieusement (warn seulement)** —
-  trouvé en construisant `php-kirigami.github.io` (phase 0 du plan du site, premier
-  vrai test d'intégration). highlight.js nomme son module `xml.js` (couvre
-  html/svg/xml via ses alias internes) ; `languages: ["html"]` tente
-  `import('highlight.js/lib/languages/html')`, qui n'existe pas →
-  `⚠ [plugin-highlight] unknown language: "html"` dans les logs de build, aucune
-  coloration pour ce langage, mais le build réussit quand même (piège silencieux).
-  "html" est pourtant le mot naturel qu'un auteur de `kirigami.yaml` va taper.
-  Contournement côté site : utiliser `xml` dans la liste. Fix suggéré dans
-  `packages/plugin-highlight/src/highlight.js` (`ensureLanguage`) : une petite table
-  d'alias avant l'`import()` (`html`→`xml`, `js`→`javascript`, `ts`→`typescript`,
-  `md`→`markdown`, `yml`→`yaml`, `sh`→`bash`, `py`→`python`) — et/ou promouvoir le
-  warning en erreur de build (`options.schema.json` ne peut pas le valider, c'est
-  un nom highlight.js, pas une enum fermée).
-
-
-## DX — `HTML::format()` écrase la casse du SVG/MathML inline (pas commité)
-
-`packages/php-prepros/src/libraries/html.class.php` fait un `strtolower()`
-inconditionnel sur les noms d'éléments et d'attributs, sans conscience du
-namespace. Lexbor livre pourtant `viewBox` correctement dans l'arbre DOM
-(foreign-content adjustment au parsing) — c'est le formatter qui le réécrit
-`viewbox`. Idem `preserveAspectRatio`, et les éléments `linearGradient` /
-`radialGradient` / `clipPath` / `textPath` / `foreignObject` (pas utilisés
-dans template-demo, qui n'a que `viewBox` sur ses 8 icônes de toggle).
-
-- Pas un bug de rendu : dans un document HTML le parseur du navigateur
-  re-mappe `viewbox` → `viewBox` via la table d'ajustement. Ça ne casserait
-  qu'en XML/XHTML ou si le SVG était extrait seul. Rien à faire côté
-  template-demo.
-- Emplacements : `:76` (`renderElement`, tag) et `:166` (`renderInline`, tag —
-  c'est celui qui tire pour une icône dans un `<button>`/`<a>`) lowercasent le
-  nom d'élément ; `:246` (`renderAttrs`) lowercase le nom d'attribut ; `:206`
-  (`hasOnlyInlineChildren`) ne fait qu'une comparaison (pas de sortie, mais un
-  `<svg>` inline force quand même le parent en bloc).
-- Fix : ne lowercaser que les noms en namespace HTML (`$node->namespaceURI`
-  null ou XHTML). Pour les nœuds SVG/MathML, émettre `nodeName` / `attr->name`
-  tels quels (Lexbor a déjà fait l'ajustement de casse). Garder une copie
-  minuscule séparée pour les lookups `VOID` / `RAW` / `VERBATIM` /
-  `BOOLEAN_ATTRS` / `INLINE`.
+- **plugin-highlight : promouvoir le warning en erreur de build ?** — reste ouvert
+  après le fix de l'alias (`html`→`xml` etc., voir CLAUDE.md) : un vrai nom
+  highlight.js inconnu (typo) passe toujours en warning silencieux, build vert
+  quand même. `options.schema.json` ne peut pas valider ça (enum fermée
+  impossible, ce sont les noms internes de highlight.js).
 
 
 ## Ailleurs
