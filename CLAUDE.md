@@ -237,13 +237,13 @@ file anyway: `@kirigami/canva ^2.5.0`, `@kirigami/kirigami ^1.5.0`,
 `@kirigami/plugin-highlight ^0.1.3`. `template-default` not touched — no
 obvious spot for an external-link demo in the minimal starter.
 
-**Not yet released: `@kirigami/php-prepros` 1.8.0 / `@kirigami/kirigami`
-1.5.1.** New default Markdown plugin `{% img-asset %}` (`md.plugins.php`,
-alongside `codepen`/`youtube`/`checklist`/`callout`) — same pipeline as
-`<img asset>`, positional `path [width [height [cover]]]`. Verified against
-the real WASM runtime in the same scratch project as plugin-extlink (plain /
-width-only / square-cover / missing-path-fallback, all four correct). `npm
-run release` will publish both once ready.
+**`@kirigami/php-prepros` 1.8.0 / `@kirigami/kirigami` 1.5.1 released.** New
+default Markdown plugin `{% img-asset %}` (`md.plugins.php`, alongside
+`codepen`/`youtube`/`checklist`/`callout`) — same pipeline as `<img asset>`,
+positional `path [width [height [cover]]]`. Verified against the real WASM
+runtime in the same scratch project as plugin-extlink (plain / width-only /
+square-cover / missing-path-fallback, all four correct). Not yet consumed by
+any site or template.
 
 **canva is a permanent part of this monorepo — reuse its code rather than
 re-implementing shared helpers per package** (that's why plugin-highlight now
