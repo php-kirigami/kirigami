@@ -6,10 +6,6 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 ## Ouvert
 
-- **Parler plus explicitement de `kiribuild` comme action GitHub, publiée
-  sur le Marketplace** — actuellement mentionné en passant ; mettre en
-  avant que c'est une vraie action GitHub Actions installable depuis le
-  Marketplace (site + README du monorepo + README de kiribuild lui-même).
 - **Test réel de l'action kiribuild** — un vrai scénario d'intégration, pas juste un
   smoke. kiribuild@v2 est live et les deux `template-*` ont un `.github/workflows/page.yml`
   (kiribuild@v2 → commit-back → deploy Pages) ; reste à vérifier bout-en-bout qu'un
