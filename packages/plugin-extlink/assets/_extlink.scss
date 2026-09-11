@@ -1,0 +1,84 @@
+// ═══════════════════════════════════════════════════════════════════════
+//  @kirigami/plugin-extlink — default `.extlink` card styles
+//
+//  A square preview image on the left, title / description / site name
+//  stacked on the right. All colours are @kirigami/canva `conf` custom
+//  properties, so it tracks the project's own light/dark palette with
+//  nothing extra to wire. Appended after the project's own sass entry
+//  (`sass:after`) — set `style: false` in the plugin's kirigami.yaml
+//  options to skip this and write your own.
+// ═══════════════════════════════════════════════════════════════════════
+
+.extlink {
+	display: flex;
+	gap: 1rem;
+	align-items: stretch;
+	padding: 0.75rem;
+	border: 1px solid var(--border);
+	border-radius: 6px;
+	background: var(--surface-2);
+	color: inherit;
+	text-decoration: none;
+	transition: border-color 0.15s;
+
+	&:hover,
+	&:focus-visible {
+		border-color: var(--accent);
+	}
+}
+
+.extlink__image {
+	flex: none;
+	width: clamp(3.5rem, 22%, 5.5rem);
+	aspect-ratio: 1 / 1;
+	border-radius: 4px;
+	object-fit: cover;
+	background: var(--surface);
+}
+
+.extlink__body {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 0.3rem;
+	min-width: 0;
+}
+
+// Multi-line ellipsis: the box-orient/line-clamp pair renders a trailing "…"
+// at the cutoff automatically — no separate text-overflow rule needed.
+@mixin clamp($lines) {
+	display: -webkit-box;
+	overflow: hidden;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: $lines;
+	line-clamp: $lines;
+}
+
+// Single-line ellipsis, for text that should never wrap at all.
+@mixin ellipsis {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.extlink__title {
+	@include clamp(2);
+	color: var(--ink);
+	font-family: var(--font-heading, inherit);
+	line-height: 1.3;
+}
+
+.extlink__desc {
+	@include clamp(2);
+	color: var(--ink-muted);
+	font-size: 0.88em;
+	line-height: 1.4;
+}
+
+.extlink__site {
+	@include ellipsis;
+	color: var(--ink-muted);
+	font-size: 0.78em;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}

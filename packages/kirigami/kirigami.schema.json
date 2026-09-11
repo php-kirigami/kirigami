@@ -454,6 +454,17 @@
                 "options": { "$ref": "../plugin-highlight/options.schema.json" }
               }
             }
+          },
+          {
+            "if": {
+              "required": ["name"],
+              "properties": { "name": { "const": "@kirigami/plugin-extlink" } }
+            },
+            "then": {
+              "properties": {
+                "options": { "$ref": "../plugin-extlink/options.schema.json" }
+              }
+            }
           }
         ]
       },

@@ -1,0 +1,52 @@
+{
+  "name": "@kirigami/plugin-extlink",
+  "version": "0.1.0",
+  "description": "<extlink> authoring tag for Kirigami — a SCRAPER-backed external link preview card, cached to disk so a rebuild never re-crawls a resolved URL.",
+  "keywords": [
+    "kirigami",
+    "kirigami-plugin",
+    "plugin",
+    "link-preview",
+    "opengraph",
+    "embed"
+  ],
+  "license": "MIT",
+  "author": "Maxime Larrivée-Roy",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "php/",
+    "assets/",
+    "options.schema.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "kirigami": {
+    "type": "plugin",
+    "minVersion": "1.5.0",
+    "optionsSchema": "./options.schema.json"
+  },
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=10.2.3"
+  },
+  "dependencies": {
+    "@kirigami/sdk": "0.2.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/php-kirigami/kirigami.git"
+  },
+  "homepage": "https://github.com/php-kirigami/kirigami/tree/main/packages/plugin-extlink#readme",
+  "bugs": {
+    "url": "https://github.com/php-kirigami/kirigami/issues"
+  }
+}

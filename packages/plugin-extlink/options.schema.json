@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/plugin-extlink/options.schema.json",
+  "title": "@kirigami/plugin-extlink options",
+  "description": "Options for the `@kirigami/plugin-extlink` entry under `plugins:` in kirigami.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "style": {
+      "description": "Append the default `.extlink` card styles to every sass task. Set false to write your own on top of the markup instead.",
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

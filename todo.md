@@ -6,8 +6,6 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 ## Ouvert
 
-- **`<extlink>`** — tag d'authoring HTML qui appelle `SCRAPER` (les `CURL::HEADERS`
-  sont déjà à jour, Chrome 131 / Win 11).
 - **Test réel de l'action kiribuild** — un vrai scénario d'intégration, pas juste un
   smoke. kiribuild@v2 est live et les deux `template-*` ont un `.github/workflows/page.yml`
   (kiribuild@v2 → commit-back → deploy Pages) ; reste à vérifier bout-en-bout qu'un
