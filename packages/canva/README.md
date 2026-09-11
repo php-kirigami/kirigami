@@ -27,10 +27,28 @@ Its `.scss` entries are meant to be compiled by kirigami-core's `sass` task,
 which provides the native `inline-file()` / `font-*()` functions the token layer
 relies on.
 
-> **Work in progress.** `styles/main.scss` and the `Burger` component are still
-> empty stubs; the API below is what currently ships.
+> **Work in progress.** The `Burger` component is still an empty stub; the API
+> below is what currently ships.
 
 Part of the **Kirigami** project ecosystem.
+
+---
+
+## What's new in 2.5.0
+
+- **`styles/main` — shared components.** No longer an empty stub. Five small,
+  generic patterns lifted from what Kirigami sites kept re-implementing
+  identically: `.breadcrumb` (pairs with php-prepros' `FS::getBreadcrumb()`),
+  `.docs-toc` (a quick-jump anchor list for long reference pages), `.table` /
+  `.table-wrap` (a generic data table, `&__num` for tabular-figure columns),
+  `.badge` / `.badge--muted` (status/license tags), and `.palette` (a row of
+  colour chips, for `IMG::palette()` / `colors()` output). All `conf` tokens,
+  so light/dark comes for free. Opt-in via `@use "@kirigami/canva/main"`.
+- **`conf` — themed native scrollbars.** The reset now sets
+  `scrollbar-color: var(--border) var(--surface-2)` and `scrollbar-width: thin`
+  on `<html>`, so scrollbars on overflowing content (a wide code block, an
+  `<iframe>`) follow the palette instead of defaulting to white in dark mode.
+  No opt-out flag — every project's `conf` already defines both tokens.
 
 ---
 
@@ -129,6 +147,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/canva](#kirigamicanva)
   - [Overview](#overview)
+  - [What's new in 2.5.0](#whats-new-in-250)
   - [What's new in 2.4.0](#whats-new-in-240)
   - [What's new in 2.3.0](#whats-new-in-230)
   - [What's new in 2.2.0](#whats-new-in-220)
@@ -237,7 +256,9 @@ Sass variables, then:
   encoding) so icons pick up the current palette;
 - ships a minimal reset (`* { margin: 0; box-sizing: border-box }`), smooth
   scrolling with `scroll-padding-top: var(--scroll-top)`, a responsive
-  `font-size`, and `.is-busy` / `.is-working` cursor-lock states on `<html>`.
+  `font-size`, themed native scrollbars (`scrollbar-color` / `scrollbar-width`
+  from the `--border` / `--surface-2` tokens), and `.is-busy` / `.is-working`
+  cursor-lock states on `<html>`.
 
 The root `font-size` is fluid and bounded both ways:
 `clamp(var(--font-min), var(--font-resp), var(--font-base))`, where
@@ -372,7 +393,20 @@ blocks pick up the richer styling automatically.
 
 ### `styles/main`
 
-Currently an empty entry point, reserved for the shared component styles.
+Small, generic UI patterns that kept turning up identically across Kirigami
+sites. All colours are `conf` tokens, so light/dark comes for free. Opt-in:
+
+```scss
+@use '@kirigami/canva/main';
+```
+
+| Class | Purpose |
+|---|---|
+| `.breadcrumb` | A trail of links + the current page. Pairs with php-prepros' `FS::getBreadcrumb()`. |
+| `.docs-toc` | An inline quick-jump list of anchor links, for long reference pages. |
+| `.table-wrap` / `.table` | A generic data table; wrap in `.table-wrap` to scroll horizontally instead of widening the page. `&__num` (`.table__num`) styles a tabular-figure column (e.g. a version number). |
+| `.badge` / `.badge--muted` | A small status/license tag — accent-filled by default, `--muted` for an outlined neutral variant. |
+| `.palette` | A row of colour chips, for visualising a hex list (e.g. `IMG::palette()` / `colors()` output) — one `<li>` per swatch. |
 
 ---
 

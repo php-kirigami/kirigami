@@ -187,6 +187,12 @@ html {
     scroll-padding-top: var(--scroll-top);;
     font-size: var(--font-size);
 
+    // --border / --surface-2 already flip with the theme, so this alone
+    // themes every native scrollbar (a code block that overflows, an
+    // <iframe>, …) without a separate dark-mode override.
+    scrollbar-color: var(--border) var(--surface-2);
+    scrollbar-width: thin;
+
     &.is-busy, &.is-busy * {
         cursor: wait !important;
         pointer-events: none !important;

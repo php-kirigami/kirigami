@@ -52,26 +52,13 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   — pour l'instant `createDevServer()` rejette la promesse d'écoute (l'erreur
   `EADDRINUSE` remonte telle quelle) ; un message plus clair ("essaie
   `--port`") serait plus sympa. Mineur.
-- **Idées `canva` repérées en construisant `/docs/` sur le site** (rien d'urgent,
-  juste noté avant d'oublier) :
-  - **`scrollbar-color`/`scrollbar-width` dans le reset de `conf`** — le site
-    devait les ajouter à la main (`:root { scrollbar-color: var(--border)
-    var(--surface-2); }`) parce que sans ça les scrollbars natives (ex. un
-    bloc de code qui déborde) restent blanches en dark mode. Vu que
-    `--border`/`--surface-2` existent déjà dans tout projet `conf`, ça pourrait
-    être un défaut du reset lui-même plutôt que quelque chose à réécrire par
-    site.
-  - **Un partial « docs layout »** — fil d'Ariane (`FS::getBreadcrumb()`) +
-    liste de saut rapide (ancres `#id` vers chaque section) : deux petits
-    composants CSS (`.breadcrumb`, `.docs-toc`) qu'un autre site à
-    documentation dense (un template, le site lui-même plus tard) referait
-    sûrement à l'identique.
-  - **`.pkg-table` / `.badge`** (nés sur `/ecosystem/`) — un tableau de
-    données générique + un badge de statut/licence, assez génériques pour
-    vivre dans `canva` plutôt que redupliqués par site.
-  - **Swatches de palette** (`IMG::palette()` → une rangée de puces de
-    couleur) — un petit composant pour visualiser un tableau de couleurs hex,
-    utile partout où `IMG::palette()`/`colors()` sert (pas juste une démo).
+- **Migrer `../php-kirigami.github.io/` vers `@kirigami/canva` 2.5.0** — le
+  site a encore ses propres copies de `.breadcrumb`/`.docs-toc`/`.pkg-table`/
+  `.badge`/palette-swatches/scrollbar dans `_main.scss`/`_conf.scss`; ces
+  idées ont été rapatriées dans `canva` `styles/main` (2026-09-11, voir
+  CLAUDE.md). Une fois 2.5.0 publié, remplacer les copies du site par
+  `@use "@kirigami/canva/main"` et retirer le CSS dupliqué (comme fait pour
+  `styles/prose` / `reveal` en 2.4.0).
 
 
 ## Ailleurs
@@ -83,3 +70,7 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 
 plugin-embed, pour mapper les tags <youtube> <vimeo> et d'autres avec le protocol oembed pour aller chercher le titre, l'image, les dimensions pour ensuite calculer la proportion et utilisé l'image fournis comme cover du video dont il aura un bouton play par dessus (un svg qui va utiliser la variable $accent) que je vais fournir avec le plugin. Donc quand on passe sur le play in scale 1.1 environ et on change le cursor pis toute. tk on verra rendu là
+
+
+
+Ajouter un plugin markdown {% img-asset facedepoil.jpg 800 600 cover %}

@@ -1,0 +1,119 @@
+// ═══════════════════════════════════════════════════════════════════════
+//  Shared components
+//
+//  Small, generic UI patterns that kept turning up identically across
+//  Kirigami sites: a breadcrumb trail (pairs with php-prepros'
+//  `FS::getBreadcrumb()`), a quick-jump anchor list for long reference
+//  pages, a data table, a status/license badge, and a colour-swatch row
+//  (pairs with `IMG::palette()` / `colors()`).
+//
+//  All colours are `conf` tokens, so everything tracks the light / dark
+//  palette with nothing extra to wire. Opt-in — nothing here is emitted
+//  unless you `@use` this file:
+//
+//      @use "@kirigami/canva/main";
+// ═══════════════════════════════════════════════════════════════════════
+
+$mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+
+// ── Breadcrumb ──────────────────────────────────────────────────────
+.breadcrumb {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .35rem;
+	font-family: $mono;
+	font-size: .78rem;
+	color: var(--ink-muted);
+
+	a { color: inherit; text-decoration: none; }
+	a:hover { color: var(--accent); }
+	[aria-current="page"] { color: var(--ink); }
+}
+
+
+// ── Quick-jump list ─────────────────────────────────────────────────
+// An inline list of anchor links, for long reference pages.
+.docs-toc {
+	display: flex;
+	flex-wrap: wrap;
+	gap: .4rem .6rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+
+	a {
+		display: inline-block;
+		padding: .2rem .55rem;
+		border: 1px solid var(--border);
+		border-radius: 3px;
+		background: var(--surface-2);
+		font-family: $mono;
+		font-size: .78rem;
+		text-decoration: none;
+		color: var(--ink-muted);
+	}
+	a:hover { color: var(--accent); border-color: var(--accent); }
+}
+
+
+// ── Table ───────────────────────────────────────────────────────────
+// `.table-wrap` scrolls horizontally on its own instead of widening the
+// page — wrap `.table` in it when the content might not fit.
+.table-wrap { overflow-x: auto; }
+
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: .92rem;
+
+	th, td {
+		text-align: left;
+		padding: .65rem .9rem;
+		border-bottom: 1px solid var(--border);
+	}
+
+	thead th {
+		font-family: $mono;
+		font-size: .72rem;
+		letter-spacing: .08em;
+		text-transform: uppercase;
+		color: var(--ink-muted);
+		border-bottom: 2px solid var(--border);
+	}
+
+	// A numeric/version column — tabular figures, never wraps.
+	&__num { font-family: $mono; font-variant-numeric: tabular-nums; white-space: nowrap; }
+}
+
+
+// ── Badge ───────────────────────────────────────────────────────────
+.badge {
+	display: inline-block;
+	padding: .15em .6em;
+	border-radius: 3px;
+	font-family: $mono;
+	font-size: .72rem;
+	letter-spacing: .03em;
+	background: var(--accent-soft);
+	color: var(--accent);
+
+	// Neutral/secondary variant — outlined instead of accent-filled.
+	&--muted { background: var(--surface); color: var(--ink-muted); border: 1px solid var(--border); }
+}
+
+
+// ── Palette swatches ────────────────────────────────────────────────
+// A row of colour chips, for visualising a hex list — e.g. php-prepros'
+// `IMG::palette()` / `colors()` output.
+.palette {
+	display: flex;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	border-radius: 5px;
+	overflow: hidden;
+	border: 1px solid var(--border);
+
+	li { flex: 1; height: 1.75rem; }
+}

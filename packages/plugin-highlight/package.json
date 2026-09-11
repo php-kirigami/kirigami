@@ -41,7 +41,7 @@
     "npm": ">=10.2.3"
   },
   "dependencies": {
-    "@kirigami/canva": "2.4.0",
+    "@kirigami/canva": "2.5.0",
     "@kirigami/sdk": "0.2.0",
     "highlight.js": "^11.11.1"
   },
