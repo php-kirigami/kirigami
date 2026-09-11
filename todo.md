@@ -6,15 +6,6 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 ## Ouvert
 
-- **plugin-highlight : `languages: [html]` devrait-il ajouter `xml` (et
-  vice-versa) à la liste effective ?** — à vérifier avant de coder quoi que
-  ce soit : `ensureLanguage()` enregistre déjà le module sous les deux noms
-  au niveau du moteur hljs (`registered.add(name); registered.add(moduleName)`),
-  donc un bloc explicite `` ```xml `` marche déjà même si seul `html` est
-  configuré. Ce qui n'est *peut-être* pas couvert : la liste `usable`
-  retournée (candidats pour l'autodétection) ne contient que le nom tel que
-  tapé, jamais les deux. À confirmer par un vrai test avant de juger que
-  c'est cassé.
 - **`template-react`** — un nouveau template officiel avec un vrai pipeline
   JSX/TSX intégré (esbuild le supporte déjà nativement — reste à scoper :
   build-time only (SSR-ish, rendu en HTML statique comme le reste de
