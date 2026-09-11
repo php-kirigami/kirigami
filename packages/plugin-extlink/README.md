@@ -103,17 +103,21 @@ On first use of a given URL, the tag:
 
 1. Calls `SCRAPER::get($src)` and writes the raw result to
    `_data/extlink/<hash>.json`, `<hash>` being `STR::shorthash($src)`.
-2. Downloads the scraped preview image, square-crops it, and re-encodes it to
-   the project's own `image:` config (`format`, default `webp`) at
+2. Downloads the scraped preview image and saves it, untouched at its native
+   resolution (re-encoded to jpg), to `assets/extlink/<hash>.jpg` — an
+   archival copy, in case a different size or crop is ever needed without
+   re-downloading.
+3. Square-crops that same image and re-encodes it to the project's own
+   `image:` config (`format`, default `webp`) at
    `assets/images/extlink/<hash>.<format>` — then publishes it under
    `image.dest` the same way `<img asset>` does, so it ships with the site
-   like any other image.
+   like any other image. This is the one actually used by the card.
 
-Every later build for that same `src` finds both files already on disk and
-skips straight to rendering the card — no network call, no re-encode.
-**Commit `_data/extlink/` and `assets/images/extlink/` to your repo** so CI
-and every contributor share the same cache instead of re-crawling from
-scratch.
+Every later build for that same `src` finds all three files already on disk
+and skips straight to rendering the card — no network call, no re-encode.
+**Commit `_data/extlink/`, `assets/extlink/` and `assets/images/extlink/` to
+your repo** so CI and every contributor share the same cache instead of
+re-crawling from scratch.
 
 Requires `prepros.network: true` in `kirigami.yaml` (same prerequisite as
 `SCRAPER`/`CURL` themselves).

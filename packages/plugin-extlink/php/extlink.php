@@ -19,7 +19,10 @@
 // STR::shorthash($src), and meant to be committed:
 //
 //   - _data/extlink/<hash>.json                — the raw SCRAPER::get() result
-//   - assets/images/extlink/<hash>.<format>    — the downloaded image, square-
+//   - assets/extlink/<hash>.jpg                 — the downloaded image, as-is
+//                                                 (native resolution, re-encoded
+//                                                 to jpg) — an archival copy
+//   - assets/images/extlink/<hash>.<format>    — the same image, square-
 //                                                 cropped, re-encoded to the
 //                                                 project's image.format
 //
@@ -89,7 +92,16 @@ PREPROS::registerTag('extlink', function ($tag, $attrs, $body) {
             $tmp = '/tmp/extlink-' . $key;
             try {
                 if (CURL::getContents($imageUrl, $tmp) !== false && is_file($tmp) && filesize($tmp) > 0) {
-                    $img = (new IMG($tmp))->resize($size, $size, true);
+                    $img = new IMG($tmp);
+
+                    // The untouched original, at its native resolution — an
+                    // archival copy, in case a bigger/differently-cropped
+                    // version is ever needed without re-downloading.
+                    $originalRel = 'assets/extlink/' . $key . '.jpg';
+                    $img->save('/project/' . $originalRel);
+                    PREPROS::exportFile('/project/' . $originalRel);
+
+                    $img->resize($size, $size, true);
                     $img->save('/project/' . $sourceRel);
                     PREPROS::exportFile('/project/' . $sourceRel);
                     $img->save($destVirtual);

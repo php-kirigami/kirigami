@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/plugin-extlink",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "<extlink> authoring tag for Kirigami — a SCRAPER-backed external link preview card, cached to disk so a rebuild never re-crawls a resolved URL.",
   "keywords": [
     "kirigami",

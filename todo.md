@@ -54,7 +54,3 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 - **template-demo** a son propre `todo.md` : `C:\projects\kirigami\template-demo\todo.md`.
   Toggle de thème : tranché — les deux templates font `import "@kirigami/canva/theme"`
   (plus de réimplémentation inline). Reste ouvert là-bas : réactiver `prepros.format`.
-
-
-
-extlink: sauvegarder la photo de dimention originale en jpg ou png dans les assets/extlink
