@@ -6,6 +6,12 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 ## Ouvert
 
+- **Shortcode `{% %}` pour tous les plugins qui ont un tag HTML** —
+  `plugin-embed` a déjà les deux formes (`<youtube id="…">` **et**
+  `{% youtube ID %}`/`{% vimeo ID %}` via `php/embed.php`) ; `plugin-extlink`
+  n'a que le tag HTML (`<extlink src="…">`), pas de `{% extlink … %}`.
+  Uniformiser : chaque plugin avec un tag HTML devrait offrir le raccourci
+  Markdown équivalent.
 - **Test réel de l'action kiribuild** — un vrai scénario d'intégration, pas juste un
   smoke. kiribuild@v2 est live et les deux `template-*` ont un `.github/workflows/page.yml`
   (kiribuild@v2 → commit-back → deploy Pages) ; reste à vérifier bout-en-bout qu'un
