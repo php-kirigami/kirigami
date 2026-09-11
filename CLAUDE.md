@@ -257,36 +257,25 @@ mechanics of all three). `<youtube>`/`<vimeo>` oEmbed cards, entirely
 client-side. Not yet consumed by any site or template — no demo added
 anywhere yet.
 
-**`@kirigami/canva` 2.5.1 — not yet released, bumped/committed, `npm run
-release` pending an OTP.** Real bug reported by the user while browsing
-`../php-kirigami.github.io/`'s `/docs/authoring/`: toggling the theme
-(`data-theme-toggle`) visibly reflowed every highlighted code block — the
-whole page shifted on every click. Root cause: `styles/prose.scss`'s
-standalone code defaults (`code, kbd, samp, pre { font-family; font-size }`
-and `pre { code { padding: 0; … } }`) are scoped under `.prose`, and once
-compiled that gives them **equal-or-higher CSS specificity than
-`plugin-highlight`'s own `.hljs` theme rule** (a single class) — so in light
-mode / no `data-theme` attribute, prose's reset wins and a highlighted block
-renders unpadded with the wrong font metrics; only `[data-theme="dark"]
-.hljs` (two classes) has enough specificity to win, so dark mode looked
-right and light mode was actually the broken one — most visible as a jump
-*when switching between them*, not as an obviously "broken" single state. A
-comment in the source already claimed "those rules land after these and
-take over", which is false: CSS cascade order never gets a chance to matter
-here because specificity is decided first. Fixed both rules with an explicit
-`:not(.hljs)` exclusion instead of relying on source order. Verified with a
-Playwright repro (`getBoundingClientRect()` before/after a real
-`[data-theme-toggle]` click, and a full `getComputedStyle()` diff) against
-the monorepo's own source first, then — since the site consumes canva from
-**the real npm registry**, not a workspace `file:` link — by temporarily
-overwriting `../php-kirigami.github.io/node_modules/@kirigami/canva/dist/`
-with the freshly built local `dist/` to prove the fix end-to-end before
-committing to a release: page-wide height diff went from 699px (many blocks
-each +40-47px) to 0px. `@kirigami/kirigami` 1.5.4 / `@kirigami/plugin-embed`
-0.1.3 / `@kirigami/plugin-highlight` 0.1.4 bumped alongside it (exact-pin dep
-bump only, no code change) — `npm run release` will publish all four; the
-site and both templates still need their `@kirigami/canva` floor bumped to
-`^2.5.1` afterward.
+**Fourth release shipped (2026-09-11).** On npm and good: `@kirigami/canva`
+**2.5.2**, `@kirigami/struct-walker` **1.0.5**, `@kirigami/php-prepros`
+**1.9.3**, `@kirigami/sdk` **0.2.1**, `@kirigami/kirigami` **1.5.6**,
+`@kirigami/plugin-embed` **0.1.4**, `@kirigami/plugin-extlink` **0.1.3**,
+`@kirigami/plugin-highlight` **0.1.6** (`php-wasm` unchanged, skipped by the
+release script — its version encodes the bundled PHP build, so it's never
+bumped for an unrelated metadata/dep change). See each package's own row
+above for the full detail; in short, this release carried: canva's
+`.hljs` specificity fix (theme toggle no longer reflows highlighted code) and
+plugin-highlight's matching inline-code version of the same bug;
+plugin-extlink's `{% extlink %}` Markdown shortcut; `kiri serve`'s clear
+`EADDRINUSE` message and CSS hot-injection (no full reload for a `sass`-only
+change); the `kiri create --help` "Claude Ready" mention; php-prepros's
+`/roadmap/` multi-line-list fix; and plugin-highlight's two real bugs found
+this session — an unknown `languages:` name now fails the build eagerly
+(not just once some page happens to render a code block), and `copyButton`
+no longer ships a styled, non-functional button when the project has no
+esbuild task. `../php-kirigami.github.io/` and both `../template-*/` still
+need their floors bumped once npm propagation settles — next step.
 
 **canva is a permanent part of this monorepo — reuse its code rather than
 re-implementing shared helpers per package** (that's why plugin-highlight now
