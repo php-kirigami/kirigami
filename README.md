@@ -310,10 +310,11 @@ An ordered list of build tasks, run in array order — on top of the implicit `p
 ## Continuous deployment
 
 Kirigami ships an official reusable GitHub Action, [`php-kirigami/kiribuild`](https://github.com/php-kirigami/kiribuild)
-(**v2**). The action itself only installs Node + `kiri` and runs `kiri export`
-— checkout, committing back whatever the build regenerated, and the actual
-Pages upload/deploy are wired by the caller's own workflow steps, so the full
-flow stays explicit:
+(**v2**) — published on the [**GitHub Marketplace**](https://github.com/marketplace/actions/kiribuild),
+installable straight from a workflow file's Actions sidebar. The action itself
+only installs Node + `kiri` and runs `kiri export` — checkout, committing back
+whatever the build regenerated, and the actual Pages upload/deploy are wired by
+the caller's own workflow steps, so the full flow stays explicit:
 
 ```yaml
 # .github/workflows/page.yml
