@@ -250,6 +250,12 @@ square-cover / missing-path-fallback, all four correct). `template-default`,
 no `{% img-asset %}` demo added anywhere yet, this was just the dep-floor
 pass.
 
+**`@kirigami/plugin-embed` 0.1.0 released** (`@kirigami/php-prepros` 1.9.0 /
+`@kirigami/kirigami` 1.5.2 alongside it — see the package rows above for the
+mechanics of all three). `<youtube>`/`<vimeo>` oEmbed cards, entirely
+client-side. Not yet consumed by any site or template — no demo added
+anywhere yet.
+
 **canva is a permanent part of this monorepo — reuse its code rather than
 re-implementing shared helpers per package** (that's why plugin-highlight now
 depends on it).
