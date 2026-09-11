@@ -1,9 +1,21 @@
 // Injected by @kirigami/plugin-highlight when `theme: auto`.
 // Light by default; dark under an explicit [data-theme="dark"] or the OS
 // preference — the same model as @kirigami/canva's theming.
+//
+// The light block is scoped under `:root:not([data-theme="dark"])` rather
+// than left bare on purpose: every declaration below (`.hljs`, inline
+// `code`, …) needs the *same* specificity in light and dark, or a page's own
+// same-or-lower-specificity CSS for the same selectors (a `.prose` reset,
+// say) can beat light but lose to dark — which reads as a font/padding jump
+// on every theme toggle. Confirmed on a real page: canva's `styles/prose`
+// inline-code reset (`.prose :not(pre) > code`) has more type selectors than
+// a bare `code:not(.hljs)`, so it out-specifies the (bare) light rule below
+// but loses to the (`[data-theme="dark"]`-scoped) dark one.
 @use "highlight" as hljs;
 
-@include hljs.light();
+:root:not([data-theme="dark"]) {
+	@include hljs.light();
+}
 
 @media (prefers-color-scheme: dark) {
 	:root:not([data-theme="light"]) {

@@ -23,6 +23,8 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 - **`homepage` des packages** — pointer le champ `homepage` de chaque
   `package.json` (`packages/*`) vers https://php-kirigami.github.io au lieu
   d'où il pointe actuellement (repo GitHub).
+- **Faire le OG:image** — une vraie image `og:image`/`twitter:image` (générée
+  ou statique) pour le site et/ou par page, au lieu de rien/placeholder.
 - **esbuild importer** — lui donner la même résolution Node que l'importer Sass si un jour
   c'est nécessaire (pour l'instant il bundle des chemins absolus fournis par les hooks, donc OK).
 - **Theme toggle sans build (Layer 2)** — `injectHead()` injecte déjà le guard FOUC en
