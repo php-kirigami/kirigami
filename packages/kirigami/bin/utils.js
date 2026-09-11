@@ -193,21 +193,23 @@ export function joinWith(part1, part2, separator = '/', prefix = '') {
 }
 
 
-export function formatFrDate(dateInput = new Date()) {
+// English long date + 24h time, in the local timezone — e.g.
+// "Thursday, September 10, 2026 at 20:04". Used for the export banner's
+// ###DATE### token.
+export function formatDate(dateInput = new Date()) {
 	const d = (dateInput instanceof Date) ? dateInput : new Date(dateInput);
-	const fmt = new Intl.DateTimeFormat('fr-CA', {
+	const fmt = new Intl.DateTimeFormat('en-US', {
 		weekday: 'long',
-		day: 'numeric',
-		month: 'long',
 		year: 'numeric',
-		hour: 'numeric',
+		month: 'long',
+		day: 'numeric',
+		hour: '2-digit',
 		minute: '2-digit',
 		hour12: false,
 		timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
 	});
 	const parts = Object.fromEntries(fmt.formatToParts(d).map(p => [p.type, p.value]));
-	const weekday = parts.weekday.charAt(0).toUpperCase() + parts.weekday.slice(1);
-	return `${weekday} le ${parts.day} ${parts.month} ${parts.year} à ${parts.hour} h ${parts.minute}`;
+	return `${parts.weekday}, ${parts.month} ${parts.day}, ${parts.year} at ${parts.hour}:${parts.minute}`;
 }
 
 

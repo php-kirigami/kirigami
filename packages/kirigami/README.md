@@ -471,7 +471,7 @@ kiri fills them from the `kirigami` block on every build / export:
 
 | Token | Value |
 |---|---|
-| `###DATE###` | today, formatted in French (`Mardi le 9 septembre 2026 à 14 h 30`) |
+| `###DATE###` | today — English long date + 24h local time (`Tuesday, September 9, 2026 at 14:30`) |
 | `###YEAR###` | current year |
 | `###PROJECT###` | `kirigami.project` |
 | `###AUTHOR###` / `###EMAIL###` | `kirigami.author` / `kirigami.email` |

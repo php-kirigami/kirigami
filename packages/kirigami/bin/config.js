@@ -5,7 +5,7 @@ import Ajv from 'ajv';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { walkFile } from "@kirigami/struct-walker";
-import { formatFrDate } from "./utils.js";
+import { formatDate } from "./utils.js";
 
 
 const require = createRequire(import.meta.url);
@@ -122,7 +122,7 @@ async function validateConfig(config) {
 		const tpl = path.join(__dirname, '..', 'assets', 'banner-template.txt');
 		config.kirigami.banner = fs.existsSync(tpl)
 			? fillBanner(fs.readFileSync(tpl, 'utf8'), config.kirigami)
-			: `Exported by Kirigami: ${formatFrDate()}`;
+			: `Exported by Kirigami: ${formatDate()}`;
 	}
 
 	// Verify image section
@@ -177,7 +177,7 @@ export function deriveRepo(baseurl) {
 // Foo"; a bare "Label:" line is dropped).
 function fillBanner(text, k) {
 	const map = {
-		'###DATE###':    formatFrDate(),
+		'###DATE###':    formatDate(),
 		'###YEAR###':    String(new Date().getFullYear()),
 		'###PROJECT###': k.project || '',
 		'###AUTHOR###':  k.author || '',
