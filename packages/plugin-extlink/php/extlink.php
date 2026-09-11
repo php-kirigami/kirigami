@@ -1,19 +1,27 @@
 <?php
 
 // ---------------------------------------------------------------------------
-// @kirigami/plugin-extlink — <extlink> authoring tag.
+// @kirigami/plugin-extlink — <extlink> authoring tag + {% extlink %} shortcut.
 //
 // Included in the prepros runtime by kiri (the `prepros:php` hook). Renders a
 // link-preview card for an external URL:
 //
 //     <extlink src="https://example.com/article">
+//     {% extlink https://example.com/article %}
+//
+// Both forms resolve through the same extlink_resolve() below — the
+// Markdown shortcut isn't left as literal `<extlink>` text for a later pass
+// to pick up (unlike plugin-embed's client-side `{% youtube %}`, extlink's
+// card is built server-side, so there's no "later pass" to rely on); it
+// calls the exact same resolver directly, same pattern php-prepros' own
+// default `{% img-asset %}` uses for `<img asset>`.
 //
 // SCRAPER::get() pulls title / description / image / site name out of the
 // target page (OG tags, JSON-LD, oembed, …). Any of the four can be
-// overridden on the tag itself — handy when the scrape misses, or gets it
-// wrong:
+// overridden — handy when the scrape misses, or gets it wrong:
 //
 //     <extlink src="https://example.com/article" title="A better title">
+//     {% extlink https://example.com/article "A better title" %}
 //
 // Both the scrape result and the preview image are cached to disk, keyed by
 // STR::shorthash($src), and meant to be committed:
@@ -31,7 +39,17 @@
 // project's own `image:` config — no new config block.
 // ---------------------------------------------------------------------------
 
-PREPROS::registerTag('extlink', function ($tag, $attrs, $body) {
+PREPROS::registerTag('extlink', fn($tag, $attrs, $body) => extlink_resolve($attrs));
+
+MD::registerPlugin('extlink', function (array $args, string $body): string {
+    $src = trim($args[0] ?? '');
+    if ($src === '' || !STR::is_url($src)) return '<!-- extlink: missing or invalid src -->';
+    $attrs = ['src' => $src];
+    if (!empty($args[1])) $attrs['title'] = $args[1];
+    return extlink_resolve($attrs);
+});
+
+function extlink_resolve(array $attrs): string {
     $src = trim($attrs['src'] ?? '');
     if (!$src || !STR::is_url($src)) {
         throw new Exception('<extlink> requires a valid src="https://…" attribute.');
@@ -119,7 +137,7 @@ PREPROS::registerTag('extlink', function ($tag, $attrs, $body) {
     }
 
     return extlink_render($src, $title, $description, $label, $image);
-});
+}
 
 
 function extlink_render(string $src, string $title, string $description, string $label, string $image): string

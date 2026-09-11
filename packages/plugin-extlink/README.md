@@ -41,6 +41,7 @@ Part of the **Kirigami** project ecosystem.
   - [Configuration](#configuration)
     - [Options](#options)
   - [The `<extlink>` tag](#the-extlink-tag)
+  - [The `{% extlink %}` shortcut](#the-extlink-shortcut)
   - [How it works](#how-it-works)
   - [Styling](#styling)
   - [Requirements](#requirements)
@@ -94,6 +95,28 @@ right on the tag — handy when the scrape misses something, or gets it wrong:
 
 If the scrape (and no override) turns up no title at all, the tag throws a
 clear build error naming the offending `src` — pass `title="…"` to fix it.
+
+---
+
+## The `{% extlink %}` shortcut
+
+The same card from Markdown — handy inside a `<markdown>` block or a `.md`
+data file, where writing an HTML tag by hand is awkward:
+
+```
+{% extlink https://example.com/some-article %}
+```
+
+An optional second argument overrides the title, same as the tag's
+`title="…"` attribute:
+
+```
+{% extlink https://example.com/some-article "A better title" %}
+```
+
+Only `title` is available inline (description/image/label overrides still
+need the full `<extlink>` tag). Both forms resolve through the exact same
+code path — same disk cache, same behavior either way.
 
 ---
 
