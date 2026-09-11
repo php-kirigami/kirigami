@@ -33,11 +33,6 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 - **`@kirigami/canva` `styles/main.scss`** — encore un stub. `styles/prose` couvre le
   markdown ; `main.scss` reste réservé aux styles de composants partagés (WIP dans le
   README canva).
-- **`kiri install <plugin>`** — commande calquée sur `create`, pour les plugins
-  (`plugin-*`) : `npm install` le package, puis explique à l'utilisateur quoi ajouter
-  dans `kirigami.yaml` (entrée `plugins:` + options) à partir du `kirigami.optionsSchema`
-  déclaré dans le `package.json` du plugin. Si déjà installé : détecte une nouvelle
-  version et l'installe.
 - **plugin-highlight : promouvoir le warning en erreur de build ?** — reste ouvert
   après le fix de l'alias (`html`→`xml` etc., voir CLAUDE.md) : un vrai nom
   highlight.js inconnu (typo) passe toujours en warning silencieux, build vert
@@ -64,3 +59,7 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 - **template-demo** a son propre `todo.md` : `C:\projects\kirigami\template-demo\todo.md`.
   Toggle de thème : tranché — les deux templates font `import "@kirigami/canva/theme"`
   (plus de réimplémentation inline). Reste ouvert là-bas : réactiver `prepros.format`.
+
+
+
+plugin-embed, pour mapper les tags <youtube> <vimeo> et d'autres avec le protocol oembed pour aller chercher le titre, l'image, les dimensions pour ensuite calculer la proportion et utilisé l'image fournis comme cover du video dont il aura un bouton play par dessus (un svg qui va utiliser la variable $accent) que je vais fournir avec le plugin. Donc quand on passe sur le play in scale 1.1 environ et on change le cursor pis toute. tk on verra rendu là

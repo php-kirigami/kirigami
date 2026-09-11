@@ -92,7 +92,7 @@ export async function loadPlugins() {
 
 // Resolve a plugin from the project's own node_modules first, then fall back to
 // kiri's resolution (monorepo workspaces, a globally-linked plugin).
-function resolvePlugin(name) {
+export function resolvePlugin(name) {
 	for (const from of [path.join(process.cwd(), "index.js"), import.meta.url]) {
 		try {
 			return createRequire(from).resolve(name);
@@ -105,7 +105,7 @@ function resolvePlugin(name) {
 // Walk up from a resolved entry file to the directory whose package.json
 // actually owns it (matched by name), so we read the plugin's own manifest and
 // schema — not a nested dependency's.
-function ownerPackageDir(entryPath, name) {
+export function ownerPackageDir(entryPath, name) {
 	let dir = path.dirname(entryPath);
 	while (dir !== path.dirname(dir)) {
 		const json = readJson(path.join(dir, "package.json"));
@@ -116,7 +116,7 @@ function ownerPackageDir(entryPath, name) {
 }
 
 
-function readJson(file) {
+export function readJson(file) {
 	try {
 		return JSON.parse(fs.readFileSync(file, "utf8"));
 	} catch {
@@ -125,7 +125,7 @@ function readJson(file) {
 }
 
 
-function kiriVersion() {
+export function kiriVersion() {
 	try {
 		return JSON.parse(fs.readFileSync(path.join(__dirname, "../../package.json"), "utf8")).version;
 	} catch {
@@ -137,7 +137,7 @@ function kiriVersion() {
 // Numeric, dot/dash-separated compare — enough for "is X >= Y" without pulling
 // in a semver dependency (stay lite). Pre-release tags are compared as numbers,
 // which is coarse but fine for the minVersion gate.
-function compareVersions(a, b) {
+export function compareVersions(a, b) {
 	const pa = String(a).split(/[.-]/).map(n => parseInt(n, 10) || 0);
 	const pb = String(b).split(/[.-]/).map(n => parseInt(n, 10) || 0);
 	for (let i = 0; i < Math.max(pa.length, pb.length); i++) {

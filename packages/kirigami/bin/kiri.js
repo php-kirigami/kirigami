@@ -17,6 +17,7 @@ const COMMANDS = {
 	serve: "Dev-mode with hot-reload, served locally in a browser",
 	run: "Run a PHP command script from the scripts/ folder",
 	create: "Create a new project from an official template",
+	install: "Install a plugin and print its kirigami.yaml options",
 	cache: "Purge the local caches (.node.db / .cache.db / .cookie.txt)",
 	phpinfo: "Print phpinfo() from the embedded PHP-WASM runtime",
 };
@@ -52,6 +53,7 @@ ${c.bold("EXAMPLES")}
   ${c.dim("kiri serve")}
   ${c.dim("kiri run convert-images")}
   ${c.dim("kiri create --list")}
+  ${c.dim("kiri install @kirigami/plugin-highlight")}
   ${c.dim("kiri cache purge")}
 
 ${c.dim("Type `kiri <command> --help` for detailed help on a command.")}
