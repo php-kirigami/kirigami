@@ -33,8 +33,10 @@ function escape(s) {
 
 // <pre><code[ class="language-x"]>…</code></pre>, with optional whitespace/attrs
 // tolerance. The body is non-greedy and the source is already entity-escaped,
-// so there is no raw `</code>` to trip on.
-const BLOCK_RE = /<pre>\s*<code(?:\s+class="([^"]*)")?\s*>([\s\S]*?)<\/code>\s*<\/pre>/g;
+// so there is no raw `</code>` to trip on. The leading run of horizontal
+// whitespace on the `<pre>` line is captured so the rewritten block can be
+// re-indented to the same column HTML::format() left it at.
+const BLOCK_RE = /([^\S\n]*)<pre>\s*<code(?:\s+class="([^"]*)")?\s*>([\s\S]*?)<\/code>\s*<\/pre>/g;
 
 // Page opt-out: `php/page.php` injects this comment when a page's PHPDOC says
 // `@highlight false`. Strip it and leave the page untouched.
@@ -96,7 +98,7 @@ export async function highlightHtml(html, options = {}) {
 	const autodetect = options.autodetect !== false && languages.length > 0;
 
 	let touched = false;
-	const out = html.replace(BLOCK_RE, (whole, cls, body) => {
+	const out = html.replace(BLOCK_RE, (whole, indent, cls, body) => {
 		// Author opted this block out (`nohighlight`, `language-plaintext`, …):
 		// hand it back byte-for-byte.
 		if (cls && NOHIGHLIGHT_CLASS.test(cls)) return whole;
@@ -106,6 +108,13 @@ export async function highlightHtml(html, options = {}) {
 		// already does this PHP-side via STR::trimIndent; fenced blocks reach
 		// Node raw, so mirror it here. Relative indentation is kept.
 		const code = dedent(decode(body));
+		// HTML::format() runs before this hook: when it pretty-prints, it opens
+		// `<pre><code>` then puts the source on its own lines one level deeper
+		// (body starts with a newline). Reproduce that exact shape below so the
+		// highlighted markup lines up with the rest of the document; the leading
+		// run is stripped again before first paint by the de-indent script
+		// Kirigami injects (prepros.head).
+		const wasFormatted = /^\n/.test(body);
 		const requested = langFromClass(cls);
 		let rendered;
 		let resolved = requested;
@@ -130,7 +139,15 @@ export async function highlightHtml(html, options = {}) {
 
 		touched = true;
 		const classes = ['hljs', resolved ? `language-${resolved}` : null].filter(Boolean).join(' ');
-		return `<pre><code class="${classes}">${rendered}</code></pre>`;
+
+		if (wasFormatted) {
+			const pad = indent + '    ';
+			const inner = rendered.split('\n')
+				.map(line => line === '' ? '' : pad + line)
+				.join('\n');
+			return `${indent}<pre><code class="${classes}">\n${inner}\n${indent}</code></pre>`;
+		}
+		return `${indent}<pre><code class="${classes}">${rendered}</code></pre>`;
 	});
 
 	return touched ? out : html;

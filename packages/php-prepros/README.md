@@ -34,6 +34,7 @@ Part of the **Kirigami** project ecosystem.
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
   - [Overview](#overview)
   - [Table of contents](#table-of-contents)
+  - [What's new in 1.7.2](#whats-new-in-172)
   - [What's new in 1.7.1](#whats-new-in-171)
   - [What's new in 1.7.0](#whats-new-in-170)
   - [What's new in 1.6.0](#whats-new-in-160)
@@ -108,6 +109,26 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 1.7.2
+
+- **Cleaner formatted output around highlighted code.** The de-indent script
+  `PREPROS::injectHead()` adds when `prepros.format` is on now flattens the
+  `<pre><code>` indentation `HTML::format()` writes for *every* block, including
+  ones a build-time highlighter has wrapped in `<span>`s. It works on
+  `innerHTML` line by line and removes only the shared leading run (relative
+  indentation is kept). This lets [`@kirigami/plugin-highlight`](https://www.npmjs.com/package/@kirigami/plugin-highlight)
+  1.7.2+ re-indent its markup to line up with the rest of the document instead
+  of leaving it flush-left — the served HTML stays consistently indented, the
+  rendered code is still de-indented before the first paint.
+
+- **`<markdown prose>` wraps in `.prose`.** With the `prose` attribute the
+  built-in tag emits `<div class="prose"> … </div>` so long-form Markdown picks
+  up `@kirigami/canva`'s `styles/prose` typography with no extra markup. Opt-in
+  (a bare `<markdown>` is unchanged); `class` / `id` on the tag land on the
+  wrapper.
+
+---
+
 ## What's new in 1.7.1
 
 - **No side effects on import.** `kirigami.yaml` is now loaded on first use
@@ -157,10 +178,11 @@ Part of the **Kirigami** project ecosystem.
 - **`HTML::format()` indents `<pre><code>`.** A fenced code block's lines are
   shifted to the block's nesting depth so the HTML source stays readable
   (relative indentation preserved). The exact leading run is stripped again
-  before it's shown — at build time by `@kirigami/plugin-highlight`, otherwise
-  by a ~250-byte de-indent script `prepros.head` injects before `</body>` (only
-  when `format` is on; it skips blocks a highlighter already flattened). A bare
-  `<pre>` and `<textarea>` are still emitted byte-for-byte.
+  before it's shown, by a small de-indent script `prepros.head` injects before
+  `</body>` (only when `format` is on). Since 1.7.2 the script works on
+  `innerHTML` line by line, so it also flattens blocks a build-time highlighter
+  has wrapped in `<span>`s. A bare `<pre>` and `<textarea>` are still emitted
+  byte-for-byte.
 
 ---
 
@@ -622,6 +644,13 @@ your template. All registered [MD plugins](#md-plugins) work inside it. See
     </markdown>
 </section>
 ```
+
+Add the `prose` attribute — `<markdown prose>` — to wrap the output in
+`<div class="prose">`, so it picks up the long-form typography of
+[`@kirigami/canva`'s `styles/prose`](https://www.npmjs.com/package/@kirigami/canva)
+with no extra markup. Any `class` / `id` on the tag lands on that wrapper
+(`<markdown prose class="lede" id="intro">` → `<div class="prose lede" id="intro">`).
+A bare `<markdown>` emits just the converted HTML, as before.
 
 #### `<img asset="…">`
 

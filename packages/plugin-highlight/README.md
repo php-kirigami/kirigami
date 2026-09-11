@@ -123,7 +123,12 @@ The plugin registers `@kirigami/sdk` hooks:
   stripped, matching what `STR::trimIndent` already does for the `<highlight>`
   tag — so you can indent a fenced block in your source markdown for readability
   without that indentation showing up in the rendered code. Relative indentation
-  is kept.
+  is kept. When `@kirigami/php-prepros` has pretty-printed the page
+  (`prepros.format: true`), the rewritten block is re-indented to the same column
+  `HTML::format()` left the `<pre>` at, so the served HTML stays consistently
+  indented; php-prepros 1.7.2+ flattens that leading run again before the first
+  paint (its `injectHead` de-indent script). With `format` off the block is
+  written flush, as before.
 - **`sass:after`** — appends the theme stylesheet (plus, by default, the font
   `@font-face` and the copy-button styles) to every `sass` task's output.
 - **`esbuild:after`** — with `copyButton` on, bundles the copy-button script
@@ -258,8 +263,9 @@ A fenced block does this with its info string:
 
 - Node.js `>= 24.0.0`
 - npm `>= 10.2.3`
-- `@kirigami/kirigami` `>= 1.2.0` (the plugin loader; `prepros:html` /
-  `prepros:php` / `esbuild:*` hooks)
+- `@kirigami/kirigami` `>= 1.4.3` (the plugin loader; `prepros:html` /
+  `prepros:php` / `esbuild:*` hooks; bundles `@kirigami/php-prepros` `>= 1.7.2`,
+  whose de-indent script flattens the re-indented highlight markup)
 - `@kirigami/canva` (bundled dependency — supplies the `dedent` helper used to
   de-indent fenced blocks)
 - ESM only (`"type": "module"`)

@@ -210,8 +210,9 @@ single task's tag with `head: false` on that task.
 
 With `format: true`, `HTML::format()` also indents each `<pre><code>` block to
 its nesting depth (so the HTML source stays readable) and `prepros.head` injects
-a small script that de-indents it again before display — `@kirigami/plugin-highlight`
-does the same at build time, so highlighted blocks skip the runtime step.
+a small script that de-indents it again before display. `@kirigami/plugin-highlight`
+re-indents its highlighted markup to match, so it stays in the same flow — the
+same runtime script flattens both.
 
 ---
 
@@ -300,6 +301,8 @@ Processed **after** PHP runs, on the assembled HTML:
 
 - `<markdown> … </markdown>` — converts its body from Markdown to HTML, stripping
   common leading indentation first. All registered MD plugins work inside it.
+  Add `prose` (`<markdown prose>`) to wrap the output in `<div class="prose">`
+  (`@kirigami/canva`'s `styles/prose`); `class` / `id` on the tag go on that div.
 - `<img asset="path/in/assets-images.jpg" width="450" height="300" cover>` —
   resolves through the image autogenerator, calling `IMG::asset()` with the same
   parameters (`asset`→`$path`, `width`/`height` optional ints, `cover` presence =

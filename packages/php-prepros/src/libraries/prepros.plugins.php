@@ -2,8 +2,17 @@
 
 
 PREPROS::registerTag('markdown', function ($tag, $attrs, $body) {
-	$body = STR::trimIndent($body);
-    return MD::toHtml($body);
+	$html = MD::toHtml(STR::trimIndent($body));
+
+	// `<markdown prose>` wraps the output in the canva `.prose` container so
+	// long-form Markdown picks up the typographic styles with no extra markup.
+	// Opt-in (a bare `<markdown>` is unchanged); extra classes / id on the tag
+	// land on the wrapper: `<markdown prose class="lede" id="intro">`.
+	if (empty($attrs['prose'])) return $html;
+
+	$class = trim('prose ' . (is_string($attrs['class'] ?? null) ? $attrs['class'] : ''));
+	$id = is_string($attrs['id'] ?? null) ? ' id="' . htmlspecialchars($attrs['id'], ENT_QUOTES) . '"' : '';
+	return '<div class="' . htmlspecialchars($class, ENT_QUOTES) . '"' . $id . ">\n{$html}\n</div>";
 });
 
 

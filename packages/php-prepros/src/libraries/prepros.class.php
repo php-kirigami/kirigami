@@ -161,14 +161,16 @@ final class PREPROS
         $scripts = [];
 
         // Undo the <pre><code> indentation HTML::format() added, at parse time
-        // (before first paint), for blocks a build-time highlighter didn't
-        // already flatten (those carry child <span>s).
+        // (before first paint). Works on innerHTML line by line so it also
+        // flattens blocks a build-time highlighter has wrapped in <span>s
+        // (@kirigami/plugin-highlight re-indents its output to match the
+        // formatter); only the shared leading run is removed, relative
+        // indentation is kept.
         if (!empty(self::$config->format)) {
             $scripts[] = '<script>document.querySelectorAll("pre>code").forEach(function(c){'
-                . 'if(c.children.length)return;'
-                . 'var L=c.textContent.replace(/^\n+/,"").replace(/\s+$/,"").split("\n"),n=1/0;'
-                . 'L.forEach(function(l){if(l.trim())n=Math.min(n,l.match(/^\s*/)[0].length)});'
-                . 'if(n&&n<1/0)c.textContent=L.map(function(l){return l.slice(n)}).join("\n")});</script>';
+                . 'var L=c.innerHTML.replace(/^\n+/,"").replace(/\n[^\S\n]*$/,"").split("\n"),n=1/0;'
+                . 'L.forEach(function(l){if(l.trim())n=Math.min(n,l.match(/^[ \t]*/)[0].length)});'
+                . 'if(n&&n<1/0)c.innerHTML=L.map(function(l){return l.slice(n)}).join("\n")});</script>';
         }
         foreach ((array) (self::$config->tasks ?? []) as $task) {
             $task = (array) $task;
