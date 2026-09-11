@@ -116,4 +116,8 @@ $mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 	border: 1px solid var(--border);
 
 	li { flex: 1; height: 1.75rem; }
+
+	// A narrower row for a small/inline demo (e.g. next to body text)
+	// instead of stretching full-width like the default.
+	&--compact { max-width: 20rem; }
 }

@@ -35,6 +35,11 @@ Part of the **Kirigami** project ecosystem.
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
   - [Overview](#overview)
   - [Table of contents](#table-of-contents)
+  - [What's new in 1.9.3](#whats-new-in-193)
+  - [What's new in 1.9.2](#whats-new-in-192)
+  - [What's new in 1.9.1](#whats-new-in-191)
+  - [What's new in 1.9.0](#whats-new-in-190)
+  - [What's new in 1.8.0](#whats-new-in-180)
   - [What's new in 1.7.2](#whats-new-in-172)
   - [What's new in 1.7.1](#whats-new-in-171)
   - [What's new in 1.7.0](#whats-new-in-170)
@@ -107,6 +112,26 @@ Part of the **Kirigami** project ecosystem.
   - [Extending the `<markdown>` tag](#extending-the-markdown-tag)
   - [Requirements](#requirements)
   - [License](#license)
+
+---
+
+## What's new in 1.9.3
+
+- Dependency bump to `@kirigami/struct-walker` 1.0.5; `homepage` + README
+  pointed at the site (metadata only).
+
+---
+
+## What's new in 1.9.2
+
+- **Fixed a real Markdown bug**: a list item's source line count was 1:1
+  with `<li>` count, so an indented continuation line with no marker of its
+  own (a soft-wrapped `- **foo** text\n  more text`) fell outside the
+  block-matching regex entirely — the list closed after the first line, the
+  continuation resurfaced as a stray flat `<p>`, and a new list reopened for
+  the next marker line. Fixed by widening the block regex to also accept a
+  marker-less indented line and, in the per-line loop, appending it to the
+  previous item instead of dropping it.
 
 ---
 

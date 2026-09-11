@@ -36,10 +36,83 @@ build. Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 0.1.7
+
+- Dependency bump to
+  [`@kirigami/canva`](https://www.npmjs.com/package/@kirigami/canva) **2.6.0**
+  (no behaviour change — still only uses `dedent`).
+
+---
+
+## What's new in 0.1.6
+
+- **An unknown `languages:` name now fails the build**, not just warns.
+  `register()` validates every configured language eagerly, once per build,
+  before any page renders — previously the check only ran once a page
+  happened to contain a `<pre>` block, so a typo could build green forever
+  with highlighting silently broken.
+- **`copyButton` no longer ships a dead button** when the project has no
+  `esbuild` task to bundle its click handler — before, the warning fired but
+  the button's structural CSS still rendered a real, hoverable button that
+  silently did nothing.
+- Dependency bumps: `@kirigami/canva` 2.5.2, `@kirigami/sdk` 0.2.1.
+
+---
+
+## What's new in 0.1.5
+
+- Fixed a real specificity bug in `theme: auto` (the default): the light-mode
+  palette was applied with lower CSS specificity than the two dark-mode paths
+  (`prefers-color-scheme` and `[data-theme="dark"]`), so a page with its own
+  same-or-lower-specificity rule for inline `code` could beat light but lose
+  to dark — visible as inline code changing size on every theme toggle.
+  `theme: light` / `theme: dark` (single-palette) were unaffected.
+
+---
+
+## What's new in 0.1.4
+
+- Dependency bump to `@kirigami/canva` 2.5.1.
+
+---
+
+## What's new in 0.1.3
+
+- **Clean HTML output.** When `HTML::format()` pretty-printed a block, the
+  highlighted markup now lands in the exact same shape (`<pre><code>` open,
+  source one level deeper, `</code></pre>` back at the `<pre>` column)
+  instead of flush-left. `dedent` (minimum shared indent removed, relative
+  kept) is unchanged, as is the flush path when `format` is off.
+
+---
+
+## What's new in 0.1.2
+
+- **`@highlight false` page opt-out** — a page's PHPDOC can turn highlighting
+  off entirely for itself.
+- **Per-block opt-out** — a `<code>` class of `nohighlight`, `no-highlight`,
+  `language-plaintext`, `-text` or `-none` is left byte-for-byte.
+
+---
+
+## What's new in 0.1.1
+
+- Dependency bump to `@kirigami/canva` 2.4.0 (no behaviour change — still
+  only uses `dedent`).
+
+---
+
 ## Table of contents
 
 - [@kirigami/plugin-highlight](#kirigamiplugin-highlight)
   - [Overview](#overview)
+  - [What's new in 0.1.7](#whats-new-in-017)
+  - [What's new in 0.1.6](#whats-new-in-016)
+  - [What's new in 0.1.5](#whats-new-in-015)
+  - [What's new in 0.1.4](#whats-new-in-014)
+  - [What's new in 0.1.3](#whats-new-in-013)
+  - [What's new in 0.1.2](#whats-new-in-012)
+  - [What's new in 0.1.1](#whats-new-in-011)
   - [Table of contents](#table-of-contents)
   - [Installation](#installation)
   - [Configuration](#configuration)

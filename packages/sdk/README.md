@@ -32,6 +32,12 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 0.2.1
+
+- `homepage` + README pointed at the site (metadata only).
+
+---
+
 ## What's new in 0.2.0
 
 - `esbuild:before` / `esbuild:after` / `esbuild:plugins` hooks — the esbuild
@@ -49,6 +55,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/sdk](#kirigamisdk)
   - [Overview](#overview)
+  - [What's new in 0.2.1](#whats-new-in-021)
   - [What's new in 0.2.0](#whats-new-in-020)
   - [Table of contents](#table-of-contents)
   - [Installation](#installation)

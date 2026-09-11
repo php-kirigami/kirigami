@@ -34,6 +34,38 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 1.5.7
+
+- Cascade dependency bump to
+  [`@kirigami/canva`](https://www.npmjs.com/package/@kirigami/canva) **2.6.0**
+  — the new `styles/lightswitch` animated theme toggle and `.palette--compact`.
+
+---
+
+## What's new in 1.5.6
+
+- **`kiri serve` gives a direct fix for a taken port** instead of a raw
+  Node crash: `Port 4321 on 127.0.0.1 is already in use — try a different
+  one with --port 4322.`
+- **`kiri serve` hot-injects CSS with no full reload.** A `sass`-only
+  rebuild now sends a named `css` event instead of the default full-reload
+  one — every `<link rel=stylesheet>` is swapped for a cache-busted copy
+  (new one loaded before the old one is removed, no flash), so scroll
+  position and form state survive a stylesheet-only change. `esbuild` /
+  `prepros` rebuilds still trigger a full reload.
+- `kiri create --help` (and the READMEs) now mention every template ships
+  its own `CLAUDE.md` — Claude Code-ready out of the box.
+
+---
+
+## What's new in 1.5.5 / 1.5.4
+
+Dependency bumps: [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirigami/php-prepros)
+**1.9.2** (1.5.5) and [`@kirigami/canva`](https://www.npmjs.com/package/@kirigami/canva)
+**2.5.1** (1.5.4) — see each package's own changelog.
+
+---
+
 ## What's new in 1.5.3
 
 - **`kiri serve`** (1.5.0) — everything `kiri watch` does, plus a static file
@@ -76,6 +108,9 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/kirigami](#kirigamikirigami)
   - [Overview](#overview)
+  - [What's new in 1.5.7](#whats-new-in-157)
+  - [What's new in 1.5.6](#whats-new-in-156)
+  - [What's new in 1.5.5 / 1.5.4](#whats-new-in-155--154)
   - [What's new in 1.5.3](#whats-new-in-153)
   - [Table of contents](#table-of-contents)
   - [Installation](#installation)

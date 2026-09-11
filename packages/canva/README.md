@@ -35,6 +35,42 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 2.6.0
+
+- **`styles/lightswitch` — animated theme toggle.** A pill-shaped switch whose
+  pin slides and morphs from a sun disc into a crescent moon, instead of
+  swapping two static icons. The morph is a real CSS `d` transition between
+  two SVG paths with matching command structure, so the browser interpolates
+  point-by-point — same idea as a two-icon toggle, just animated instead of an
+  instant swap. Colours are `conf` tokens (`--surface` / `--accent`), so it
+  always matches the current project's palette instead of a fixed colour
+  scheme; only the shape is driven by `[data-theme-toggle]`'s existing
+  `data-theme-state` attribute — no extra JS. Opt-in via
+  `@use "@kirigami/canva/lightswitch"`.
+- **`styles/main` — `.palette--compact`.** A narrower variant of `.palette`
+  (`max-width: 20rem`) for a small inline swatch demo instead of a row that
+  stretches full-width.
+
+---
+
+## What's new in 2.5.2
+
+- `homepage` + README pointed at the site (metadata only).
+
+---
+
+## What's new in 2.5.1
+
+- Fixed a real specificity bug: `styles/prose`'s standalone code defaults
+  (`code, kbd, samp, pre { font-family; font-size }` and
+  `pre { code { padding: 0; … } }`) had equal-or-higher specificity than
+  `@kirigami/plugin-highlight`'s own `.hljs` theme rule, so a highlighted
+  block's font/padding were silently overridden in light mode — visible as
+  the whole page reflowing on every theme toggle. Now scoped
+  `code:not(.hljs)`.
+
+---
+
 ## What's new in 2.5.0
 
 - **`styles/main` — shared components.** No longer an empty stub. Five small,
@@ -148,6 +184,9 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/canva](#kirigamicanva)
   - [Overview](#overview)
+  - [What's new in 2.6.0](#whats-new-in-260)
+  - [What's new in 2.5.2](#whats-new-in-252)
+  - [What's new in 2.5.1](#whats-new-in-251)
   - [What's new in 2.5.0](#whats-new-in-250)
   - [What's new in 2.4.0](#whats-new-in-240)
   - [What's new in 2.3.0](#whats-new-in-230)
@@ -165,6 +204,7 @@ Part of the **Kirigami** project ecosystem.
     - [`styles/utils`](#stylesutils)
     - [`styles/prose`](#stylesprose)
     - [`styles/main`](#stylesmain)
+    - [`styles/lightswitch`](#styleslightswitch)
   - [Scripts](#scripts)
     - [`dom`](#dom)
     - [`helpers`](#helpers)
@@ -222,7 +262,8 @@ segment is optional there (Node's own resolver still needs it).
         ├── conf.scss
         ├── utils.scss
         ├── prose.scss
-        └── main.scss
+        ├── main.scss
+        └── lightswitch.scss
 ```
 
 `dist/` is generated from `src/` by [`build.js`](./build.js): scripts are
@@ -407,7 +448,43 @@ sites. All colours are `conf` tokens, so light/dark comes for free. Opt-in:
 | `.docs-toc` | An inline quick-jump list of anchor links, for long reference pages. |
 | `.table-wrap` / `.table` | A generic data table; wrap in `.table-wrap` to scroll horizontally instead of widening the page. `&__num` (`.table__num`) styles a tabular-figure column (e.g. a version number). |
 | `.badge` / `.badge--muted` | A small status/license tag — accent-filled by default, `--muted` for an outlined neutral variant. |
-| `.palette` | A row of colour chips, for visualising a hex list (e.g. `IMG::palette()` / `colors()` output) — one `<li>` per swatch. |
+| `.palette` / `.palette--compact` | A row of colour chips, for visualising a hex list (e.g. `IMG::palette()` / `colors()` output) — one `<li>` per swatch. `--compact` caps it at `20rem` instead of stretching full-width, for a small inline demo. |
+
+### `styles/lightswitch`
+
+An animated theme toggle — a pill-shaped switch whose pin slides and morphs
+from a sun disc into a crescent moon, instead of swapping two static icons.
+Pairs with [`theme`](#theme)'s `[data-theme-toggle]`: that script already
+keeps `data-theme-state="light"|"dark"` current on the element, so this file
+only styles that attribute — no extra JS.
+
+```scss
+@use '@kirigami/canva/lightswitch';
+```
+
+The morph needs one pin `<path>` inside a decorative `<svg>` — its `d`
+attribute is the light-mode (sun) shape, used as a fallback in browsers that
+don't yet support animating the `d` CSS property:
+
+```html
+<button type="button" data-theme-toggle class="lightswitch" aria-label="Toggle dark mode">
+    <svg viewBox="0 0 55 55" aria-hidden="true">
+        <path d="M55 27.5C55 42.6878 42.6878 55 27.5 55C12.3122 55 0 42.6878 0 27.5C0 12.3122 12.3122 0 27.5 0C42.6878 0 55 12.3122 55 27.5Z"/>
+    </svg>
+</button>
+```
+
+Colours come from `conf` tokens by default (`--surface` for the track,
+`--accent` for the pin), so the toggle always matches the current project's
+palette — nothing to override for a themed look.
+
+Runtime knobs (set on the element or `:root`):
+
+| Custom property | Default | Purpose |
+|---|---|---|
+| `--lightswitch-size` | `1.75rem` | Pin diameter; the track is twice as wide. |
+| `--lightswitch-bg` | `var(--surface)` | Track colour. |
+| `--lightswitch-pin` | `var(--accent)` | Pin colour. |
 
 ---
 

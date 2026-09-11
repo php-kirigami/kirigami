@@ -33,10 +33,38 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 0.1.3
+
+- Dependency bump to `@kirigami/sdk` 0.2.1; `homepage` + README pointed at
+  the site (metadata only).
+
+---
+
+## What's new in 0.1.2
+
+- **`{% extlink URL ["title"] %}` Markdown shortcut**, alongside the existing
+  `<extlink src="…">` HTML tag — both call the same `extlink_resolve()`
+  resolver directly, so the shortcut hits the same disk cache as an
+  already-resolved URL from the tag form.
+
+---
+
+## What's new in 0.1.1
+
+- Also saves the untouched download at its native resolution, re-encoded to
+  jpg, to `assets/extlink/<hash>.jpg` — an archival copy alongside the
+  square-cropped card image (costs no extra download, decoded from the same
+  in-memory `IMG` instance).
+
+---
+
 ## Table of contents
 
 - [@kirigami/plugin-extlink](#kirigamiplugin-extlink)
   - [Overview](#overview)
+  - [What's new in 0.1.3](#whats-new-in-013)
+  - [What's new in 0.1.2](#whats-new-in-012)
+  - [What's new in 0.1.1](#whats-new-in-011)
   - [Table of contents](#table-of-contents)
   - [Installation](#installation)
   - [Configuration](#configuration)

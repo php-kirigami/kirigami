@@ -33,10 +33,51 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 0.1.5
+
+- Dependency bump to
+  [`@kirigami/canva`](https://www.npmjs.com/package/@kirigami/canva) **2.6.0**
+  / `@kirigami/sdk` 0.2.1; `homepage` + README pointed at the site (metadata
+  only).
+
+---
+
+## What's new in 0.1.4
+
+- Dependency bump to `@kirigami/canva` 2.5.1.
+
+---
+
+## What's new in 0.1.3
+
+- **Superseded the 16∶9 aspect-ratio floor with a `maxWidth` cap + the real
+  ratio.** A full-page-wide `.embed` (no `max-width`) still read as huge even
+  at a "correct" ratio, so the floor hack is gone: `.embed` now caps at
+  `max-width: var(--embed-max-width, 40rem)`, and the video's **actual**
+  aspect-ratio is used. Two new options: `maxWidth` (default `"40rem"`,
+  `"none"` removes the cap) and `forcedAspectRatio` (e.g. `"1 / 1"` to pin
+  every card in a grid to one uniform shape).
+
+---
+
+## What's new in 0.1.1
+
+- **Aspect-ratio floored at 16∶9** — a real, reported bug: a narrower source
+  video (4∶3, portrait, a Short) produced an unusually tall card that
+  dominated the page next to normal widescreen ones. The real player, once
+  clicked, still showed at its own true ratio, pillarboxed rather than
+  stretched. (Superseded by 0.1.3's `maxWidth` cap, above.)
+
+---
+
 ## Table of contents
 
 - [@kirigami/plugin-embed](#kirigamiplugin-embed)
   - [Overview](#overview)
+  - [What's new in 0.1.5](#whats-new-in-015)
+  - [What's new in 0.1.4](#whats-new-in-014)
+  - [What's new in 0.1.3](#whats-new-in-013)
+  - [What's new in 0.1.1](#whats-new-in-011)
   - [Table of contents](#table-of-contents)
   - [Installation](#installation)
   - [Configuration](#configuration)

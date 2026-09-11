@@ -1,0 +1,92 @@
+// ═══════════════════════════════════════════════════════════════════════
+//  Lightswitch — animated theme toggle
+//
+//  A pill-shaped switch whose pin slides and rotates across the track while
+//  morphing from a sun disc into a crescent moon, instead of swapping two
+//  static icons. The morph is a real CSS `d` transition between two SVG
+//  paths built with the same command structure (so the browser interpolates
+//  point-by-point) — the same technique as the two-different-SVGs toggle
+//  this was lifted from, just driven by CSS instead of a JS class swap.
+//
+//  Colours are `conf` tokens (`--surface` for the track, `--accent` for the
+//  pin), so the switch always matches the current project's palette instead
+//  of a fixed day/night colour scheme — only the *shape* (sun vs. moon) is
+//  theme-state-driven, the colours already flip for free wherever `conf`'s
+//  dark palette does.
+//
+//  Markup — one pin `<path>` inside a decorative `<svg>`, the `d` attribute
+//  is the light-mode (sun) shape as a no-JS/no-CSS fallback:
+//
+//      <button type="button" data-theme-toggle class="lightswitch" aria-label="Toggle dark mode">
+//          <svg viewBox="0 0 55 55" aria-hidden="true">
+//              <path d="M55 27.5C55 42.6878 42.6878 55 27.5 55C12.3122 55 0 42.6878 0 27.5C0 12.3122 12.3122 0 27.5 0C42.6878 0 55 12.3122 55 27.5Z"/>
+//          </svg>
+//      </button>
+//
+//  Wire it exactly like any other [data-theme-toggle] — `@kirigami/canva/theme`
+//  already binds the click and keeps `data-theme-state="light"|"dark"` current
+//  on the element; this file only styles that attribute, no JS of its own.
+//
+//  Opt-in: @use "@kirigami/canva/lightswitch";
+//
+//  Runtime knobs (set on the element or :root):
+//    --lightswitch-size   pin diameter (default 1.75rem; the track is 2x as wide)
+//    --lightswitch-bg     track colour (default var(--surface))
+//    --lightswitch-pin    pin colour   (default var(--accent))
+// ═══════════════════════════════════════════════════════════════════════
+
+.lightswitch {
+	--lightswitch-size: 1.75rem;
+	--lightswitch-bg:  var(--surface, #ecf1f3);
+	--lightswitch-pin: var(--accent, #c7402c);
+	--lightswitch-translate: 100%;
+	--lightswitch-rotate: 0deg;
+	--lightswitch-d: path("M55 27.5C55 42.6878 42.6878 55 27.5 55C12.3122 55 0 42.6878 0 27.5C0 12.3122 12.3122 0 27.5 0C42.6878 0 55 12.3122 55 27.5Z");
+
+	position: relative;
+	display: inline-block;
+	width: calc(var(--lightswitch-size) * 2);
+	height: var(--lightswitch-size);
+	padding: 0;
+	border: 0;
+	border-radius: calc(var(--lightswitch-size) / 2);
+	background-color: var(--lightswitch-bg);
+	cursor: pointer;
+	overflow: hidden;
+
+	svg {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: var(--lightswitch-size);
+		height: var(--lightswitch-size);
+		transform: translateX(var(--lightswitch-translate)) rotate(var(--lightswitch-rotate));
+	}
+
+	path {
+		d: var(--lightswitch-d);
+		fill: var(--lightswitch-pin);
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--accent, currentColor);
+		outline-offset: 2px;
+	}
+
+	&[data-theme-state="dark"] {
+		--lightswitch-translate: 0%;
+		--lightswitch-rotate: -25deg;
+		--lightswitch-d: path("M17.5 28C17.5 43.1878 28.5681 55.5 27.5 55.5C12.3122 55.5 0 43.1878 0 28C0 12.8122 12.3122 0.5 27.5 0.5C27.5 0.5 17.5 12.8122 17.5 28Z");
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		transition: background-color var(--transition-duration, 200ms) ease;
+
+		svg { transition: transform var(--transition-duration, 200ms) ease; }
+		path {
+			transition:
+				d var(--transition-duration, 200ms) ease,
+				fill var(--transition-duration, 200ms) ease;
+		}
+	}
+}

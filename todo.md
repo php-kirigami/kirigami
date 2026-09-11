@@ -6,6 +6,36 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 ## Ouvert
 
+- **Système de fichiers de langue** — un mécanisme pour externaliser les
+  chaînes de texte (façon i18n) plutôt que codées en dur dans les pages PHP.
+  Première étape vers le multilingue (à explorer plus tard : routing/URLs
+  par langue, `hreflang`, structure de projet).
+- **`injectHead()` : le check "fichier déjà référencé" est trop naïf** —
+  `!str_contains($contents, $out)` (`prepros.class.php`) cherche le nom du
+  fichier compilé (`kirigami.core.min.css`, etc.) n'importe où dans le HTML
+  rendu, pas juste dans un vrai `<link>`/`<script>`. Une page qui *mentionne*
+  ce nom en prose ou dans un bloc de code (ex. `docs/cli/` documentant la
+  sortie réelle de `kiri build`) se fait donc sauter l'injection du CSS/JS
+  réel — trouvé en vrai sur ce site même. À resserrer (regex ciblant une
+  vraie balise) plutôt que le simple `str_contains`.
+- **Regrouper `meta:` et `jsonld:`** — actuellement deux blocs top-level
+  distincts dans `kirigami.yaml` (siblings de `kirigami:`), à évaluer pour
+  les fusionner (un seul bloc, ou `jsonld` en sous-clé de `meta`) — impact
+  sur `@kirigami/php-prepros` (`META`/`LD`) et `kirigami.schema.json`.
+- **`@kirigami/plugin-extlink` : attribut `class=""` sur `<extlink>`** —
+  permettre de passer une classe custom sur la carte générée, pour la
+  styliser plus facilement au cas par cas (en plus des `title`/`description`/
+  `image`/`label` déjà supportés).
+- **`@kirigami/plugin-highlight` : option pour les numéros de ligne** —
+  actuellement pas de moyen d'afficher le # des lignes sur un bloc
+  `<pre><code>` surligné. Nouvelle option (ex. `lineNumbers: true`), gérée
+  dans `highlightHtml()` (`src/highlight.js`) + le thème SCSS
+  (`assets/_highlight.scss`).
+- **Générer `humans.txt` depuis `kirigami.yaml`** — quand les infos dev
+  (`author`/`email`/etc. du bloc `kirigami:`) sont présentes, générer
+  automatiquement un `humans.txt` (format humanstxt.org) au même moment que
+  `sitemap.xml`/`robots.txt` (même mécanisme/étape), dans le même esprit que
+  `fillBanner()` qui remplit déjà `###AUTHOR###`/`###EMAIL###` depuis ce bloc.
 - **Commande `kiri deploy`, avec système de plugin (FTP, Git, whatever)** —
   une commande qui prend le `dist/` exporté et le déploie, le mécanisme de
   déploiement lui-même étant un plugin (FTP, push Git vers une branche,
@@ -20,12 +50,6 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   build-time only (SSR-ish, rendu en HTML statique comme le reste de
   Kirigami) vs hydration client, et comment ça s'articule avec les pages
   PHP existantes).
-- **Un style de theme-toggle "interrupteur" animé pour `canva/theme`** —
-  inspiration : `_lightswitch.scss` du propre projet `action-quebec.github.io`
-  de l'utilisateur (pin qui glisse/tourne via `--lightswitch-translate`/
-  `--lightswitch-rotate`, fond ciel jour/nuit). Offrir ça en option dans
-  `@kirigami/canva`'s `theme`, en plus du simple swap d'icône soleil/lune
-  actuel (`_layouts/header.php` du site, `.theme-toggle__sun`/`__moon`).
 - **`kirigami.type` `"task"` / `"command"`** — packages qui ajoutent un type de task ou une
   sous-commande `kiri`, et leur loading. (`"plugin"` est déjà en place.) Le bug
   réel de `copyButton` sans task esbuild est fixé (voir CLAUDE.md) — ce qui
@@ -50,8 +74,6 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   WordPress** — même esprit que `SCRAPER` : une classe PHP dédiée pour
   requêter un site WordPress (`/wp-json/wp/v2/posts`, etc.) et alimenter
   une page/`_data/` Kirigami avec du vrai contenu WordPress.
-- **Faire le OG:image** — une vraie image `og:image`/`twitter:image` (générée
-  ou statique) pour le site et/ou par page, au lieu de rien/placeholder.
 - **Rendre `kirigami.schema.json` officiel sur SchemaStore** — soumettre le
   schéma au dépôt officiel (schemastore.org / `SchemaStore/schemastore`) pour
   que l'autocomplétion marche sans avoir à écrire le commentaire
