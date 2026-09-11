@@ -25,6 +25,10 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   d'où il pointe actuellement (repo GitHub).
 - **Faire le OG:image** — une vraie image `og:image`/`twitter:image` (générée
   ou statique) pour le site et/ou par page, au lieu de rien/placeholder.
+- **Rendre `kirigami.schema.json` officiel sur SchemaStore** — soumettre le
+  schéma au dépôt officiel (schemastore.org / `SchemaStore/schemastore`) pour
+  que l'autocomplétion marche sans avoir à écrire le commentaire
+  `# yaml-language-server: $schema=...` dans chaque `kirigami.yaml`.
 - **esbuild importer** — lui donner la même résolution Node que l'importer Sass si un jour
   c'est nécessaire (pour l'instant il bundle des chemins absolus fournis par les hooks, donc OK).
 - **Theme toggle sans build (Layer 2)** — `injectHead()` injecte déjà le guard FOUC en
