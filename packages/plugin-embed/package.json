@@ -1,0 +1,57 @@
+{
+  "name": "@kirigami/plugin-embed",
+  "version": "0.1.0",
+  "description": "<youtube>/<vimeo>/<dailymotion> video embed cards for Kirigami — oEmbed-backed, localStorage-cached, cover thumbnail + play button, powered by @kirigami/canva's observer.",
+  "keywords": [
+    "kirigami",
+    "kirigami-plugin",
+    "plugin",
+    "youtube",
+    "vimeo",
+    "dailymotion",
+    "oembed",
+    "embed",
+    "video"
+  ],
+  "license": "MIT",
+  "author": "Maxime Larrivée-Roy",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "php/",
+    "src/",
+    "assets/",
+    "options.schema.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "kirigami": {
+    "type": "plugin",
+    "minVersion": "1.5.1",
+    "optionsSchema": "./options.schema.json"
+  },
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=10.2.3"
+  },
+  "dependencies": {
+    "@kirigami/canva": "2.5.0",
+    "@kirigami/sdk": "0.2.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/php-kirigami/kirigami.git"
+  },
+  "homepage": "https://github.com/php-kirigami/kirigami/tree/main/packages/plugin-embed#readme",
+  "bugs": {
+    "url": "https://github.com/php-kirigami/kirigami/issues"
+  }
+}

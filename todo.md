@@ -57,5 +57,4 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 
 
-plugin-embed, pour mapper les tags <youtube> <vimeo> et d'autres avec le protocol oembed pour aller chercher le titre, l'image, les dimensions pour ensuite calculer la proportion et utilisé l'image fournis comme cover du video dont il aura un bouton play par dessus (un svg qui va utiliser la variable $accent) que je vais fournir avec le plugin. Donc quand on passe sur le play in scale 1.1 environ et on change le cursor pis toute. tk on verra rendu là - Aller voir dans le projet action-quebec.github.io, je veux le même principe avec l'observer. il faut que le résultat du oembed soit caché dans le localStorage
-
+extlink: sauvegarder la photo de dimention originale en jpg ou png dans les assets/extlink

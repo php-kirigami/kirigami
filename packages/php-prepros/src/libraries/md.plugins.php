@@ -27,21 +27,6 @@ MD::registerPlugin('codepen', function (array $args, string $body): string {
          . "</iframe>";
 });
 
-// --- YouTube (inline) ---
-// {% youtube VIDEO_ID %}
-// {% youtube VIDEO_ID 560 315 %}
-MD::registerPlugin('youtube', function (array $args, string $body): string {
-    $id     = htmlspecialchars($args[0] ?? '', ENT_QUOTES, 'UTF-8');
-    $width  = intval($args[1] ?? 560);
-    $height = intval($args[2] ?? 315);
-    if ($id === '') return '<!-- youtube: missing id -->';
-    return "<iframe width=\"{$width}\" height=\"{$height}\" "
-         . "src=\"https://www.youtube.com/embed/{$id}\" "
-         . "title=\"YouTube video player\" frameborder=\"0\" loading=\"lazy\" "
-         . "allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\" "
-         . "allowfullscreen></iframe>";
-});
-
 // --- Checklist (multi-line block) ---
 // {% checklist
 // Do the dishes

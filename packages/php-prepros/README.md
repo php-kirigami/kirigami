@@ -109,6 +109,19 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 1.9.0
+
+- **`{% youtube %}` removed** — moved to
+  [`@kirigami/plugin-embed`](https://www.npmjs.com/package/@kirigami/plugin-embed),
+  which replaces the old plain-iframe output with a real oEmbed-backed card
+  (cover thumbnail, title, play button — no network call until the visitor
+  actually clicks play). If a project used the built-in `{% youtube %}`,
+  install the plugin; without it, the tag now falls through unresolved
+  (`{% youtube ID %}` printed as-is) rather than rendering an iframe.
+  `codepen`/`checklist`/`callout` are unaffected.
+
+---
+
 ## What's new in 1.8.0
 
 - **`{% img-asset %}` — a new built-in Markdown plugin.** Same pipeline as the
