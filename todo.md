@@ -43,6 +43,34 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   highlight.js inconnu (typo) passe toujours en warning silencieux, build vert
   quand même. `options.schema.json` ne peut pas valider ça (enum fermée
   impossible, ce sont les noms internes de highlight.js).
+- **Générateur de favicon.ico / apple-touch-icon.png depuis une image de `assets/`** —
+  une image source → les deux fichiers, via `runenv` pour pouvoir appeler
+  Imagick (GD seul ne fait pas de multi-résolution `.ico`). Piste : une nouvelle
+  méthode `IMG` (`IMG::favicon()`?) ou un `kiri run` intégré ; se brancher sur
+  `image.source`/`image.dest` existants plutôt qu'un nouveau bloc de config.
+- **Notre propre `php-wasm-builder`, dérivé de WordPress Playground** — pour
+  mettre à jour plus facilement nos versions de PHP / extensions / libs
+  (actuellement on suit le fork tel quel). Gros chantier, pas de plan détaillé
+  encore — à scoper séparément (quelles extensions garder, quelle version PHP
+  cible, comment on reproduit le build Docker de Playground).
+- **Désactiver `short_open_tag` dans le php.ini de prepros** — objectif : rendre
+  un `<?` bare inerte dans un fichier `.php` de site (protège contre un texte
+  d'exemple/documentation qui commence accidentellement par `<?`). ⚠️ Ne couvre
+  qu'une partie du risque : `short_open_tag` ne gouverne que le tag court nu
+  `<?` — `<?=` (short echo) est **toujours actif** depuis PHP 5.4, quel que
+  soit ce réglage, et `<?php` n'est de toute façon jamais affecté. Trouvé
+  concrètement en écrivant le tutoriel du site : un `<?= img_asset(...) ?>`
+  tapé comme texte d'exemple s'est exécuté pour de vrai (`img_asset(...)` est
+  du first-class-callable PHP 8.1, d'où un fatal "Closure to string"). Si
+  l'objectif est vraiment de neutraliser les tags PHP dans du contenu
+  d'exemple, il faudrait un mécanisme différent (un tag `<phpblock>` d'échappement,
+  ou documenter la règle plutôt que la forcer par l'ini).
+- **Mode `kiri serve` avec hot reload** — `kiri watch` ne fait que régénérer
+  les fichiers sur disque, aucun serveur HTTP, aucun refresh navigateur. Un
+  vrai mode dev voudrait : un petit serveur statique local + un reload
+  (WebSocket ou SSE) au lieu de rouvrir l'onglet à la main. À voir si ça
+  reste "lite" (pas de dépendance lourde style browser-sync) — un serveur
+  `node:http` + un tout petit script client suffirait probablement.
 
 
 ## Ailleurs
@@ -50,21 +78,3 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 - **template-demo** a son propre `todo.md` : `C:\projects\kirigami\template-demo\todo.md`.
   Toggle de thème : tranché — les deux templates font `import "@kirigami/canva/theme"`
   (plus de réimplémentation inline). Reste ouvert là-bas : réactiver `prepros.format`.
-
-
-
-
-
-
-
-
-
-une fonctionnalité pour créer un favicon.ico et le apple-machin-truc.png à partir d'une image dans asset. Utiliser runenv pour pouvoir générer le ico avec Imagick
-
-
-
-
-Créer notre propre php-wasm-builder à partir de comment fonctionne le playground. On veut pouvoir mettre à jour plus facilement nos verisons de librairies extensions etc, 
-
-
-Forcer le disable du php shortag <?= ?> dans le php_ini de prepros
