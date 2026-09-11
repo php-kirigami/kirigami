@@ -6,6 +6,15 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 ## Ouvert
 
+- **Commande `kiri deploy`, avec système de plugin (FTP, Git, whatever)** —
+  une commande qui prend le `dist/` exporté et le déploie, le mécanisme de
+  déploiement lui-même étant un plugin (FTP, push Git vers une branche,
+  autre). S'articule avec `kiribuild` (déjà GitHub Pages via Actions) sans
+  le remplacer — pour les cas hors GitHub Pages.
+- **Fichier local (gitignored) pour des variables d'environnement qui
+  imitent celles de GitHub Actions** — pour tester localement dans des
+  conditions proches de la CI (mêmes noms de variables env) sans dépendre
+  d'un vrai run GitHub.
 - **`template-react`** — un nouveau template officiel avec un vrai pipeline
   JSX/TSX intégré (esbuild le supporte déjà nativement — reste à scoper :
   build-time only (SSR-ish, rendu en HTML statique comme le reste de
