@@ -52,6 +52,26 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   — pour l'instant `createDevServer()` rejette la promesse d'écoute (l'erreur
   `EADDRINUSE` remonte telle quelle) ; un message plus clair ("essaie
   `--port`") serait plus sympa. Mineur.
+- **Idées `canva` repérées en construisant `/docs/` sur le site** (rien d'urgent,
+  juste noté avant d'oublier) :
+  - **`scrollbar-color`/`scrollbar-width` dans le reset de `conf`** — le site
+    devait les ajouter à la main (`:root { scrollbar-color: var(--border)
+    var(--surface-2); }`) parce que sans ça les scrollbars natives (ex. un
+    bloc de code qui déborde) restent blanches en dark mode. Vu que
+    `--border`/`--surface-2` existent déjà dans tout projet `conf`, ça pourrait
+    être un défaut du reset lui-même plutôt que quelque chose à réécrire par
+    site.
+  - **Un partial « docs layout »** — fil d'Ariane (`FS::getBreadcrumb()`) +
+    liste de saut rapide (ancres `#id` vers chaque section) : deux petits
+    composants CSS (`.breadcrumb`, `.docs-toc`) qu'un autre site à
+    documentation dense (un template, le site lui-même plus tard) referait
+    sûrement à l'identique.
+  - **`.pkg-table` / `.badge`** (nés sur `/ecosystem/`) — un tableau de
+    données générique + un badge de statut/licence, assez génériques pour
+    vivre dans `canva` plutôt que redupliqués par site.
+  - **Swatches de palette** (`IMG::palette()` → une rangée de puces de
+    couleur) — un petit composant pour visualiser un tableau de couleurs hex,
+    utile partout où `IMG::palette()`/`colors()` sert (pas juste une démo).
 
 
 ## Ailleurs
