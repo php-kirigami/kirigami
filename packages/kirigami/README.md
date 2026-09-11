@@ -461,18 +461,23 @@ files compiled respectively before and after the entry (paths relative to
 ### `tasks:`
 
 Ordered list, run in array order, on top of the implicit `prepros` and `dist`
-tasks.
+tasks. The two `type`s below are the ones you actually write into `tasks:`
+yourself — `prepros` and `dist` are internal, added automatically (see
+[Build tasks](#build-tasks) below), never declared by hand.
 
 | `type` | Purpose | Required fields | Optional |
 |---|---|---|---|
 | `esbuild` | Bundle/minify a JS/TS entry. Build + watch. | `name`, `type`, `entry` | `force` |
 | `sass` | Compile a `.scss`/`.sass` entry. Build + watch. | `name`, `type`, `entry` | `force` |
-| `prepros` | Render pages + `sitemap.xml`. Watch only (runs on build/export only when forced/implicit). | `name`, `type` | `target`, `force` |
-| `dist` | Copy `root` into an output dir. Forced/implicit only. | `name`, `type`, `path` | `ignore`, `force` |
 
 ---
 
 ## Build tasks
+
+`esbuild` and `sass` are the tasks you declare in `tasks:`; `prepros` and
+`dist` are added automatically (the former whenever a `prepros:` block
+exists, the latter only during `kiri export`) and documented here purely as
+reference for what they actually do.
 
 ### esbuild task
 
