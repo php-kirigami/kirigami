@@ -109,6 +109,26 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 1.8.0
+
+- **`{% img-asset %}` — a new built-in Markdown plugin.** Same pipeline as the
+  `<img asset>` HTML tag (`IMG::asset()`: resize, cache, publish under
+  `image.dest`), usable straight from Markdown text:
+
+  ```
+  {% img-asset photo.jpg %}
+  {% img-asset photo.jpg 800 %}
+  {% img-asset photo.jpg 800 600 %}
+  {% img-asset photo.jpg 800 600 cover %}
+  ```
+
+  Positional args: source path (relative to `image.source`), width, height,
+  and the literal `cover` keyword. Registered in `md.plugins.php` alongside
+  `codepen`/`youtube`/`checklist`/`callout` — available out of the box, drop
+  it with `MD::unregisterPlugin('img-asset')` if you don't want it.
+
+---
+
 ## What's new in 1.7.2
 
 - **Cleaner formatted output around highlighted code.** The de-indent script

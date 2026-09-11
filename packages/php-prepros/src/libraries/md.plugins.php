@@ -90,3 +90,20 @@ MD::registerPlugin('callout', function (array $args, string $body): string {
     $titleHtml = $title ? "<strong>{$title}</strong><br>" : '';
     return "<div class=\"callout callout-{$type}\">{$titleHtml}{$content}</div>";
 });
+
+// --- Image asset (inline) — same pipeline as <img asset>, via IMG::asset() ---
+// {% img-asset photo.jpg %}
+// {% img-asset photo.jpg 800 %}
+// {% img-asset photo.jpg 800 600 %}
+// {% img-asset photo.jpg 800 600 cover %}
+MD::registerPlugin('img-asset', function (array $args, string $body): string {
+    $path = trim($args[0] ?? '');
+    if ($path === '') return '<!-- img-asset: missing path -->';
+
+    $width  = isset($args[1]) ? (int) $args[1] : 0;
+    $height = isset($args[2]) ? (int) $args[2] : 0;
+    $cover  = isset($args[3]) && strtolower($args[3]) === 'cover';
+
+    $src = IMG::asset($path, $width, $height, $cover, PREPROS::$file);
+    return '<img src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" alt="">';
+});
