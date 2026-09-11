@@ -59,15 +59,6 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   — pour l'instant `createDevServer()` rejette la promesse d'écoute (l'erreur
   `EADDRINUSE` remonte telle quelle) ; un message plus clair ("essaie
   `--port`") serait plus sympa. Mineur.
-- **Bug MD trouvé en écrivant le site (`/roadmap/`)** — un item de liste `- `
-  écrit sur plusieurs lignes source (continuation indentée sous le marqueur,
-  ex. `- **foo** texte\n  suite du texte`) casse en deux : `<li>` se ferme
-  après la première ligne, `</ul>`, puis la suite ressort comme un `<p>` à
-  plat, puis un nouveau `<ul>` recommence pour l'item suivant. Repro isolée
-  et confirmée (voir le commit du site). Contournement actuel : chaque item
-  de liste sur une seule ligne source. À creuser dans `md.class.php`
-  (probablement l'étape de parsing des listes qui ne suit pas la même règle
-  de continuation que les paragraphes normaux).
 
 
 ## Ailleurs

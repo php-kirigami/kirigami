@@ -989,12 +989,17 @@ class MD {
         // A single pass detects a contiguous block of lines that are either a
         // bullet (-,*,+) or a numbered item, whatever their indentation level;
         // the block is then rebuilt recursively into nested <ol>/<ul>
-        // according to the relative indentation depth.
+        // according to the relative indentation depth. An indented line with
+        // no marker of its own is a *continuation* of the previous item's
+        // text (a soft-wrapped source line) and is appended to it, not
+        // treated as the block's end — a marker-less continuation line used
+        // to fall outside the match entirely, splitting one list into two
+        // with the continuation text stranded as a stray <p> in between.
         // Task items (already converted to <li class="task-item">) no longer
         // match this pattern and are therefore not re-wrapped here.
         // ====================================================================
         $html = preg_replace_callback(
-            '/^([ \t]*(?:\d+\.|[-*+])[ \t]+.+(?:\n[ \t]*(?:\d+\.|[-*+])[ \t]+.+)*)/m',
+            '/^([ \t]*(?:\d+\.|[-*+])[ \t]+.+(?:\n(?:[ \t]*(?:\d+\.|[-*+])[ \t]+.+|[ \t]+\S.*))*)/m',
             function ($matches) {
                 $lines = explode("\n", $matches[1]);
                 $items = [];
@@ -1003,6 +1008,8 @@ class MD {
                         $items[] = ['indent' => self::indentWidth($m[1]), 'type' => 'ol', 'text' => $m[3]];
                     } elseif (preg_match('/^([ \t]*)[-*+][ \t]+(.*)$/', $line, $m)) {
                         $items[] = ['indent' => self::indentWidth($m[1]), 'type' => 'ul', 'text' => $m[2]];
+                    } elseif (!empty($items) && preg_match('/^[ \t]+(\S.*)$/', $line, $m)) {
+                        $items[count($items) - 1]['text'] .= ' ' . $m[1];
                     }
                 }
                 if (empty($items)) return $matches[1];
