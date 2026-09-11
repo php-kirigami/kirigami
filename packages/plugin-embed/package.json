@@ -1,14 +1,13 @@
 {
   "name": "@kirigami/plugin-embed",
-  "version": "0.1.0",
-  "description": "<youtube>/<vimeo>/<dailymotion> video embed cards for Kirigami — oEmbed-backed, localStorage-cached, cover thumbnail + play button, powered by @kirigami/canva's observer.",
+  "version": "0.1.1",
+  "description": "<youtube>/<vimeo> video embed cards for Kirigami — oEmbed-backed, localStorage-cached, cover thumbnail + play button, powered by @kirigami/canva's observer.",
   "keywords": [
     "kirigami",
     "kirigami-plugin",
     "plugin",
     "youtube",
     "vimeo",
-    "dailymotion",
     "oembed",
     "embed",
     "video"

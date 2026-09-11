@@ -6,7 +6,7 @@
 
 # @kirigami/plugin-embed
 
-YouTube / Vimeo / Dailymotion embed cards for the **Kirigami** static site generator.
+YouTube / Vimeo embed cards for the **Kirigami** static site generator.
 
 [![npm version](https://img.shields.io/npm/v/@kirigami/plugin-embed)](https://www.npmjs.com/package/@kirigami/plugin-embed)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
@@ -88,7 +88,6 @@ Straight in HTML — the tag is deliberately non-closing, like `<img>`:
 ```
 <youtube id="dQw4w9WgXcQ">
 <vimeo id="1084537">
-<dailymotion id="x7tgad0">
 ```
 
 or, inside Markdown, the shorthand:
@@ -96,25 +95,29 @@ or, inside Markdown, the shorthand:
 ```
 {% youtube dQw4w9WgXcQ %}
 {% vimeo 1084537 %}
-{% dailymotion x7tgad0 %}
 ```
 
 Both forms produce the exact same tag — the shorthand just saves typing raw
 HTML in prose.
 
-**Facebook is not supported.** Its oEmbed (Graph API) has required an app
-`access_token` since 2018 — there's no anonymous client-side fetch to make.
-A project with its own Facebook App ID could add it on top with its own
-`register('facebook', …)` call (see [How it works](#how-it-works)) — nothing
-here stops you, it's just not bundled.
+**Dailymotion and Facebook are not supported.** Dailymotion's oEmbed endpoint
+sends no `Access-Control-Allow-Origin` header, so an anonymous browser
+`fetch()` is blocked by CORS regardless of video id — confirmed against real
+videos, not just one bad id. Facebook's oEmbed (Graph API) has required an
+app `access_token` since 2018, so no anonymous fetch is possible there
+either. A project with its own working endpoint for either (a proxy, an
+access token, …) can still add it on top with its own
+`register('dailymotion' | 'facebook', …)` call (see
+[How it works](#how-it-works)) — nothing here stops you, it's just not
+bundled.
 
 ---
 
 ## How it works
 
-1. `src/embed.js` registers `youtube`, `vimeo` and `dailymotion` on
-   `@kirigami/canva`'s `observer`, which sweeps the page for those tags (on
-   load, and for anything added later) and hands each one to the plugin.
+1. `src/embed.js` registers `youtube` and `vimeo` on `@kirigami/canva`'s
+   `observer`, which sweeps the page for those tags (on load, and for
+   anything added later) and hands each one to the plugin.
 2. The tag is swapped **immediately** for a `.embed` placeholder — sized by
    the default 16∶9 aspect-ratio — so there's no layout shift waiting on the
    network.
@@ -122,9 +125,12 @@ here stops you, it's just not bundled.
    (`kirigami-embed:<provider>:<id>`) if a previous visit already resolved
    this id, or fetched from the provider's oEmbed endpoint otherwise and
    cached for next time.
-4. Once that resolves, the thumbnail, real aspect-ratio and title are
-   patched into the same placeholder — no second layout shift, no
-   re-registering.
+4. Once that resolves, the thumbnail and title are patched into the same
+   placeholder, and the aspect-ratio is updated to the video's real ratio —
+   **floored at 16∶9**, so a narrower source (4∶3, square, portrait, a Short)
+   never makes the card taller than widescreen; the real player still shows
+   at its own ratio once clicked, pillarboxed within that box rather than
+   stretched.
 5. Clicking the play button swaps the placeholder's content for the real
    player `<iframe>` — nothing loads (or autoplays) before that click.
 
@@ -142,7 +148,7 @@ target those same class names to restyle it from scratch.
 ## Requirements
 
 - Node.js `>= 24.0.0`
-- `@kirigami/kirigami` `^1.5.1`
+- `@kirigami/kirigami` `^1.5.3`
 - An `esbuild` task in `kirigami.yaml`
 
 ---

@@ -1,8 +1,7 @@
 <?php
 
 // ---------------------------------------------------------------------------
-// @kirigami/plugin-embed — {% youtube %} / {% vimeo %} / {% dailymotion %}
-// Markdown shortcuts.
+// @kirigami/plugin-embed — {% youtube %} / {% vimeo %} Markdown shortcuts.
 //
 // Included in the prepros runtime by kiri (the `prepros:php` hook). These
 // just emit the plain, non-closing authoring tag:
