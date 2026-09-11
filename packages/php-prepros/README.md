@@ -109,6 +109,19 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## What's new in 1.9.1
+
+- **`{% img-asset %}` no longer crashes the build on an unresolvable path.**
+  `IMG::asset()`'s exception is now caught and turned into an HTML comment,
+  matching `codepen`/`checklist`'s own missing-argument behavior instead of
+  aborting the whole render. This also makes it safe to *document* the tag —
+  a literal `` `{% img-asset path … %}` `` written as prose inside a code
+  span still runs the plugin (code-span protection only swaps the *displayed*
+  output back to the literal text; the callback itself always executes), so
+  a placeholder path used to throw "Invalid image file." and fail the build.
+
+---
+
 ## What's new in 1.9.0
 
 - **`{% youtube %}` removed** — moved to

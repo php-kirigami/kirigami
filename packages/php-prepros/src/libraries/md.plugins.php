@@ -89,6 +89,15 @@ MD::registerPlugin('img-asset', function (array $args, string $body): string {
     $height = isset($args[2]) ? (int) $args[2] : 0;
     $cover  = isset($args[3]) && strtolower($args[3]) === 'cover';
 
-    $src = IMG::asset($path, $width, $height, $cover, PREPROS::$file);
+    // A resolvable path is required to actually call IMG::asset() — this
+    // also protects a literal `{% img-asset path … %}` written as Markdown
+    // *documentation* (inside a code span): the plugin still runs even when
+    // its output ends up discarded for the literal text, so a placeholder
+    // path must not throw.
+    try {
+        $src = IMG::asset($path, $width, $height, $cover, PREPROS::$file);
+    } catch (Throwable $e) {
+        return '<!-- img-asset: ' . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') . ' -->';
+    }
     return '<img src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" alt="">';
 });
