@@ -1,0 +1,55 @@
+{
+	"name": "@kirigami/audiowaveform-wasm",
+	"version": "1.0.0",
+	"description": "Waveform peak extraction and ID3 tag/cover-art reading from BBC's audiowaveform, compiled to WebAssembly for Node.js.",
+	"keywords": [
+		"audiowaveform",
+		"waveform",
+		"waveform-data",
+		"mp3",
+		"id3",
+		"id3-tags",
+		"webassembly",
+		"wasm",
+		"node",
+		"audio",
+		"kirigami"
+	],
+	"homepage": "https://php-kirigami.github.io",
+	"bugs": {
+		"url": "https://github.com/php-kirigami/kirigami/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/php-kirigami/kirigami.git"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"license": "GPL-3.0-or-later",
+	"author": "Maxime Larrivée-Roy",
+	"type": "module",
+	"main": "index.js",
+	"types": "index.d.ts",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./index.d.ts",
+			"import": "./index.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"engines": {
+		"node": ">=24.0.0"
+	},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"files": [
+		"index.js",
+		"index.d.ts",
+		"dist",
+		"LICENSE",
+		"README.md"
+	]
+}
