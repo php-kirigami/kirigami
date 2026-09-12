@@ -394,3 +394,16 @@ The `HTML::format()` SVG/MathML lowercasing DX issue and plugin-highlight's
 Still-open `todo.md` items: an `<extlink>` authoring tag (calls `SCRAPER`); a
 real kiribuild action test; plugin-declared tasks / commands (`kirigami.type`
 `"task"` / `"command"`).
+
+**New package: `packages/audiowaveform-wasm/` — published as
+`@kirigami/audiowaveform-wasm@1.0.0` (2026-09-12).** Same shape as
+`packages/php-wasm/` (`index.js`/`index.d.ts`/`dist/` holding the compiled
+artifacts), but for waveform peak extraction + ID3 tag/cover-art reading,
+built from BBC's `audiowaveform` compiled to WebAssembly. The actual
+Docker/Emscripten build pipeline lives in a separate sibling repo,
+`php-kirigami/audiowaveform-wasm-compiler` — its own `CLAUDE.md` there has
+the full build/debugging history (config.sub patches, a real Emscripten
+default-stack-size crash, ID3v2.3/2.4/Unicode testing, etc.); this
+package here just vendors that repo's compiled output. Published for real
+via `scripts/publish.js --only audiowaveform-wasm --otp <code>` and
+confirmed live on the registry.
