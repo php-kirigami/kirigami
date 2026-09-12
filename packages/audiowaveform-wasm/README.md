@@ -25,7 +25,7 @@ Built for the **[Kirigami](https://github.com/php-kirigami)** static site genera
 - ✅ **Node.js** only, no browser target
 - ✅ One monolithic wasm module — no JSPI, no Asyncify (peak extraction is synchronous, CPU-bound work)
 - ✅ Buffer in, plain JS object out — peaks are shaped like `audiowaveform`'s own documented JSON format, so [`waveform-data.js`](https://github.com/bbc/waveform-data.js) can consume them directly
-- ✅ MP3, WAV (16/24-bit PCM, 32-bit float), and AIFF today — see [Format support](#format-support)
+- ✅ MP3, WAV (16/24-bit PCM, 32-bit float), AIFF, FLAC, Ogg Vorbis, Opus, M4A/AAC, and WebM (Vorbis/Opus audio) — see [Format support](#format-support)
 
 Built by [`audiowaveform-wasm-compiler`](https://github.com/php-kirigami/audiowaveform-wasm-compiler), which also documents the full build pipeline and architecture decisions.
 
@@ -99,10 +99,11 @@ if (cover) {
 | WAV (24-bit PCM) | ✅ Works |
 | WAV (32-bit float) | ✅ Works |
 | AIFF | ✅ Works |
-| FLAC | ❌ Not yet |
-| Ogg Vorbis | ❌ Not yet |
-| Opus | ❌ Not yet |
-| M4A/AAC | ❌ Not yet |
+| FLAC | ✅ Works |
+| Ogg Vorbis | ✅ Works |
+| Opus | ✅ Works |
+| M4A/AAC | ✅ Works |
+| WebM (Vorbis or Opus audio) | ✅ Works |
 
 Unsupported formats resolve to `null` — never throw.
 

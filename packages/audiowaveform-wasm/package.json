@@ -1,6 +1,6 @@
 {
 	"name": "@kirigami/audiowaveform-wasm",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"description": "Waveform peak extraction and ID3 tag/cover-art reading from BBC's audiowaveform, compiled to WebAssembly for Node.js.",
 	"keywords": [
 		"audiowaveform",

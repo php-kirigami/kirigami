@@ -48,9 +48,9 @@ export interface Id3CoverArt {
  * Extracts waveform peak data from an in-memory audio buffer.
  *
  * The format is auto-detected from the buffer's own container magic
- * bytes — MP3, WAV (16/24-bit PCM, 32-bit float), and AIFF are supported
- * today. FLAC, Ogg Vorbis, Opus, and M4A/AAC are not yet supported and
- * resolve to `null` rather than throwing.
+ * bytes — MP3, WAV (16/24-bit PCM, 32-bit float), AIFF, FLAC, Ogg Vorbis,
+ * Opus, M4A/AAC, and WebM (Vorbis or Opus audio) are all supported.
+ * Anything else resolves to `null` rather than throwing.
  *
  * @example
  * ```ts
