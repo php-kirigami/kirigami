@@ -25,7 +25,8 @@ Built for the **[Kirigami](https://github.com/php-kirigami)** static site genera
 - ✅ **Node.js** only, no browser target
 - ✅ One monolithic wasm module — no JSPI, no Asyncify (peak extraction is synchronous, CPU-bound work)
 - ✅ Buffer in, plain JS object out — peaks are shaped like `audiowaveform`'s own documented JSON format, so [`waveform-data.js`](https://github.com/bbc/waveform-data.js) can consume them directly
-- ✅ MP3, WAV (16/24-bit PCM, 32-bit float), AIFF, FLAC, Ogg Vorbis, Opus, M4A/AAC, and WebM (Vorbis/Opus audio) — see [Format support](#format-support)
+- ✅ **MP3, fully verified**: both CBR and VBR, every common bitrate/quality level, mono and stereo, MPEG1 and MPEG2 sample rates, with and without a Xing/LAME VBR header
+- ✅ WAV (16/24-bit PCM, 32-bit float), AIFF, FLAC, Ogg Vorbis, Opus, M4A/AAC, and WebM (Vorbis/Opus audio) — see [Format support](#format-support)
 
 Built by [`audiowaveform-wasm-compiler`](https://github.com/php-kirigami/audiowaveform-wasm-compiler), which also documents the full build pipeline and architecture decisions.
 
@@ -71,8 +72,11 @@ import fs from 'node:fs';
 const mp3Bytes = fs.readFileSync('song.mp3');
 
 const peaks = await extractAudioPeaks(mp3Bytes, 512);
-// { version: 2, channels: 2, sample_rate: 44100, samples_per_pixel: 512,
+// { version: 2, channels: 1, sample_rate: 44100, samples_per_pixel: 512,
 //   bits: 16, length: 1234, data: [...] }
+// Note: `channels` is always 1 — stereo (or any multichannel) input is
+// downmixed into one merged waveform, matching audiowaveform's own CLI
+// default. It does not reflect the source file's real channel count.
 
 const tags = await getId3Tags(mp3Bytes);
 // { title, artist, album, albumArtist, year, track, genre } — each a
@@ -94,7 +98,7 @@ if (cover) {
 
 | Format | Status |
 | --- | --- |
-| MP3 | ✅ Works |
+| MP3 | ✅ Works — verified against 25 real files plus a deliberate 16-case CBR/VBR encoding matrix (see below) |
 | WAV (16-bit PCM) | ✅ Works |
 | WAV (24-bit PCM) | ✅ Works |
 | WAV (32-bit float) | ✅ Works |
@@ -106,6 +110,21 @@ if (cover) {
 | WebM (Vorbis or Opus audio) | ✅ Works |
 
 Unsupported formats resolve to `null` — never throw.
+
+### MP3 encoding modes tested
+
+| Case | Status |
+| --- | --- |
+| CBR 64 / 128 / 192 / 256 / 320 kbps | ✅ Works |
+| VBR quality 0 (best, ~245kbps) / 4 (~165kbps) / 9 (worst, ~65kbps) | ✅ Works |
+| Mono, CBR and VBR | ✅ Works |
+| 48000 Hz (MPEG1 framing) | ✅ Works |
+| 22050 Hz / 16000 Hz (MPEG2 framing) | ✅ Works |
+| Full-length file (~6.5 min), VBR | ✅ Works |
+| No Xing/LAME VBR header frame | ✅ Works |
+| Simple (non-joint) stereo vs. joint-stereo | ✅ Works |
+
+See [`audiowaveform-wasm-compiler`'s README](https://github.com/php-kirigami/audiowaveform-wasm-compiler#mp3-encoding-modes-tested) for how this matrix was generated.
 
 ---
 
