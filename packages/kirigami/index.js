@@ -8,9 +8,9 @@
 // MCP server, a script — that wants to drive Kirigami without shelling out to
 // `kiri` and re-spawning a process for every build.
 //
-// `@kirigami/cli`'s `build`/`serve`/`watch` commands are thin wrappers over
-// this API (see that package's bin/cmd/*.js). The other commands
-// (export/create/install/run/cache/phpinfo/test) still have their own
+// `@kirigami/cli`'s `build`/`serve`/`watch`/`export` commands are thin
+// wrappers over this API (see that package's bin/cmd/*.js). The other
+// commands (create/install/run/cache/phpinfo/test) still have their own
 // unmigrated logic — that's the next iteration (see todo.md).
 //
 // Still bound to `process.cwd()` for locating kirigami.yaml, scripts/ and
@@ -121,6 +121,52 @@ export class Project {
 
 		return { success: true, trigger: beforeBuild, results };
 	}
+
+	// Same task loop as build(), forced (every task runs, even build-only
+	// ones like "dist") and writing into "export:path" (default "dist",
+	// resolved against process.cwd() — same anchor kirigami.yaml itself
+	// loads from, not config.root) instead of in place. Runs "before-export"
+	// then "before-build" first, "after-export" last; stops at the first
+	// failing trigger script or task, same early-return shape as build().
+	async export({ path: exportPath } = {}) {
+		if (!this.#loaded) await this.reload();
+		const config = this.#config;
+
+		if (!config.export) config.export = {};
+		config.export.path = exportPath || config.export.path || "dist";
+		const dist = path.resolve(process.cwd(), config.export.path);
+
+		const beforeExport = await runTrigger(config, "before-export");
+		if (!beforeExport.success) return { success: false, dist, beforeExport, beforeBuild: null, afterExport: null, results: [] };
+
+		const beforeBuild = await runTrigger(config, "before-build");
+		if (!beforeBuild.success) return { success: false, dist, beforeExport, beforeBuild, afterExport: null, results: [] };
+
+		const tasks = [
+			...(config.prepros ? [{ name: "render-all", type: "prepros", force: true, config: config.prepros }] : []),
+			{ name: "copy-files", type: "dist", force: true, path: dist, ...config.export },
+			...config.tasks,
+		];
+
+		const modules = {};
+		const results = [];
+		for (const task of tasks) {
+			if (!modules[task.type]) {
+				const taskPath = path.join(tasksDir, `${task.type}.js`);
+				modules[task.type] = await import(pathToFileURL(taskPath).href);
+			}
+			if (!task.force && !modules[task.type].canbuild) continue;
+
+			task.banner = config.kirigami.banner;
+			const result = await modules[task.type].default(config.root, task, dist);
+			results.push({ task: task.name, type: task.type, taskname: modules[task.type].taskname, ...result });
+			if (!result.success) return { success: false, dist, beforeExport, beforeBuild, afterExport: null, results };
+		}
+
+		const afterExport = await runTrigger(config, "after-export");
+		return { success: afterExport.success, dist, beforeExport, beforeBuild, afterExport, results };
+	}
+
 
 	// Starts the same watch+hot-reload dev server `kiri serve` uses. Returns
 	// { address, port, url, close() } — `port: 0` lets the OS pick a free port,

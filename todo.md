@@ -21,11 +21,12 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   revue le contenu pour voir ce qui sert encore réellement.
 - **Architecture "API core + interfaces" (plan de match ChatGPT) : Phase 1 +
   Phase 2 faites** — `@kirigami/kirigami` est maintenant le moteur pur
-  (`Project.load()`/`.reload()`/`.validate()`/`.build()`/`.serve()`/`.watch()`,
-  `packages/kirigami/index.js`), et le CLI a été extrait dans un nouveau
-  package **`@kirigami/cli`** (`packages/cli/`, commande `kiri` inchangée —
-  pas de renommage) dont `build`/`serve`/`watch` sont maintenant de purs
-  wrappers autour de `Project`. Testé en vrai (pas juste des smoke tests) :
+  (`Project.load()`/`.reload()`/`.validate()`/`.build()`/`.serve()`/`.watch()`/
+  `.export()`, `packages/kirigami/index.js`), et le CLI a été extrait dans un
+  nouveau package **`@kirigami/cli`** (`packages/cli/`, commande `kiri`
+  inchangée — pas de renommage) dont `build`/`serve`/`watch`/`export` sont
+  maintenant de purs wrappers autour de `Project`. Testé en vrai (pas juste
+  des smoke tests) :
   build/export/watch/serve/run/phpinfo/cache/install/create --help, contre
   `template-default` ET `template-demo` (3 vrais plugins), via la vraie
   résolution de package npm (`npm install` à la racine, pas des chemins
@@ -51,13 +52,28 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
     a silencieusement copié le dossier `@kirigami/sdk` au lieu de le lier,
     donnant un registre sdk dédoublé/déconnecté — corrigé avec une vraie
     jonction Windows (`New-Item -ItemType Junction`).
+  - **`Project.export()` ajouté** (même session, après le reste de la
+    phase 2) — même boucle de tâches que `build()`, forcée (`force: true`
+    partout, donc les tâches build-only comme `dist` tournent aussi),
+    écrivant dans `export:path` (défaut `"dist"`, résolu contre
+    `process.cwd()` — pas `config.root` — même ancre que `kirigami.yaml`
+    lui-même). Ordre des tâches préservé exactement (prepros → dist →
+    tâches du projet) ; triggers `before-export` → `before-build` avant,
+    `after-export` après, avec arrêt au premier script/tâche en échec (même
+    forme de retour anticipé que `build()`). `packages/cli/bin/cmd/export.js`
+    est maintenant un pur wrapper (même patron que `build.js`) — plus
+    d'import direct de `@kirigami/kirigami/internal/*`. **Vérifié en vrai**
+    contre une copie scratch de `template-default` (avec son vrai
+    `node_modules`, pas de chemins relatifs) : `kiri export` produit les 8
+    mêmes fichiers dans `dist/` qu'avant (prepros/dist/sass/esbuild tous
+    verts, dans le bon ordre), banner stampé correctement,
+    `kiri export --help` inchangé. Le chemin d'échec des triggers
+    (`before-export`/`before-build` qui stoppe l'export) réutilise le
+    `runTrigger()` déjà testé pour `build()` — pas re-testé isolément ici.
   - Reste ouvert :
-    - `.export()` pas encore exposé sur `Project` (`export.js` garde sa
-      propre logique de tâches, juste réimportée depuis `@kirigami/kirigami`
-      via les nouveaux sous-chemins `exports["./internal/*"]`).
-      `create`/`install`/`cache`/`phpinfo`/`run`/`test` non plus — ils
-      utilisent `@kirigami/kirigami/internal/*` directement plutôt que de
-      passer par une méthode `Project`.
+    - `create`/`install`/`cache`/`phpinfo`/`run`/`test` toujours pas
+      migrés sur une méthode `Project` — ils utilisent
+      `@kirigami/kirigami/internal/*` directement.
     - Les commandes intégrées (build/export/watch/…) elles-mêmes ne passent
       **pas** par le nouveau registre `registerCommand()` — seul un plugin
       externe l'utilise pour l'instant. À évaluer : est-ce qu'on veut untifier

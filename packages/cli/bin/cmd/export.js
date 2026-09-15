@@ -1,10 +1,21 @@
-import path from "path";
 import { c, log, parseArgs, printCommandHelp, printTaskError } from "../utils.js";
-import { getConfig } from "@kirigami/kirigami/internal/config";
-import { loadPlugins } from "@kirigami/kirigami/internal/plugins";
-import { trigger } from "../libs/triggers.js";
+import { load } from "@kirigami/kirigami";
 
-const __root = process.cwd();
+
+function printTriggerResults(trigger) {
+	if (!trigger) return;
+	for (const scriptResult of trigger.results) {
+		process.stdout.write(`\n${c.gray("›")} SCRIPT: ${scriptResult.name}`);
+		if (scriptResult.success) {
+			process.stdout.write(` ${c.green("✔")}\n`);
+			scriptResult.files?.forEach(file => console.log(`    ${c.gray(file)}`));
+		} else {
+			process.stdout.write(` ${c.red("❌")}\n`);
+			console.log(c.red("\n› Error:"));
+			console.log(scriptResult.error);
+		}
+	}
+}
 
 
 const HELP = {
@@ -35,75 +46,47 @@ export default async function exportDist(args) {
 	}
 
 	console.log(`\n${c.bold(c.cyan("kiri"))} — Export Project\n`);
-	const config = await getConfig();
-
-	if(!config.export?.path) {
-		if(!config.export) config.export = {};
-		config.export.path = 'dist';
-	}
-
-	const __dist = path.join(__root, config.export.path);
+	const project = await load();
+	const { config } = project;
 
 	log.step(`Project   : ${c.dim(config.kirigami.project)}`);
 	log.step(`Base URL  : ${c.dim(config.kirigami.baseurl)}`);
 	log.step(`Root      : ${c.dim(config.root)}`);
-	log.step(`Export    : ${c.dim(__dist)}`);
 
-	const loadedPlugins = await loadPlugins(config);
-	if (loadedPlugins.length) {
+	if (project.plugins.length) {
 		console.log(`\n${c.bold("Plugins:")}`);
-		loadedPlugins.forEach(({ name, version }) =>
+		project.plugins.forEach(({ name, version }) =>
 			log.step(`${c.green("✔")} ${name}${version ? c.dim(` v${version}`) : ""}`));
 	}
 
 	console.log(`\n\n${c.bold('Tasks:')}`);
 
-	await trigger('before-export');
-	await trigger('before-build');
+	const result = await project.export();
 
-	config.tasks = [{
-		name: "copy-files",
-		type: "dist",
-		force: true,
-		path: __dist,
-		...config.export,
-	}, ...config.tasks];
-	if(config.prepros) {
-		const task = {
-			name: "render-all",
-			type: "prepros",
-			force: true,
-			config: config.prepros,
-		};
-		config.tasks = [ task, ...config.tasks];
-	}
+	log.step(`Export    : ${c.dim(result.dist)}`);
 
-	const modules = [];
-	for (const task of config.tasks) {
-		if(!modules[task.type]) {
-			modules[task.type] = await import(`@kirigami/kirigami/internal/tasks/${task.type}`);
-		}
-		if(!task.force && !modules[task.type].canbuild) continue;
-		task.banner = config.kirigami.banner;
-		process.stdout.write(`\n${c.gray("›")} ${modules[task.type].taskname}: ${task.name}`);
-		const results = await modules[task.type].default(config.root, task, __dist);
+	printTriggerResults(result.beforeExport);
+	printTriggerResults(result.beforeBuild);
 
-		if(results.success) {
+	for (const taskResult of result.results) {
+		process.stdout.write(`\n${c.gray("›")} ${taskResult.taskname}: ${taskResult.task}`);
+		if (taskResult.success) {
 			process.stdout.write(` ${c.green("✔")}\n`);
-			results.files.forEach(file => console.log(`    ${c.gray(file)}`));
-			if(results.warnings) {
+			taskResult.files?.forEach(file => console.log(`    ${c.gray(file)}`));
+			if (taskResult.warnings) {
 				console.log(c.yellow("\n› Warnings:"));
-				console.log(c.dim(results.warnings));
+				console.log(c.dim(taskResult.warnings));
 			}
 		} else {
 			process.stdout.write(` ${c.red("❌")}\n`);
-			printTaskError(results);
-			process.exit(1);
+			printTaskError(taskResult);
 		}
 	}
-	
-	await trigger('after-export');
-	
+
+	printTriggerResults(result.afterExport);
+
+	if (!result.success) process.exit(1);
+
 	console.log(`\n`);
 	log.success(c.bold(c.green(` Export finished!`)));
 	console.log();
