@@ -43,9 +43,19 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   scratch → `tsc` échoue bien (`TS2339: Property 'create' does not exist on
   type 'HTMLElement'`), confirmant que c'est vraiment eux qui règlent le
   problème.
-- **`plugin-highlight/src/highlight.js` : évaluer l'observer de canva** —
-  voir si le mécanisme actuel de repérage des blocs `<pre><code>` peut être
-  remplacé par `@kirigami/canva`'s `observer` plutôt que sa logique propre.
+- **Réglé (pas applicable) — `plugin-highlight/src/highlight.js` :
+  l'observer de canva n'est pas un remplacement possible.** Deux
+  environnements incompatibles : `highlightHtml()` réécrit une **chaîne HTML
+  brute côté Node**, avant tout DOM, pendant le build (le commentaire du
+  fichier le dit lui-même : "Nothing is shipped to the client") — c'est tout
+  le principe du plugin (highlighting *build-time*, zéro JS runtime).
+  `@kirigami/canva`'s `observer` (`querySelectorAll`/`MutationObserver`)
+  tourne côté navigateur sur un DOM réel qui, à ce moment du pipeline,
+  n'existe simplement pas. Commentaire source remplacé par une explication
+  courte (pour ne pas re-poser la question plus tard) ; l'autre commentaire
+  périmé sur `import { dedent } from '@kirigami/canva/helpers'` (« vscode
+  n'arrive pas à le résoudre ») retiré aussi — réglé par l'ajout des `.d.ts`
+  plus haut dans cette même session.
 - **`canva/utils.scss` : revoir l'utilité de tout le fichier** — passer en
   revue le contenu pour voir ce qui sert encore réellement.
 - **Architecture "API core + interfaces" (plan de match ChatGPT) : Phase 1 +
