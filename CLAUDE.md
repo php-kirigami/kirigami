@@ -433,23 +433,23 @@ confirmed live on the registry.
 
 ## Documentation todo
 
-Notes left in-code during this session (not yet actioned — carry into the next
-iteration):
+**Session 2026-09-15 — the four in-code notes below are all resolved**, full
+detail (what was verified, how) in `todo.md`'s "Ouvert" section:
+- `$font-mono`/`--font-mono` centralized in `canva/conf.scss`; `main.scss`/
+  `prose.scss` and plugin-highlight's `$code-font` all point at it now.
+- `.d.ts` written for every `canva/dist/scripts/*.js` (the `copyDeclarations()`
+  plumbing in `build.js` already existed, just nothing to copy yet) — verified
+  with a real `tsc --noEmit` against all 6 import paths.
+- `plugin-highlight`/canva `observer`: **not applicable, decided** — one runs
+  on a raw HTML string in Node before any DOM exists, the other needs a live
+  browser DOM. Comment in the source explains why, so the question doesn't
+  resurface.
+- `canva/utils.scss`: reviewed — every function still pulls its weight
+  (`wash`/`hex6`/`hexbin` are intentional public API, not dead code); only
+  actual finding was an unused `@use "sass:map"`, removed.
 
-- **Centralize `$font-mono`** as a real token in `canva/conf.scss`
-  (`$font-mono` / `--font-mono`). Right now the same monospace stack is
-  hardcoded independently in `canva/main.scss`, `canva/prose.scss`, and
-  `plugin-highlight/assets/_highlight.scss` — each has a comment pointing
-  back at this.
-- **`canva/build.js`**: generate `.d.ts` for the compiled `dist/scripts/*.js`
-  and wire it up so VS Code resolves `@kirigami/canva/*` script imports —
-  currently unresolved (see the comment on the `dedent` import in
-  `plugin-highlight/src/highlight.js`). `canva/package.json` already gained
-  the `./scripts/*` export as a first step.
-- **`plugin-highlight/src/highlight.js`**: consider swapping the current
-  wiring for canva's `observer` instead.
-- **`canva/utils.scss`**: revisit whether everything in this file is still
-  pulling its weight.
+Still open:
+
 - **`canva/conf.scss`**: the `font-style: normal` line in the `@font-face`
   loop has a note to "integrate the sass function we made" — needs
   clarification from Maxime before actioning, unclear which function.
