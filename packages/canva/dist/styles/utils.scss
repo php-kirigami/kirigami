@@ -1,10 +1,5 @@
 @use "sass:string";
 @use "sass:color";
-@use "sass:map";
-
-
-// à revoir l'utilité de tout ça
-
 
 
 @function wash($bg, $base, $amount) {

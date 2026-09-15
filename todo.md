@@ -56,8 +56,17 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   périmé sur `import { dedent } from '@kirigami/canva/helpers'` (« vscode
   n'arrive pas à le résoudre ») retiré aussi — réglé par l'ajout des `.d.ts`
   plus haut dans cette même session.
-- **`canva/utils.scss` : revoir l'utilité de tout le fichier** — passer en
-  revue le contenu pour voir ce qui sert encore réellement.
+- **Fait — `canva/utils.scss` : revu, le fichier sert entièrement.**
+  `str-replace`/`url-encode`/`svg-url`/`apply-colors` sont porteurs — chaîne
+  utilisée en vrai par le système d'icônes de `conf.scss`
+  (`svg-url(apply-colors($svg, $palette))`). `wash`/`hex6`/`hexbin` n'ont
+  aucun appelant interne mais sont de l'API publique documentée
+  intentionnellement (tableau du README, "pure Sass utilities" — dans la
+  description même du package) : pas du code mort, un utilitaire offert aux
+  auteurs de sites. Seul vrai trouvaille de la revue : `@use "sass:map"`
+  était importé sans jamais être utilisé — retiré. Vérifié en compilant
+  réellement `conf`+`main`+`prose`+`utils` ensemble avec `sass` après coup
+  (exit 0). `canva/dist/` régénéré.
 - **Architecture "API core + interfaces" (plan de match ChatGPT) : Phase 1 +
   Phase 2 faites** — `@kirigami/kirigami` est maintenant le moteur pur
   (`Project.load()`/`.reload()`/`.validate()`/`.build()`/`.serve()`/`.watch()`/
