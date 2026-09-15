@@ -8,10 +8,13 @@
 // MCP server, a script — that wants to drive Kirigami without shelling out to
 // `kiri` and re-spawning a process for every build.
 //
-// `@kirigami/cli`'s `build`/`serve`/`watch`/`export` commands are thin
-// wrappers over this API (see that package's bin/cmd/*.js). The other
-// commands (create/install/run/cache/phpinfo/test) still have their own
-// unmigrated logic — that's the next iteration (see todo.md).
+// `@kirigami/cli`'s `build`/`serve`/`watch`/`export`/`run` commands are thin
+// wrappers over this API (see that package's bin/cmd/*.js). `create`/`install`
+// don't operate on a loaded project (create has none yet, install shells out
+// to npm before plugins load) and `cache`/`phpinfo` don't touch kirigami.yaml
+// at all — none of those four are a natural `Project` method, so they keep
+// their own CLI-side logic. `test` is dead debug scaffolding, not a real
+// command.
 //
 // Still bound to `process.cwd()` for locating kirigami.yaml, scripts/ and
 // node_modules — same as the CLI. Loading a *different* project than the
@@ -207,6 +210,17 @@ export class Project {
 		const rules = await buildWatchRules(this.#config);
 		const { close } = createWatchers(rules);
 		return { close };
+	}
+
+	// Runs scripts/<command>.php inside the PHP-WASM runtime — the same
+	// scripts/ entry point "kiri run" and the before-build/before-export/
+	// after-export triggers use, minus the trigger-name lookup (a plain
+	// command name, not a trigger). Throws if the script doesn't exist (same
+	// as runscript() itself) rather than returning a failure result, since
+	// there's no partial work to report back on a bad command name.
+	async run(command, argv = []) {
+		if (!this.#loaded) await this.reload();
+		return runscript(command, argv);
 	}
 }
 

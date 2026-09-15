@@ -1,6 +1,5 @@
 import { c, log, parseArgs, printCommandHelp } from "../utils.js";
-import { getConfig } from "@kirigami/kirigami/internal/config";
-import { runscript } from "@kirigami/kirigami/internal/runscript";
+import { load } from "@kirigami/kirigami";
 
 const HELP = {
 	name: "run",
@@ -32,17 +31,17 @@ export default async function run(args) {
 	}
 
 	console.log(`\n${c.bold(c.cyan("kiri"))} — Run PHP command script\n`);
-	await getConfig(); // fail fast on an invalid kirigami.yaml before touching the PHP runtime
+	const project = await load(); // fails fast on an invalid kirigami.yaml before touching the PHP runtime
 
 	const argv = [
 		...(subcommand ? [subcommand] : []),
 		...positional
 	];
-	
+
 	log.step(`Command    : ${c.dim(command)}`);
 	if(argv.length) log.step(`Parameters : ${c.dim(argv)}`);
 
-	const result = await runscript(command, argv);
+	const result = await project.run(command, argv);
 
 	if(result.success) log.step(`Execution  : ${c.dim('Success ✔')}`);
 	else {

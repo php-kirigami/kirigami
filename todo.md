@@ -22,11 +22,11 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 - **Architecture "API core + interfaces" (plan de match ChatGPT) : Phase 1 +
   Phase 2 faites** — `@kirigami/kirigami` est maintenant le moteur pur
   (`Project.load()`/`.reload()`/`.validate()`/`.build()`/`.serve()`/`.watch()`/
-  `.export()`, `packages/kirigami/index.js`), et le CLI a été extrait dans un
-  nouveau package **`@kirigami/cli`** (`packages/cli/`, commande `kiri`
-  inchangée — pas de renommage) dont `build`/`serve`/`watch`/`export` sont
-  maintenant de purs wrappers autour de `Project`. Testé en vrai (pas juste
-  des smoke tests) :
+  `.export()`/`.run()`, `packages/kirigami/index.js`), et le CLI a été extrait
+  dans un nouveau package **`@kirigami/cli`** (`packages/cli/`, commande `kiri`
+  inchangée — pas de renommage) dont `build`/`serve`/`watch`/`export`/`run`
+  sont maintenant de purs wrappers autour de `Project`. Testé en vrai (pas
+  juste des smoke tests) :
   build/export/watch/serve/run/phpinfo/cache/install/create --help, contre
   `template-default` ET `template-demo` (3 vrais plugins), via la vraie
   résolution de package npm (`npm install` à la racine, pas des chemins
@@ -70,10 +70,21 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
     `kiri export --help` inchangé. Le chemin d'échec des triggers
     (`before-export`/`before-build` qui stoppe l'export) réutilise le
     `runTrigger()` déjà testé pour `build()` — pas re-testé isolément ici.
-  - Reste ouvert :
-    - `create`/`install`/`cache`/`phpinfo`/`run`/`test` toujours pas
-      migrés sur une méthode `Project` — ils utilisent
-      `@kirigami/kirigami/internal/*` directement.
+  - **`Project.run()` ajouté** (même session) — wrappe `runscript()`
+    directement (charge le projet si pas déjà fait, fail-fast sur un
+    `kirigami.yaml` invalide, comme avant). `packages/cli/bin/cmd/run.js`
+    est maintenant un pur wrapper. **Vérifié en vrai** contre la même copie
+    scratch de `template-default` : `kiri run hello world 42` (script réel
+    dans `scripts/hello.php`) reçoit le bon `$argv`, sort en succès ; `kiri
+    run doesnotexist` échoue proprement avec le même message qu'avant,
+    exit code 1 préservé.
+  - `create`/`install`/`cache`/`phpinfo` **délibérément pas migrés** — ce ne
+    sont pas de bons candidats pour une méthode `Project` : `create` n'a pas
+    encore de projet chargé (il en crée un), `install` shell out vers `npm`
+    avant même que les plugins chargent, et `cache`/`phpinfo` ne touchent pas
+    du tout `kirigami.yaml` (housekeeping fichiers / introspection du
+    runtime PHP-WASM, sans notion de projet). `test.js` est du code de debug
+    mort (pas de HELP, tout commenté) — pas une vraie commande, ignoré.
     - Les commandes intégrées (build/export/watch/…) elles-mêmes ne passent
       **pas** par le nouveau registre `registerCommand()` — seul un plugin
       externe l'utilise pour l'instant. À évaluer : est-ce qu'on veut untifier
