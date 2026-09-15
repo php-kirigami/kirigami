@@ -85,12 +85,21 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
     du tout `kirigami.yaml` (housekeeping fichiers / introspection du
     runtime PHP-WASM, sans notion de projet). `test.js` est du code de debug
     mort (pas de HELP, tout commenté) — pas une vraie commande, ignoré.
-    - Les commandes intégrées (build/export/watch/…) elles-mêmes ne passent
-      **pas** par le nouveau registre `registerCommand()` — seul un plugin
-      externe l'utilise pour l'instant. À évaluer : est-ce qu'on veut untifier
-      (tout — y compris les built-ins — passe par le registre) ou garder les
-      deux mécanismes séparés (built-ins = méthodes `Project`, extensions =
-      registre) ?
+    - **Décidé (même session) : les deux mécanismes restent séparés, pas
+      d'unification.** Relu `kiri.js` : le dispatcher résout un built-in par
+      nom de fichier (`cmd/<nom>.js`) *avant* de charger le projet — c'est ce
+      qui permet à `kiri phpinfo`/`kiri create`/`kiri --help` de marcher sans
+      `kirigami.yaml` du tout, et évite à `kiri build`/`export`/etc. de payer
+      le coût d'un chargement de projet juste pour savoir si la commande
+      existe. Le registre `registerCommand()` n'est peuplé que par
+      `loadPlugins()`, qui a besoin d'un projet valide déjà chargé — un
+      plugin l'obtient "gratuitement" puisqu'il doit de toute façon charger
+      le projet pour que son `register()` tourne. Faire passer les built-ins
+      par le même registre forcerait donc *chaque* commande (même celles qui
+      n'ont besoin d'aucun projet) à charger le projet avant de savoir si son
+      nom est connu — une vraie régression, pas une simplification. Le split
+      actuel (built-ins = dispatch fichier + méthodes `Project`, extensions =
+      registre) est la bonne architecture, pas un compromis temporaire.
     - Chargement limité à un seul projet par process (`process.cwd()` figé
       dans `config.js`/`plugins.js`/`runscript.js`) — charger un projet à un
       chemin arbitraire, différent du cwd, n'est pas supporté.
