@@ -127,9 +127,37 @@ final class PREPROS
         $destrobots = self::$root . 'robots.txt';
         $urlrobots = rtrim(self::$config->data->baseurl, '/') . '/sitemap.xml';
         file_put_contents($destrobots, "User-agent: *\nAllow: /\nSitemap: {$urlrobots}");
-        
-        self::exportFile([$dest, $destrobots]);
+
+        $desthumans = self::humans();
+
+        self::exportFile(array_filter([$dest, $destrobots, $desthumans]));
         return realpath($dest);
+    }
+
+
+    // Generates humans.txt (humanstxt.org) from the kirigami: block's
+    // author/email — same source fields config.js's fillBanner() already
+    // pulls ###AUTHOR###/###EMAIL### from, same spirit: fill in what the
+    // project already declared instead of asking for it twice. Skipped
+    // entirely when neither is set — nothing meaningful to write.
+    private static function humans(): ?string
+    {
+        $author = trim((string) (self::$config->data->author ?? ''));
+        $email  = trim((string) (self::$config->data->email ?? ''));
+        if ($author === '' && $email === '') return null;
+
+        $lines = ['/* TEAM */', ''];
+        if ($author !== '') $lines[] = "    {$author}";
+        if ($email !== '') $lines[] = "    Contact: {$email}";
+        $lines[] = '';
+        $lines[] = '/* SITE */';
+        $lines[] = '';
+        $lines[] = '    Last update: ' . date('Y-m-d');
+        $lines[] = '    Software: Kirigami -- https://php-kirigami.github.io';
+
+        $dest = self::$root . 'humans.txt';
+        file_put_contents($dest, implode("\n", $lines) . "\n");
+        return $dest;
     }
 
 

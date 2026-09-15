@@ -237,11 +237,18 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   `<pre><code>` surligné. Nouvelle option (ex. `lineNumbers: true`), gérée
   dans `highlightHtml()` (`src/highlight.js`) + le thème SCSS
   (`assets/_highlight.scss`).
-- **Générer `humans.txt` depuis `kirigami.yaml`** — quand les infos dev
-  (`author`/`email`/etc. du bloc `kirigami:`) sont présentes, générer
-  automatiquement un `humans.txt` (format humanstxt.org) au même moment que
-  `sitemap.xml`/`robots.txt` (même mécanisme/étape), dans le même esprit que
-  `fillBanner()` qui remplit déjà `###AUTHOR###`/`###EMAIL###` depuis ce bloc.
+- **Fait — Génère `humans.txt` depuis `kirigami.yaml`.** Nouvelle
+  `PREPROS::humans()` (`prepros.class.php`), appelée depuis `sitemap()` —
+  même mécanisme/étape que `sitemap.xml`/`robots.txt`, même source de champs
+  que `fillBanner()` (`config.js`) qui remplit déjà
+  `###AUTHOR###`/`###EMAIL###`. Format humanstxt.org minimal (`/* TEAM */` +
+  nom/contact, `/* SITE */` + date + `Software: Kirigami`). **Écrit
+  seulement si `author` ou `email` est présent** dans le bloc `kirigami:` —
+  rien de généré sinon. Vérifié en vrai avec un vrai `kiri build` (PHP-WASM
+  réel, pas juste relu) contre la copie scratch de `template-default` : avec
+  `author`/`email` renseignés → `src/humans.txt` généré avec le bon contenu ;
+  les deux retirés du `kirigami.yaml` → aucun fichier créé, `sitemap.xml`/
+  `robots.txt` toujours générés normalement.
 - **Commande `kiri deploy`, avec système de plugin (FTP, Git, whatever)** —
   une commande qui prend le `dist/` exporté et le déploie, le mécanisme de
   déploiement lui-même étant un plugin (FTP, push Git vers une branche,
