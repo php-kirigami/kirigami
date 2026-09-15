@@ -26,10 +26,23 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   `hljs.dark()` isolément (`font-family: "JetBrains Mono", var(--font-mono);`
   dans les deux règles qui l'utilisent). `canva/dist/` régénéré
   (`node build.js`).
-- **`.d.ts` pour `canva/dist/scripts/*.js`** — VS Code n'arrive pas à
-  résoudre les imports `@kirigami/canva/<script>` (ex. `helpers`), faute de
-  déclarations de types ; à générer dans `canva/build.js`. `./scripts/*` a
-  déjà été ajouté à `package.json#exports` comme premier pas.
+- **Fait — `.d.ts` pour `canva/dist/scripts/*.js`.** La plomberie
+  (`copyDeclarations()` dans `build.js`, copie `src/scripts/**/*.d.ts` →
+  `dist/scripts/`) existait déjà — il ne manquait que les fichiers eux-mêmes.
+  Écrits à la main plutôt que générés par `tsc` (pas de dépendance
+  TypeScript à ajouter juste pour ça, cf. "stay lite" du CLAUDE.md) : un
+  `.d.ts` par script exporté public (`dom`, `helpers`, `theme`, `observer`,
+  `reveal`, `components/burger`), signatures tirées du code réel + des
+  exemples du README. `dom.d.ts` inclut l'augmentation globale
+  `HTMLElement.prototype.create`. `canva/dist/` régénéré (`node build.js`,
+  "✔ .d.ts copied (6 file(s))"). **Vérifié en vrai**, pas juste relu :
+  package copié dans un projet scratch, `tsc --noEmit` (moduleResolution
+  `bundler`, `checkJs`) sur un fichier important les 6 chemins
+  (`@kirigami/canva/dom`/`helpers`/`theme`/`observer`/`reveal`/
+  `components/burger`) — 0 erreur. Contrôle négatif : `.d.ts` supprimés du
+  scratch → `tsc` échoue bien (`TS2339: Property 'create' does not exist on
+  type 'HTMLElement'`), confirmant que c'est vraiment eux qui règlent le
+  problème.
 - **`plugin-highlight/src/highlight.js` : évaluer l'observer de canva** —
   voir si le mécanisme actuel de repérage des blocs `<pre><code>` peut être
   remplacé par `@kirigami/canva`'s `observer` plutôt que sa logique propre.
