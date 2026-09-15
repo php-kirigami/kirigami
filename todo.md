@@ -214,18 +214,20 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   chaînes de texte (façon i18n) plutôt que codées en dur dans les pages PHP.
   Première étape vers le multilingue (à explorer plus tard : routing/URLs
   par langue, `hreflang`, structure de projet).
-- **`injectHead()` : le check "fichier déjà référencé" est trop naïf** —
-  `!str_contains($contents, $out)` (`prepros.class.php`) cherche le nom du
-  fichier compilé (`kirigami.core.min.css`, etc.) n'importe où dans le HTML
-  rendu, pas juste dans un vrai `<link>`/`<script>`. Une page qui *mentionne*
-  ce nom en prose ou dans un bloc de code (ex. `docs/cli/` documentant la
-  sortie réelle de `kiri build`) se fait donc sauter l'injection du CSS/JS
-  réel — trouvé en vrai sur ce site même. À resserrer (regex ciblant une
-  vraie balise) plutôt que le simple `str_contains`.
-- **Regrouper `meta:` et `jsonld:`** — actuellement deux blocs top-level
-  distincts dans `kirigami.yaml` (siblings de `kirigami:`), à évaluer pour
-  les fusionner (un seul bloc, ou `jsonld` en sous-clé de `meta`) — impact
-  sur `@kirigami/php-prepros` (`META`/`LD`) et `kirigami.schema.json`.
+- **Fait — `injectHead()` : le check "fichier déjà référencé" resserré.**
+  `str_contains($contents, $out)` cherchait le nom du fichier compilé
+  n'importe où dans le HTML rendu — une page qui *mentionne* ce nom en prose
+  ou dans un `<code>` (ex. `docs/cli/` documentant la sortie réelle de
+  `kiri build`) se faisait sauter l'injection du CSS/JS réel. Remplacé par
+  `hasAssetTag()` (`prepros.class.php`), une regex qui cible une vraie
+  balise `<link href="…">` / `<script src="…">` contenant le nom, pas
+  n'importe quelle occurrence. **Vérifié en vrai** avec le PHP CLI local
+  (8.5.10, disponible sur cette machine) — 7 cas dont le bug original exact
+  (nom mentionné dans un `<code>` documentant `kiri build`, avant : faux
+  positif → CSS/JS pas injecté ; maintenant : correctement pas détecté comme
+  "déjà référencé"), une vraie balise avec des attributs avant `href`, et un
+  fichier différent dans le même dossier qui ne doit pas matcher — les 7
+  passent.
 - **`@kirigami/plugin-extlink` : attribut `class=""` sur `<extlink>`** —
   permettre de passer une classe custom sur la carte générée, pour la
   styliser plus facilement au cas par cas (en plus des `title`/`description`/

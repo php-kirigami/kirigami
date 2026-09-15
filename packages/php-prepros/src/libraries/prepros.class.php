@@ -146,6 +146,22 @@ final class PREPROS
      * only expanded on export (see replaceTokens()), so rebuilding a preview
      * never rewrites the committed page.
      */
+    // Whether $contents already has a real <$tag … $attr="…$needle…"> —
+    // not just a mention of the filename somewhere in the page (prose, a
+    // <code> block documenting real build output, an HTML comment). The
+    // naive str_contains() this replaces matched any occurrence anywhere,
+    // so a page that merely *documents* the compiled filename (e.g. a
+    // docs page showing captured `kiri build` output) got its real
+    // <link>/<script> injection skipped — found in production on
+    // php-kirigami.github.io's own docs/cli page.
+    private static function hasAssetTag(string $contents, string $tag, string $attr, string $needle): bool
+    {
+        $pattern = '/<' . $tag . '\b[^>]*\b' . $attr . '\s*=\s*["\'][^"\']*'
+            . preg_quote($needle, '/') . '[^"\']*["\'][^>]*>/i';
+        return (bool) preg_match($pattern, $contents);
+    }
+
+
     private static function injectHead(string $contents, string $relroot): string
     {
         $inject = [];
@@ -180,12 +196,12 @@ final class PREPROS
 
             if (($task['type'] ?? '') === 'sass') {
                 $out = preg_replace('/\.s?css$/', '.min.css', $entry);
-                if ($out !== $entry && !str_contains($contents, $out)) {
+                if ($out !== $entry && !self::hasAssetTag($contents, 'link', 'href', $out)) {
                     $links[] = '<link rel="stylesheet" href="' . $relroot . $out . '?###TIMESTAMP###">';
                 }
             } elseif (($task['type'] ?? '') === 'esbuild') {
                 $out = preg_replace('/\.[jt]s$/', '.min.js', $entry);
-                if ($out !== $entry && !str_contains($contents, $out)) {
+                if ($out !== $entry && !self::hasAssetTag($contents, 'script', 'src', $out)) {
                     $scripts[] = '<script src="' . $relroot . $out . '?###TIMESTAMP###"></script>';
                 }
             }
