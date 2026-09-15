@@ -13,8 +13,11 @@
 // is shipped to the client.
 // ---------------------------------------------------------------------------
 
+// Pourrais utiliser l'observer à la place
+
+
 import hljs from 'highlight.js/lib/core';
-import { dedent } from '@kirigami/canva/helpers';
+import { dedent } from '@kirigami/canva/helpers'; // vscode est pas capable le resolver, surement parce qu'il n'a pas encore de d.ts
 
 const registered = new Set();  // language names successfully registered on `hljs`
 const warned = new Set();      // language names we've already complained about

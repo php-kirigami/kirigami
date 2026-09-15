@@ -46,8 +46,9 @@ $font-break:           1200 !default;
 $font-resp:            calc($font-base * 100 / $font-break);
 $font-body:            -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !default;
 $font-heading:         "Trebuchet MS", "Segoe UI", Verdana, sans-serif !default;
+// Ajouter la monospace par default ici.
 
-$transition-duration:  200ms;
+$transition-duration:  200ms !default;
 $scroll-top:           0 !default;
 $fonts:                () !default;
 $icons:                () !default;
@@ -60,7 +61,7 @@ $icons-defaults: (
 @each $family, $path in $fonts {
 	@font-face {
 		font-family: $family;
-		font-style: normal;
+		font-style: normal; // intégrer la fonction sass qu'on a fait pour voir ce que ça fait
 		font-display: block;
 		font-weight: #{font-weight-range($path)};
 		font-stretch: #{font-stretch-range($path)};

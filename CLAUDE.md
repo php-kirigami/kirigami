@@ -5,6 +5,28 @@ travels with the code and is shared across machines and contributors.
 
 ---
 
+## New Workflow
+
+We a big work to do so the new workflow is:
+
+1. Create a branch / checkout pis toute
+2. Code and write comments
+3. Put a note on the section Documentation todo of this document
+4. Commit
+5. repeat steps 1-3 for each itterations of ideas
+6. Push batch
+7. Goto step 1 if work needs to be done before publishing new versions 
+8. Update ALL README.md that needs update in the workspace (see Documentation todo)
+9. Prepare npm packages that needs update
+10. Publish packages and wait until it's propagated
+11. (Future: pack VSCode extension + Publish)
+12. Commit + Push
+13. Merge branch to main
+14. Update templates-*
+15. Deep Update website
+16. Go to step 1
+
+
 ## What Kirigami is
 
 **Kirigami** is a static site generator that compiles PHP page templates into
@@ -407,3 +429,27 @@ default-stack-size crash, ID3v2.3/2.4/Unicode testing, etc.); this
 package here just vendors that repo's compiled output. Published for real
 via `scripts/publish.js --only audiowaveform-wasm --otp <code>` and
 confirmed live on the registry.
+
+
+## Documentation todo
+
+Notes left in-code during this session (not yet actioned — carry into the next
+iteration):
+
+- **Centralize `$font-mono`** as a real token in `canva/conf.scss`
+  (`$font-mono` / `--font-mono`). Right now the same monospace stack is
+  hardcoded independently in `canva/main.scss`, `canva/prose.scss`, and
+  `plugin-highlight/assets/_highlight.scss` — each has a comment pointing
+  back at this.
+- **`canva/build.js`**: generate `.d.ts` for the compiled `dist/scripts/*.js`
+  and wire it up so VS Code resolves `@kirigami/canva/*` script imports —
+  currently unresolved (see the comment on the `dedent` import in
+  `plugin-highlight/src/highlight.js`). `canva/package.json` already gained
+  the `./scripts/*` export as a first step.
+- **`plugin-highlight/src/highlight.js`**: consider swapping the current
+  wiring for canva's `observer` instead.
+- **`canva/utils.scss`**: revisit whether everything in this file is still
+  pulling its weight.
+- **`canva/conf.scss`**: the `font-style: normal` line in the `@font-face`
+  loop has a note to "integrate the sass function we made" — needs
+  clarification from Maxime before actioning, unclear which function.

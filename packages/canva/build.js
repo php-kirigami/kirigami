@@ -12,6 +12,9 @@ const DIST_SCRIPTS = "dist/scripts";
 const DIST_STYLES = "dist/styles";
 
 
+// faudrait faire des d.ts et linker ça pour que vscode reconnaissent les scripts
+
+
 async function printWarnings(warnings) {
 	if (!warnings?.length) return;
 	const formatted = await formatMessages(warnings, {

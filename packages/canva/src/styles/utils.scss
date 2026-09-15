@@ -3,6 +3,10 @@
 @use "sass:map";
 
 
+// à revoir l'utilité de tout ça
+
+
+
 @function wash($bg, $base, $amount) {
 	@return color.mix($base, $bg, $amount);
 }

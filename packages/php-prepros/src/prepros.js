@@ -98,10 +98,10 @@ const getPHPInstance = async () => {
                     results: results
                 });
             } catch(e) {
-                return {
+                return JSON.stringify({
                     success: false,
                     error: typeof e == 'string' ? e : e.message
-                }
+                });
             }
         });
     }

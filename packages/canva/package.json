@@ -17,6 +17,7 @@
   },
   "exports": {
     "./styles/*": "./dist/styles/*.scss",
+    "./scripts/*": "./dist/scripts/*.js",
     "./*": "./dist/scripts/*.js"
   },
   "files": [

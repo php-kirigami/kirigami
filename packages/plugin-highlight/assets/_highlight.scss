@@ -28,7 +28,7 @@
 // Font stack for code. Override before @include if you don't want JetBrains
 // Mono to win: `@use "…/highlight" with ($code-font: (Consolas, monospace));`
 $code-font: (
-	"JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace
+	"JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace // À CALISSER DANS CONF genre $font-mono
 ) !default;
 
 

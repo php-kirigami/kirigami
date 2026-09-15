@@ -107,7 +107,7 @@ $emit-class: true !default;
 	// Relying on "these rules land first, highlighter rules land after and
 	// win" is not enough on its own; the exclusion is required.
 	code:not(.hljs), kbd, samp, pre {
-		font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+		font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; // UTILISER LA VARIABLE GLOBALE --font-mono
 		font-size: .9em;
 	}
 	:not(pre) > code {
