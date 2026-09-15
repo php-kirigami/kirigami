@@ -7,9 +7,6 @@
   "homepage": "https://php-kirigami.github.io",
   "type": "module",
   "main": "index.js",
-  "bin": {
-    "kiri": "./bin/kiri.js"
-  },
   "publishConfig": {
     "access": "public"
   },
@@ -28,7 +25,15 @@
   "exports": {
     ".": "./index.js",
     "./package.json": "./package.json",
-    "./schema": "./kirigami.schema.json"
+    "./schema": "./kirigami.schema.json",
+    "./internal/config": "./bin/config.js",
+    "./internal/tasks/*": "./bin/tasks/*.js",
+    "./internal/plugins": "./bin/libs/plugins.js",
+    "./internal/watchengine": "./bin/libs/watchengine.js",
+    "./internal/runscript": "./bin/libs/runscript.js",
+    "./internal/devserver": "./bin/libs/devserver.js",
+    "./internal/phpinfoparser": "./bin/libs/phpinfoparser.js",
+    "./internal/utils": "./bin/utils.js"
   },
   "dependencies": {
     "@kirigami/canva": "2.6.0",

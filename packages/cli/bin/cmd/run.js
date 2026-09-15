@@ -1,11 +1,6 @@
-import fs from 'fs';
-import path from "path";
-import { c, log, parseArgs, printCommandHelp, findFiles } from "../utils.js";
-import { getConfig } from "../config.js";
-import { runenv } from '@kirigami/php-prepros';
-
-
-const __root = process.cwd();
+import { c, log, parseArgs, printCommandHelp } from "../utils.js";
+import { getConfig } from "@kirigami/kirigami/internal/config";
+import { runscript } from "@kirigami/kirigami/internal/runscript";
 
 const HELP = {
 	name: "run",
@@ -37,10 +32,7 @@ export default async function run(args) {
 	}
 
 	console.log(`\n${c.bold(c.cyan("kiri"))} — Run PHP command script\n`);
-	const config = await getConfig();
-
-	const file = path.join(__root, 'scripts', `${command}.php`);
-	if(!fs.existsSync(file)) throw `Command "${command}" not found.`
+	await getConfig(); // fail fast on an invalid kirigami.yaml before touching the PHP runtime
 
 	const argv = [
 		...(subcommand ? [subcommand] : []),
@@ -71,26 +63,5 @@ export default async function run(args) {
 	}
 
 	if(!result.success) process.exit(1);
-	
-}
 
-
-export async function runscript(command, argv = []) {
-	const config = await getConfig();
-	
-	const file = path.join(__root, 'scripts', `${command}.php`);
-	if(!fs.existsSync(file)) throw `Command "${command}" not found.`
-
-	const mountpaths = [];
-	if(config.scripts?.length) {
-		config.scripts.forEach(job => {
-			if(job.name == command && job.mount?.length) {
-				job.mount.forEach(pattern => findFiles(pattern).forEach(file => mountpaths.push(path.resolve(__root, file))));
-			}
-		});
-	}
-
-	const results = await runenv(file, mountpaths, ...argv);
-	if(!results.files) results.files = [];
-	return results;
 }

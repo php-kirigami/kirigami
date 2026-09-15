@@ -8,10 +8,15 @@
 // top-level `kirigami` key:
 //
 //   "kirigami": {
-//     "type": "plugin",                        // "plugin" | (later: "task", "command")
+//     "type": "plugin",                        // "plugin" | "command" | (later: "task")
 //     "minVersion": "1.2.0",                    // minimum @kirigami/kirigami version
 //     "optionsSchema": "./options.schema.json"  // JSON Schema for its kirigami.yaml `options`
 //   }
+//
+// A "command" package's register() calls @kirigami/sdk's registerCommand()
+// to add a new `kiri <name>` subcommand instead of (or alongside) hooks —
+// @kirigami/cli's dispatcher falls back to the registry for any name that
+// isn't one of its own built-in commands.
 //
 // The `options` live entirely in kirigami.yaml. If `optionsSchema` is set, those
 // options are validated against it before the plugin is loaded.
@@ -24,11 +29,11 @@ import { createRequire } from "node:module";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { reset as resetHooks } from "@kirigami/sdk";
 import { getConfig } from "../config.js";
-import { c, log } from "../utils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let _loaded = false;
+let _lastLoaded = [];
 
 
 // `{ reload: true }` re-runs every plugin's register() even if already
@@ -41,18 +46,22 @@ let _loaded = false;
 // CLAUDE.md), so this resets hooks for *every* loaded project in the
 // process, not just this one — fine today since only one project is ever
 // loaded per process, but a real limit if that changes later.
+//
+// Returns the list of plugins actually loaded, as [{ name, version }] —
+// doesn't print anything itself (an engine module shouldn't own terminal
+// output); @kirigami/cli's commands render this list themselves.
 export async function loadPlugins(config, { reload = false } = {}) {
-	if (_loaded && !reload) return;
+	if (_loaded && !reload) return _lastLoaded;
 	if (_loaded && reload) resetHooks();
 	_loaded = true;
 
 	config = config || await getConfig();
 	const entries = (Array.isArray(config.plugins) ? config.plugins : [])
 		.filter(p => p && p.name && p.active !== false);
-	if (!entries.length) return;
+	if (!entries.length) return (_lastLoaded = []);
 
-	console.log(`\n${c.bold("Plugins:")}`);
 	const kiriVer = kiriVersion();
+	const loaded = [];
 
 	for (const entry of entries) {
 		const { name } = entry;
@@ -66,7 +75,12 @@ export async function loadPlugins(config, { reload = false } = {}) {
 		const pkg = pkgDir ? readJson(path.join(pkgDir, "package.json")) : {};
 		const meta = pkg.kirigami || {};
 
-		if (meta.type && meta.type !== "plugin") {
+		// "command" packages (kirigami.type: "command") register a new `kiri`
+		// subcommand instead of/alongside build hooks — see @kirigami/sdk's
+		// registerCommand(). Loaded through the same `plugins:` list and the
+		// same register(options, {config, name}) call as a regular plugin;
+		// only "task" (not implemented yet) is still rejected here.
+		if (meta.type && !["plugin", "command"].includes(meta.type)) {
 			throw `Package "${name}" is a kirigami "${meta.type}", not a plugin — it can't go under "plugins:".`;
 		}
 
@@ -97,8 +111,10 @@ export async function loadPlugins(config, { reload = false } = {}) {
 		}
 
 		await register(options, { config, name });
-		log.step(`${c.green("✔")} ${name}${pkg.version ? c.dim(` v${pkg.version}`) : ""}`);
+		loaded.push({ name, version: pkg.version || null });
 	}
+
+	return (_lastLoaded = loaded);
 }
 
 

@@ -453,3 +453,11 @@ iteration):
 - **`canva/conf.scss`**: the `font-style: normal` line in the `@font-face`
   loop has a note to "integrate the sass function we made" — needs
   clarification from Maxime before actioning, unclear which function.
+- **New package `@kirigami/cli`** split out of `@kirigami/kirigami` (core-api
+  refactor, `refactor/core-api` branch — see `todo.md` for the full detail).
+  `@kirigami/kirigami`'s 689-line README still opens with "The kiri CLI",
+  which is no longer accurate now that `kiri`'s `bin/cmd/*.js` + `kiri.js`
+  live in the new package — needs a real rewrite (structure/content, not just
+  the opening line) once this is closer to release. `@kirigami/cli` already
+  has its own correct-shaped README. Not released yet, so not done as part of
+  this coding pass — this is the step-8-style README pass for when it ships.

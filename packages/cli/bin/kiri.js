@@ -5,6 +5,8 @@ import { fileURLToPath, pathToFileURL } from "url";
 import { existsSync } from "fs";
 import { c } from "./utils.js";
 import { phpversion } from "@kirigami/php-wasm";
+import { getCommand } from "@kirigami/sdk";
+import { load } from "@kirigami/kirigami";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -91,22 +93,39 @@ async function main() {
 	// Resolve the command file
 	const cmdPath = resolve(__dirname, "cmd", `${subcommand}.js`);
 
-	if (!existsSync(cmdPath)) {
+	try {
+		if (existsSync(cmdPath)) {
+			const cmdModule = await import(pathToFileURL(cmdPath).href);
+			await cmdModule.default(rest);
+			return;
+		}
+
+		// Not a built-in command — a plugin may have registered it (a package
+		// declaring `"kirigami": { "type": "command" }`, see @kirigami/sdk's
+		// commands.js). Loading the project runs every plugin's register(),
+		// which is what actually populates that registry — same cost `build`/
+		// `serve`/etc. already pay, just paid here instead. Only a failure to
+		// *load* falls through to "unknown command" below (no kirigami.yaml
+		// here, or it's invalid) — a found command's own run() failing is a
+		// real error and propagates normally, it isn't "unknown".
+		let project = null;
+		try {
+			project = await load();
+		} catch { /* no project here (or invalid) — command falls through as unknown */ }
+
+		const plugin = project && getCommand(subcommand);
+		if (plugin) {
+			await plugin.run(rest, project);
+			return;
+		}
+
 		console.error(
 			`\n${c.red("❌")} Unknown command : ${c.bold(subcommand)}\n` +
 			`  Type ${c.cyan("kiri --help")} to see avaiable commands.\n`
 		);
 		process.exit(1);
-	}
-
-	// Load and run the subcommand
-	try {
-		const cmdModule = await import(pathToFileURL(cmdPath).href);
-		await cmdModule.default(rest);
-		// process.exit(0);
 	} catch (err) {
 		console.error(`\n${c.red("❌")} Error: ${c.bold(subcommand)} failed:\n  ${typeof err == 'string' ? err : err.message}\n`);
-		// console.log(err);
 		process.exit(1);
 	}
 }

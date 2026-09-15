@@ -1,6 +1,6 @@
 import { parseArgs, printCommandHelp } from "../utils.js";
 import { phpinfo as phpinfo_ } from "@kirigami/php-wasm";
-import PHPInfoParser from "../libs/phpinfoparser.js";
+import PHPInfoParser from "@kirigami/kirigami/internal/phpinfoparser";
 
 
 const HELP = {

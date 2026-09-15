@@ -1,11 +1,6 @@
-import path from "path";
-import { fileURLToPath } from 'url';
 import { c, log, parseArgs, printCommandHelp } from "../utils.js";
-import { getConfig } from "../config.js";
-import { loadPlugins } from "../libs/plugins.js";
-import { buildWatchRules, createWatchers } from "../libs/watchengine.js";
+import { load } from "@kirigami/kirigami";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let __close = null;
 
 
@@ -37,29 +32,29 @@ export default async function watch(args) {
 	}
 
 	console.log(`\n${c.bold(c.cyan("kiri"))} — Dev-mode with hot-reload\n`);
-	const config = await getConfig();
-
-	if(!config.export?.path) {
-		if(!config.export) config.export = {};
-		config.export.path = 'dist';
-	}
+	const project = await load();
+	const { config } = project;
 
 	log.step(`Project   : ${c.dim(config.kirigami.project)}`);
 	log.step(`Base URL  : ${c.dim(config.kirigami.baseurl)}`);
 	log.step(`Root      : ${c.dim(config.root)}`);
+
+	if (project.plugins.length) {
+		console.log(`\n${c.bold("Plugins:")}`);
+		project.plugins.forEach(({ name, version }) =>
+			log.step(`${c.green("✔")} ${name}${version ? c.dim(` v${version}`) : ""}`));
+	}
+
 	console.log("\n");
 	log.info('Waiting for file change...\n');
 
-	await loadPlugins();
-
-	const watchers = await buildWatchRules(config, __dirname);
-	const { close } = createWatchers(watchers);
-	__close = close;
+	const watcher = await project.watch();
+	__close = watcher.close;
 }
 
 
 process.on("SIGINT", async () => {
-	if(__close) {
+	if (__close) {
 		await __close();
 	}
 });

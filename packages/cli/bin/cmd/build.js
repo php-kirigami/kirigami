@@ -1,11 +1,5 @@
-import path from "path";
-import { fileURLToPath, pathToFileURL } from 'url';
 import { c, log, parseArgs, printCommandHelp, printTaskError } from "../utils.js";
-import { getConfig } from "../config.js";
-import { trigger } from "../libs/triggers.js";
-import { loadPlugins } from "../libs/plugins.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { load } from "@kirigami/kirigami";
 
 
 const HELP = {
@@ -36,50 +30,52 @@ export default async function build(args) {
 	}
 
 	console.log(`\n${c.bold(c.cyan("kiri"))} — Build Project\n`);
-	const config = await getConfig();
+	const project = await load();
+	const { config } = project;
 
 	log.step(`Project   : ${c.dim(config.kirigami.project)}`);
 	log.step(`Base URL  : ${c.dim(config.kirigami.baseurl)}`);
 	log.step(`Root      : ${c.dim(config.root)}`);
-	await loadPlugins();
+
+	if (project.plugins.length) {
+		console.log(`\n${c.bold("Plugins:")}`);
+		project.plugins.forEach(({ name, version }) =>
+			log.step(`${c.green("✔")} ${name}${version ? c.dim(` v${version}`) : ""}`));
+	}
 
 	console.log(`\n\n${c.bold('Tasks:')}`);
 
-	await trigger('before-build');
+	const result = await project.build();
 
-	if(config.prepros) {
-		const task = {
-			name: "render-all",
-			type: "prepros",
-			force: true,
-			config: config.prepros,
-		};
-		config.tasks = [ task, ...config.tasks];
+	for (const scriptResult of result.trigger.results) {
+		process.stdout.write(`\n${c.gray("›")} SCRIPT: ${scriptResult.name}`);
+		if (scriptResult.success) {
+			process.stdout.write(` ${c.green("✔")}\n`);
+			scriptResult.files?.forEach(file => console.log(`    ${c.gray(file)}`));
+		} else {
+			process.stdout.write(` ${c.red("❌")}\n`);
+			console.log(c.red("\n› Error:"));
+			console.log(scriptResult.error);
+		}
 	}
 
-	const modules = [];
-	for (const task of config.tasks) {
-		if(!modules[task.type]) {
-			const taskPath = path.resolve(__dirname, "../tasks", `${task.type}.js`);
-			modules[task.type] = await import(pathToFileURL(taskPath).href);
-		}
-		if(!task.force && !modules[task.type].canbuild) continue;
-		process.stdout.write(`\n${c.gray("›")} ${modules[task.type].taskname}: ${task.name}`);
-		const results = await modules[task.type].default(config.root, task);
-		if(results.success) {
+	for (const taskResult of result.results) {
+		process.stdout.write(`\n${c.gray("›")} ${taskResult.taskname}: ${taskResult.task}`);
+		if (taskResult.success) {
 			process.stdout.write(` ${c.green("✔")}\n`);
-			results.files.forEach(file => console.log(`    ${c.gray(file)}`));
-			if(results.warnings) {
+			taskResult.files?.forEach(file => console.log(`    ${c.gray(file)}`));
+			if (taskResult.warnings) {
 				console.log(c.yellow("\n› Warnings:"));
-				console.log(c.dim(results.warnings));
+				console.log(c.dim(taskResult.warnings));
 			}
 		} else {
 			process.stdout.write(` ${c.red("❌")}\n`);
-			printTaskError(results);
-			process.exit(1);
+			printTaskError(taskResult);
 		}
 	}
-	
+
+	if (!result.success) process.exit(1);
+
 	console.log(`\n`);
 	log.success(c.bold(c.green(` Build finished!`)));
 	console.log();

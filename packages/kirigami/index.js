@@ -8,40 +8,38 @@
 // MCP server, a script — that wants to drive Kirigami without shelling out to
 // `kiri` and re-spawning a process for every build.
 //
-// `bin/cmd/*.js` (the actual `kiri` CLI) is NOT yet rewritten to call through
-// this API — that's the next iteration (see todo.md, "Phase 2 — CLI" in the
-// plan). This file is additive: it reuses the same config/plugin/task
-// machinery `bin/` already has, without changing how the CLI itself behaves.
+// `@kirigami/cli`'s `build`/`serve`/`watch` commands are thin wrappers over
+// this API (see that package's bin/cmd/*.js). The other commands
+// (export/create/install/run/cache/phpinfo/test) still have their own
+// unmigrated logic — that's the next iteration (see todo.md).
 //
 // Still bound to `process.cwd()` for locating kirigami.yaml, scripts/ and
 // node_modules — same as the CLI. Loading a *different* project than the
 // current working directory (multiple projects in one long-lived process)
-// isn't supported yet: config.js/plugins.js/run.js all resolve paths off
-// `process.cwd()` internally. Untangling that is future work, not done here.
+// isn't supported yet: config.js/plugins.js/runscript.js all resolve paths
+// off `process.cwd()` internally. Untangling that is future work, not done
+// here.
 // ---------------------------------------------------------------------------
 
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { getConfig, clearConfigCache } from "./bin/config.js";
 import { loadPlugins } from "./bin/libs/plugins.js";
-import { runscript } from "./bin/cmd/run.js";
+import { runscript } from "./bin/libs/runscript.js";
 import { createDevServer } from "./bin/libs/devserver.js";
 import { buildWatchRules, createWatchers } from "./bin/libs/watchengine.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const tasksDir = path.join(__dirname, "bin", "tasks");
-// buildWatchRules() resolves task modules as `path.resolve(dirname, "../tasks", …)`
-// — pass it a directory one level under tasksDir's parent so that math lands
-// back on tasksDir, matching the convention bin/cmd/*.js already uses.
-const watchEngineDir = path.join(__dirname, "bin", "cmd");
 
 
 // Runs every `scripts:` entry whose `trigger` matches `name` (e.g.
 // "before-build"), in order, stopping at the first failure. Deliberately
-// reimplemented here instead of reusing bin/libs/triggers.js's `trigger()` —
-// that one prints to the console and calls `process.exit(1)` on failure,
-// both wrong for a library call. `runscript()` itself (bin/cmd/run.js) is
-// already pure, so this just adds the scripts-list lookup around it.
+// reimplemented here instead of reusing bin/libs/triggers.js's `trigger()`
+// (which moved to @kirigami/cli on the package split, and prints to the
+// console + calls `process.exit(1)` on failure — both wrong for a library
+// call). `runscript()` itself is already pure, so this just adds the
+// scripts-list lookup around it.
 async function runTrigger(config, name) {
 	const scripts = (config.scripts || []).filter((s) => s.trigger === name);
 	const results = [];
@@ -57,9 +55,16 @@ async function runTrigger(config, name) {
 export class Project {
 	#loaded = false;
 	#config = null;
+	#plugins = [];
 
 	get config() {
 		return this.#config;
+	}
+
+	// [{ name, version }] for every plugin loadPlugins() actually activated on
+	// the last load()/reload() — empty until then.
+	get plugins() {
+		return this.#plugins;
 	}
 
 	// Loads (or re-loads) kirigami.yaml and the project's plugins. Safe to call
@@ -70,7 +75,7 @@ export class Project {
 	async reload() {
 		if (this.#loaded) clearConfigCache();
 		this.#config = await getConfig();
-		await loadPlugins(this.#config, { reload: this.#loaded });
+		this.#plugins = await loadPlugins(this.#config, { reload: this.#loaded });
 		this.#loaded = true;
 		return this;
 	}
@@ -110,7 +115,7 @@ export class Project {
 			if (!task.force && !modules[task.type].canbuild) continue;
 
 			const result = await modules[task.type].default(config.root, task);
-			results.push({ task: task.name, type: task.type, ...result });
+			results.push({ task: task.name, type: task.type, taskname: modules[task.type].taskname, ...result });
 			if (!result.success) return { success: false, trigger: beforeBuild, results };
 		}
 
@@ -127,7 +132,7 @@ export class Project {
 		const config = this.#config;
 
 		const devserver = await createDevServer({ root: config.root, port, host });
-		const rules = await buildWatchRules(config, watchEngineDir);
+		const rules = await buildWatchRules(config);
 		const watchers = rules.map((rule) => ({
 			...rule,
 			callback: async (...cbArgs) => {
@@ -147,6 +152,15 @@ export class Project {
 				await devserver.close();
 			},
 		};
+	}
+
+	// Same watch machinery as serve(), minus the HTTP server/hot-reload —
+	// rebuilds files on disk on change, nothing else. Returns { close() }.
+	async watch() {
+		if (!this.#loaded) await this.reload();
+		const rules = await buildWatchRules(this.#config);
+		const { close } = createWatchers(rules);
+		return { close };
 	}
 }
 

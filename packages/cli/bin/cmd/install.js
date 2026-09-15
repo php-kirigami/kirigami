@@ -4,7 +4,7 @@ import { execSync } from "node:child_process";
 import { c, log, parseArgs, printCommandHelp } from "../utils.js";
 import {
 	resolvePlugin, ownerPackageDir, readJson, compareVersions, kiriVersion,
-} from "../libs/plugins.js";
+} from "@kirigami/kirigami/internal/plugins";
 
 // Same naming convention kirigami.schema.json enforces for a `plugins:` entry
 // (see `properties.plugins.items.properties.name.pattern`) — kept in sync by hand.

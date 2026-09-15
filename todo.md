@@ -19,25 +19,73 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   remplacé par `@kirigami/canva`'s `observer` plutôt que sa logique propre.
 - **`canva/utils.scss` : revoir l'utilité de tout le fichier** — passer en
   revue le contenu pour voir ce qui sert encore réellement.
-- **API programmatique `@kirigami/kirigami` (`index.js`) : suite du chantier
-  core API** — première itération faite (`Project.load()`/`.reload()`/
-  `.validate()`/`.build()`/`.serve()`, testée en vrai contre `template-default`
-  et `template-demo`, vérifié qu'un `reload()` répété ne duplique pas les
-  hooks/CSS d'un plugin). Reste ouvert :
-  - `bin/cmd/build.js`/`serve.js`/`watch.js`/`export.js` ne passent pas encore
-    par cette API — ils gardent leur propre logique dupliquée pour l'instant
-    (Phase 2 du plan : les faire appeler `Project` au lieu de réimplémenter).
-  - `.watch()` et `.export()` pas encore exposés sur `Project` (seulement
-    `.build()`/`.serve()`).
-  - Chargement limité à un seul projet par process (`process.cwd()` figé dans
-    `config.js`/`plugins.js`/`run.js`) — charger un projet à un chemin
-    arbitraire, différent du cwd, n'est pas supporté.
-  - Le registre de hooks `@kirigami/sdk` est process-global (déjà documenté
-    dans CLAUDE.md) : `Project.reload()` reset donc les hooks de *tous* les
-    projets chargés dans le process, pas juste celui qu'on reload — sans
-    conséquence tant qu'un seul projet est chargé à la fois, mais une vraie
-    limite si l'extension VS Code doit un jour gérer plusieurs workspaces
-    Kirigami ouverts en même temps.
+- **Architecture "API core + interfaces" (plan de match ChatGPT) : Phase 1 +
+  Phase 2 faites** — `@kirigami/kirigami` est maintenant le moteur pur
+  (`Project.load()`/`.reload()`/`.validate()`/`.build()`/`.serve()`/`.watch()`,
+  `packages/kirigami/index.js`), et le CLI a été extrait dans un nouveau
+  package **`@kirigami/cli`** (`packages/cli/`, commande `kiri` inchangée —
+  pas de renommage) dont `build`/`serve`/`watch` sont maintenant de purs
+  wrappers autour de `Project`. Testé en vrai (pas juste des smoke tests) :
+  build/export/watch/serve/run/phpinfo/cache/install/create --help, contre
+  `template-default` ET `template-demo` (3 vrais plugins), via la vraie
+  résolution de package npm (`npm install` à la racine, pas des chemins
+  relatifs) — pas de régression trouvée après plusieurs itérations de bugs
+  réels corrigés en route (voir historique du commit). Les deux repos siblings
+  remis intacts après coup.
+  - **Registre de commandes pour les plugins** (en réponse directe à la
+    demande : les commandes doivent être disponibles via l'API puisque des
+    plugins pourront en installer) — `@kirigami/sdk` gagne
+    `registerCommand()`/`getCommand()`/`listCommands()`, parallèle à `on()`
+    pour les hooks. `plugins.js` accepte maintenant `kirigami.type: "command"`
+    en plus de `"plugin"` dans `plugins:` (seul `"task"` reste rejeté). Le
+    dispatcher de `@kirigami/cli` (`kiri.js`) essaie d'abord un fichier
+    `bin/cmd/<nom>.js` intégré, puis — si absent — charge le projet (ce qui
+    fait tourner `register()` de chaque plugin) et cherche dans le registre
+    sdk ; une commande trouvée s'exécute normalement, une vraiment inconnue
+    retombe sur "Unknown command" comme avant. **Vérifié end-to-end avec un
+    vrai faux plugin** (`kirigami-plugin-hello`, `kirigami.type: "command"`,
+    appelle `registerCommand("hello", …)`) dans un projet scratch : `kiri
+    hello` exécute bien la commande du plugin, `kiri unknowncommand` échoue
+    toujours correctement. Piège de test rencontré en route (déjà documenté
+    dans CLAUDE.md pour sdk) : un `ln -s` git-bash sur Windows sans privilège
+    a silencieusement copié le dossier `@kirigami/sdk` au lieu de le lier,
+    donnant un registre sdk dédoublé/déconnecté — corrigé avec une vraie
+    jonction Windows (`New-Item -ItemType Junction`).
+  - Reste ouvert :
+    - `.export()` pas encore exposé sur `Project` (`export.js` garde sa
+      propre logique de tâches, juste réimportée depuis `@kirigami/kirigami`
+      via les nouveaux sous-chemins `exports["./internal/*"]`).
+      `create`/`install`/`cache`/`phpinfo`/`run`/`test` non plus — ils
+      utilisent `@kirigami/kirigami/internal/*` directement plutôt que de
+      passer par une méthode `Project`.
+    - Les commandes intégrées (build/export/watch/…) elles-mêmes ne passent
+      **pas** par le nouveau registre `registerCommand()` — seul un plugin
+      externe l'utilise pour l'instant. À évaluer : est-ce qu'on veut untifier
+      (tout — y compris les built-ins — passe par le registre) ou garder les
+      deux mécanismes séparés (built-ins = méthodes `Project`, extensions =
+      registre) ?
+    - Chargement limité à un seul projet par process (`process.cwd()` figé
+      dans `config.js`/`plugins.js`/`runscript.js`) — charger un projet à un
+      chemin arbitraire, différent du cwd, n'est pas supporté.
+    - Le registre de hooks/commandes `@kirigami/sdk` est process-global (déjà
+      documenté dans CLAUDE.md) : `Project.reload()` reset donc les hooks de
+      *tous* les projets chargés dans le process, pas juste celui qu'on
+      reload — sans conséquence tant qu'un seul projet est chargé à la fois,
+      mais une vraie limite si l'extension VS Code doit un jour gérer
+      plusieurs workspaces Kirigami ouverts en même temps.
+    - Un plugin/task module peut toujours écrire directement dans la console
+      de l'hôte (`c`/`log` restés dans `@kirigami/kirigami/bin/utils.js` pour
+      `tasks/sass.js`/`esbuild.js`/`prepros.js`) même quand `Project.build()`
+      est appelé par un embedder programmatique — pas nouveau, pas réglé ici.
+    - `@kirigami/kirigami`'s README (689 lignes) décrit encore le package
+      comme "the kiri CLI" — plus vrai depuis l'extraction de `@kirigami/cli`.
+      Pas retouché cette session (c'est le genre de mise à jour prévue à
+      l'étape "Update ALL README.md" du nouveau workflow, pas pendant le
+      codage). `@kirigami/cli` a un README neuf et correct.
+    - Aucun des deux packages (`@kirigami/kirigami` 2.x sans `bin`,
+      `@kirigami/cli` 0.1.0 nouveau) n'est publié sur npm — ni les
+      `../template-*/`/le site ne pointent encore vers `@kirigami/cli`. Pas
+      touché cette session (prématuré avant publication réelle).
 
 - **`FS::phpFileInfo()` en cascade** — permettre à une page d'hériter des
   tags PHPDOC d'un `_index.php` ancêtre (au lieu de ne lire que le fichier

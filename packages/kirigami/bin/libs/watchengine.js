@@ -1,7 +1,7 @@
 import path from "path";
 import chokidar from "chokidar";
 import picomatch from "picomatch";
-import { pathToFileURL } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 
 /**
  * bin/libs/watchengine.js — the file-watching core shared by `kiri watch`
@@ -9,10 +9,16 @@ import { pathToFileURL } from "url";
  * Extracted so neither command re-implements the other's plumbing.
  */
 
+// Resolved from this file's own location, not a caller-supplied dirname —
+// used to require every caller (bin/cmd/*.js, and @kirigami/cli's commands
+// across the package boundary since the core-api split) to pass one in just
+// so this could find its sibling tasks/ folder.
+const tasksDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../tasks");
+
 // Builds one watch "rule" per watchable task (esbuild, sass, prepros, …),
 // prepending the implicit `prepros` task the same way `build`/`export` do.
 // Mutates nothing on `config` beyond what `watch`/`serve` already expect.
-export async function buildWatchRules(config, __dirname) {
+export async function buildWatchRules(config) {
 	if (config.prepros) {
 		const task = {
 			name: "prepros",
@@ -26,7 +32,7 @@ export async function buildWatchRules(config, __dirname) {
 	const watchers = [];
 	for (const task of config.tasks) {
 		if (!modules[task.type]) {
-			const taskPath = path.resolve(__dirname, "../tasks", `${task.type}.js`);
+			const taskPath = path.join(tasksDir, `${task.type}.js`);
 			modules[task.type] = await import(pathToFileURL(taskPath).href);
 		}
 		if (modules[task.type].canwatch) {

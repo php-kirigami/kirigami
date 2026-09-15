@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
-import { c, log } from "../utils.js";
 
 /**
  * bin/libs/devserver.js — the static file server + hot-reload channel behind
@@ -179,8 +178,4 @@ export async function createDevServer({ root, port = 4321, host = "127.0.0.1" })
 			return new Promise((resolve) => server.close(resolve));
 		},
 	};
-}
-
-export function logServerReady(url) {
-	log.info(`Serving  : ${c.dim(url)} ${c.gray("(hot-reload on)")}`);
 }

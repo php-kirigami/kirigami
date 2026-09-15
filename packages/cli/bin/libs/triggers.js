@@ -1,5 +1,5 @@
-import { runscript } from "../cmd/run.js";
-import { getConfig } from "../config.js";
+import { runscript } from "@kirigami/kirigami/internal/runscript";
+import { getConfig } from "@kirigami/kirigami/internal/config";
 import { c } from "../utils.js";
 
 

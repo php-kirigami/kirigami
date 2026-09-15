@@ -1,11 +1,9 @@
 import path from "path";
-import { fileURLToPath, pathToFileURL } from 'url';
 import { c, log, parseArgs, printCommandHelp, printTaskError } from "../utils.js";
-import { getConfig } from "../config.js";
+import { getConfig } from "@kirigami/kirigami/internal/config";
+import { loadPlugins } from "@kirigami/kirigami/internal/plugins";
 import { trigger } from "../libs/triggers.js";
-import { loadPlugins } from "../libs/plugins.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const __root = process.cwd();
 
 
@@ -51,7 +49,12 @@ export default async function exportDist(args) {
 	log.step(`Root      : ${c.dim(config.root)}`);
 	log.step(`Export    : ${c.dim(__dist)}`);
 
-	await loadPlugins();
+	const loadedPlugins = await loadPlugins(config);
+	if (loadedPlugins.length) {
+		console.log(`\n${c.bold("Plugins:")}`);
+		loadedPlugins.forEach(({ name, version }) =>
+			log.step(`${c.green("✔")} ${name}${version ? c.dim(` v${version}`) : ""}`));
+	}
 
 	console.log(`\n\n${c.bold('Tasks:')}`);
 
@@ -78,8 +81,7 @@ export default async function exportDist(args) {
 	const modules = [];
 	for (const task of config.tasks) {
 		if(!modules[task.type]) {
-			const taskPath = path.resolve(__dirname, "../tasks", `${task.type}.js`);
-			modules[task.type] = await import(pathToFileURL(taskPath).href);
+			modules[task.type] = await import(`@kirigami/kirigami/internal/tasks/${task.type}`);
 		}
 		if(!task.force && !modules[task.type].canbuild) continue;
 		task.banner = config.kirigami.banner;

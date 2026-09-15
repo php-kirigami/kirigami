@@ -8,7 +8,7 @@ import { execSync } from "child_process";
 import { Octokit } from "@octokit/rest";
 import { fileURLToPath } from 'url';
 import { Cache } from "@kirigami/sdk";
-import { deriveRepo } from "../config.js";
+import { deriveRepo } from "@kirigami/kirigami/internal/config";
 import { c, log, parseArgs, printCommandHelp, isInteractive, ask, confirm, select } from "../utils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
