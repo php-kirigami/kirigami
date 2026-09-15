@@ -19,6 +19,25 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   remplacé par `@kirigami/canva`'s `observer` plutôt que sa logique propre.
 - **`canva/utils.scss` : revoir l'utilité de tout le fichier** — passer en
   revue le contenu pour voir ce qui sert encore réellement.
+- **API programmatique `@kirigami/kirigami` (`index.js`) : suite du chantier
+  core API** — première itération faite (`Project.load()`/`.reload()`/
+  `.validate()`/`.build()`/`.serve()`, testée en vrai contre `template-default`
+  et `template-demo`, vérifié qu'un `reload()` répété ne duplique pas les
+  hooks/CSS d'un plugin). Reste ouvert :
+  - `bin/cmd/build.js`/`serve.js`/`watch.js`/`export.js` ne passent pas encore
+    par cette API — ils gardent leur propre logique dupliquée pour l'instant
+    (Phase 2 du plan : les faire appeler `Project` au lieu de réimplémenter).
+  - `.watch()` et `.export()` pas encore exposés sur `Project` (seulement
+    `.build()`/`.serve()`).
+  - Chargement limité à un seul projet par process (`process.cwd()` figé dans
+    `config.js`/`plugins.js`/`run.js`) — charger un projet à un chemin
+    arbitraire, différent du cwd, n'est pas supporté.
+  - Le registre de hooks `@kirigami/sdk` est process-global (déjà documenté
+    dans CLAUDE.md) : `Project.reload()` reset donc les hooks de *tous* les
+    projets chargés dans le process, pas juste celui qu'on reload — sans
+    conséquence tant qu'un seul projet est chargé à la fois, mais une vraie
+    limite si l'extension VS Code doit un jour gérer plusieurs workspaces
+    Kirigami ouverts en même temps.
 
 - **`FS::phpFileInfo()` en cascade** — permettre à une page d'hériter des
   tags PHPDOC d'un `_index.php` ancêtre (au lieu de ne lire que le fichier

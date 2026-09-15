@@ -26,6 +26,7 @@
     "npm": ">=10.2.3"
   },
   "exports": {
+    ".": "./index.js",
     "./package.json": "./package.json",
     "./schema": "./kirigami.schema.json"
   },

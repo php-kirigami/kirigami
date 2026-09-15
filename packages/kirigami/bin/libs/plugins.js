@@ -22,6 +22,7 @@ import path from "node:path";
 import Ajv from "ajv";
 import { createRequire } from "node:module";
 import { pathToFileURL, fileURLToPath } from "node:url";
+import { reset as resetHooks } from "@kirigami/sdk";
 import { getConfig } from "../config.js";
 import { c, log } from "../utils.js";
 
@@ -30,11 +31,22 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let _loaded = false;
 
 
-export async function loadPlugins() {
-	if (_loaded) return;
+// `{ reload: true }` re-runs every plugin's register() even if already
+// loaded — resetting the shared @kirigami/sdk hook registry first, since
+// re-registering without a reset would pile up a duplicate set of listeners
+// (see reset()'s own doc comment). Used by the programmatic `Project.reload()`
+// API (package root index.js) so a long-lived host can pick up a changed
+// kirigami.yaml `plugins:` list without restarting the process. Note: the
+// hook registry is process-global (a @kirigami/sdk design constraint, see
+// CLAUDE.md), so this resets hooks for *every* loaded project in the
+// process, not just this one — fine today since only one project is ever
+// loaded per process, but a real limit if that changes later.
+export async function loadPlugins(config, { reload = false } = {}) {
+	if (_loaded && !reload) return;
+	if (_loaded && reload) resetHooks();
 	_loaded = true;
 
-	const config = await getConfig();
+	config = config || await getConfig();
 	const entries = (Array.isArray(config.plugins) ? config.plugins : [])
 		.filter(p => p && p.name && p.active !== false);
 	if (!entries.length) return;

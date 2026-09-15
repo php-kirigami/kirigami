@@ -17,16 +17,30 @@ let config = null;
 let schemaValidator = null;
 
 
+// Reads + validates a kirigami.yaml from disk, fresh every call (no caching).
+// Used directly by callers that need to reload after the file changed on
+// disk (the programmatic `Project.reload()` API — see the package root
+// index.js) without needing to clear/touch getConfig()'s own cache.
+export async function loadConfig(configPath = __configpath) {
+	if (!fs.existsSync(configPath)) throw `Config file not found: ${configPath}`;
+	const _config = await walkFile(configPath);
+	if(!_config) throw `Invalid config file: ${configPath}`;
+	validateAgainstSchema(_config, configPath);
+	await validateConfig(_config, configPath);
+	return _config;
+}
+
+
 export async function getConfig() {
-	if(!config) {
-		if (!fs.existsSync(__configpath)) throw `Config file not found: ${__configpath}`;
-		const _config = await walkFile(__configpath);
-		if(!_config) throw `Invalid config file: ${__configpath}`;
-		validateAgainstSchema(_config);
-		await validateConfig(_config);
-		config = _config;
-	}
+	if(!config) config = await loadConfig(__configpath);
 	return config;
+}
+
+
+// Drops getConfig()'s cached result so the next call re-reads kirigami.yaml
+// from disk. Still bound to the same cwd-derived path as getConfig() itself.
+export function clearConfigCache() {
+	config = null;
 }
 
 
@@ -39,7 +53,7 @@ export async function getConfig() {
 // annotations compile without extra Ajv plugins; validateFormats: false skips
 // the `format` keyword (baseurl is checked imperatively in validateConfig()).
 // ---------------------------------------------------------------------------
-function validateAgainstSchema(_config) {
+function validateAgainstSchema(_config, configPath) {
 	if (!schemaValidator) {
 		const schema = structuredClone(require('../kirigami.schema.json'));
 		inlinePluginOptionSchemas(schema);
@@ -51,7 +65,7 @@ function validateAgainstSchema(_config) {
 		const details = schemaValidator.errors
 			.map((e) => `  ${e.instancePath || '(root)'} ${e.message}`)
 			.join('\n');
-		throwConfigError(__configpath, `Schema validation failed:\n${details}`);
+		throwConfigError(configPath, `Schema validation failed:\n${details}`);
 	}
 }
 
@@ -93,21 +107,22 @@ function inlinePluginOptionSchemas(schema) {
 }
 
 
-async function validateConfig(config) {
+async function validateConfig(config, configPath) {
 	const modules = [];
+	const projectDir = path.dirname(configPath);
 
 	// Verify kirigami section
-	if(!config.kirigami) throwConfigError(__configpath, `Missing "kirigami" configuration section.`);
+	if(!config.kirigami) throwConfigError(configPath, `Missing "kirigami" configuration section.`);
 
 	// verify kirigami.project, kirigami.baseurl
-	if(!config.kirigami.project) throwConfigError(__configpath, `Missing "kirigami:project" property.`);
-	if(!config.kirigami.baseurl) throwConfigError(__configpath, `Missing "kirigami:baseurl" property.`);
+	if(!config.kirigami.project) throwConfigError(configPath, `Missing "kirigami:project" property.`);
+	if(!config.kirigami.baseurl) throwConfigError(configPath, `Missing "kirigami:baseurl" property.`);
 	config.kirigami.baseurl = config.kirigami.baseurl.replace(/\/$/, '');
 
 	// Verify root
-	if(!config.kirigami.root) throwConfigError(__configpath, `Missing "kirigami:root" property.`);
-	const __root = path.resolve(__project, config.kirigami.root);
-	if (!fs.existsSync(__root)) throwConfigError(__configpath, `Invalid "kirigami:root" property.`);
+	if(!config.kirigami.root) throwConfigError(configPath, `Missing "kirigami:root" property.`);
+	const __root = path.resolve(projectDir, config.kirigami.root);
+	if (!fs.existsSync(__root)) throwConfigError(configPath, `Invalid "kirigami:root" property.`);
 	config.root = __root;
 
 	// Verify banner. A `kirigami:banner` file is filled from the config; with no
@@ -115,8 +130,8 @@ async function validateConfig(config) {
 	// (and the rest) are resolved here, on every build/export — the committed
 	// banner.txt keeps its placeholders.
 	if(config.kirigami.banner) {
-		const bannerFile = path.join(__project, config.kirigami.banner);
-		if (!fs.existsSync(bannerFile)) throwConfigError(__configpath, `Invalid "kirigami:banner" property.`);
+		const bannerFile = path.join(projectDir, config.kirigami.banner);
+		if (!fs.existsSync(bannerFile)) throwConfigError(configPath, `Invalid "kirigami:banner" property.`);
 		config.kirigami.banner = fillBanner(fs.readFileSync(bannerFile, 'utf8'), config.kirigami);
 	} else {
 		const tpl = path.join(__dirname, '..', 'assets', 'banner-template.txt');
@@ -134,17 +149,17 @@ async function validateConfig(config) {
 	// Verify tasks
 	if(config.tasks) {
 		await Promise.all(config.tasks.map(async task => {
-			if(!task.type) throwConfigError(__configpath, `Invalid task type: ${util.inspect(task)}.`);
-			if(!task.name) throwConfigError(__configpath, `Invalid task name: ${util.inspect(task)}.`);
+			if(!task.type) throwConfigError(configPath, `Invalid task type: ${util.inspect(task)}.`);
+			if(!task.name) throwConfigError(configPath, `Invalid task name: ${util.inspect(task)}.`);
 			try {
 				if(!modules[task.type]) {
 					const taskPath = path.resolve(__dirname, "tasks", `${task.type}.js`);
-					if (!fs.existsSync(taskPath)) throwConfigError(__configpath, `Unknown task type: ${util.inspect(task)}.`);
+					if (!fs.existsSync(taskPath)) throwConfigError(configPath, `Unknown task type: ${util.inspect(task)}.`);
 					modules[task.type] = await import(pathToFileURL(taskPath).href);
 				}
 				await modules[task.type].validate(__root, task);
 			} catch(err) {
-				throwConfigError(__configpath, typeof err == 'string' ? err : err.message);
+				throwConfigError(configPath, typeof err == 'string' ? err : err.message);
 			}
 		}));
 	} else config.tasks = [];

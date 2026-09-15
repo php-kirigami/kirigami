@@ -25,6 +25,18 @@ export function off(hookName, fn) {
 }
 
 
+// Clears every listener for one hook, or the whole registry when no
+// hookName is given. Meant for a long-lived host (a VS Code extension, an
+// MCP server) that reloads a project's plugins in place — without this,
+// re-running each plugin's register() on reload would pile up a second set
+// of listeners alongside the first, since every call creates new function
+// closures `on()` can't recognize as duplicates.
+export function reset(hookName) {
+	if (hookName) listeners.delete(hookName);
+	else listeners.clear();
+}
+
+
 // True if at least one listener is registered for a hook. Lets a task skip
 // expensive setup (reading files, booting a runtime) when nothing hooks in.
 export function has(hookName) {
