@@ -15,7 +15,7 @@ const HELP = {
 	description: "Dev-mode with hot-reload, plus a local server to preview it in a browser.",
 	usage: "[options]",
 	options: [
-		{ flag: "--port, -p <n>", desc: "Port to listen on (default 4321)" },
+		{ flag: "--port, -p <n>", desc: "Port to listen on (default 4321, 0 for a random free port)" },
 		{ flag: "--host <host>",  desc: "Host to bind to (default 127.0.0.1)" },
 		{ flag: "--help, -h",     desc: "Show this help section" },
 	],
@@ -40,7 +40,8 @@ export default async function serve(args) {
 		return;
 	}
 
-	const port = Number.parseInt(flags.port ?? flags.p, 10) || 4321;
+	const parsedPort = Number.parseInt(flags.port ?? flags.p, 10);
+	const port = Number.isNaN(parsedPort) ? 4321 : parsedPort;
 	const host = typeof flags.host === "string" ? flags.host : "127.0.0.1";
 
 	console.log(`\n${c.bold(c.cyan("kiri"))} — Dev-mode with hot-reload\n`);

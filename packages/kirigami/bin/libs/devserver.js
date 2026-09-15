@@ -102,7 +102,10 @@ function resolveFile(root, pathname) {
  * fallback (served as-is if present, otherwise a minimal built-in page) and a
  * hot-reload channel every HTML response is wired to automatically.
  *
- * Returns `{ url, broadcastReload(), broadcastCssReload(), close() }`.
+ * `port: 0` lets the OS pick a free port — the actual port is reflected back
+ * in the returned `port`/`url` either way.
+ *
+ * Returns `{ address, port, url, broadcastReload(), broadcastCssReload(), close() }`.
  * `broadcastReload()` triggers a full page reload; `broadcastCssReload()`
  * swaps every `<link rel=stylesheet>` in place instead (no reload, scroll
  * position and form state kept) — use it when only CSS changed. Both are
@@ -158,8 +161,12 @@ export async function createDevServer({ root, port = 4321, host = "127.0.0.1" })
 		server.listen(port, host, resolve);
 	});
 
+	const actualPort = server.address().port;
+
 	return {
-		url: `http://${host}:${port}/`,
+		address: host,
+		port: actualPort,
+		url: `http://${host}:${actualPort}/`,
 		broadcastReload() {
 			for (const res of clients) res.write("data: reload\n\n");
 		},
