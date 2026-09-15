@@ -6,6 +6,20 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 ## Ouvert
 
+- **Centraliser `$font-mono` dans `canva/conf.scss`** — le même stack
+  monospace est actuellement dupliqué en dur dans `canva/main.scss`,
+  `canva/prose.scss` et `plugin-highlight/assets/_highlight.scss` ; en faire
+  un vrai token (`$font-mono` / `--font-mono`) réutilisé partout.
+- **`.d.ts` pour `canva/dist/scripts/*.js`** — VS Code n'arrive pas à
+  résoudre les imports `@kirigami/canva/<script>` (ex. `helpers`), faute de
+  déclarations de types ; à générer dans `canva/build.js`. `./scripts/*` a
+  déjà été ajouté à `package.json#exports` comme premier pas.
+- **`plugin-highlight/src/highlight.js` : évaluer l'observer de canva** —
+  voir si le mécanisme actuel de repérage des blocs `<pre><code>` peut être
+  remplacé par `@kirigami/canva`'s `observer` plutôt que sa logique propre.
+- **`canva/utils.scss` : revoir l'utilité de tout le fichier** — passer en
+  revue le contenu pour voir ce qui sert encore réellement.
+
 - **`FS::phpFileInfo()` en cascade** — permettre à une page d'hériter des
   tags PHPDOC d'un `_index.php` ancêtre (au lieu de ne lire que le fichier
   lui-même), pour définir une valeur une fois au niveau d'une section plutôt
