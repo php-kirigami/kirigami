@@ -1,0 +1,74 @@
+{
+	"name": "@kirigami/bestframe",
+	"version": "0.1.0",
+	"description": "Automatic thumbnail/still-frame selection for video, powered by a tiny embedded aesthetic AI model, compiled to WebAssembly for Node.js.",
+	"keywords": [
+		"video",
+		"thumbnail",
+		"screenshot",
+		"still-frame",
+		"best-frame",
+		"frame-extraction",
+		"video-thumbnail",
+		"video-poster",
+		"video-preview",
+		"ffmpeg",
+		"h264",
+		"hevc",
+		"h265",
+		"vp9",
+		"av1",
+		"webm",
+		"matroska",
+		"mp4",
+		"ai",
+		"machine-learning",
+		"aesthetic",
+		"nima",
+		"image-quality",
+		"jpeg",
+		"png",
+		"video-processing",
+		"webassembly",
+		"wasm",
+		"node",
+		"kirigami"
+	],
+	"homepage": "https://php-kirigami.github.io",
+	"bugs": {
+		"url": "https://github.com/php-kirigami/kirigami/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/php-kirigami/kirigami.git"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"license": "LGPL-2.1-or-later",
+	"author": "Maxime Larrivée-Roy",
+	"type": "module",
+	"main": "index.js",
+	"types": "index.d.ts",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./index.d.ts",
+			"import": "./index.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"engines": {
+		"node": ">=24.0.0"
+	},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"files": [
+		"index.js",
+		"index.d.ts",
+		"dist",
+		"LICENSE",
+		"README.md"
+	]
+}
