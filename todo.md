@@ -6,10 +6,26 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 ## Ouvert
 
-- **Centraliser `$font-mono` dans `canva/conf.scss`** — le même stack
-  monospace est actuellement dupliqué en dur dans `canva/main.scss`,
-  `canva/prose.scss` et `plugin-highlight/assets/_highlight.scss` ; en faire
-  un vrai token (`$font-mono` / `--font-mono`) réutilisé partout.
+- **Fait — Centraliser `$font-mono` dans `canva/conf.scss`.** Nouveau token
+  `$font-mono` / `--font-mono` (même patron que `$font-body`/`--font-body`),
+  stack système générique (`ui-monospace, SFMono-Regular, "SF Mono", Menlo,
+  Consolas, monospace`). `canva/main.scss` (le `$mono` local supprimé,
+  5 usages) et `canva/prose.scss` pointent maintenant sur `var(--font-mono)`.
+  `plugin-highlight/assets/_highlight.scss`'s `$code-font` — un font stack
+  différent exprès (JetBrains Mono en premier, plugin-highlight embarque son
+  propre webfont) — garde JetBrains Mono en tête mais retombe sur
+  `var(--font-mono)` au lieu de dupliquer une deuxième liste de fallback en
+  dur (`"JetBrains Mono", var(--font-mono)` — un `var()` à l'intérieur d'un
+  `font-family` substitue toute la chaîne à cette position, CSS valide).
+  Les fichiers "copy-me" `theme-dark.scss`/`theme-light.scss` **pas touchés**
+  exprès : ils sont déjà autonomes (leur propre palette en dur, pas de token
+  canva) — y mettre `var(--font-mono)` casserait cette autonomie. Vérifié en
+  compilant réellement les deux côtés avec `sass` (pas juste relu) :
+  `conf`+`main`+`prose` ensemble (un seul `--font-mono` émis dans `:root`,
+  6 usages en `var(--font-mono)` dans le CSS de sortie) et le mixin
+  `hljs.dark()` isolément (`font-family: "JetBrains Mono", var(--font-mono);`
+  dans les deux règles qui l'utilisent). `canva/dist/` régénéré
+  (`node build.js`).
 - **`.d.ts` pour `canva/dist/scripts/*.js`** — VS Code n'arrive pas à
   résoudre les imports `@kirigami/canva/<script>` (ex. `helpers`), faute de
   déclarations de types ; à générer dans `canva/build.js`. `./scripts/*` a

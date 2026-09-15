@@ -46,8 +46,14 @@ $font-break:           1200 !default;
 $font-resp:            calc($font-base * 100 / $font-break);
 $font-body:            -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !default;
 $font-heading:         "Trebuchet MS", "Segoe UI", Verdana, sans-serif !default;
+// Generic system monospace fallback — chrome that merely wants "a monospace
+// font" (breadcrumb, table headers, badges in styles/main, prose.scss's
+// no-highlighter code defaults). Not the same job as plugin-highlight's own
+// $code-font, which prepends an actual brand font (JetBrains Mono) and falls
+// back to this token via `var(--font-mono)` for its tail.
+$font-mono:            ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace !default;
 
-$transition-duration:  200ms;
+$transition-duration:  200ms !default;
 $scroll-top:           0 !default;
 $fonts:                () !default;
 $icons:                () !default;
@@ -60,7 +66,7 @@ $icons-defaults: (
 @each $family, $path in $fonts {
 	@font-face {
 		font-family: $family;
-		font-style: normal;
+		font-style: normal; // intégrer la fonction sass qu'on a fait pour voir ce que ça fait
 		font-display: block;
 		font-weight: #{font-weight-range($path)};
 		font-stretch: #{font-stretch-range($path)};
@@ -127,6 +133,7 @@ $dark-enabled: $dark == true or meta.type-of($dark) == "map";
 
 	--font-body:           #{$font-body};
 	--font-heading:        #{$font-heading};
+	--font-mono:           #{$font-mono};
 	--font-base:           #{$font-base}px;
 	--font-min:            #{$font-min}px;
 	--font-break:          #{$font-break}px;
