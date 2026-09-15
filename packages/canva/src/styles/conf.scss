@@ -64,9 +64,19 @@ $icons-defaults: (
 
 
 @each $family, $path in $fonts {
+	// font-style-detect() (kirigami-core's sass.js) reads real font metadata:
+	// "normal" / "italic" / "oblique NNdeg NNdeg", or the "ital-axis"
+	// sentinel for a variable font whose binary `ital` axis can't be
+	// expressed as one font-style value at all — that would need splitting
+	// this loop into two @font-face blocks (one per ital value), which
+	// nothing here does yet. Fall back to "normal" rather than emit that
+	// sentinel as literal (invalid) CSS.
+	$font-style: font-style-detect($path);
+	@if $font-style == "ital-axis" { $font-style: "normal"; }
+
 	@font-face {
 		font-family: $family;
-		font-style: normal; // intégrer la fonction sass qu'on a fait pour voir ce que ça fait
+		font-style: #{$font-style};
 		font-display: block;
 		font-weight: #{font-weight-range($path)};
 		font-stretch: #{font-stretch-range($path)};

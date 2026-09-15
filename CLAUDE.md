@@ -448,11 +448,19 @@ detail (what was verified, how) in `todo.md`'s "Ouvert" section:
   (`wash`/`hex6`/`hexbin` are intentional public API, not dead code); only
   actual finding was an unused `@use "sass:map"`, removed.
 
+**Also resolved this session** — `canva/conf.scss`'s `font-style: normal`
+now calls the already-existing `font-style-detect($path)` (`kirigami/bin/
+tasks/sass.js`) instead of hardcoding `normal`; guarded against its
+`"ital-axis"` sentinel (a variable font with a binary `ital` axis — falls
+back to `normal`, same as before) since nothing consumes that sentinel
+anywhere. Verified against a real `kiri build` (template-default's real
+`$fonts:`, Roboto Flex + Quicksand). Full detail in `todo.md`. One real
+question still open for Maxime: if a project ever uses a font with that
+`ital` axis, does splitting the `@each` loop into two `@font-face` blocks
+(one per `ital` value) sound right, or something else?
+
 Still open:
 
-- **`canva/conf.scss`**: the `font-style: normal` line in the `@font-face`
-  loop has a note to "integrate the sass function we made" — needs
-  clarification from Maxime before actioning, unclear which function.
 - **New package `@kirigami/cli`** split out of `@kirigami/kirigami` (core-api
   refactor, `refactor/core-api` branch — see `todo.md` for the full detail).
   `@kirigami/kirigami`'s 689-line README still opens with "The kiri CLI",

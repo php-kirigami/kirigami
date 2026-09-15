@@ -6,6 +6,29 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
 
 ## Ouvert
 
+- **Fait — `canva/conf.scss` : câblé `font-style-detect($path)` dans la
+  boucle `@font-face`** (remplace le `font-style: normal;` codé en dur,
+  seul item de la liste "Documentation todo" qui demandait une clarification
+  de Maxime — "unclear which function"). La fonction existait déjà, câblée
+  en JS dans `kirigami/bin/tasks/sass.js` (ligne ~192) aux côtés de
+  `font-weight-range`/`font-stretch-range`/etc., juste jamais appelée
+  depuis `conf.scss`. Elle lit les vraies métadonnées de la police
+  (`italicAngle`, le nom de la sous-famille, l'axe variable `slnt`) et
+  retourne `normal` / `italic` / `oblique NNdeg NNdeg` — sauf pour une
+  police variable avec un axe `ital` binaire, où elle retourne un sentinel
+  `"ital-axis"` (pas une vraie valeur CSS) **jamais géré nulle part
+  ailleurs dans le code** ; câbler ça tel quel aurait émis
+  `font-style: ital-axis;`, du CSS invalide, pour une police comme
+  Recursive. Ajouté un garde-fou (`@if $font-style == "ital-axis" {
+  $font-style: "normal"; }`, même comportement qu'avant pour ce cas précis)
+  plutôt que de deviner comment scinder la boucle en deux `@font-face` (un
+  par valeur d'`ital`) — **ça, ça reste une vraie question pour Maxime** si
+  jamais un projet utilise une police avec cet axe un jour. Vérifié en vrai
+  contre le vrai pipeline sass (pas juste compilé à vide) : copie scratch de
+  `template-default` (qui a un vrai `$fonts:` avec Roboto Flex + Quicksand,
+  fichiers `.woff2` réels), `kiri build` via le CLI réel — les deux
+  `@font-face` sortent bien `font-style: normal;`, aucune erreur, aucun
+  `ital-axis` qui fuit dans le CSS.
 - **Fait — Centraliser `$font-mono` dans `canva/conf.scss`.** Nouveau token
   `$font-mono` / `--font-mono` (même patron que `$font-body`/`--font-body`),
   stack système générique (`ui-monospace, SFMono-Regular, "SF Mono", Menlo,
