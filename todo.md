@@ -228,10 +228,17 @@ https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigam
   "déjà référencé"), une vraie balise avec des attributs avant `href`, et un
   fichier différent dans le même dossier qui ne doit pas matcher — les 7
   passent.
-- **`@kirigami/plugin-extlink` : attribut `class=""` sur `<extlink>`** —
-  permettre de passer une classe custom sur la carte générée, pour la
-  styliser plus facilement au cas par cas (en plus des `title`/`description`/
-  `image`/`label` déjà supportés).
+- **Fait — `@kirigami/plugin-extlink` : attribut `class=""` sur
+  `<extlink>`.** Même patron que `title`/`description`/`image`/`label` déjà
+  supportés (`extlink_resolve()` lit `$attrs['class']`, passé à
+  `extlink_render()`) — ajoutée à côté de la classe `extlink` de base
+  (`class="extlink featured"`), pas un remplacement. Non exposé sur le
+  raccourci Markdown `{% extlink %}` (qui n'a que 2 args positionnels :
+  url, title — pas un bon véhicule pour une classe CSS). Vérifié avec du
+  PHP réel (`extlink_render()` isolée, pas de réseau nécessaire pour ce
+  bout) : sans classe custom → markup inchangé, avec → `class="extlink
+  featured"`, et un essai d'évasion d'attribut (`"><script>…`) reste bien
+  échappé (`&quot;&gt;&lt;script&gt;…`). README mis à jour.
 - **`@kirigami/plugin-highlight` : option pour les numéros de ligne** —
   actuellement pas de moyen d'afficher le # des lignes sur un bloc
   `<pre><code>` surligné. Nouvelle option (ex. `lineNumbers: true`), gérée

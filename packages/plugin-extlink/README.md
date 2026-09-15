@@ -125,6 +125,13 @@ right on the tag — handy when the scrape misses something, or gets it wrong:
 If the scrape (and no override) turns up no title at all, the tag throws a
 clear build error naming the offending `src` — pass `title="…"` to fix it.
 
+A `class="…"` attribute is appended alongside the card's own `extlink`
+class, for one-off styling without overriding `style: false`:
+
+```
+<extlink src="https://example.com/some-article" class="featured">
+```
+
 ---
 
 ## The `{% extlink %}` shortcut
