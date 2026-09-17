@@ -82,7 +82,7 @@ export function getWatcher(__root, task) {
 				const dir = path.dirname(e.file.replace(root, '')).replace(/^\//, '');
 				return task.deep ? path.dirname(dir) : dir;
 			});
-			await Promise.all(paths.filter((v, i, a) => a.indexOf(v) === i).map(async p => {
+			const allResults = await Promise.all(paths.filter((v, i, a) => a.indexOf(v) === i).map(async p => {
 				const results = await build(__root, { target: p, ...task });
 				if(results.success) {
 					results.files.forEach(f => log.step(f));
@@ -90,8 +90,16 @@ export function getWatcher(__root, task) {
 				} else {
 					printTaskError(results);
 				}
+				return results;
 			}));
 			console.log("");
+			const success = allResults.every(r => r.success);
+			return {
+				success,
+				files: allResults.flatMap(r => r.files || []),
+				warnings: allResults.map(r => r.warnings).filter(Boolean).join("\n") || undefined,
+				error: success ? undefined : allResults.find(r => !r.success)?.error,
+			};
 		}
 	};
 }

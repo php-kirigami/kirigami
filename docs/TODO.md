@@ -18,3 +18,13 @@ Small, concrete, near-term action items — not full features (those go in
   (`config.js` ~line 132). Pre-existing gap for the global before/after,
   now also true of page types (see [DECISIONS.md](DECISIONS.md)) — worth
   fixing once, for all four, rather than patching just the new ones.
+- **`packages/vscode` needs an actual F5 run** — the v1 scaffold (see
+  [STATUS.md](STATUS.md)) was only verified by building the bundle and
+  loading it under plain Node (up to the expected `Cannot find module
+  'vscode'`); nobody has driven the real Extension Development Host yet.
+  Open `packages/vscode` as its own workspace root, F5, open a folder with
+  a `kirigami.yaml` (e.g. `../template-demo`) in the host window, then
+  walk through: the activation smoke test first (incl. the `node:sqlite`
+  risk noted in [BUGS.md](BUGS.md)), then all 5 commands, the status
+  bar's idle/running/building/error transitions, and the config-reload
+  watcher.

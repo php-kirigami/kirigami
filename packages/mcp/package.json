@@ -35,7 +35,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@kirigami/kirigami": "2.0.0",
+    "@kirigami/kirigami": "2.1.0",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "zod": "^4.6.5"
   },

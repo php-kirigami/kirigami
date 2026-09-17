@@ -2,8 +2,11 @@
 
 Design notes for the Kirigami VS Code extension — a GUI face over
 `@kirigami/kirigami`'s `Project` API, the same one `@kirigami/cli` (terminal)
-and `@kirigami/mcp` (AI agent) already wrap. Not started yet; this is the
-scoped plan, written up before writing any code. See
+and `@kirigami/mcp` (AI agent) already wrap. The v1 scope below is now
+scaffolded in `packages/vscode` (see [STATUS.md](STATUS.md) for what
+shipped and [DECISIONS.md](DECISIONS.md) for the implementation-level
+decisions that came up building it) — this file stays as the design
+record rather than being folded into the package's own README. See
 [ROADMAP.md](ROADMAP.md) for where this sits among other unscheduled ideas,
 and [DECISIONS.md](DECISIONS.md) for why this is a third "face" rather than
 routing through `@kirigami/mcp`.

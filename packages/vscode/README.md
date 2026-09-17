@@ -1,0 +1,137 @@
+<div align="center">
+
+<img src="https://zmotrin.github.io/assets/kirigami/kirigami-logo-universal.svg" alt="Kirigami" width="400" />
+
+---
+
+# @kirigami/vscode
+
+A VS Code extension for **Kirigami** — build, export, run, and preview a
+Kirigami static site without leaving the editor.
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![Node.js >=24.0.0](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](https://nodejs.org)
+[![VS Code >=1.90.0](https://img.shields.io/badge/vscode-%5E1.90.0-blue)](https://code.visualstudio.com)
+[![Website](https://img.shields.io/badge/website-php--kirigami.github.io-1f6b4a)](https://php-kirigami.github.io)
+
+</div>
+
+---
+
+## Overview
+
+`@kirigami/vscode` wraps `@kirigami/kirigami`'s `Project` API — the same
+one `@kirigami/cli` (terminal) and `@kirigami/mcp` (AI agent) already
+wrap — directly, in-process, the same way `@kirigami/cli` does. See
+`docs/DECISIONS.md`'s `@kirigami/mcp` section in the monorepo for why this
+doesn't go through `@kirigami/mcp`'s stdio server instead.
+
+Activates automatically in any workspace whose root has a `kirigami.yaml`,
+and gives you Command Palette actions for the one-shot operations plus a
+status bar toggle for the dev server with live build state.
+
+Note: `package.json`'s `name` is unscoped (`kirigami-vscode`, not
+`@kirigami/vscode`) — deliberately, not an oversight. It doubles as the
+VS Code extension identity (→ `php-kirigami.kirigami-vscode`), and npm
+workspaces symlinks every `packages/*` package into the repo root's
+`node_modules` by this exact field. Naming it plain `vscode` (a tempting
+match for the extension ecosystem's own convention) creates
+`node_modules/vscode` pointing at this package itself, shadowing the
+literal string `"vscode"` for the whole monorepo — harmless inside the
+real extension host (which intercepts `require("vscode")` before normal
+module resolution), but confusing for anything else, including testing
+this bundle with plain Node outside VS Code.
+
+Part of the **Kirigami** project ecosystem.
+
+---
+
+## Table of contents
+
+- [@kirigami/vscode](#kirigamivscode)
+  - [Overview](#overview)
+  - [Table of contents](#table-of-contents)
+  - [Commands](#commands)
+  - [Status bar](#status-bar)
+  - [Requirements](#requirements)
+  - [Development](#development)
+  - [Known limitations](#known-limitations)
+  - [License](#license)
+
+---
+
+## Commands
+
+Available from the Command Palette, all under the **Kirigami** category:
+
+| Command | ID | Wraps |
+|---|---|---|
+| Kirigami: Build | `kirigami.build` | `Project.build()` |
+| Kirigami: Export | `kirigami.export` | `Project.export()` |
+| Kirigami: Run Script… | `kirigami.run` | `Project.run(name)`, prompts via `Project.scripts` |
+| Kirigami: Validate kirigami.yaml | `kirigami.validate` | `Project.validate()` |
+| Kirigami: Toggle Dev Server | `kirigami.toggleServer` | `Project.serve()` / the returned handle's `close()` |
+
+Results and errors are summarized in a notification; full detail (and
+every watch-triggered rebuild's outcome) goes to the **Kirigami** Output
+channel.
+
+---
+
+## Status bar
+
+One item, bottom-right, also bound to **Kirigami: Toggle Dev Server**:
+
+| State | Meaning | Look |
+|---|---|---|
+| Idle | No `serve()` call active | Plain icon, default colors |
+| Running | Server up, no build in flight | `$(radio-tower)`, tooltip shows the URL |
+| Building | A watch-triggered rebuild is in progress | `$(sync~spin)` |
+| Error | The last rebuild failed | `$(error)`, error background |
+
+Clicking it while idle starts the dev server, then asks whether to open it
+in VS Code's Simple Browser or your default external browser — asked
+every time, nothing remembered. Clicking it while running stops the
+server.
+
+---
+
+## Requirements
+
+Node `>=24.0.0` (informational — the extension host embeds its own Node,
+this isn't enforced) and VS Code `^1.90.0`.
+
+---
+
+## Development
+
+Open this package as its own workspace root (`launch.json`/`tasks.json`
+resolve relative to `${workspaceFolder}`, so opening the monorepo root
+instead won't work):
+
+```bash
+# from the repo root, first
+npm install
+
+code packages/vscode
+```
+
+Then press <kbd>F5</kbd> to launch an Extension Development Host, and open
+a folder containing a `kirigami.yaml` in that host window (e.g.
+`../template-demo`).
+
+---
+
+## Known limitations
+
+- Single workspace folder only — binds to `workspaceFolders[0]`; multi-root
+  isn't supported by `Project` itself yet.
+- No `.vsix` packaging/publishing set up yet.
+- The `kirigami.yaml` reload watcher doesn't yet cover plugin
+  installs/removals (`node_modules` changes).
+
+---
+
+## License
+
+MIT © Maxime Larrivée-Roy, 2026

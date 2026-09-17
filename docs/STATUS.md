@@ -191,3 +191,24 @@ the sibling repo `audiowaveform-wasm-compiler`.
   ({% codepen %}, {% checklist %}, {% callout %}, {% img-asset %}, loaded
   from `md.plugins.php`) still register and expand correctly, including
   the C extension calling back into the registered PHP closure.
+- **`packages/vscode` v1 scaffold** — a fourth "face" over
+  `@kirigami/kirigami`'s `Project` API (npm name `kirigami-vscode`, not
+  `@kirigami/vscode` — see [DECISIONS.md](DECISIONS.md) for why), per the
+  scope in [EXTENSION-VSCODE.md](EXTENSION-VSCODE.md): 5 Command Palette
+  actions (build/export/run/validate/toggle dev server), a status bar item
+  reflecting idle/running/building/error, and a `kirigami.yaml` reload
+  watcher. Required a new `Project.serve({ onBuildResult })` option
+  (`@kirigami/kirigami` 2.0.0 → 2.1.0, `@kirigami/cli`/`@kirigami/mcp`'s
+  pins bumped to match) so watch-triggered rebuild results reach an
+  embedder instead of only `console.log` — see
+  [DECISIONS.md](DECISIONS.md) for that and for three esbuild-bundling
+  gotchas found (and fixed) by actually building and running the bundle:
+  an `import.meta.url`-in-CJS shim, a `require()`-vs-ESM-only-exports
+  workaround for `@kirigami/php-prepros`, and a `node_modules/vscode` name
+  collision. Verified: `npm install` picks up the new workspace package,
+  `npm run compile` bundles cleanly, and the bundle loads under plain Node
+  up to (and only up to) the expected `Cannot find module 'vscode'` —
+  the real Extension Development Host (F5) wasn't driven end-to-end (no
+  GUI in this environment), so the actual command/status-bar/watcher
+  behavior inside VS Code itself is still unverified — see the plan's
+  verification steps 3–6 for what to check first.

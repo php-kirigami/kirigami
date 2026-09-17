@@ -182,7 +182,13 @@ export class Project {
 	// reflected back in the returned `port`/`url` (see devserver.js). Meant for
 	// an embedder (VS Code preview webview, MCP `kirigami_serve` tool) that
 	// needs to know where the server ended up listening.
-	async serve({ port = 4321, host = "127.0.0.1" } = {}) {
+	//
+	// `onBuildResult`, if given, is called for every watch-triggered rebuild —
+	// once with { status: "start" } right before it runs, once with
+	// { status: "done", success, files, warnings, error } right after — so an
+	// embedder (e.g. a VS Code status bar item) can reflect real build state
+	// instead of re-parsing console output.
+	async serve({ port = 4321, host = "127.0.0.1", onBuildResult } = {}) {
 		if (!this.#loaded) await this.reload();
 		const config = this.#config;
 
@@ -191,9 +197,11 @@ export class Project {
 		const watchers = rules.map((rule) => ({
 			...rule,
 			callback: async (...cbArgs) => {
-				await rule.callback(...cbArgs);
+				if (onBuildResult) await onBuildResult({ status: "start", rule: rule.name, type: rule.type });
+				const result = await rule.callback(...cbArgs);
 				if (rule.type === "sass") devserver.broadcastCssReload();
 				else devserver.broadcastReload();
+				if (onBuildResult) await onBuildResult({ status: "done", rule: rule.name, type: rule.type, ...result });
 			},
 		}));
 		const { close: closeWatchers } = createWatchers(watchers);

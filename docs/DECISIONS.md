@@ -213,8 +213,8 @@ script — even though only an MCP client actually needs it. Same "stay
 lite" reasoning behind keeping every package's dependency list to what
 that package itself actually uses.
 
-A **VS Code extension** (on [ROADMAP.md](ROADMAP.md), not started) is a
-different consumer again: it would import `@kirigami/kirigami` directly,
+A **VS Code extension** (`packages/vscode`, see its own entry below) is a
+different consumer again: it imports `@kirigami/kirigami` directly,
 in-process, the same way `@kirigami/cli` does — going through
 `@kirigami/mcp`'s stdio server to talk to itself would be a pointless
 subprocess+JSON-RPC detour. `@kirigami/mcp` is for an actual external MCP
@@ -235,3 +235,74 @@ is long-lived across many independent tool calls, and the expected agent
 loop (edit a file, call a tool, read the result, edit again) means a
 config snapshot from an earlier call is exactly the kind of staleness that
 would silently mislead the agent.
+
+## `packages/vscode` v1 scaffold: `Project.serve()`'s `onBuildResult`, and three esbuild-bundling gotchas
+
+Scaffolded per [EXTENSION-VSCODE.md](EXTENSION-VSCODE.md)'s v1 scope. Two
+decisions worth recording beyond what that doc already planned.
+
+**`serve({ onBuildResult })`, not an `EventEmitter`.** The status bar's
+idle/running/building/error states need to see watch-triggered rebuild
+results, which previously only reached `console.log` (`watchengine.js`'s
+`createWatchers()` awaits and discards each `rule.callback()`'s return
+value). No `EventEmitter` pattern exists anywhere else in this codebase's
+app code, so a callback option — two-phase, `{status:"start"}` then
+`{status:"done", success, files, warnings, error}` — matches the existing
+plain-callback style instead of introducing a new one. `sass.js`/
+`esbuild.js`'s watch callbacks now `return results;`; `prepros.js`'s
+(which fans out over several changed paths via `Promise.all`) aggregates
+them into one `{success, files, warnings, error}`. Additive,
+backward-compatible — bumped `@kirigami/kirigami` 2.0.0 → 2.1.0 anyway per
+this repo's exact-pin convention, and bumped `@kirigami/cli`/`@kirigami/mcp`'s
+pins to match (`docs/INSTRUCTIONS.md`).
+
+**Bundling `packages/vscode` with esbuild surfaced three real problems,
+none of them theoretical** (found by actually building and `require()`ing
+the output, not by inspection):
+
+1. **`import.meta.url` in a CJS bundle.** `@kirigami/struct-walker`'s
+   `walker.js` does `createRequire(import.meta.url)` — a normal ESM/CJS
+   interop trick — but esbuild's `format:"cjs"` output didn't shim
+   `import.meta.url` correctly for it (compiled to an empty object, so
+   `.url` was `undefined`, throwing at `require()` time). Fixed with the
+   standard `define`/`banner` shim (`esbuild.mjs`):
+   `define: {"import.meta.url": "import_meta_url"}` +
+   `banner.js` assigning `import_meta_url` from
+   `require('url').pathToFileURL(__filename).href`.
+2. **`@kirigami/php-prepros` can't be `require()`'d at all.** Its
+   `package.json` `exports` map only declares an `"import"` condition —
+   correct for its own normal (ESM) usage everywhere else, but a bundled
+   `require("@kirigami/php-prepros")` throws
+   `ERR_PACKAGE_PATH_NOT_EXPORTED` unconditionally, regardless of Node
+   version. Bundling it inline instead wasn't an option either: it pulls
+   in `@kirigami/php-wasm`, whose loader reads its `.wasm` binary from a
+   path relative to its own (real, on-disk) file — bundled into one file,
+   that path breaks. Fixed with an esbuild `alias` pointing the specifier
+   at a local shim (`packages/vscode/build/prepros-shim.mjs`) that
+   re-exports every named export (`render`/`sitemap`/`runenv`/
+   `mountPath`/`processImages` — has to list them individually, `export *`
+   isn't possible here) as an `async` wrapper around
+   `await import(specifier)`, where `specifier` is a **variable**, not a
+   string literal — esbuild can't statically resolve a dynamic `import()`
+   with a non-literal argument, so it's left completely untouched, and
+   Node's real ESM loader (which does honor `"import"`) resolves the
+   genuine, unbundled package from `node_modules` at runtime.
+3. **The package's own name collided with `node_modules/vscode`.**
+   Naming the npm package plain `"vscode"` (tempting — it's also the VS
+   Code extension identity field) makes npm workspaces symlink it into
+   the shared root `node_modules` under that exact name, shadowing the
+   literal string `"vscode"` for the *entire monorepo*. Harmless in the
+   real extension host (which intercepts `require("vscode")` before
+   normal resolution) but broke testing the bundle with plain Node
+   outside VS Code, and is a needless landmine for anything else in this
+   workspace. Renamed to `"kirigami-vscode"`.
+
+Also discovered while running a first `npm install` for this package:
+`packages/cli` and `packages/php-prepros` still pinned
+`@kirigami/php-wasm` at `8.5.10-5`, left behind when that package's own
+version was bumped to `8.5.10-6` (the `MD::` → native `mdhtml` swap,
+above) without updating dependents — exactly the step
+`docs/INSTRUCTIONS.md` calls out as easy to forget. Fixed both pins;
+unrelated to this scaffold but surfaced by it (stale nested
+`node_modules/@kirigami/php-wasm@8.5.10-5` under both packages from the
+version conflict, removed).

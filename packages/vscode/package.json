@@ -1,0 +1,45 @@
+{
+  "name": "kirigami-vscode",
+  "displayName": "Kirigami",
+  "description": "Build, export, run, and preview a Kirigami static site from VS Code.",
+  "version": "0.1.0",
+  "publisher": "php-kirigami",
+  "license": "MIT",
+  "author": "Maxime Larrivée-Roy",
+  "homepage": "https://php-kirigami.github.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/php-kirigami/kirigami.git"
+  },
+  "bugs": {
+    "url": "https://github.com/php-kirigami/kirigami/issues"
+  },
+  "engines": {
+    "vscode": "^1.90.0",
+    "node": ">=24.0.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": ["workspaceContains:kirigami.yaml"],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "kirigami.build", "title": "Kirigami: Build", "category": "Kirigami" },
+      { "command": "kirigami.export", "title": "Kirigami: Export", "category": "Kirigami" },
+      { "command": "kirigami.run", "title": "Kirigami: Run Script…", "category": "Kirigami" },
+      { "command": "kirigami.validate", "title": "Kirigami: Validate kirigami.yaml", "category": "Kirigami" },
+      { "command": "kirigami.toggleServer", "title": "Kirigami: Toggle Dev Server", "category": "Kirigami" }
+    ]
+  },
+  "scripts": {
+    "compile": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "vscode:prepublish": "node esbuild.mjs --minify"
+  },
+  "dependencies": {
+    "@kirigami/kirigami": "2.1.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "1.90.0",
+    "esbuild": "^0.28.2"
+  }
+}

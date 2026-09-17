@@ -322,6 +322,7 @@ export function getWatcher(__root, task) {
 				console.log(results.error);
 			}
 			console.log("");
+			return results;
 		}
 	};
 }

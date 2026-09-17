@@ -12,12 +12,12 @@ and limitations see [BUGS.md](BUGS.md).
   (`vendor/autoload.php`) in a Kirigami project, alongside the current
   JS classes/plugins system. Needs scoping: mounting `vendor/` in the WASM
   runtime, package compatibility with the sandboxed environment, etc.
-- **Electron UI + VS Code extension** — a GUI to drive `kiri`
-  (build/export/serve, plugin management, `kirigami.yaml` editing) without
-  the terminal. The VS Code half is now scoped (commands, a status-bar
-  server toggle + task indicator, packaging) — see
-  [EXTENSION-VSCODE.md](EXTENSION-VSCODE.md). The Electron half is still
-  just an idea.
+- **Electron UI** — a GUI to drive `kiri` (build/export/serve, plugin
+  management, `kirigami.yaml` editing) without the terminal, for users
+  outside an editor entirely. The VS Code half of this idea is no longer
+  just an idea — see `packages/vscode` and
+  [EXTENSION-VSCODE.md](EXTENSION-VSCODE.md) for its v1 scaffold. The
+  Electron half is still just an idea.
 - **Automatic Google Analytics (gtag) integration** — a config option
   under the unified `seo:` block that injects `gtag.js` automatically when
   a measurement ID is provided.
