@@ -990,7 +990,9 @@ Marks a file as a build output so it gets surfaced in `PreprosResult.files`. Cal
 
 ### MD
 
-Markdown-to-HTML converter with a plugin system for custom shortcodes.
+Markdown-to-HTML converter with a plugin system for custom shortcodes,
+backed by PHP's native `mdhtml` extension (real `cmark-gfm`), statically
+built into `@kirigami/php-wasm` — no userland parsing.
 
 ```php
 $html = MD::toHtml(string $markdown): string;

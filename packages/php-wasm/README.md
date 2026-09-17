@@ -281,9 +281,9 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | Key | Value |
 | --- | --- |
 | System | Emscripten emscripten 4.0.19 #1 wasm32 |
-| Build Date | Sep 9 2026 23:55:03 |
+| Build Date | Sep 17 2026 06:41:31 |
 | Build System | Linux buildkitsandbox 6.18.33.2-microsoft-standard-WSL2 #1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux |
-| Configure Command | './configure' 'PKG_CONFIG_PATH=/root/lib/lib/pkgconfig' '--disable-fiber-asm' '--disable-phar' '--enable-json' '--enable-embed=static' '--with-layout=GNU' '--disable-cgi' '--disable-posix' '--enable-hash' '--enable-static' '--enable-shared' '--disable-session' '--enable-filter' '--enable-calendar' '--disable-rpath' '--disable-phpdbg' '--without-pear' '--with-valgrind=no' '--without-pcre-jit' '--enable-bcmath' '--enable-ctype' '--enable-tokenizer' '--enable-wasm_memory_storage' '--enable-dns_polyfill' '--enable-post_message_to_js' '--disable-opcache' '--with-zlib' '--with-zlib-dir=/root/lib' '--with-zip' '--enable-libxml' '--with-libxml' '--with-libxml-dir=/root/lib' '--enable-dom' '--enable-xml' '--enable-simplexml' '--enable-xmlreader' '--enable-xmlwriter' '--disable-soap' '--with-sqlite3' '--enable-pdo' '--with-pdo-sqlite=/root/lib' '--with-external-gd=/root/lib' '--enable-gd' '--with-avif' '--with-png-dir=/root/lib' '--with-jpeg' '--with-webp' '--with-openssl' '--with-openssl-dir=/root/lib' '--disable-fileinfo' '--with-iconv=/root/lib' '--with-curl=/root/lib' '--enable-mbstring' '--enable-exif' '--disable-mbregex' '--with-imagick=/root/lib' '--with-imagick-config=/root/lib/bin/wasm32-unknown-emscripten-MagickWand-config' 'PKG_CONFIG_LIBDIR=/root/emsdk/upstream/emscripten/cache/sysroot/local/lib/pkgconfig:/root/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig' 'CURL_CFLAGS=-I/root/lib/include' 'CURL_LIBS=-I/root/lib/lib -L/root/lib/lib' 'PNG_CFLAGS=-I/root/lib/include' 'PNG_LIBS=-L/root/lib/lib -lpng16 -lz' 'AVIF_CFLAGS=-I/root/lib/include' 'AVIF_LIBS=-L/root/lib/lib -lavif' 'WEBP_CFLAGS=-I/root/lib/include' 'WEBP_LIBS=-L/root/lib/lib -lwebp -lsharpyuv' 'JPEG_CFLAGS=-I/root/lib/include' 'JPEG_LIBS=-L/root/lib/lib -ljpeg' 'GDLIB_CFLAGS=-I/root/lib/include' 'GDLIB_LIBS=-L/root/lib/lib -lgd -lpng16 -lz -ljpeg -lwebp -lsharpyuv -lavif' |
+| Configure Command | './configure' 'PKG_CONFIG_PATH=/root/lib/lib/pkgconfig' '--disable-fiber-asm' '--disable-phar' '--enable-json' '--enable-embed=static' '--with-layout=GNU' '--disable-cgi' '--disable-posix' '--enable-hash' '--enable-static' '--enable-shared' '--disable-session' '--enable-filter' '--enable-calendar' '--disable-rpath' '--disable-phpdbg' '--without-pear' '--with-valgrind=no' '--without-pcre-jit' '--enable-bcmath' '--enable-ctype' '--enable-tokenizer' '--enable-wasm_memory_storage' '--enable-dns_polyfill' '--enable-post_message_to_js' '--disable-opcache' '--disable-opcache-jit' '--disable-huge-code-pages' '--with-zlib' '--with-zlib-dir=/root/lib' '--with-zip' '--enable-phar' '--enable-cli=static' '--enable-libxml' '--with-libxml' '--with-libxml-dir=/root/lib' '--enable-dom' '--enable-xml' '--enable-simplexml' '--enable-xmlreader' '--enable-xmlwriter' '--disable-soap' '--with-sqlite3' '--enable-pdo' '--with-pdo-sqlite=/root/lib' '--with-external-gd=/root/lib' '--enable-gd' '--with-avif' '--with-png-dir=/root/lib' '--with-jpeg' '--with-webp' '--with-openssl' '--with-openssl-dir=/root/lib' '--disable-fileinfo' '--with-iconv=/root/lib' '--with-curl=/root/lib' '--enable-mbstring' '--enable-exif' '--disable-mbregex' '--enable-sockets' '--with-yaml=/root/lib' '--with-mdhtml=/root/lib' '--enable-jsonk' '--enable-apcu' '--with-navicat=/root/lib' '--enable-igbinary' '--enable-norm' '--with-imagick=/root/lib' '--with-imagick-config=/root/lib/bin/wasm32-unknown-emscripten-MagickWand-config' 'PKG_CONFIG_LIBDIR=/root/emsdk/upstream/emscripten/cache/sysroot/local/lib/pkgconfig:/root/emsdk/upstream/emscripten/cache/sysroot/lib/pkgconfig' 'CURL_CFLAGS=-I/root/lib/include' 'CURL_LIBS=-I/root/lib/lib -L/root/lib/lib' 'PNG_CFLAGS=-I/root/lib/include' 'PNG_LIBS=-L/root/lib/lib -lpng16 -lz' 'AVIF_CFLAGS=-I/root/lib/include' 'AVIF_LIBS=-L/root/lib/lib -lavif' 'WEBP_CFLAGS=-I/root/lib/include' 'WEBP_LIBS=-L/root/lib/lib -lwebp -lsharpyuv' 'JPEG_CFLAGS=-I/root/lib/include' 'JPEG_LIBS=-L/root/lib/lib -ljpeg' 'GDLIB_CFLAGS=-I/root/lib/include' 'GDLIB_LIBS=-L/root/lib/lib -lgd -lpng16 -lz -ljpeg -lwebp -lsharpyuv -lavif' |
 | Server API | PHP WASM SAPI (JSPI) |
 | Virtual Directory Support | disabled |
 | Configuration File (php.ini) Path | /usr/local/etc |
@@ -304,13 +304,42 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | Zend Max Execution Timers | disabled |
 | IPv6 Support | enabled |
 | DTrace Support | disabled |
-| Registered PHP Streams | https, ftps, compress.zlib, php, file, glob, data, http, ftp, zip |
+| Registered PHP Streams | https, ftps, compress.zlib, php, file, glob, data, http, ftp, phar, zip |
 | Registered Stream Socket Transports | tcp, udp, unix, udg, ssl, tls, tlsv1.0, tlsv1.1, tlsv1.2, tlsv1.3 |
 | Registered Stream Filters | zlib.*, string.rot13, string.toupper, string.tolower, convert.*, consumed, dechunk, convert.iconv.* |
 
 | Key | Value |
 | --- | --- |
 | This program makes use of the Zend Scripting Language Engine:<br>Zend Engine v4.5.10, Copyright (c) Zend Technologies<br>with Zend OPcache v8.5.10, Copyright (c), by Zend Technologies | _no value_ |
+
+### apcu
+
+| Key | Value |
+| --- | --- |
+| APCu Support | Enabled |
+| Version | 5.1.28 |
+| APCu Debugging | Disabled |
+| MMAP Support | Enabled |
+| MMAP File Mask | _no value_ |
+| Serialization Support | php, igbinary |
+| Build Date | Sep 17 2026 06:36:56 |
+
+| Directive | Local Value | Master Value |
+| --- | --- | --- |
+| apc.coredump_unmap | Off | Off |
+| apc.enable_cli | Off | Off |
+| apc.enabled | On | On |
+| apc.entries_hint | 0 | 0 |
+| apc.gc_ttl | 3600 | 3600 |
+| apc.mmap_file_mask | _no value_ | _no value_ |
+| apc.mmap_hugepage_size | 0 | 0 |
+| apc.preload_path | _no value_ | _no value_ |
+| apc.serializer | igbinary | igbinary |
+| apc.shm_size | 32M | 32M |
+| apc.slam_defense | Off | Off |
+| apc.smart | 0 | 0 |
+| apc.ttl | 0 | 0 |
+| apc.use_request_time | Off | Off |
 
 ### bcmath
 
@@ -443,25 +472,25 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | Key | Value |
 | --- | --- |
 | cURL support | enabled |
-| cURL Information | 7.69.1 |
-| Age | 5 |
+| cURL Information | 8.22.0 |
+| Age | 11 |
 | Features | _no value_ |
 | AsynchDNS | No |
 | CharConv | No |
 | Debug | No |
 | GSS-Negotiate | No |
 | IDN | No |
-| IPv6 | No |
+| IPv6 | Yes |
 | krb4 | No |
 | Largefile | Yes |
 | libz | Yes |
-| NTLM | Yes |
-| NTLMWB | Yes |
+| NTLM | No |
+| NTLMWB | No |
 | SPNEGO | No |
 | SSL | Yes |
 | SSPI | No |
-| TLS-SRP | Yes |
-| HTTP2 | No |
+| TLS-SRP | No |
+| HTTP2 | Yes |
 | GSSAPI | No |
 | KERBEROS5 | No |
 | UNIX_SOCKETS | Yes |
@@ -469,12 +498,17 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | HTTPS_PROXY | Yes |
 | MULTI_SSL | No |
 | BROTLI | No |
-| ALTSVC | No |
+| ALTSVC | Yes |
 | HTTP3 | No |
-| Protocols | dict, file, http, https |
+| UNICODE | No |
+| ZSTD | No |
+| HSTS | Yes |
+| GSASL | No |
+| Protocols | dict, file, http, https, mqtt, mqtts, scp, sftp, ws, wss |
 | Host | i386-pc-linux-gnu |
-| SSL Version | OpenSSL/1.1.1t |
+| SSL Version | OpenSSL/3.6.4 |
 | ZLib Version | 1.2.13 |
+| libSSH Version | libssh2/1.11.1 |
 
 | Directive | Local Value | Master Value |
 | --- | --- | --- |
@@ -510,7 +544,7 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | --- | --- |
 | DOM/XML | enabled |
 | DOM/XML API Version | 20031129 |
-| libxml Version | 2.9.10 |
+| libxml Version | 2.15.4 |
 | HTML Support | enabled |
 | XPath Support | enabled |
 | XPointer Support | enabled |
@@ -584,7 +618,7 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | --- | --- |
 | iconv support | enabled |
 | iconv implementation | libiconv |
-| iconv library version | 1.17 |
+| iconv library version | 1.19 |
 
 | Directive | Local Value | Master Value |
 | --- | --- | --- |
@@ -592,18 +626,31 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | iconv.internal_encoding | _no value_ | _no value_ |
 | iconv.output_encoding | _no value_ | _no value_ |
 
+### igbinary
+
+| Key | Value |
+| --- | --- |
+| igbinary support | enabled |
+| igbinary version | 3.2.15 |
+| igbinary APCu serializer ABI | 0 |
+| igbinary session support | no |
+
+| Directive | Local Value | Master Value |
+| --- | --- | --- |
+| igbinary.compact_strings | On | On |
+
 ### imagick
 
 | imagick module | enabled |
 | --- | --- |
-| imagick module version | @PACKAGE_VERSION@ |
+| imagick module version | 3.8.1 |
 | imagick classes | Imagick, ImagickDraw, ImagickPixel, ImagickPixelIterator, ImagickKernel |
-| Imagick compiled with ImageMagick version | ImageMagick 7.1.1-39 Q16-HDRI i386 e339a05ed:20241002 https://imagemagick.org |
-| Imagick using ImageMagick library version | ImageMagick 7.1.1-39 Q16-HDRI i386 e339a05ed:20241002 https://imagemagick.org |
+| Imagick compiled with ImageMagick version | ImageMagick 7.1.2-31 Q16-HDRI i386 8309dc92a:20260903 https://imagemagick.org |
+| Imagick using ImageMagick library version | ImageMagick 7.1.2-31 Q16-HDRI i386 8309dc92a:20260903 https://imagemagick.org |
 | ImageMagick copyright | (C) 1999 ImageMagick Studio LLC |
-| ImageMagick release date | 2024-10-02 |
-| ImageMagick number of supported formats: | 246 |
-| ImageMagick supported formats | 3FR, 3G2, 3GP, A, AAI, AI, APNG, ART, ARW, ASHLAR, AVI, AVS, B, BAYER, BAYERA, BGR, BGRA, BGRO, BMP, BMP2, BMP3, BRF, C, CAL, CALS, CANVAS, CAPTION, CIN, CIP, CLIP, CMYK, CMYKA, CR2, CR3, CRW, CUBE, CUR, CUT, DATA, DCM, DCR, DCRAW, DCX, DDS, DNG, DPX, DXT1, DXT5, EPDF, EPI, EPS, EPS2, EPS3, EPSF, EPSI, ERF, FARBFELD, FAX, FF, FFF, FILE, FITS, FL32, FLV, FRACTAL, FTP, FTS, FTXT, G, G3, G4, GIF, GIF87, GRADIENT, GRAY, GRAYA, HALD, HDR, HISTOGRAM, HRZ, HTM, HTML, HTTP, HTTPS, ICB, ICO, ICON, IIQ, INFO, INLINE, IPL, ISOBRL, ISOBRL6, JNG, JNX, JPE, JPEG, JPG, JPS, JSON, K, K25, KDC, LABEL, M, M2V, M4V, MAC, MAP, MASK, MAT, MATTE, MDC, MEF, MIFF, MKV, MNG, MONO, MOS, MOV, MP4, MPC, MPEG, MPG, MPO, MRW, MSL, MSVG, MTV, MVG, NEF, NRW, NULL, O, ORA, ORF, OTB, PAL, PALM, PAM, PANGO, PATTERN, PBM, PCD, PCDS, PCL, PCT, PCX, PDB, PDF, PDFA, PEF, PES, PFM, PGM, PGX, PHM, PICON, PICT, PIX, PJPEG, PLASMA, PNG, PNG00, PNG24, PNG32, PNG48, PNG64, PNG8, PNM, POCKETMOD, PPM, PS, PS2, PS3, PSB, PSD, PWP, QOI, R, RADIAL-GRADIENT, RAF, RAS, RAW, RGB, RGB565, RGBA, RGBO, RGF, RLA, RLE, RMF, RW2, RWL, SCR, SCREENSHOT, SCT, SFW, SGI, SHTML, SIX, SIXEL, SPARSE-COLOR, SR2, SRF, SRW, STEGANO, STI, STRIMG, SUN, SVG, SVGZ, TEXT, TGA, THUMBNAIL, TILE, TIM, TM2, TXT, UBRL, UBRL6, UIL, UYVY, VDA, VICAR, VID, VIFF, VIPS, VST, WBMP, WEBM, WEBP, WMV, WPG, X3F, XBM, XC, XCF, XPM, XPS, XV, Y, YAML, YCBCR, YCBCRA, YUV |
+| ImageMagick release date | 2026-09-03 |
+| ImageMagick number of supported formats: | 253 |
+| ImageMagick supported formats | 3FR, 3G2, 3GP, A, AAI, AI, APNG, ART, ARW, ASE, ASEPRITE, ASHLAR, AVI, AVS, B, BAYER, BAYERA, BGR, BGRA, BGRO, BMP, BMP2, BMP3, BRF, C, C2PA, CAL, CALS, CANVAS, CAPTION, CIN, CIP, CLIP, CMYK, CMYKA, CR2, CR3, CRW, CUBE, CUR, CUT, DATA, DCM, DCR, DCRAW, DCX, DDS, DNG, DPX, DXT1, DXT5, EPDF, EPI, EPS, EPS2, EPS3, EPSF, EPSI, ERF, FARBFELD, FAX, FF, FFF, FILE, FITS, FL32, FLV, FRACTAL, FTP, FTS, FTXT, G, G3, G4, GIF, GIF87, GRADIENT, GRAY, GRAYA, HALD, HDR, HISTOGRAM, HRZ, HTM, HTML, HTTP, HTTPS, ICB, ICN, ICO, ICON, IIQ, INFO, INLINE, IPL, ISOBRL, ISOBRL6, JNG, JNX, JPE, JPEG, JPG, JPS, JSON, K, K25, KDC, KERNEL, LABEL, M, M2V, M4V, MAC, MAP, MASK, MAT, MATTE, MDC, MEF, MIFF, MKV, MNG, MONO, MOS, MOV, MP4, MPC, MPEG, MPG, MPO, MRW, MSL, MSVG, MTV, MVG, NEF, NRW, NULL, O, ORA, ORF, OTB, PAL, PALM, PAM, PANGO, PATTERN, PBM, PCD, PCDS, PCL, PCT, PCX, PDB, PDF, PDFA, PEF, PES, PFM, PGM, PGX, PHM, PICON, PICT, PIX, PJPEG, PLASMA, PNG, PNG00, PNG24, PNG32, PNG48, PNG64, PNG8, PNM, POCKETMOD, PPM, PS, PS2, PS3, PSB, PSD, PWP, QOI, R, RADIAL-GRADIENT, RAF, RAS, RAW, RGB, RGB565, RGBA, RGBO, RGF, RLA, RLE, RMF, RW2, RWL, SCR, SCREENSHOT, SCT, SF3, SFW, SGI, SHTML, SIX, SIXEL, SPARSE-COLOR, SR2, SRF, SRW, STEGANO, STI, STRIMG, SUN, SVG, SVGZ, TEXT, TGA, THUMBNAIL, TILE, TIM, TM2, TXT, UBRL, UBRL6, UIL, UYVY, VDA, VICAR, VID, VIFF, VIPS, VST, WBINFO, WBMP, WEBM, WEBP, WMV, WPG, X3F, XBM, XC, XCF, XPM, XPS, XV, Y, YAML, YCBCR, YCBCRA, YUV |
 
 | Directive | Local Value | Master Value |
 | --- | --- | --- |
@@ -620,6 +667,21 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | --- | --- |
 | json support | enabled |
 
+### jsonk
+
+| jsonk support | enabled |
+| --- | --- |
+| version | 0.1.4 |
+| pcre (pattern/patternProperties/format:"regex") | enabled |
+| curl (external "$ref" resolution) | enabled |
+| apcu (external "$ref" fetch cache) | enabled, used as the fetch cache |
+| json_encode()/json_decode() replacement | enabled -- native json_encode()/json_decode() are jsonk-backed |
+| Part of the Kirigami PHP extension family |  |
+
+| Directive | Local Value | Master Value |
+| --- | --- | --- |
+| jsonk.replace_json_functions | On | On |
+
 ### lexbor
 
 | Key | Value |
@@ -632,8 +694,8 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | Key | Value |
 | --- | --- |
 | libXML support | active |
-| libXML Compiled Version | 2.9.10 |
-| libXML Loaded Version | 20910-GITv2.9.10 |
+| libXML Compiled Version | 2.15.4 |
+| libXML Loaded Version | 21504-GITv2.15.4 |
 | libXML streams | enabled |
 
 ### mbstring
@@ -661,13 +723,42 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | mbstring.strict_detection | Off | Off |
 | mbstring.substitute_character | _no value_ | _no value_ |
 
+### mdhtml
+
+| mdhtml support | enabled |
+| --- | --- |
+| version | 0.1.3 |
+| cmark-gfm version | 0.29.0.gfm.13 |
+| Part of the Kirigami PHP extension family |  |
+
+### navicat
+
+| Key | Value |
+| --- | --- |
+| navicat support | enabled |
+| version | 0.1.5 |
+| navicat backends | mysql, pgsql, sqlite |
+| libcurl version | libcurl/8.22.0 OpenSSL/3.6.4 zlib/1.2.13 libssh2/1.11.1 nghttp2/1.70.0 |
+| Part of the Kirigami PHP extension family |  |
+
+### norm
+
+| norm support | enabled |
+| --- | --- |
+| version | 0.1.1 |
+| utf8proc version | 2.11.3 |
+| Unicode version | 17.0.0 |
+| Normalizer class | provided by norm |
+| normalizer_normalize() / normalizer_is_normalized() | provided by norm |
+| Part of the Kirigami PHP extension family |  |
+
 ### openssl
 
 | Key | Value |
 | --- | --- |
 | OpenSSL support | enabled |
-| OpenSSL Library Version | OpenSSL 1.1.1t 7 Feb 2023 |
-| OpenSSL Header Version | OpenSSL 1.1.1t 7 Feb 2023 |
+| OpenSSL Library Version | OpenSSL 3.6.4 25 Aug 2026 |
+| OpenSSL Header Version | OpenSSL 3.6.4 25 Aug 2026 |
 | Openssl default config | /root/install/ssl/openssl.cnf |
 
 | Directive | Local Value | Master Value |
@@ -702,7 +793,30 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | Key | Value |
 | --- | --- |
 | PDO Driver for SQLite 3.x | enabled |
-| SQLite Library | 3.51.0 |
+| SQLite Library | 3.53.4 |
+
+### Phar
+
+| Key | Value |
+| --- | --- |
+| Phar: PHP Archive support | enabled |
+| Phar API version | 1.1.1 |
+| Phar-based phar archives | enabled |
+| Tar-based phar archives | enabled |
+| ZIP-based phar archives | enabled |
+| gzip compression | enabled |
+| bzip2 compression | disabled (install ext/bz2) |
+| Native OpenSSL support | enabled |
+
+| Key | Value |
+| --- | --- |
+| Phar based on pear/PHP_Archive, original concept by Davey Shafik.<br>Phar fully realized by Gregory Beaver and Marcus Boerger.<br>Portions of tar implementation Copyright (c) 2003-2009 Tim Kientzle. | _no value_ |
+
+| Directive | Local Value | Master Value |
+| --- | --- | --- |
+| phar.cache_list | _no value_ | _no value_ |
+| phar.readonly | On | On |
+| phar.require_hash | On | On |
 
 ### post_message_to_js
 
@@ -729,6 +843,12 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | SimpleXML support | enabled |
 | Schema support | enabled |
 
+### sockets
+
+| Key | Value |
+| --- | --- |
+| Sockets Support | enabled |
+
 ### SPL
 
 | Key | Value |
@@ -742,7 +862,7 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | Key | Value |
 | --- | --- |
 | SQLite3 support | enabled |
-| SQLite Library | 3.51.0 |
+| SQLite Library | 3.53.4 |
 
 | Directive | Local Value | Master Value |
 | --- | --- | --- |
@@ -798,7 +918,7 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | --- | --- |
 | XML Support | active |
 | XML Namespace Support | active |
-| libxml2 Version | 2.9.10 |
+| libxml2 Version | 2.15.4 |
 
 ### xmlreader
 
@@ -812,6 +932,23 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | --- | --- |
 | XMLWriter | enabled |
 
+### yaml
+
+| Key | Value |
+| --- | --- |
+| LibYAML Support | enabled |
+| Module Version | 2.3.0 |
+| LibYAML Version | 0.2.5 |
+
+| Directive | Local Value | Master Value |
+| --- | --- | --- |
+| yaml.decode_binary | 0 | 0 |
+| yaml.decode_php | 0 | 0 |
+| yaml.decode_timestamp | 0 | 0 |
+| yaml.output_canonical | 0 | 0 |
+| yaml.output_indent | 2 | 2 |
+| yaml.output_width | 80 | 80 |
+
 ### Zend OPcache
 
 | Key | Value |
@@ -820,7 +957,7 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | Optimization | Enabled |
 | SHM Cache | Disabled |
 | File Cache | Enabled |
-| JIT | Disabled |
+| JIT | Not Available |
 | Startup | OK |
 
 | Directive | Local Value | Master Value |
@@ -837,27 +974,7 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | opcache.file_cache_read_only | Off | Off |
 | opcache.file_update_protection | 2 | 2 |
 | opcache.force_restart_timeout | 180 | 180 |
-| opcache.huge_code_pages | Off | Off |
 | opcache.interned_strings_buffer | 8 | 8 |
-| opcache.jit | 0 | 0 |
-| opcache.jit_bisect_limit | 0 | 0 |
-| opcache.jit_blacklist_root_trace | 16 | 16 |
-| opcache.jit_blacklist_side_trace | 8 | 8 |
-| opcache.jit_buffer_size | 64M | 64M |
-| opcache.jit_debug | 0 | 0 |
-| opcache.jit_hot_func | 127 | 127 |
-| opcache.jit_hot_loop | 61 | 61 |
-| opcache.jit_hot_return | 8 | 8 |
-| opcache.jit_hot_side_exit | 8 | 8 |
-| opcache.jit_max_exit_counters | 8192 | 8192 |
-| opcache.jit_max_loop_unrolls | 8 | 8 |
-| opcache.jit_max_polymorphic_calls | 2 | 2 |
-| opcache.jit_max_recursive_calls | 2 | 2 |
-| opcache.jit_max_recursive_returns | 2 | 2 |
-| opcache.jit_max_root_traces | 1024 | 1024 |
-| opcache.jit_max_side_traces | 128 | 128 |
-| opcache.jit_max_trace_length | 1024 | 1024 |
-| opcache.jit_prof_threshold | 0.005 | 0.005 |
 | opcache.lockfile_path | /tmp | /tmp |
 | opcache.log_verbosity_level | 1 | 1 |
 | opcache.max_accelerated_files | 1000 | 1000 |
@@ -926,7 +1043,7 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | PWD | / |
 | HOME | /home/web_user |
 | LANG | en_CA.UTF-8 |
-| _ | C:/projects/kirigami/kirigami/packages/kirigami/bin/kiri.js |
+| _ | C:/Users/ZmotriN/AppData/Local/Temp/claude/c--projects-kirigami-kirigami/25bed0a3-1f38-40bd-a89a-44ed9f5f0b1e/scratchpad/regen-phpinfo-md.mjs |
 | USE_ZEND_ALLOC | 0 |
 
 ### PHP Variables
@@ -939,7 +1056,7 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | $_SERVER['PWD'] | / |
 | $_SERVER['HOME'] | /home/web_user |
 | $_SERVER['LANG'] | en_CA.UTF-8 |
-| $_SERVER['_'] | C:/projects/kirigami/kirigami/packages/kirigami/bin/kiri.js |
+| $_SERVER['_'] | C:/Users/ZmotriN/AppData/Local/Temp/claude/c--projects-kirigami-kirigami/25bed0a3-1f38-40bd-a89a-44ed9f5f0b1e/scratchpad/regen-phpinfo-md.mjs |
 | $_SERVER['USE_ZEND_ALLOC'] | 0 |
 | $_SERVER['REQUEST_URI'] | _no value_ |
 | $_SERVER['SCRIPT_NAME'] | _no value_ |
@@ -953,15 +1070,15 @@ The version is encoded in the package version number (`major.minor.patch` → `8
 | $_SERVER['REQUEST_METHOD'] | GET |
 | $_SERVER['QUERY_STRING'] | _no value_ |
 | $_SERVER['HTTPS'] | off |
-| $_SERVER['REQUEST_TIME_FLOAT'] | 1789011340.69 |
-| $_SERVER['REQUEST_TIME'] | 1789011340 |
+| $_SERVER['REQUEST_TIME_FLOAT'] | 1789628588.602 |
+| $_SERVER['REQUEST_TIME'] | 1789628588 |
 | $_ENV['USER'] | web_user |
 | $_ENV['LOGNAME'] | web_user |
 | $_ENV['PATH'] | /internal/shared/bin |
 | $_ENV['PWD'] | / |
 | $_ENV['HOME'] | /home/web_user |
 | $_ENV['LANG'] | en_CA.UTF-8 |
-| $_ENV['_'] | C:/projects/kirigami/kirigami/packages/kirigami/bin/kiri.js |
+| $_ENV['_'] | C:/Users/ZmotriN/AppData/Local/Temp/claude/c--projects-kirigami-kirigami/25bed0a3-1f38-40bd-a89a-44ed9f5f0b1e/scratchpad/regen-phpinfo-md.mjs |
 | $_ENV['USE_ZEND_ALLOC'] | 0 |
 
 ### PHP Credits

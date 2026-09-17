@@ -182,3 +182,12 @@ the sibling repo `audiowaveform-wasm-compiler`.
   correctly merges disk + yaml, `runTask("js-core")` and
   `runTask("render-all")` both produce real output files independently,
   and an unknown name returns a structured failure instead of throwing.
+- **`MD::` swapped to the native `mdhtml` extension** (`@kirigami/php-wasm`
+  8.5.10-6, freshly compiled via `php-wasm-compiler` with `mdhtml` now
+  statically built in). Old hand-rolled renderer retired to `MD_LEGACY`
+  (`md-legacy.class.php`), same pattern as the earlier `YAML::` swap — see
+  [DECISIONS.md](DECISIONS.md). Verified through the real WASM runtime:
+  `MD::toHtml()` renders CommonMark/GFM correctly and the default plugins
+  ({% codepen %}, {% checklist %}, {% callout %}, {% img-asset %}, loaded
+  from `md.plugins.php`) still register and expand correctly, including
+  the C extension calling back into the registered PHP closure.

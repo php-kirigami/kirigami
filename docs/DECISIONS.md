@@ -24,6 +24,40 @@ reference resolution) was verified to match byte-for-byte across ~40 test
 cases before switching. See [BUGS.md](BUGS.md) for the one remaining
 un-root-caused difference (`|+` keep-chomping, one trailing blank line).
 
+## `MD::` now backed by the native `mdhtml` extension
+
+Switched from the hand-written regex/placeholder renderer to the native
+`mdhtml` extension (real `cmark-gfm` 0.29.0.gfm.13), statically built into
+`@kirigami/php-wasm` from `php-kirigami/php-mdhtml`. Same swap pattern as
+the `YAML::` decision above: every `MD::` public method (`toHtml()`,
+`registerPlugin()`, `unregisterPlugin()`, `getRegisteredPlugins()`,
+`registerEmoji()`) is reimplemented in C — not just the CommonMark/GFM
+core, but the `{% %}` plugin syntax and emoji shortcodes too — so
+`md.plugins.php`'s default plugins ({% codepen %}, {% checklist %},
+{% callout %}, {% img-asset %}) keep working unchanged against the new
+class, verified end-to-end through the WASM runtime (plugin callback
+invoked from the C extension back into PHP).
+
+Diff-tested (in `php-mdhtml`, 2026-09-12) against `MD_LEGACY::`'s real
+output across a full corpus. Byte-identical or visually-equivalent on
+everything except one deliberate change: footnote HTML now uses GitHub's
+real markup (`<section class="footnotes" data-footnotes>`, `fn-1` ids,
+`aria-label`s) instead of `MD_LEGACY::`'s custom `<div class="footnotes">`
+— checked against `packages/canva/src/styles/prose.scss` first, whose
+`.footnotes`/`.footnote-backref` rules are plain class selectors that keep
+matching regardless of the element tag, so nothing broke. The diff also
+surfaced a pre-existing `MD_LEGACY::` bug, now moot: its single-pass list
+regex used to drop a `1.`/`2.` ordered list entirely when it immediately
+followed an unordered one with no blank line between; `MD::` (native)
+handles it correctly.
+
+Kept the old implementation as `MD_LEGACY` (`md-legacy.class.php`) —
+untouched, still autoloadable — as a rollback path, same as
+`YAML_LEGACY`. Unlike the `YAML::` swap, `MD_LEGACY`'s default-plugin
+include was dropped from that file (it hardcoded `MD::registerPlugin(...)`,
+which would otherwise register against the *new* native class instead of
+itself) — reviving `MD_LEGACY` for real use would need that wired back.
+
 ## Core-API / CLI split (`refactor/core-api`)
 
 `@kirigami/kirigami` is now the pure engine (`Project.load()/.reload()/

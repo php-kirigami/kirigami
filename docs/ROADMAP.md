@@ -53,13 +53,6 @@ and limitations see [BUGS.md](BUGS.md).
   tunnel mechanism. Nothing in `php-prepros` calls it yet — needs a class
   (`DB`? mirroring `SCRAPER`'s shape) so a page/`_data/` can query a
   database through it instead of relying on a static export.
-- **Wire the `mdhtml` PHP-WASM extension into `php-prepros`.** Also
-  already built and available (v0.1.2, real `cmark-gfm` 0.29.0.gfm.13),
-  not yet consumed anywhere. Candidate: an alternative Markdown engine for
-  `MD`, which currently hand-rolls its own parser (see the `/roadmap/`
-  list-continuation bug in [docs/STATUS.md](STATUS.md) for the kind of
-  edge case a real GFM parser would sidestep) — needs scoping how it
-  coexists with `MD`'s own plugin system (`{% %}` tags, `registerPlugin()`).
 - **Wire the `jsonk` PHP-WASM extension into `php-prepros`.** Also already
   built (v0.1.4) — native JSON-schema validation (pattern/patternProperties/
   format:"regex", external `$ref` resolution via curl, apcu-backed fetch

@@ -20,6 +20,19 @@ step-8 "update every README.md" pass in
   actually version-bumped for release (not yet — this landed mid-refactor
   on `refactor/core-api`). Don't add the changelog entry before the bump;
   it'll drift from the real version number otherwise.
+- **Same changelog gap for the `MD::` native-backend switch** (see
+  [DECISIONS.md](DECISIONS.md)) — fold it into the same future changelog
+  entry once `php-prepros` is version-bumped, including the footnote-markup
+  change (now GitHub's real `<section class="footnotes">` shape) since
+  that's user-visible for anyone with custom CSS targeting the old
+  `<div class="footnotes">` by tag rather than by class.
+- **`docs/template-CLAUDE.md` doesn't mention the `MD::` native-backend
+  switch either** — lower urgency than the `YAML::` gap above (no
+  known behavioral footgun for template authors, everything's
+  diff-tested/documented in `php-mdhtml`'s `CLAUDE.md`), but the footnote
+  HTML shape change is worth a one-line mention if `template-CLAUDE.md`
+  documents `[^1]` footnote output anywhere. Fan out per the usual rule
+  in [CONTEXT.md](CONTEXT.md) once updated.
 - **Not a doc gap, just a reminder for whoever reads this next:**
   `kirigami.yaml` itself is parsed in Node by `@kirigami/struct-walker`
   (js-yaml), not by the PHP `YAML::` class — the native-backend switch

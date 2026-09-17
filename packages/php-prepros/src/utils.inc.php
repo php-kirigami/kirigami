@@ -36,6 +36,7 @@ spl_autoload_register(function ($class) {
         'YAML'            => 'yaml.class.php',
 
         // Fallbacks
+        'MD_LEGACY'       => 'md-legacy.class.php',
         'Normalizer'      => 'normalizer.class.php',
         'YAML_LEGACY'     => 'yaml-legacy.class.php'
     ];
