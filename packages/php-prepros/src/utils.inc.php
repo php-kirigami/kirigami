@@ -59,3 +59,11 @@ PREPROS::loadConfig($config);
 // `includes` file (or prepros.plugins.php) can hook here to pull in extra
 // PHP files or wire itself up.
 PREPROS::runHook('boot', $config);
+
+// Symmetric `shutdown` hook, fired via register_shutdown_function rather
+// than auto_append_file: every entrypoint ends in STD::succeed()/STD::error(),
+// both of which exit() — and PHP skips auto_append_file whenever the script
+// terminates through exit()/die(). A shutdown function has no such gap.
+register_shutdown_function(function () {
+    PREPROS::runHook('shutdown');
+});

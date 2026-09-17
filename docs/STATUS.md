@@ -126,3 +126,23 @@ the sibling repo `audiowaveform-wasm-compiler`.
   [DECISIONS.md](DECISIONS.md) for the design. Not yet in a
   `docs/template-CLAUDE.md` fan-out or a released version — `refactor/core-api`
   branch, in progress.
+- **`php-prepros` bootstrap switched to `auto_prepend_file`**: the
+  framework (autoloader, `$argv`/`$config`, aliases, `boot` hook —
+  `src/utils.inc.php`) used to be loaded by an explicit
+  `include(__DIR__.'/utils.inc.php')` at the top of each of the three PHP
+  entrypoints (`prepros.php`, `runenv.php`, `imagebatch.php`). Now it's one
+  `auto_prepend_file` ini directive set in `prepros.js`'s
+  `getPHPInstance()` (`setIniValues()`, already the mechanism used for
+  `memory_limit` etc.); the three entrypoints no longer `include` it
+  themselves. New symmetric `shutdown` hook (via
+  `register_shutdown_function()` in `utils.inc.php`) — **not**
+  `auto_append_file`, which PHP skips whenever the script exits, and every
+  entrypoint always exits via `STD::succeed()`/`STD::error()`. Verified
+  with a local fixture: page rendering unchanged, `kiri run` still sees
+  `PREPROS`/`MD` classes, and the `shutdown` hook fires even through
+  `STD::succeed()`'s `exit()` (confirmed via `error_log()` landing in
+  `stderr`/`warnings`, since `PREPROS::exportFile()` called from a
+  shutdown hook is too late — the result JSON is already written before
+  shutdown runs). See [DECISIONS.md](DECISIONS.md). README updated
+  (`shutdown` hook row, bootstrap note). `refactor/core-api` branch, in
+  progress.

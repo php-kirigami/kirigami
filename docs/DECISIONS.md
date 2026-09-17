@@ -130,3 +130,32 @@ null-coalescing chain (safe even through an unset `self::$config->types`),
 so the page falls back to exactly today's global-only behavior — this was
 the main risk to guard since page types must never change existing sites
 that don't use them.
+
+## `php-prepros` bootstrap: `auto_prepend_file`, not `auto_append_file`+exit
+
+Maxime wanted the framework bootstrap (`src/utils.inc.php` — autoloader,
+`$argv`/`$config`, aliases, `boot` hook) loaded through php.ini's
+`auto_prepend_file`/`auto_append_file` instead of the explicit
+`include(__DIR__.'/utils.inc.php')` repeated at the top of `prepros.php`,
+`runenv.php`, and `imagebatch.php`. `@kirigami/php-wasm` already exposes a
+working `setIniValues()` (VFS-based php.ini rewrite, same idiom as the CA
+bundle injection) — so `auto_prepend_file` pointed at
+`/prepros/utils.inc.php`, set once in `prepros.js`'s `getPHPInstance()`,
+is a clean 1:1 replacement: PHP runs it in the same global scope right
+before the main script, exactly like the `include()` it replaces.
+
+`auto_append_file` is a trap here, though: **every** entrypoint ends via
+`STD::succeed()`/`STD::error()`, both of which call `exit()` — and PHP
+documents that `auto_append_file` is skipped whenever the script
+terminates through `exit()`/`die()`. Anything placed there would be dead
+code that silently never runs. Used `register_shutdown_function()` from
+inside `utils.inc.php` instead, firing a new `shutdown` hook symmetric to
+the existing `boot` hook — shutdown functions run regardless of `exit()`,
+which is exactly the guarantee `auto_append_file` can't give here.
+Verified with a local fixture (see [STATUS.md](STATUS.md)): the hook
+fires even through `STD::succeed()`'s `exit()`, but a `PREPROS::exportFile()`
+call made from *inside* a shutdown hook is too late to reach the JSON
+result — `STD::succeed()` snapshots `getExportedFiles()` before `exit()`
+triggers the shutdown sequence. `shutdown` hooks are for side effects
+(logging, flushing an external resource), not for growing the build's
+`files` list.

@@ -65,12 +65,16 @@ const getPHPInstance = async () => {
         __php.setSpawnHandler((command, args, options) => spawn(command, args, options));
         __php.preprosConfig = preprosConfig;
         __php.setIniValues({
-            log_errors:      1,
-            html_errors:     0,
-            display_errors:  1,
-            error_reporting: 32767,
-            error_log:       'php://stderr',
-            memory_limit:    '2G',
+            log_errors:        1,
+            html_errors:       0,
+            display_errors:    1,
+            error_reporting:   32767,
+            error_log:         'php://stderr',
+            memory_limit:      '2G',
+            // The framework bootstrap (autoloader, $argv/$config, aliases,
+            // the `boot` hook) — every entrypoint used to `include` this by
+            // hand; auto_prepend_file makes it a single config point instead.
+            auto_prepend_file: '/prepros/utils.inc.php',
         });
 
         await mountPath(__dirname, '/prepros', __php);

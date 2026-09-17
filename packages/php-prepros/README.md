@@ -924,6 +924,11 @@ const { files, colors } = await processImages([
 ## PHP classes reference
 
 All classes are autoloaded — no manual `require` needed inside your page files.
+The autoloader itself, `$argv`/`$config`, procedural aliases, and the `boot`
+hook are installed via php.ini's `auto_prepend_file` (pointed at
+`utils.inc.php`), set once per WASM runtime instance — every entrypoint
+(`prepros.php`, `runenv.php`, `imagebatch.php`) gets it automatically,
+with no `include` of its own.
 
 ---
 
@@ -1730,6 +1735,7 @@ PREPROS::registerHook(string $hookName, callable $callback): void
 | Hook | When it fires | `$data` type | Expected return |
 |------|---------------|--------------|-----------------|
 | `boot` | Once per process, right after bootstrap (config loaded, `includes` pulled in), before any page renders. Fires for every entrypoint. | `stdClass $config` | ignored |
+| `shutdown` | Via `register_shutdown_function()`, at the very end of the request — fires even after `STD::succeed()`/`STD::error()`'s `exit()`, unlike `auto_append_file` (which PHP skips whenever the script exits). The place for cleanup that must always run. | `null` | ignored |
 | `page_info` | After PHPDOC parsing, before rendering (auto-loads `.yaml`/`.json`/`.md` annotations) | `[$filePath, $pageObject]` — see note | `$pageObject` (modified) |
 | `pre_render` | Before PHP execution | Raw file contents as `string` | `string` |
 | `pre_before` | Just before the `before` include (inside its output buffer — `echo` to prepend to the header) | `before` config path as `string\|null` | ignored |
