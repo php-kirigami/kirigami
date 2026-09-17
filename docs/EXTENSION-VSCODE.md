@@ -94,6 +94,27 @@ the extension reflects real state instead of re-parsing console output.
 Once that exists, the extension's job is just to reflect it in the status
 bar item, not to reimplement watching.
 
+### Config reload
+
+A file watcher on `kirigami.yaml` (workspace-root level, separate from
+`serve()`'s own build-triggering watchers) calls `Project.reload()` when
+it changes, so the extension's in-memory `Project` instance — and
+whatever it's showing (status bar, commands) — stays in sync with the
+file on disk without the user restarting anything. `reload()`'s own
+docblock (`packages/kirigami/index.js`) already anticipates this: "safe
+to call again after the file ... changed on disk."
+
+Scoped to `kirigami.yaml` only for v1. `reload()` also re-reads installed
+plugins ("or an installed plugin changed on disk" per its docblock) —
+watching `node_modules` for plugin install/removal to trigger the same
+reload is a natural extension of this, but not scoped yet.
+
+(Separately, `Project.validate()` — cheaper, config-only, no plugin
+reload — has a docblock literally anticipating "every keystroke in a VS
+Code editor": a candidate for live-validating `kirigami.yaml` as the user
+types, e.g. surfacing errors via a `Diagnostic`. Related to the Problems
+panel open question below, not decided yet.)
+
 ## Open questions
 
 - Multi-root workspaces: which folder's `kirigami.yaml` does the status
@@ -105,3 +126,5 @@ bar item, not to reimplement watching.
   PHP/task error to a `Diagnostic` with a real file/line)?
 - Extension activation: onStartup if a `kirigami.yaml` is present at the
   workspace root, vs. a manual "Kirigami: Enable" command?
+- Should the `node_modules` plugin-install watch mentioned above (Config
+  reload) be in scope for v1, or deferred alongside `create`/`install`?
