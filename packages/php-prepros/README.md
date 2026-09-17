@@ -1050,7 +1050,7 @@ Uses PHP 8.4's `Dom\HTMLDocument` (Lexbor engine) to parse the input and re-seri
 
 ### YAML
 
-A lightweight, zero-dependency YAML parser. Covers the full subset used in static site projects.
+A YAML parser backed by PHP's native `yaml` extension (libyaml), statically built into `@kirigami/php-wasm` — full YAML 1.1 support, no userland parsing.
 
 ```php
 $data = YAML::parse(string $yaml, bool $assoc = false): mixed;
@@ -1058,19 +1058,9 @@ $data = YAML::parseFile(string $path, bool $assoc = false): mixed;
 $data = YAML::loadFile(string $path, bool $assoc = false): mixed;
 ```
 
-Supported features:
-
-- Scalars: strings (quoted and unquoted), integers, floats, booleans, null
-- Single and double quoted strings with escape sequences
-- Literal block scalars (`|`, `|-`, `|+`)
-- Folded block scalars (`>`, `>-`, `>+`)
-- Plain scalars spanning multiple lines
-- Nested mappings and sequences
-- Inline collections (`[a, b]` and `{k: v}`)
-- Comments (`#`)
-- Multiple documents separated by `---`
-
 By default, YAML mappings are returned as `stdClass` objects. Pass `true` as the second argument to get associative arrays instead.
+
+Following YAML 1.1 means the usual implicit-boolean gotcha applies to both values *and* mapping keys: `y`/`Y`/`n`/`N`, `yes`/`no`, `true`/`false`, `on`/`off` (any case) all resolve to a boolean when unquoted — so an unquoted `no:` key or a `NO` value becomes `false`. Quote a scalar (`"y": 2`) to keep it a string.
 
 `YAML::loadFile()` behaves like `YAML::parseFile()`, then walks the result recursively: any string value ending in `.yaml`, `.yml`, or `.json` that resolves to an existing file (relative to *its own* file's directory) is replaced by that file's parsed content, and so on, recursively. Values that don't match an existing file are left untouched. Circular references (`A → B → A`) throw a `RuntimeException`.
 

@@ -12,6 +12,7 @@ evolving material lives in `docs/`, split by topic:
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Future feature ideas, not yet scheduled |
 | [docs/BUGS.md](docs/BUGS.md) | Known open issues / questions needing a decision |
 | [docs/TODO.md](docs/TODO.md) | Small, concrete, near-term action items |
+| [docs/DOCTODO.md](docs/DOCTODO.md) | Documentation debt — pending doc updates code changes left behind |
 
 `docs/template-CLAUDE.md` is a different thing entirely — it's the
 `CLAUDE.md` gabarit copied verbatim into every `../template-*/` sibling
@@ -43,6 +44,7 @@ Full detail and rationale for each of these: [docs/CONTEXT.md](docs/CONTEXT.md).
 2. Check [docs/DECISIONS.md](docs/DECISIONS.md) so you don't re-litigate a
    settled question.
 3. When you finish something durable, log it in `docs/STATUS.md` (what
-   shipped), `docs/DECISIONS.md` (a non-obvious "why"), or `docs/TODO.md` /
-   `docs/ROADMAP.md` (what's still open) — whichever fits, per step 3 of
-   the workflow in [docs/INSTRUCTIONS.md](docs/INSTRUCTIONS.md).
+   shipped), `docs/DECISIONS.md` (a non-obvious "why"), `docs/TODO.md` /
+   `docs/ROADMAP.md` (what's still open), or `docs/DOCTODO.md` (docs it left
+   stale) — whichever fits, per step 3 of the workflow in
+   [docs/INSTRUCTIONS.md](docs/INSTRUCTIONS.md).

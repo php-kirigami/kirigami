@@ -102,3 +102,11 @@ the sibling repo `audiowaveform-wasm-compiler`.
   not yet published.
 - `CLAUDE.md` (470 lines) retired in favor of this `docs/` split, kept
   under 200 lines as a short entry point going forward.
+- `php-prepros`: `YAML::` switched to a native-`yaml`-extension backend
+  (libyaml, statically built into `@kirigami/php-wasm`) — ~6.8x faster
+  (0.58ms/iter vs 3.97ms/iter on a ~4KB corpus, 500 iterations), same
+  public API (`parse()`, `parseFile()`, `loadFile()`). The previous
+  hand-written parser is kept as `YAML_LEGACY`
+  (`src/libraries/yaml-legacy.class.php`, autoloadable) as a rollback
+  path. See [DECISIONS.md](DECISIONS.md) for the "why" and
+  [BUGS.md](BUGS.md) for the one open behavioural difference.

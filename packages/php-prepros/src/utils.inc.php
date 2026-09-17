@@ -36,7 +36,8 @@ spl_autoload_register(function ($class) {
         'YAML'            => 'yaml.class.php',
 
         // Fallbacks
-        'Normalizer'      => 'normalizer.class.php'
+        'Normalizer'      => 'normalizer.class.php',
+        'YAML_LEGACY'     => 'yaml-legacy.class.php'
     ];
     if (isset($catalog[$class])) require_once(__DIR__ . '/libraries/' . $catalog[$class]);
 }, true, true);

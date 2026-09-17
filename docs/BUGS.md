@@ -11,3 +11,10 @@ decision from Maxime before they can be closed. Fixed bugs move to
   loop in `canva/conf.scss` split into two blocks (one per `ital` value),
   or is there a better approach? No project has hit this yet, so left
   unresolved on purpose rather than guessed at.
+
+- **`|+` (keep-chomping) literal blocks: `YAML::` vs `YAML_LEGACY::` differ
+  by one trailing blank line.** Happens when the block is immediately
+  followed by a less-indented line with a blank line in between. Not yet
+  root-caused which one matches the YAML spec — low priority, `|+` is
+  rarely used. See [DECISIONS.md](DECISIONS.md) for the switch to the
+  native-backed `YAML::`.

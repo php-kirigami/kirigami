@@ -4,6 +4,26 @@ Architectural decisions and the reasoning behind them, so a question doesn't
 get re-litigated later without knowing it was already settled. For "what
 shipped and when," see [STATUS.md](STATUS.md).
 
+## `YAML::` now backed by the native `yaml` extension
+
+Switched from the hand-written recursive-descent parser to PHP's native
+`yaml` extension (libyaml), now statically built into `@kirigami/php-wasm`.
+~6.8x faster on a representative corpus (see STATUS.md), and it fixed a
+real bug found along the way: the old parser corrupted the whole document
+on a compact nested sequence (`- - item`).
+
+Kept the old implementation as `YAML_LEGACY` (`yaml-legacy.class.php`) —
+untouched, still autoloadable — as a rollback path, rather than deleting
+it outright, since the native extension follows YAML 1.1's implicit-boolean
+resolution (the "Norway problem") slightly more aggressively: bare `y`/`n`
+(unquoted, either case) now resolve to booleans as both values *and*
+mapping keys, where `YAML::` used to leave them as strings. Every other
+supported feature (quotes, `|`/`>` blocks incl. chomping, inline
+collections, comments, multi-doc, `loadFile()`'s recursive external
+reference resolution) was verified to match byte-for-byte across ~40 test
+cases before switching. See [BUGS.md](BUGS.md) for the one remaining
+un-root-caused difference (`|+` keep-chomping, one trailing blank line).
+
 ## Core-API / CLI split (`refactor/core-api`)
 
 `@kirigami/kirigami` is now the pure engine (`Project.load()/.reload()/
