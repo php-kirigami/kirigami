@@ -24,6 +24,9 @@
 // here.
 // ---------------------------------------------------------------------------
 
+// Il manque le index.d.ts
+
+
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { getConfig, clearConfigCache } from "./bin/config.js";
@@ -70,6 +73,8 @@ export class Project {
 		return this.#plugins;
 	}
 
+
+	// ===> Il faudra aussi recharger l'instance PHP de php-wasm 
 	// Loads (or re-loads) kirigami.yaml and the project's plugins. Safe to call
 	// again after the file or an installed plugin changed on disk — each call
 	// forces a fresh read instead of trusting getConfig()'s own cache, and

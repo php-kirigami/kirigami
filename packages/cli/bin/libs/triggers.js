@@ -3,6 +3,9 @@ import { getConfig } from "@kirigami/kirigami/internal/config";
 import { c } from "../utils.js";
 
 
+//// À quoi ça sert finalement si les triggers passent par l'API maintenant ?
+
+
 export async function is_trigger(name) {
 	const config = await getConfig();
 	return config.scripts?.some(s => s.trigger == name);

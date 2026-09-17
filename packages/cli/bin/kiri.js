@@ -10,6 +10,7 @@ import { load } from "@kirigami/kirigami";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// Ajouter une commande pour starter le mcp
 
 // ─── Available subcommands ─────────────────────────────────────────────────
 const COMMANDS = {

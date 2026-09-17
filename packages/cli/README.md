@@ -36,16 +36,19 @@ See its README for how a Kirigami project is built.
 
 ## Table of contents
 
-- [Installation](#installation)
-- [Commands](#commands)
-- [License](#license)
+- [@kirigami/cli](#kirigamicli)
+	- [Overview](#overview)
+	- [Table of contents](#table-of-contents)
+	- [Installation](#installation)
+	- [Commands](#commands)
+	- [License](#license)
 
 ---
 
 ## Installation
 
 ```bash
-npm install --save-dev @kirigami/cli
+npm install -g --save-dev @kirigami/cli
 ```
 
 `kiri create` (see below) also works via `npx @kirigami/cli create` without
