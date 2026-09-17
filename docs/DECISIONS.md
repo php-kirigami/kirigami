@@ -94,3 +94,39 @@ that name in prose or a `<code>` block (e.g. docs showing real `kiri
 build` output) got its real `<link>`/`<script>` injection skipped.
 Replaced with `hasAssetTag()`, a regex that targets an actual
 `<link href="…">` / `<script src="…">` tag containing the name.
+
+## Page types: explicit `prepros.types` dict, header/footer pair, single flat type
+
+Design discussed with Maxime for a "page type" concept: a page opts in with
+`@type <name>` and gets wrapped with type-specific markup *inside* the
+site's real global `before`/`after`, without touching them. Three choices
+made, all deliberate:
+
+- **Explicit `prepros.types.<name>.{before,after}` in `kirigami.yaml`**,
+  not convention-based path discovery (e.g. auto-resolving
+  `_layouts/types/<name>.header.php`). Consistent with how the *global*
+  `before`/`after` are already explicit yaml paths rather than inferred —
+  it documents/autocompletes via `kirigami.schema.json`, and a type isn't
+  forced into a fixed subfolder. The cost is one yaml entry per type, judged
+  acceptable since a site has a handful of types at most, not dozens.
+- **A header/footer pair per type** (mirroring the global `before`/`after`
+  shape), not a single template file with a content placeholder. Keeps both
+  sides executable PHP with hook symmetry (`pre_type_before`/
+  `post_type_before`/`pre_type_after`/`post_type_after`, matching the
+  existing `pre_before`/`post_before`/`pre_after`/`post_after`), rather than
+  introducing a second, different templating mechanism alongside the
+  existing include-based one.
+- **Single flat type per page, no inheritance/stacking** — Maxime's explicit
+  call. Covers the common case (a handful of named page kinds, each with its
+  own extra chrome) without the complexity of resolving multiple nested
+  types. Revisit only if a real project needs to compose types.
+
+Implementation: `PREPROS::render()` wraps `$body` with the type's
+before/after (via `$type`, already available for free since PHPDOC tags are
+extracted generically — no parser change needed) right after the
+`@indent` reflow and before the global `after` include. A missing `@type`
+or an unmatched type name resolves to `null` through PHP's `??`
+null-coalescing chain (safe even through an unset `self::$config->types`),
+so the page falls back to exactly today's global-only behavior — this was
+the main risk to guard since page types must never change existing sites
+that don't use them.

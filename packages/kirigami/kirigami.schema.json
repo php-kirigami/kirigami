@@ -378,6 +378,33 @@
               "_layouts/functions.php"
             ]
           ]
+        },
+        "types": {
+          "type": "object",
+          "description": "Named page types. A page opts in with `@type <name>` in its PHPDOC header; the matching entry's `before`/`after` wrap the page body one level inside the global `before`/`after` (global before → type before → body → type after → global after). A page with no `@type`, or naming a type absent here, renders with just the global wrap.",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "before": {
+                "type": "string",
+                "description": "Path, relative to kirigami.root, to a PHP file included before the page's body, inside the global `before`."
+              },
+              "after": {
+                "type": "string",
+                "description": "Path, relative to kirigami.root, to a PHP file included after the page's body, inside the global `after`."
+              }
+            }
+          },
+          "default": {},
+          "examples": [
+            {
+              "article": {
+                "before": "_layouts/types/article.header.php",
+                "after": "_layouts/types/article.footer.php"
+              }
+            }
+          ]
         }
       }
     },

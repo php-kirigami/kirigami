@@ -64,7 +64,7 @@ Part of the **Kirigami** project ecosystem.
   - [Writing pages](#writing-pages)
     - [PHPDOC header](#phpdoc-header)
     - [Auto-loading data files](#auto-loading-data-files)
-    - [`@content` and `@indent`](#content-and-indent)
+    - [`@content`, `@indent`, and `@type`](#content-indent-and-type)
     - [Built-in tags](#built-in-tags)
   - [JavaScript API](#javascript-api)
     - [`render(file?)`](#renderfile)
@@ -479,6 +479,10 @@ prepros:
     - .webp
   includes:                     # PHP files auto-included once, before any page renders.
     - _lib/functions.php
+  types:                        # Named page types — opt in per page with @type <name>.
+    article:
+      before: _layouts/types/article.header.php
+      after:  _layouts/types/article.footer.php
 
 image:                          # Image autogenerator — powers IMG::asset() / IMG::palette().
   format: webp                  # webp | avif (default: webp)
@@ -566,6 +570,7 @@ Options for the PHP → HTML compiler. **Read by `php-prepros`.** Declaring this
 | `network` | `bool` | `false` | Enables outbound HTTP(S) inside the WASM PHP runtime. Required for PHPDOC `@tag https://…` annotations that fetch remote `.yaml`/`.json`/`.md` data (see [Auto-loading data files](#auto-loading-data-files)), and for the `CURL` / `SCRAPER` classes. |
 | `mountext` | `string[]` | `[]` | Extra file extensions to mount automatically into the virtual filesystem alongside the built-in `.php`, `.json`, `.yaml`, `.yml`, `.md`, `.db`, `.txt`. Use this for assets your PHP code reads directly (e.g. `.svg`, `.webp`). Files with extensions not in this set are skipped during mounting — mount them on demand with [`PREPROS::mount()`](#preprosmountstringarray-patterns) instead. |
 | `includes` | `string[]` | `[]` | PHP files (relative to `kirigami.root`) `include_once`'d once, right after config is loaded — before any page renders. The natural place to `PREPROS::registerTag()`, `PREPROS::registerHook()`, or `MD::registerPlugin()`. |
+| `types` | `object` | `{}` | Named page types. A page opts in with `@type <name>` in its PHPDOC header; the matching entry's `before`/`after` (each `string`, relative to `kirigami.root`, both optional) wrap the page body **one level inside** the global `before`/`after` — render order is global before → type before → body → type after → global after. A page with no `@type`, or naming a type absent here, renders with just the global wrap. See [`@type`](#content-indent-and-type). |
 
 ### `image` block
 
@@ -714,12 +719,13 @@ When `network: true` is set in `kirigami.yaml`, annotation values that start wit
  */
 ```
 
-### `@content` and `@indent`
+### `@content`, `@indent`, and `@type`
 
-Two special annotation names change how a page's body is assembled:
+Three special annotation names change how a page's body is assembled:
 
 - **`@content`** — if a `content` variable already resolves to a non-empty value (typically because it's a `.md`/`.yaml`/`.json` annotation that auto-loaded into HTML/data, see above), it is used **as-is** as the page body, and the PHP file itself is **not executed** for its output. This is handy for pages that are pure data/markdown wrapped by a shared layout.
 - **`@indent`** — when set to a number, every line of the rendered body is prefixed with that many spaces before being wrapped by `before.php`/`after.php`. Useful for keeping generated HTML readable when a page is nested inside indented layout markup.
+- **`@type`** — names an entry under [`prepros.types`](#prepros-block). If it matches, that entry's `before`/`after` wrap the (already-indented) body **one level inside** `before.php`/`after.php`: global before → type before → body → type after → global after. No match (missing annotation, or a name absent from `prepros.types`) leaves the page with just the global wrap — a page type is an extra layer, never a replacement for the site's real header/footer.
 
 ```php
 <?php
@@ -728,6 +734,7 @@ Two special annotation names change how a page's body is assembled:
  * @title   Changelog
  * @content _changelog.md
  * @indent  4
+ * @type    article
  */
 ```
 
@@ -944,11 +951,13 @@ Internal method called once per source file. Orchestrates the full pipeline:
 
 1. Resolves PHPDOC metadata and auto-loads data files.
 2. Fires the `pre_render` hook with the raw source contents.
-3. Includes `before.php` (wrapped in the `pre_before` / `post_before` hooks), the page body (or `@content`, see [above](#content-and-indent)), and `after.php` (wrapped in `pre_after` / `post_after`) into a single string.
-4. Processes all registered custom HTML tags.
-5. Fires the `post_render` hook on the assembled HTML.
-6. Optionally pretty-prints via `HTML::format()` (when `format: true`).
-7. Writes the output `.html` file.
+3. Includes `before.php` (wrapped in the `pre_before` / `post_before` hooks) and the page body (or `@content`, see [above](#content-indent-and-type)).
+4. If the page declares `@type <name>` and `prepros.types.<name>` exists, wraps the body with that type's `before`/`after` (wrapped in `pre_type_before` / `post_type_before` and `pre_type_after` / `post_type_after`) — nested inside the global wrap.
+5. Includes `after.php` (wrapped in `pre_after` / `post_after`), assembling everything into a single string.
+6. Processes all registered custom HTML tags.
+7. Fires the `post_render` hook on the assembled HTML.
+8. Optionally pretty-prints via `HTML::format()` (when `format: true`).
+9. Writes the output `.html` file.
 
 #### `PREPROS::sitemap()`
 
@@ -1725,6 +1734,10 @@ PREPROS::registerHook(string $hookName, callable $callback): void
 | `pre_render` | Before PHP execution | Raw file contents as `string` | `string` |
 | `pre_before` | Just before the `before` include (inside its output buffer — `echo` to prepend to the header) | `before` config path as `string\|null` | ignored |
 | `post_before` | Right after the `before` include, on the captured header | Header `string` | `string` |
+| `pre_type_before` | Just before the page's `@type` `before` include, if any (inside its output buffer) | Type's `before` config path as `string\|null` | ignored |
+| `post_type_before` | Right after the `@type` `before` include, on the captured type header | Type header `string` | `string` |
+| `pre_type_after` | Just before the page's `@type` `after` include, if any (inside its output buffer) | Type's `after` config path as `string\|null` | ignored |
+| `post_type_after` | Right after the `@type` `after` include, on the captured type footer | Type footer `string` | `string` |
 | `pre_after` | Just before the `after` include (inside its output buffer — `echo` to prepend to the footer) | `after` config path as `string\|null` | ignored |
 | `post_after` | Right after the `after` include, on the captured footer | Footer `string` | `string` |
 | `post_render` | After tag processing, before `HTML::format()` | Assembled HTML `string` | `string` |

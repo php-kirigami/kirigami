@@ -26,3 +26,11 @@ step-8 "update every README.md" pass in
   doesn't touch it. Only `.yaml`/`.yml` files loaded from *inside* PHP
   templates (`YAML::parseFile()`/`loadFile()`/`yaml_load_file()`,
   `prepros.plugins.php`'s data-tag handling) go through the new backend.
+- **`docs/template-CLAUDE.md` doesn't mention page types yet** (new
+  `prepros.types` / `@type` feature, see [STATUS.md](STATUS.md) and
+  [DECISIONS.md](DECISIONS.md)). Add a `types:` line to its example
+  `prepros:` yaml block and a one-line mention of `@type` next to
+  `@content`/`@indent`, then fan out to `../template-*/` and the org site
+  per [CONTEXT.md](CONTEXT.md) — deliberately deferred until the feature
+  is actually used by a template, per the workflow's step-14 ordering
+  ([INSTRUCTIONS.md](INSTRUCTIONS.md#workflow)).

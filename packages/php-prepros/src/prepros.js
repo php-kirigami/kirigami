@@ -268,6 +268,10 @@ const render = async (file = '.', phpIncludes = []) => {
     await mountPath(target);
     if(config?.prepros?.before) await mountPath(path.resolve(config?.kirigami?.root, config?.prepros?.before));
     if(config?.prepros?.after) await mountPath(path.resolve(config?.kirigami?.root, config?.prepros?.after));
+    for (const type of Object.values(config?.prepros?.types || {})) {
+        if (type?.before) await mountPath(path.resolve(config?.kirigami?.root, type.before));
+        if (type?.after) await mountPath(path.resolve(config?.kirigami?.root, type.after));
+    }
 
     // Extra PHP files contributed by plugins (the kiri 'prepros:php' hook):
     // mounted outside /project and include_once'd once, before any page

@@ -110,3 +110,19 @@ the sibling repo `audiowaveform-wasm-compiler`.
   (`src/libraries/yaml-legacy.class.php`, autoloadable) as a rollback
   path. See [DECISIONS.md](DECISIONS.md) for the "why" and
   [BUGS.md](BUGS.md) for the one open behavioural difference.
+- **Page types** (`php-prepros`): a page can now declare `@type <name>` in
+  its PHPDOC header; if `prepros.types.<name>` exists in `kirigami.yaml`,
+  its `before`/`after` wrap the page body one level *inside* the global
+  `prepros.before`/`after` (global before → type before → body → type
+  after → global after). No `@type`, or a name absent from
+  `prepros.types`, falls back silently to the global-only wrap — verified
+  with a local fixture build (`kiri build` against the workspace source).
+  New `pre_type_before`/`post_type_before`/`pre_type_after`/
+  `post_type_after` hooks mirror the existing global-wrap hooks. Schema
+  (`prepros.types`), `prepros.js` (mounts type before/after files), and
+  `prepros.class.php` (`PREPROS::render()`) all updated; `php-prepros`
+  README updated (config table, `@content`/`@indent` section renamed to
+  include `@type`, hooks table, render pipeline steps). See
+  [DECISIONS.md](DECISIONS.md) for the design. Not yet in a
+  `docs/template-CLAUDE.md` fan-out or a released version — `refactor/core-api`
+  branch, in progress.

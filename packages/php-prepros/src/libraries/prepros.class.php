@@ -67,6 +67,20 @@ final class PREPROS
             }, explode(PHP_EOL, $body)));
         }
 
+        $typeConfig = !empty($type) ? (self::$config->types->{$type} ?? null) : null;
+
+        ob_start();
+        self::processHook('pre_type_before', $typeConfig->before ?? null);
+        if (!empty($typeConfig->before)) include(realpath(self::$root . $typeConfig->before));
+        $typeHeader = self::processHook('post_type_before', ob_get_clean());
+
+        ob_start();
+        self::processHook('pre_type_after', $typeConfig->after ?? null);
+        if (!empty($typeConfig->after)) include(realpath(self::$root . $typeConfig->after));
+        $typeFooter = self::processHook('post_type_after', ob_get_clean());
+
+        $body = $typeHeader . $body . $typeFooter;
+
         ob_start();
         self::processHook('pre_after', self::$config->after);
         if (self::$config->after) include(realpath(self::$root . self::$config->after));
