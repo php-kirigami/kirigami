@@ -14,7 +14,10 @@ and limitations see [BUGS.md](BUGS.md).
   runtime, package compatibility with the sandboxed environment, etc.
 - **Electron UI + VS Code extension** — a GUI to drive `kiri`
   (build/export/serve, plugin management, `kirigami.yaml` editing) without
-  the terminal.
+  the terminal. The VS Code half is now scoped (commands, a status-bar
+  server toggle + task indicator, packaging) — see
+  [EXTENSION-VSCODE.md](EXTENSION-VSCODE.md). The Electron half is still
+  just an idea.
 - **Automatic Google Analytics (gtag) integration** — a config option
   under the unified `seo:` block that injects `gtag.js` automatically when
   a measurement ID is provided.
