@@ -43,10 +43,29 @@ and limitations see [BUGS.md](BUGS.md).
   or a Kirigami page), packaged as an official action/script.
 - **Official Excel → JSON action/script** — same idea, for an
   Excel/`.xlsx` file to `.json` (to feed a `_data/` folder).
-- **A Navicat-style HTTP tunnel bridge for DB queries** — inspired by
-  Navicat's HTTP tunnel mechanism (concept only, no borrowed code): a
-  Kirigami system/script that queries a database through an HTTP bridge,
-  to feed a `_data/` folder or page from live data instead of a static export.
+- **Wire the `navicat` PHP-WASM extension into `php-prepros`.** The
+  extension itself is already built and available in the runtime
+  (`@kirigami/php-wasm`, v0.1.5 — mysql/pgsql/sqlite backends over
+  libcurl, see [docs/CONTEXT.md](CONTEXT.md)), inspired by Navicat's HTTP
+  tunnel mechanism. Nothing in `php-prepros` calls it yet — needs a class
+  (`DB`? mirroring `SCRAPER`'s shape) so a page/`_data/` can query a
+  database through it instead of relying on a static export.
+- **Wire the `mdhtml` PHP-WASM extension into `php-prepros`.** Also
+  already built and available (v0.1.2, real `cmark-gfm` 0.29.0.gfm.13),
+  not yet consumed anywhere. Candidate: an alternative Markdown engine for
+  `MD`, which currently hand-rolls its own parser (see the `/roadmap/`
+  list-continuation bug in [docs/STATUS.md](STATUS.md) for the kind of
+  edge case a real GFM parser would sidestep) — needs scoping how it
+  coexists with `MD`'s own plugin system (`{% %}` tags, `registerPlugin()`).
+- **Wire the `jsonk` PHP-WASM extension into `php-prepros`.** Also already
+  built (v0.1.4) — native JSON-schema validation (pattern/patternProperties/
+  format:"regex", external `$ref` resolution via curl, apcu-backed fetch
+  cache) plus a drop-in `json_encode()`/`json_decode()` replacement. Not
+  yet consumed anywhere. Candidate: replace `SCHEMA`'s pure-PHP validator
+  (see the "stay lite" convention in [docs/CONTEXT.md](CONTEXT.md), which
+  this would need to update) — worth checking whether `jsonk`'s validation
+  coverage actually matches what `kirigami.schema.json` / plugin
+  `options.schema.json` need before swapping it in.
 - **A class to fetch posts (and more) via the WordPress REST API** — same
   spirit as `SCRAPER`: a dedicated PHP class to query a WordPress site
   (`/wp-json/wp/v2/posts`, etc.) and feed a page/`_data/` with real
