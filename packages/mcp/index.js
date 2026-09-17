@@ -98,7 +98,7 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 		"kirigami_run",
 		{
 			title: "Run a Kirigami PHP script",
-			description: "Runs scripts/<command>.php inside the PHP-WASM runtime — same as `kiri run <command>`. The project's PHP class library (PREPROS, MD, HTML, …) is available with no include needed. Reloads the config first. Can execute any named script the project defines — only offer this to a project you trust.",
+			description: "Runs scripts/<command>.php inside the PHP-WASM runtime — same as `kiri run <command>`. The project's PHP class library (PREPROS, MD, HTML, …) is available with no include needed. Reloads the config first. Can execute any named script the project defines — only offer this to a project you trust. Use kirigami_list_scripts first if you don't already know the project's script names.",
 			inputSchema: {
 				command: z.string().describe("Script name, without the scripts/ prefix or .php extension."),
 				args: z.array(z.string()).optional().describe("Extra words passed as $argv to the PHP script."),
@@ -108,6 +108,51 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 			try {
 				await project.reload();
 				return ok(await project.run(command, args));
+			} catch (e) { return fail(e); }
+		}
+	);
+
+	server.registerTool(
+		"kirigami_list_scripts",
+		{
+			title: "List Kirigami scripts",
+			description: "Lists every scripts/<name>.php file the project actually has — each runnable via kirigami_run by its name — with its trigger (before-build/before-export/after-export/none) and any extra mounted files, from a matching kirigami.yaml scripts: entry if one exists. Reloads the config first.",
+		},
+		async () => {
+			try {
+				await project.reload();
+				return ok({ scripts: project.scripts });
+			} catch (e) { return fail(e); }
+		}
+	);
+
+	server.registerTool(
+		"kirigami_list_tasks",
+		{
+			title: "List Kirigami build tasks",
+			description: "Lists the tasks kirigami_build/kirigami_run_task would run — the project's tasks: entries (esbuild/sass/…), plus the implicit \"render-all\" prepros task when prepros: is configured. Reloads the config first.",
+		},
+		async () => {
+			try {
+				await project.reload();
+				return ok({ tasks: project.tasks });
+			} catch (e) { return fail(e); }
+		}
+	);
+
+	server.registerTool(
+		"kirigami_run_task",
+		{
+			title: "Run a single Kirigami build task",
+			description: "Runs exactly one task by name — bypassing before-build and every other task — instead of the whole kirigami_build pipeline. Forces it regardless of the task's own default policy, since naming it is itself the intent to run it. Use kirigami_list_tasks first to get valid names. Reloads the config first.",
+			inputSchema: {
+				name: z.string().describe("A task name from kirigami_list_tasks (e.g. \"render-all\", or a tasks: entry's own name)."),
+			},
+		},
+		async ({ name }) => {
+			try {
+				await project.reload();
+				return ok(await project.runTask(name));
 			} catch (e) { return fail(e); }
 		}
 	);

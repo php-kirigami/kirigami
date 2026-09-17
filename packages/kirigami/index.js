@@ -34,6 +34,7 @@ import { loadPlugins } from "./bin/libs/plugins.js";
 import { runscript } from "./bin/libs/runscript.js";
 import { createDevServer } from "./bin/libs/devserver.js";
 import { buildWatchRules, createWatchers } from "./bin/libs/watchengine.js";
+import { findFiles } from "./bin/utils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const tasksDir = path.join(__dirname, "bin", "tasks");
@@ -226,6 +227,55 @@ export class Project {
 	async run(command, argv = []) {
 		if (!this.#loaded) await this.reload();
 		return runscript(command, argv);
+	}
+
+	// Every scripts/<name>.php file actually on disk is runnable via run(),
+	// whether or not it has a matching kirigami.yaml `scripts:` entry — that
+	// entry only adds `mount`/`trigger` metadata (see runscript.js). This
+	// lists what's really runnable, merging in that metadata where present,
+	// so an embedder isn't limited to (or misled by) the yaml block alone.
+	// Empty until reload()/load() has populated #config.
+	get scripts() {
+		const config = this.#config;
+		if (!config) return [];
+		const declared = new Map((config.scripts || []).map((s) => [s.name, s]));
+		return findFiles("scripts/*.php")
+			.map((file) => path.basename(file, ".php"))
+			.sort()
+			.map((name) => ({ name, mount: declared.get(name)?.mount || [], trigger: declared.get(name)?.trigger || null }));
+	}
+
+	// The tasks build()/watch() actually iterate over: config.tasks, plus the
+	// synthetic "render-all" prepros task build() prepends when `prepros:` is
+	// set (same shape build() constructs — kept in one place so runTask() and
+	// any caller wanting "what can I run" see exactly what build() would run).
+	// Empty until reload()/load() has populated #config.
+	get tasks() {
+		const config = this.#config;
+		if (!config) return [];
+		return config.prepros
+			? [{ name: "render-all", type: "prepros", force: true, config: config.prepros }, ...config.tasks]
+			: config.tasks;
+	}
+
+	// Runs exactly one task from `tasks` by name, bypassing before-build and
+	// every other task — for an embedder that wants to re-run (or run for the
+	// first time) a single piece of the pipeline instead of the whole build.
+	// Always forces the task (ignores its own `canbuild` gating), since
+	// naming it directly is itself the intent to run it. Returns a failure
+	// result rather than throwing on an unknown name, same shape as a task's
+	// own result, so a caller doesn't need a separate try/catch for a typo.
+	async runTask(name) {
+		if (!this.#loaded) await this.reload();
+		const config = this.#config;
+		const task = this.tasks.find((t) => t.name === name);
+		if (!task) return { success: false, error: `Unknown task: "${name}".` };
+
+		const taskPath = path.join(tasksDir, `${task.type}.js`);
+		const mod = await import(pathToFileURL(taskPath).href);
+		const result = await mod.default(config.root, { ...task, force: true });
+
+		return { task: task.name, type: task.type, taskname: mod.taskname, ...result };
 	}
 }
 

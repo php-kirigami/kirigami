@@ -83,14 +83,17 @@ working directory (`kirigami.yaml` resolved from there) — set by the client's
 | `kirigami_build` | Same as `kiri build` — runs every configured task once, in place. |
 | `kirigami_export` | Same as `kiri export` — forces every task plus a copy into `export.path` (optionally overridden per call). |
 | `kirigami_run` | Same as `kiri run <command>` — runs `scripts/<command>.php` inside the PHP-WASM runtime, with extra args as `$argv`. |
+| `kirigami_list_scripts` | Lists every `scripts/<name>.php` file the project actually has (not just the ones with a `scripts:` yaml entry), each with its `trigger`/`mount` metadata if declared. Use before `kirigami_run` to discover valid names. |
+| `kirigami_list_tasks` | Lists the tasks `kirigami_build`/`kirigami_run_task` would run — `tasks:` entries plus the implicit `"render-all"` prepros task. Use before `kirigami_run_task`. |
+| `kirigami_run_task` | Runs exactly one task by name, bypassing `before-build` and every other task — for re-running (or first-running) a single piece of the pipeline instead of the whole build. |
 
 Every tool except `kirigami_validate` reloads `kirigami.yaml` (and, where
 relevant, plugins) before acting — an agent's usual loop is edit a file,
 call a tool, read the result, edit again, so a tool answering from a stale
 config snapshot would be actively misleading.
 
-`kirigami_run` executes any named script the project defines — only point
-this server at a project whose `scripts/` you trust.
+`kirigami_run`/`kirigami_run_task` execute any named script/task the
+project defines — only point this server at a project you trust.
 
 ---
 

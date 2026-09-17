@@ -163,3 +163,22 @@ the sibling repo `audiowaveform-wasm-compiler`.
   hook firing) — and `kiri mcp`/`kiri mcp --help` from `@kirigami/cli`, stdout
   confirmed clean of anything but protocol JSON once connected. Not yet
   published (`0.1.0`, unreleased) — `refactor/core-api` branch.
+- **`@kirigami/mcp`/`@kirigami/kirigami` grown discoverability + single-task
+  run**: three new tools — `kirigami_list_scripts`, `kirigami_list_tasks`,
+  `kirigami_run_task` — plus the `Project` methods/getters backing them
+  (`.scripts`, `.tasks`, `.runTask(name)`, all in `packages/kirigami/index.js`
+  since they're general `Project` API, not MCP-specific — same "lives in
+  @kirigami/kirigami" call as the rest of this feature). `.scripts` doesn't
+  just echo the yaml `scripts:` block — it globs `scripts/*.php` on disk
+  (`findFiles()`, already used by `runscript.js`'s own `mount:` resolution)
+  and merges in `mount`/`trigger` from a matching yaml entry when one
+  exists, because `runscript()` runs any `scripts/<name>.php` file
+  regardless of yaml declaration — a yaml-only listing would have
+  undersold what `kirigami_run` can actually do. `.tasks` is exactly the
+  list `build()` iterates (`tasks:` entries + the implicit `"render-all"`
+  prepros task); `.runTask(name)` finds one by name and runs it forced,
+  bypassing `before-build` and every other task. Verified against the same
+  local fixture (now with a `scripts:`/`tasks:` block added): listing
+  correctly merges disk + yaml, `runTask("js-core")` and
+  `runTask("render-all")` both produce real output files independently,
+  and an unknown name returns a structured failure instead of throwing.
