@@ -146,3 +146,20 @@ the sibling repo `audiowaveform-wasm-compiler`.
   shutdown runs). See [DECISIONS.md](DECISIONS.md). README updated
   (`shutdown` hook row, bootstrap note). `refactor/core-api` branch, in
   progress.
+- **`@kirigami/mcp` added**: new package, a third "face" over
+  `@kirigami/kirigami`'s `Project` API (sibling to `@kirigami/cli`), serving
+  an MCP server over stdio — `kirigami_config`/`validate`/`build`/`export`/`run`
+  tools. `@kirigami/cli` gained `kiri mcp` as a thin wrapper (same pattern as
+  its other commands), resolving a `// Ajouter une commande pour starter le
+  mcp` note that had been sitting at the top of `bin/kiri.js`. `serve`/`watch`
+  deliberately excluded — long-running, doesn't fit a request/response tool
+  call (see [DECISIONS.md](DECISIONS.md)). Every tool but `kirigami_validate`
+  calls `project.reload()` before acting, so a tool never answers from a
+  config snapshot older than the agent's own last edit. Verified end-to-end
+  with a raw JSON-RPC smoke test against a local fixture: `initialize` →
+  `tools/list` → `kirigami_config` (reflects the page-types feature added
+  earlier this session) → `kirigami_build` (real files rendered) →
+  `kirigami_run` (confirms `PREPROS`/`MD` availability and the `shutdown`
+  hook firing) — and `kiri mcp`/`kiri mcp --help` from `@kirigami/cli`, stdout
+  confirmed clean of anything but protocol JSON once connected. Not yet
+  published (`0.1.0`, unreleased) — `refactor/core-api` branch.

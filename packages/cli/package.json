@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "@kirigami/kirigami": "2.0.0",
+    "@kirigami/mcp": "0.1.0",
     "@kirigami/php-wasm": "8.5.10-5",
     "@kirigami/sdk": "0.2.1",
     "@octokit/rest": "^22.0.1",

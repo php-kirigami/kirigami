@@ -159,3 +159,45 @@ result — `STD::succeed()` snapshots `getExportedFiles()` before `exit()`
 triggers the shutdown sequence. `shutdown` hooks are for side effects
 (logging, flushing an external resource), not for growing the build's
 `files` list.
+
+## `@kirigami/mcp`: a sibling package to `@kirigami/cli`, not a subpath or inline feature
+
+Discussed three shapes for exposing Kirigami to an AI agent over MCP: code
+inline in `@kirigami/kirigami`, an optional subpath export of that same
+package, or a separate package. Landed on a separate package,
+`@kirigami/mcp`, depending on `@kirigami/kirigami` — same relationship
+`@kirigami/cli` already has, on the same branch that just extracted it for
+this exact reason.
+
+Why not inline: `packages/kirigami/index.js`'s own docblock already
+anticipated this — `Project` is documented as being for "a long-lived
+embedder — a VS Code extension, an MCP server, a script," i.e. the API is
+meant to stay agent-agnostic. Baking `@modelcontextprotocol/sdk` (and its
+`zod` peer dep) into `@kirigami/kirigami` would force that dependency on
+every consumer of `Project` — the CLI, a future VS Code extension, any
+script — even though only an MCP client actually needs it. Same "stay
+lite" reasoning behind keeping every package's dependency list to what
+that package itself actually uses.
+
+A **VS Code extension** (on [ROADMAP.md](ROADMAP.md), not started) is a
+different consumer again: it would import `@kirigami/kirigami` directly,
+in-process, the same way `@kirigami/cli` does — going through
+`@kirigami/mcp`'s stdio server to talk to itself would be a pointless
+subprocess+JSON-RPC detour. `@kirigami/mcp` is for an actual external MCP
+client (Claude, Copilot Chat, …); VS Code does support extensions
+registering MCP servers, so the extension could *additionally* register
+`@kirigami/mcp` for its own in-editor AI chat, but that's a bonus wiring,
+not the extension's primary path to the API.
+
+`serve`/`watch` are excluded from the tool set: both start a long-running
+process (HTTP server, filesystem watcher) that doesn't return, which
+doesn't fit a request/response MCP tool call. Revisiting that needs a
+background-process model (spawn + `status`/`stop` tools), not attempted
+here.
+
+Every tool but `kirigami_validate` calls `project.reload()` before acting
+rather than trusting `Project`'s own lazy `#loaded` cache — an MCP server
+is long-lived across many independent tool calls, and the expected agent
+loop (edit a file, call a tool, read the result, edit again) means a
+config snapshot from an earlier call is exactly the kind of staleness that
+would silently mislead the agent.

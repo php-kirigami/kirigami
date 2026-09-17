@@ -1,0 +1,49 @@
+{
+  "name": "@kirigami/mcp",
+  "version": "0.1.0",
+  "description": "MCP server exposing a Kirigami project (build/export/validate/run) as tools for an AI agent.",
+  "keywords": [
+    "kirigami",
+    "mcp",
+    "model-context-protocol",
+    "static-site-generator",
+    "ai-agent"
+  ],
+  "license": "MIT",
+  "author": "Maxime Larrivée-Roy",
+  "homepage": "https://php-kirigami.github.io",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "kiri-mcp": "./bin/kiri-mcp.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "index.js",
+    "bin/",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=10.2.3"
+  },
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@kirigami/kirigami": "2.0.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.6.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/php-kirigami/kirigami.git"
+  },
+  "bugs": {
+    "url": "https://github.com/php-kirigami/kirigami/issues"
+  }
+}

@@ -10,8 +10,6 @@ import { load } from "@kirigami/kirigami";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Ajouter une commande pour starter le mcp
-
 // ─── Available subcommands ─────────────────────────────────────────────────
 const COMMANDS = {
 	build: "Compile project for development",
@@ -19,6 +17,7 @@ const COMMANDS = {
 	watch: "Start dev-mode with hot-reload",
 	serve: "Dev-mode with hot-reload, served locally in a browser",
 	run: "Run a PHP command script from the scripts/ folder",
+	mcp: "Serve this project over MCP (stdio) for an AI agent",
 	create: "Create a new project from an official template",
 	install: "Install a plugin and print its kirigami.yaml options",
 	cache: "Purge the local caches (.node.db / .cache.db / .cookie.txt)",
@@ -55,6 +54,7 @@ ${c.bold("EXAMPLES")}
   ${c.dim("kiri watch")}
   ${c.dim("kiri serve")}
   ${c.dim("kiri run convert-images")}
+  ${c.dim("kiri mcp")}
   ${c.dim("kiri create --list")}
   ${c.dim("kiri install @kirigami/plugin-highlight")}
   ${c.dim("kiri cache purge")}
