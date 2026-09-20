@@ -23,7 +23,7 @@ Here's what Kirigami brings to your workflow:
 
 - **Real PHP templating** — includes, loops, Markdown, YAML — compiled directly to clean HTML, no server needed at runtime.
 - **Integrated asset pipeline** with esbuild for JS and Sass for styles, wired in from the start.
-- **A `watch` mode with hot-reload**, so changes show up instantly during development.
+- **A `serve` mode with browser reload**, so changes show up instantly during development.
 - **A single-command production export** — a fully static site ready to deploy anywhere (GitHub Pages, Netlify, any static host), complete with a license banner and an auto-generated sitemap.
 - **Instant project scaffolding** from official templates via `kiri create`.
 - **Scriptable automation**, running PHP scripts on demand or as build-pipeline hooks with `kiri run`.
@@ -35,35 +35,39 @@ Every project is driven by a single configuration file, `kirigami.yaml`, at the 
 ## Table of contents
 
 - [Kirigami](#kirigami)
-  - [Overview](#overview)
-  - [Table of contents](#table-of-contents)
-  - [Monorepo structure](#monorepo-structure)
-  - [Requirements](#requirements)
-  - [Installation](#installation)
-  - [Quick start](#quick-start)
-  - [CLI commands](#cli-commands)
-  - [Configuration (`kirigami.yaml`)](#configuration-kirigamiyaml)
-    - [`kirigami:` — core project settings](#kirigami--core-project-settings)
-    - [`prepros:` — the PHP → HTML compiler](#prepros--the-php--html-compiler)
-    - [`image:` — image autogenerator](#image--image-autogenerator)
-    - [`plugins:` — Kirigami plugins](#plugins--kirigami-plugins)
-    - [`esbuild:` / `sass:` — global build options](#esbuild--sass--global-build-options)
-    - [`export:` — production export options](#export--production-export-options)
-    - [`scripts:` — named PHP scripts](#scripts--named-php-scripts)
-    - [`tasks:` — the build pipeline](#tasks--the-build-pipeline)
-  - [Continuous deployment](#continuous-deployment)
-  - [License](#license)
-  - [Author](#author)
+- [Overview](#overview)
+- [Monorepo structure](#monorepo-structure)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [CLI commands](#cli-commands)
+- [Configuration (`kirigami.yaml`)](#configuration-kirigamiyaml)
+  - [`kirigami:` — core project settings](#kirigami--core-project-settings)
+  - [`prepros:` — the PHP → HTML compiler](#prepros--the-php--html-compiler)
+  - [`image:` — image autogenerator](#image--image-autogenerator)
+  - [`plugins:` — Kirigami plugins](#plugins--kirigami-plugins)
+  - [`esbuild:` / `sass:` — global build options](#esbuild--sass--global-build-options)
+  - [`export:` — production export options](#export--production-export-options)
+  - [`scripts:` — named PHP scripts](#scripts--named-php-scripts)
+  - [`tasks:` — the build pipeline](#tasks--the-build-pipeline)
+- [Continuous deployment](#continuous-deployment)
+- [License](#license)
+- [Author](#author)
 
 ---
 
 ## Monorepo structure
 
+The current working tree includes the core/API split; these docs describe checked-in behavior, not registry publication status. [Known issues](docs/BUGS.md) and [the audit](docs/AUDIT-2026-09-20.md) track the remaining implementation defects.
+
 This repository is an npm workspaces monorepo, organized as follows:
 
 | Package | Description |
 |---|---|
-| [`packages/kirigami`](./packages/kirigami) | The heart of the project: the `kiri` CLI (build, export, watch, run, create, phpinfo). |
+| [`packages/cli`](./packages/cli) | The `kiri` terminal interface. |
+| [`packages/mcp`](./packages/mcp) | MCP tools for project discovery and operations. |
+| [`packages/vscode`](./packages/vscode) | VS Code extension scaffold; activation/packaging remain under validation. |
+| [`packages/kirigami`](./packages/kirigami) | The programmatic `Project` engine shared by the CLI, MCP server, and editor extension. |
 | [`packages/php-prepros`](./packages/php-prepros) | The PHP → HTML compiler that powers the CLI (template rendering, sitemap generation, and more). |
 | [`packages/php-wasm`](./packages/php-wasm) | A custom PHP WebAssembly build for Node.js (JSPI only, no browser support). |
 | [`packages/struct-walker`](./packages/struct-walker) | Recursively walks YAML/JSON structures, resolving relative file references and converting assets to data URIs. |
@@ -84,10 +88,10 @@ This repository is an npm workspaces monorepo, organized as follows:
 
 ## Installation
 
-Get the CLI via the [`@kirigami/kirigami`](./packages/kirigami) package:
+Get the CLI via the [`@kirigami/cli`](./packages/cli) package:
 
 ```bash
-npm install -D @kirigami/kirigami
+npm install -D @kirigami/cli
 ```
 
 That's it — the `kiri` command is ready to go (via `npx kiri` or an npm script).
@@ -95,6 +99,8 @@ That's it — the `kiri` command is ready to go (via `npx kiri` or an npm script
 ---
 
 ## Quick start
+
+Create every layout file referenced below relative to `kirigami.root`. Watch and serve do not perform an initial build. `kiri create` currently has dependency/banner lookup defects after the CLI split; use a template checkout until [A05](docs/AUDIT-2026-09-20.md) is fixed.
 
 1. Drop a `kirigami.yaml` at the root of your project:
 
@@ -114,7 +120,8 @@ prepros:
 3. Fire up dev mode and watch it come alive:
 
 ```bash
-npx kiri watch
+npx kiri build
+npx kiri serve
 ```
 
 4. Ship it! Export the fully static site for production:
@@ -130,7 +137,7 @@ npx kiri export
 | Command | Description |
 |---|---|
 | `kiri build` | Compiles the project for development (runs every configured task once, no minification/export step). |
-| `kiri export` | Compiles and exports the project for production (forces every task + copies static files). |
+| `kiri export` | Compiles and exports the project for production (runs eligible tasks plus implicit rendering and a static-file copy). |
 | `kiri watch` | Starts dev mode: watches project files and rebuilds automatically on change. |
 | `kiri serve` | Same as `kiri watch`, plus a local server and browser hot-reload (Server-Sent Events, no server framework). |
 | `kiri run <script>` | Runs a PHP command script from the `scripts/` folder inside the Kirigami runtime. |
@@ -237,7 +244,9 @@ tasks:
 
 ### `prepros:` — the PHP → HTML compiler
 
-Just declaring this block (even empty) automatically prepends a forced `prepros` task that renders every page and regenerates `sitemap.xml`.
+Declaring this block prepends a forced `prepros` task that renders pages and regenerates `sitemap.xml` and `robots.txt`. Set `before` and `after` to existing layout files: an empty block currently causes PHP warnings.
+
+`prepros.head` controls managed asset/theme injection; set it to `false` to opt out. `prepros.types` maps page-type names to extra `before`/`after` wrappers, selected by a page’s `@type` annotation. The separate top-level `seo` block opts into managed metadata and can contain `jsonld`. See [the complete PHP configuration reference](packages/php-prepros/README.md#configuration--kirigamiyaml).
 
 | Key | Description |
 |---|---|
@@ -279,6 +288,8 @@ Both are free-form objects passed straight through to the underlying build call,
 
 ### `export:` — production export options
 
+The destination is emptied before copying; keep it separate from the source tree. Exclusion is not a general private-file filter: non-underscore PHP helpers and hidden directories may be copied. Add explicit `export.ignore` rules for private source material.
+
 | Key | Description |
 |---|---|
 | `path` | Output directory for `kiri export`, relative to the project root. Defaults to `dist`. |
@@ -303,11 +314,13 @@ An ordered list of build tasks, run in array order — on top of the implicit `p
 | `esbuild` | Bundles/minifies a JS or TS entry point. Supports build & watch. | `name`, `entry` |
 | `sass` | Compiles a `.scss`/`.sass` entry point, minified with csso on export. Supports build & watch. | `name`, `entry` |
 | `prepros` | Renders pages + `sitemap.xml`. Watch only on a plain `kiri build`/`watch` — the implicit task added by the `prepros:` block is always forced. | `name` |
-| `dist` | Copies `kirigami.root` into the export output dir. Implicit/forced only, added automatically by `kiri export`. | `name`, `path` |
+| `dist` | Copies `kirigami.root` into the export output dir. Added automatically by `kiri export`; explicit entries need `force: true` to build. | `name`, `path` |
 
 ---
 
 ## Continuous deployment
+
+The sibling action currently falls back to installing `@kirigami/kirigami`. For the CLI split, include `@kirigami/cli` in the site’s dependencies so a local `kiri` exists. Verify the action migration before relying on its fallback.
 
 Kirigami ships an official reusable GitHub Action, [`php-kirigami/kiribuild`](https://github.com/php-kirigami/kiribuild)
 (**v2**) — published on the [**GitHub Marketplace**](https://github.com/marketplace/actions/kiribuild),
@@ -326,7 +339,7 @@ concurrency: { group: pages, cancel-in-progress: true }
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment: { name: github-pages, url: ${{ steps.deployment.outputs.page_url }} }
+    environment: { name: github-pages, url: "${{ steps.deployment.outputs.page_url }}" }
     steps:
       - uses: actions/checkout@v7
 
@@ -358,7 +371,7 @@ its inputs.
 
 ## License
 
-This project is distributed under the [MIT license](./LICENSE), except for the `@kirigami/php-wasm` package, which is distributed under **GPL-2.0-or-later** (see its [README](./packages/php-wasm/README.md)).
+Most packages use MIT. The exceptions are `@kirigami/php-wasm` (GPL-2.0-or-later), `@kirigami/audiowaveform-wasm` (GPL-3.0-or-later), and `@kirigami/bestframe` (LGPL-2.1-or-later). See each package’s `LICENSE` and README for upstream notices.
 
 ---
 

@@ -33,85 +33,82 @@ Part of the **Kirigami** project ecosystem.
 ## Table of contents
 
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
-  - [Overview](#overview)
-  - [Table of contents](#table-of-contents)
-  - [What's new in 2.0.0](#whats-new-in-200)
-  - [What's new in 1.9.3](#whats-new-in-193)
-  - [What's new in 1.9.2](#whats-new-in-192)
-  - [What's new in 1.9.1](#whats-new-in-191)
-  - [What's new in 1.9.0](#whats-new-in-190)
-  - [What's new in 1.8.0](#whats-new-in-180)
-  - [What's new in 1.7.2](#whats-new-in-172)
-  - [What's new in 1.7.1](#whats-new-in-171)
-  - [What's new in 1.7.0](#whats-new-in-170)
-  - [What's new in 1.6.0](#whats-new-in-160)
-  - [What's new in 1.4.0](#whats-new-in-140)
-  - [What's new in 1.3.0](#whats-new-in-130)
-  - [What's new in 1.2.1](#whats-new-in-121)
-  - [What's new in 1.2.0](#whats-new-in-120)
-  - [How it works](#how-it-works)
-  - [Installation](#installation)
-  - [Configuration — `kirigami.yaml`](#configuration--kirigamiyaml)
-    - [`kirigami` block](#kirigami-block)
-    - [`seo` block](#seo-block)
-    - [`prepros` block](#prepros-block)
-    - [`image` block](#image-block)
-    - [`plugins` block](#plugins-block)
-    - [`esbuild` / `sass` blocks](#esbuild--sass-blocks)
-    - [`export` block](#export-block)
-    - [`scripts` block](#scripts-block)
-    - [`tasks` block](#tasks-block)
-  - [Writing pages](#writing-pages)
-    - [PHPDOC header](#phpdoc-header)
-    - [Auto-loading data files](#auto-loading-data-files)
-    - [`@content`, `@indent`, and `@type`](#content-indent-and-type)
-    - [Built-in tags](#built-in-tags)
-  - [JavaScript API](#javascript-api)
-    - [`render(file?)`](#renderfile)
-    - [`sitemap()`](#sitemap)
-    - [`runenv(script, paths?, ...args)`](#runenvscript-paths-args)
-    - [`mountPath(localPath, virtualDir?, php?)`](#mountpathlocalpath-virtualdir-php)
-    - [`processImages(jobs)`](#processimagesjobs)
-  - [PHP classes reference](#php-classes-reference)
-    - [PREPROS](#prepros)
-      - [`PREPROS::render(string $file)`](#preprosrenderstring-file)
-      - [`PREPROS::sitemap()`](#preprossitemap)
-      - [`PREPROS::mount(string|array $patterns)`](#preprosmountstringarray-patterns)
-      - [`PREPROS::exportFile(string $file)`](#preprosexportfilestring-file)
-    - [MD](#md)
-      - [Plugin API](#plugin-api)
-    - [HTML](#html)
-    - [YAML](#yaml)
-    - [SCHEMA](#schema)
-    - [LD](#ld)
-      - [Automatic mode](#automatic-mode)
-      - [Explicit builders](#explicit-builders)
-      - [`jsonld` config](#jsonld-config)
-    - [META](#meta)
-      - [`meta` config](#meta-config)
-    - [CACHE](#cache)
-    - [IMG](#img)
-    - [FS](#fs)
-    - [STR](#str)
-    - [ARR](#arr)
-    - [CURL](#curl)
-    - [SCRAPER](#scraper)
-    - [OBF](#obf)
-    - [STD](#std)
-    - [Bundled polyfills](#bundled-polyfills)
-    - [Procedural shortcuts (aliases)](#procedural-shortcuts-aliases)
-  - [Plugin system](#plugin-system)
-    - [PREPROS tags](#prepros-tags)
-    - [PREPROS hooks](#prepros-hooks)
-    - [MD plugins](#md-plugins)
-    - [Built-in plugins](#built-in-plugins)
-      - [`{% callout type ["Title"] content %}`](#-callout-type-title-content-)
-      - [`{% youtube id [width height] %}`](#-youtube-id-width-height-)
-      - [`{% codepen id [user height] %}`](#-codepen-id-user-height-)
-      - [`{% checklist ["Title"] items %}`](#-checklist-title-items-)
-  - [Extending the `<markdown>` tag](#extending-the-markdown-tag)
-  - [Requirements](#requirements)
-  - [License](#license)
+- [Overview](#overview)
+- [Unreleased](#unreleased)
+- [What's new in 2.0.0](#whats-new-in-200)
+- [What's new in 1.9.3](#whats-new-in-193)
+- [What's new in 1.9.2](#whats-new-in-192)
+- [What's new in 1.9.1](#whats-new-in-191)
+- [What's new in 1.9.0](#whats-new-in-190)
+- [What's new in 1.8.0](#whats-new-in-180)
+- [What's new in 1.7.2](#whats-new-in-172)
+- [What's new in 1.7.1](#whats-new-in-171)
+- [What's new in 1.7.0](#whats-new-in-170)
+- [What's new in 1.6.0](#whats-new-in-160)
+- [What's new in 1.4.0](#whats-new-in-140)
+- [What's new in 1.3.0](#whats-new-in-130)
+- [What's new in 1.2.1](#whats-new-in-121)
+- [What's new in 1.2.0](#whats-new-in-120)
+- [How it works](#how-it-works)
+- [Installation](#installation)
+- [Configuration — `kirigami.yaml`](#configuration--kirigamiyaml)
+  - [`kirigami` block](#kirigami-block)
+  - [`seo` block](#seo-block)
+  - [`prepros` block](#prepros-block)
+  - [`image` block](#image-block)
+  - [`plugins` block](#plugins-block)
+  - [`esbuild` / `sass` blocks](#esbuild--sass-blocks)
+  - [`export` block](#export-block)
+  - [`scripts` block](#scripts-block)
+  - [`tasks` block](#tasks-block)
+- [Writing pages](#writing-pages)
+  - [PHPDOC header](#phpdoc-header)
+  - [Auto-loading data files](#auto-loading-data-files)
+  - [`@content`, `@indent`, and `@type`](#content-indent-and-type)
+  - [Built-in tags](#built-in-tags)
+- [JavaScript API](#javascript-api)
+  - [`render(file?, phpIncludes?)`](#renderfile-phpincludes)
+  - [`sitemap()`](#sitemap)
+  - [`runenv(script, paths?, ...args)`](#runenvscript-paths-args)
+  - [`mountPath(localPath, virtualDir?, php?)`](#mountpathlocalpath-virtualdir-php)
+  - [`processImages(jobs)`](#processimagesjobs)
+- [PHP classes reference](#php-classes-reference)
+  - [PREPROS](#prepros)
+  - [MD](#md)
+  - [HTML](#html)
+  - [YAML](#yaml)
+  - [SCHEMA](#schema)
+  - [LD](#ld)
+  - [META](#meta)
+  - [CACHE](#cache)
+  - [IMG](#img)
+  - [FS](#fs)
+  - [STR](#str)
+  - [ARR](#arr)
+  - [CURL](#curl)
+  - [SCRAPER](#scraper)
+  - [OBF](#obf)
+  - [STD](#std)
+  - [Bundled polyfills](#bundled-polyfills)
+  - [Procedural shortcuts (aliases)](#procedural-shortcuts-aliases)
+- [Plugin system](#plugin-system)
+  - [PREPROS tags](#prepros-tags)
+  - [PREPROS hooks](#prepros-hooks)
+  - [MD plugins](#md-plugins)
+  - [Built-in plugins](#built-in-plugins)
+- [Extending the `<markdown>` tag](#extending-the-markdown-tag)
+- [Requirements](#requirements)
+- [License](#license)
+
+---
+
+## Unreleased
+
+The current working tree switches `YAML::` to the native YAML extension and `MD::` to native mdhtml. It also includes page types and request lifecycle hooks. These notes do not assign a release version.
+
+PHP data files use the native `yaml` extension backed by LibYAML. Its YAML 1.1 implicit booleans include unquoted `y`, `n`, `yes`, `no`, `on`, `off`, `true`, and `false`, including mapping keys. Quote these words when you mean strings (for example, `"NO": Norway`). `YAML::parse()` / `parseFile()` / `loadFile()` preserve the wrapper’s array/object choice; native `yaml_parse()` / `yaml_parse_file()` have their own extension signatures. `yaml_load_file()` remains a wrapper alias. The project’s `kirigami.yaml` is parsed separately in Node through `struct-walker` and `js-yaml`.
+
+`MD::` delegates to the native `mdhtml` extension (cmark-gfm). Footnotes now use `<section class="footnotes" data-footnotes>` instead of the old `<div class="footnotes">`; target `.footnotes` rather than a specific container tag in custom CSS.
 
 ---
 
@@ -436,7 +433,7 @@ npm install @kirigami/php-prepros
 
 Every project **must** have a `kirigami.yaml` at its root. The preprocessor reads it at startup and throws if it is absent or invalid.
 
-`@kirigami/php-prepros` itself only acts on four blocks — **`kirigami:`**, **`seo:`**, **`prepros:`**, and **`image:`**. The remaining blocks (**`plugins:`**, **`esbuild:`**, **`sass:`**, **`export:`**, **`scripts:`**, **`tasks:`**) are consumed by the [`kiri`](https://www.npmjs.com/package/@kirigami/kirigami) CLI that drives the build; they are documented here for completeness because everything lives in the one file. The full file is validated against [`kirigami.schema.json`](https://github.com/php-kirigami/kirigami/blob/main/packages/kirigami/kirigami.schema.json), also served for editor autocompletion:
+`@kirigami/php-prepros` consumes project data, SEO, preprocessing, image settings, and task metadata for managed head injection. The core engine owns plugin loading, task orchestration, export, and full schema validation. Direct use of this package is not a substitute for core configuration validation. All settings share `kirigami.yaml`; its schema is [`kirigami.schema.json`](../kirigami/kirigami.schema.json).
 
 ```yaml
 # yaml-language-server: $schema=https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigami.schema.json
@@ -493,8 +490,7 @@ plugins:
   - name: "@kirigami/plugin-highlight"
     active: true
     options:
-      style: canva
-      color: black
+      theme: auto
 
 esbuild:
   # minify: false
@@ -558,6 +554,8 @@ the `kirigami` block, and each page's PHPDOC. `seo: { jsonld: false }` (or
 reference and per-page `@ld_*` tags: [`LD` → `jsonld` config](#jsonld-config).
 
 ### `prepros` block
+
+Use existing global `before` and `after` files. Although the schema allows omission, an empty `prepros: {}` currently emits PHP warnings into rendered output.
 
 Options for the PHP → HTML compiler. **Read by `php-prepros`.** Declaring this block (even empty) also makes `kiri` prepend a forced `prepros` task on every build/export/watch.
 
@@ -806,7 +804,11 @@ missing or older than the source — see [`IMG`](#img) for the naming convention
 import { render, sitemap, runenv, mountPath, processImages } from '@kirigami/php-prepros';
 ```
 
-### `render(file?)`
+### `render(file?, phpIncludes?)`
+
+`phpIncludes` is an optional list of PHP include files supplied by plugins. The core collects these through the `prepros:php` hook.
+
+`phpIncludes` is an optional list of PHP include files supplied by plugins. The core collects these through the `prepros:php` hook.
 
 Compile a single PHP page or a whole directory.
 
@@ -839,7 +841,7 @@ Generate `sitemap.xml` at the source root.
 
 ```js
 const result = await sitemap();
-// result.files === ['src/sitemap.xml']
+// result.files === ['src/sitemap.xml', 'src/robots.txt']
 ```
 
 ### `runenv(script, paths?, ...args)`
@@ -850,15 +852,15 @@ Run an arbitrary PHP script — not a page template — inside the very same san
 // Run a standalone PHP script
 const result = await runenv('scripts/purge-cache.php');
 
-// Also mount extra local paths/files into the sandbox before running
-const result = await runenv('scripts/build-og-images.php', ['assets/photos']);
+// Also mount explicit extra files into the sandbox before running
+const result = await runenv('scripts/build-og-images.php', ['assets/photos/hero.jpg']);
 
 // Extra arguments are appended and available as $argv[2], $argv[3], … in the script
 const result = await runenv('scripts/import.php', [], '--force');
 ```
 
 - `script` — path to a PHP file **inside the project**, executed with `require_once`.
-- `paths` — optional array of extra local paths (files or directories) to mount into the sandbox before the script runs.
+- `paths` — optional array of explicit local file paths to mount into the sandbox before the script runs.
 - `...args` — extra string arguments appended to the script's `$argv`.
 
 **Returns** `Promise<PreprosResult>`, following the same shape as `render()`. Inside the script, call `PREPROS::exportFile()` for any file you want listed in `result.files`.
@@ -1065,6 +1067,8 @@ Uses PHP 8.4's `Dom\HTMLDocument` (Lexbor engine) to parse the input and re-seri
 ---
 
 ### YAML
+
+PHP data files use the native `yaml` extension backed by LibYAML. Its YAML 1.1 implicit booleans include unquoted `y`, `n`, `yes`, `no`, `on`, `off`, `true`, and `false`, including mapping keys. Quote these words when you mean strings (for example, `"NO": Norway`). `YAML::parse()` / `parseFile()` / `loadFile()` preserve the wrapper’s array/object choice; native `yaml_parse()` / `yaml_parse_file()` have their own extension signatures. `yaml_load_file()` remains a wrapper alias. The project’s `kirigami.yaml` is parsed separately in Node through `struct-walker` and `js-yaml`.
 
 A YAML parser backed by PHP's native `yaml` extension (libyaml), statically built into `@kirigami/php-wasm` — full YAML 1.1 support, no userland parsing.
 
@@ -1400,7 +1404,7 @@ CACHE::delete(string $key): bool
 CACHE::purge(): bool   // removes expired entries
 ```
 
-The `$ttl` is in seconds. `0` means the entry never expires. Typical use case: caching the result of network fetches in custom hooks or plugins — it is what powers [`SCRAPER`](#scraper) and `CURL`'s cookie persistence internally.
+The `$ttl` is in seconds. `0` means the entry never expires. Typical use case: caching the result of network fetches in custom hooks or plugins — it is what powers [`SCRAPER`](#scraper) internally. `CURL` persists its cookie jar separately in `.cookie.txt`.
 
 ```php
 $data = CACHE::get('my-remote-data');
@@ -1553,6 +1557,8 @@ $email  = ARR::find_key($config, 'email'); // finds `email` however deep it's ne
 
 ### CURL
 
+The current helper disables TLS certificate verification (audit A03). Network access does not imply verified HTTPS peer identity; this remains an implementation defect.
+
 Low-level HTTP client built on PHP's cURL extension, used internally by `SCRAPER`. Ships with a realistic browser `User-Agent`/header set and a cookie jar persisted at `.cookie.txt` (auto-registered via `PREPROS::exportFile()`).
 
 ```php
@@ -1598,7 +1604,7 @@ Returns `false` if the page can't be reached, can't be parsed, or has no discove
 
 ### OBF
 
-Simple reversible obfuscation for values you want to embed in HTML without making them trivially readable (e.g., contact data, API tokens in templates).
+Simple reversible obfuscation for non-secret values embedded in HTML, such as display labels or contact data. It does not protect API tokens or other credentials.
 
 ```php
 $encoded = OBF::encode(mixed $obj): string;
@@ -1611,11 +1617,11 @@ Applies JSON encoding → base64 → ROT-13 → gzip. Not cryptographically secu
 
 ### STD
 
-Output helpers used by the PHP runtime to communicate back to Node.js over stdout/stderr.
+Result helpers that write JSON to `/internal/prepros_result.json` in the virtual filesystem. Node reads that result file; ordinary PHP stdout/stderr are separate diagnostic channels.
 
 ```php
-STD::succeed(array|string $props = []): void  // exits 0, writes JSON to stdout
-STD::error(array|string $props = []): void    // exits 1, writes JSON to stderr
+STD::succeed(array|string $props = []): void  // exits 0, writes JSON to /internal/prepros_result.json
+STD::error(array|string $props = []): void    // exits 1, writes JSON to /internal/prepros_result.json
 ```
 
 These are internal to the build runner (`render()`, `sitemap()`, and `runenv()` all rely on them). You generally do not need to call them in page templates, but they are available if a script run via `runenv()` needs to terminate early with a custom result.
@@ -1739,7 +1745,7 @@ PREPROS::registerHook(string $hookName, callable $callback): void
 | `boot` | Once per process, right after bootstrap (config loaded, `includes` pulled in), before any page renders. Fires for every entrypoint. | `stdClass $config` | ignored |
 | `shutdown` | Via `register_shutdown_function()`, at the very end of the request — fires even after `STD::succeed()`/`STD::error()`'s `exit()`, unlike `auto_append_file` (which PHP skips whenever the script exits). The place for cleanup that must always run. | `null` | ignored |
 | `page_info` | After PHPDOC parsing, before rendering (auto-loads `.yaml`/`.json`/`.md` annotations) | `[$filePath, $pageObject]` — see note | `$pageObject` (modified) |
-| `pre_render` | Before PHP execution | Raw file contents as `string` | `string` |
+| `pre_render` | Before PHP execution | Raw file contents as `string` | Ignored by the current render call |
 | `pre_before` | Just before the `before` include (inside its output buffer — `echo` to prepend to the header) | `before` config path as `string\|null` | ignored |
 | `post_before` | Right after the `before` include, on the captured header | Header `string` | `string` |
 | `pre_type_before` | Just before the page's `@type` `before` include, if any (inside its output buffer) | Type's `before` config path as `string\|null` | ignored |
@@ -1818,14 +1824,15 @@ Line two after a blank line.
 %}
 ```
 
-#### `{% youtube id [width height] %}`
+#### `{% img-asset path [width height [cover]] %}`
 
-Embeds a responsive YouTube player via `<iframe>`. `width`/`height` default to `560`/`315`.
+Generate an image with `IMG::asset()` and emit an `<img>` tag. Width and height default to zero; the optional final `cover` selects cropping.
 
+```markdown
+{% img-asset photo.jpg 800 600 cover %}
 ```
-{% youtube dQw4w9WgXcQ %}
-{% youtube dQw4w9WgXcQ 800 450 %}
-```
+
+YouTube and Vimeo shortcuts require `@kirigami/plugin-embed`; YouTube is no longer a built-in plugin.
 
 #### `{% codepen id [user height] %}`
 
@@ -1865,7 +1872,7 @@ write cleanly inside your PHP templates:
 
             We are a **student organization** from Québec.
 
-            {% youtube dQw4w9WgXcQ %}
+            {% codepen abc123 author 400 %}
         </markdown>
     </div>
 </section>

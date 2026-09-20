@@ -25,8 +25,7 @@ button — with **no build-time network call**: the oEmbed lookup happens in
 the visitor's browser, on first paint, via
 [`@kirigami/canva`'s `observer`](https://github.com/php-kirigami/kirigami/tree/main/packages/canva).
 
-The result is cached in `localStorage`, so a repeat visit (or a second embed
-of the same video) costs nothing. The play button is a single inline SVG
+The result is cached in `localStorage`, so later lookups can reuse stored metadata. Concurrent first-time requests are not deduplicated, and thumbnails still load. The play button is a single inline SVG
 themed off the project's own `--accent` — nothing to draw yourself.
 
 Part of the **Kirigami** project ecosystem.
@@ -73,20 +72,19 @@ Part of the **Kirigami** project ecosystem.
 ## Table of contents
 
 - [@kirigami/plugin-embed](#kirigamiplugin-embed)
-  - [Overview](#overview)
-  - [What's new in 0.1.5](#whats-new-in-015)
-  - [What's new in 0.1.4](#whats-new-in-014)
-  - [What's new in 0.1.3](#whats-new-in-013)
-  - [What's new in 0.1.1](#whats-new-in-011)
-  - [Table of contents](#table-of-contents)
-  - [Installation](#installation)
-  - [Configuration](#configuration)
-    - [Options](#options)
-  - [Usage](#usage)
-  - [How it works](#how-it-works)
-  - [Styling](#styling)
-  - [Requirements](#requirements)
-  - [License](#license)
+- [Overview](#overview)
+- [What's new in 0.1.5](#whats-new-in-015)
+- [What's new in 0.1.4](#whats-new-in-014)
+- [What's new in 0.1.3](#whats-new-in-013)
+- [What's new in 0.1.1](#whats-new-in-011)
+- [Installation](#installation)
+- [Configuration](#configuration)
+  - [Options](#options)
+- [Usage](#usage)
+- [How it works](#how-it-works)
+- [Styling](#styling)
+- [Requirements](#requirements)
+- [License](#license)
 
 ---
 
@@ -144,16 +142,7 @@ or, inside Markdown, the shorthand:
 Both forms produce the exact same tag — the shorthand just saves typing raw
 HTML in prose.
 
-**Dailymotion and Facebook are not supported.** Dailymotion's oEmbed endpoint
-sends no `Access-Control-Allow-Origin` header, so an anonymous browser
-`fetch()` is blocked by CORS regardless of video id — confirmed against real
-videos, not just one bad id. Facebook's oEmbed (Graph API) has required an
-app `access_token` since 2018, so no anonymous fetch is possible there
-either. A project with its own working endpoint for either (a proxy, an
-access token, …) can still add it on top with its own
-`register('dailymotion' | 'facebook', …)` call (see
-[How it works](#how-it-works)) — nothing here stops you, it's just not
-bundled.
+Only YouTube and Vimeo providers are implemented. Other providers require a custom observer registration and an endpoint the browser can access; provider access policies are not part of this package’s API.
 
 ---
 
@@ -163,8 +152,7 @@ bundled.
    `observer`, which sweeps the page for those tags (on load, and for
    anything added later) and hands each one to the plugin.
 2. The tag is swapped **immediately** for a `.embed` placeholder — sized by
-   the default 16∶9 aspect-ratio — so there's no layout shift waiting on the
-   network.
+   the default 16∶9 aspect-ratio — reserving space while metadata loads. A later aspect-ratio change can still move surrounding content.
 3. The video's oEmbed data is read from `localStorage`
    (`kirigami-embed:<provider>:<id>`) if a previous visit already resolved
    this id, or fetched from the provider's oEmbed endpoint otherwise and
@@ -177,7 +165,7 @@ bundled.
    real player, once clicked, shows at that same real ratio too, nothing
    is ever stretched.
 5. Clicking the play button swaps the placeholder's content for the real
-   player `<iframe>` — nothing loads (or autoplays) before that click.
+   player `<iframe>` — the player loads only after that click; metadata and thumbnail requests happen earlier.
 
 ---
 
@@ -191,6 +179,8 @@ target those same class names to restyle it from scratch.
 ---
 
 ## Requirements
+
+The current localStorage read can throw in restricted browser contexts and prevent metadata retrieval (audit A18). This is a known limitation, not an automatic in-memory fallback.
 
 - Node.js `>= 24.0.0`
 - `@kirigami/kirigami` `^1.5.3`

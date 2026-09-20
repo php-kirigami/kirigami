@@ -15,15 +15,19 @@ release across this monorepo and its sibling repos.
 7. Go to step 1 if more work is needed before publishing new versions.
 8. Update every `README.md` that needs it across the workspace.
 9. Prepare the npm packages that need a version bump.
-10. Publish packages and wait until the registry/CDN propagate.
-11. (Future: pack the VS Code extension + publish.)
-12. Commit + push.
-13. Merge the branch to `main`.
+10. Commit the release preparation, merge the approved branch to `main`, and push.
+11. Publish packages and wait until the registry/CDN propagate.
+12. (Future: pack the VS Code extension + publish through its separate release path.)
+13. Record and commit any release follow-up changes.
 14. Update `../template-*/`.
 15. Deep-update the org site.
 16. Go to step 1.
 
 ## Releasing
+
+A documentation update does not include version bumps, commits, pushes, or publication unless requested. The steps below describe a release, not implicit authorization to perform one. Merge and push the approved release state to `main` before the publish preflight.
+
+The publish script scans non-private workspace packages, including `kirigami-vscode`; it does not implement a separate VSIX release path. It runs `build`, not the extension’s `compile` script. Review the selected packages and packaging contents before a release; do not assume extension publishing is excluded automatically.
 
 `npm run release` (→ `node scripts/publish.js`). Bump the version in each
 package's `package.json` first, and — because internal deps are pinned to
@@ -72,7 +76,7 @@ Whenever a change spans several repos, ship them in this order:
    - one-line description, with **Kirigami** bolded
    - badges: npm version, license, Node.js version (php-wasm adds a PHP
      badge), website (static shields.io badge → `https://php-kirigami.github.io`).
-     All packages are published & public, canva included.
+     Use the actual package identity and license. A manifest version does not prove that a working-tree change has been published; the VS Code package is `kirigami-vscode`.
    - `</div>`
 2. `---`
 3. `## Overview` — 2-3 short paragraphs; last line ties into the Kirigami ecosystem.
@@ -80,11 +84,11 @@ Whenever a change spans several repos, ship them in this order:
 5. `## Table of contents` — nested bullet list with `#anchor` links (use
    exactly this heading, not "Contents").
 6. `---`
-7. `## What's new in X.Y.Z` — optional.
+7. `## What's new in X.Y.Z` — optional, for released version history. Describe pending changes under `## Unreleased`; do not invent or bump a version during a documentation pass.
 8. Content sections, **each separated by `---`**.
-9. `## License` — `MIT © Maxime Larrivée-Roy, 2026` (php-wasm: GPL-2.0-or-later).
+9. `## License` — the license declared by the package, including upstream notices. PHP-WASM uses GPL-2.0-or-later, audiowaveform-wasm GPL-3.0-or-later, and bestframe LGPL-2.1-or-later; the other packages use MIT.
 
-canva's README carries a WIP note (`styles/main.scss` and `Burger` are stubs).
+Canva's `styles/main.scss` is implemented. Only `Burger` remains a stub.
 
 Non-package repos (`../template-*/`, `../kiribuild/`, the `.github.io`
 site) don't follow the full structure, but every README everywhere still

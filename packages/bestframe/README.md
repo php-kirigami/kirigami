@@ -23,11 +23,11 @@ Built for the **[Kirigami](https://github.com/php-kirigami)** static site genera
 `@kirigami/bestframe` samples frames across a video, filters out the obviously bad ones, scores the rest with a small embedded aesthetic model, and returns the best one as a ready-to-use thumbnail image:
 
 - ✅ **Node.js** only, no browser target
-- ✅ **No file I/O, no long-lived runtime instance** — one stateless call, buffer in, thumbnail out
+- ✅ **Buffer or file-path input** — file paths are read from disk; the WASM module is loaded lazily and reused, without temporary output files
 - ✅ **Multithreaded** decode, matching the real CPU core count of whatever machine this runs on
 - ✅ **Four mainstream web video codecs**: H.264, VP9, HEVC, AV1 — in MP4, Matroska (`.mkv`), and WebM containers
 - ✅ **A real AI model picks the frame**, not just "highest contrast" or "N seconds in" — a MobileNet-based NIMA aesthetic model, embedded directly in the WASM binary (no separate model file to fetch)
-- ✅ **Always returns a real frame** — even if every sampled frame fails the technical filters, you get the least-bad one back instead of nothing
+- ✅ **Fallback frame for decodable input** — even if every sampled frame fails the technical filters, you get the least-bad one back instead of nothing
 - ✅ **JPEG or PNG** output, your choice
 - ✅ Comes back with more than just the image: the source video's own duration, dimensions, and container metadata tags
 
@@ -40,17 +40,16 @@ Part of the **Kirigami** project ecosystem.
 ## Table of contents
 
 - [@kirigami/bestframe](#kirigamibestframe)
-  - [Overview](#overview)
-  - [Table of contents](#table-of-contents)
-  - [Requirements](#requirements)
-  - [Installation](#installation)
-  - [Usage](#usage)
-  - [Options](#options)
-  - [Result](#result)
-  - [Codec \& container support](#codec--container-support)
-  - [How the frame gets picked](#how-the-frame-gets-picked)
-  - [License](#license)
-  - [Author](#author)
+- [Overview](#overview)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Options](#options)
+- [Result](#result)
+- [Codec & container support](#codec--container-support)
+- [How the frame gets picked](#how-the-frame-gets-picked)
+- [License](#license)
+- [Author](#author)
 
 ---
 
@@ -75,8 +74,10 @@ import { bestFrame } from '@kirigami/bestframe';
 import fs from 'node:fs';
 
 const result = await bestFrame('movie.mp4');
-console.log(result.timestamp, result.score, result.width, result.height);
-fs.writeFileSync('thumbnail.jpg', result.data);
+if (result) {
+	console.log(result.timestamp, result.score, result.width, result.height);
+	fs.writeFileSync('thumbnail.jpg', result.data);
+}
 ```
 
 A `Buffer`/`Uint8Array` already in memory works just as well as a file path — nothing is written to disk internally either way:
@@ -90,7 +91,7 @@ const result = await bestFrame(buffer, {
 });
 ```
 
-If the source video can't be decoded at all (unsupported codec/container, corrupt data), `bestFrame()` resolves to `null` — it never throws for that.
+If the source video can't be decoded at all (unsupported codec/container, corrupt data), `bestFrame()` resolves to `null` when the native decoder returns no result. File reads, invalid input, and runtime failures can still reject the promise.
 
 ---
 
@@ -144,7 +145,7 @@ Older/niche codecs (MPEG-4 part 2 / Xvid, etc.) aren't supported — `bestFrame(
 3. **Score** — survivors are resized and run through a small embedded NIMA-based aesthetic model (a general photo-aesthetics model, not one trained specifically on "thumbnail-worthiness" — it's a genuinely good proxy for it in practice), combined with a couple of cheap technical signals (sharpness, exposure) into one composite score.
 4. **Pick & encode** — the highest-scoring frame is decoded fresh at the requested output size and encoded as JPEG or PNG.
 
-If literally every sampled frame fails step 2's filters (a clip that stays dark or blurry throughout, for instance), the least-bad one is scored and returned anyway — you always get a real frame back, never nothing.
+If literally every sampled frame fails step 2's filters (a clip that stays dark or blurry throughout, for instance), the least-bad one is scored and returned anyway when decoding produced a usable frame. Completely undecodable input can return `null`.
 
 See [`libbestframe`'s own `CLAUDE.md`](https://github.com/php-kirigami/libbestframe/blob/main/CLAUDE.md) for the full decision-by-decision history behind every piece of this — the model, the filters, the composite score formula, and every real bug found along the way.
 

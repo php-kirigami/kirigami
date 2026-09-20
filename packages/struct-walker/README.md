@@ -31,20 +31,19 @@ Part of the **Kirigami** project ecosystem.
 ## Table of contents
 
 - [@kirigami/struct-walker](#kirigamistruct-walker)
-  - [Overview](#overview)
-  - [Table of contents](#table-of-contents)
-  - [Installation](#installation)
-  - [Usage](#usage)
-  - [How it works](#how-it-works)
-    - [Example structure](#example-structure)
-  - [API](#api)
-    - [`walkFile(filePath, resolveAssets?, _visited?)`](#walkfilefilepath-resolveassets-_visited)
-    - [`fileToDataUri(absolutePath)`](#filetodatauriabsolutepath)
-    - [`TEXT_URI_MIME_TYPES`](#text_uri_mime_types)
-    - [`ASSET_EXTS`](#asset_exts)
-  - [Dependencies](#dependencies)
-  - [Requirements](#requirements)
-  - [License](#license)
+- [Overview](#overview)
+- [Installation](#installation)
+- [Usage](#usage)
+- [How it works](#how-it-works)
+  - [Example structure](#example-structure)
+- [API](#api)
+  - [`walkFile(filePath, resolveAssets?, _visited?)`](#walkfilefilepath-resolveassets-_visited)
+  - [`fileToDataUri(absolutePath)`](#filetodatauriabsolutepath)
+  - [`TEXT_URI_MIME_TYPES`](#text_uri_mime_types)
+  - [`ASSET_EXTS`](#asset_exts)
+- [Dependencies](#dependencies)
+- [Requirements](#requirements)
+- [License](#license)
 
 ---
 
@@ -71,6 +70,8 @@ const theme = await walkFile('./theme/index.yaml', true);
 ---
 
 ## How it works
+
+YAML here is parsed in Node using `js-yaml`. PHP template data uses the native YAML extension through `YAML::`; the two paths have different implicit scalar rules. Do not infer PHP YAML 1.1 behavior from a `kirigami.yaml` example.
 
 `walkFile` reads and deserializes the root file (YAML or JSON), then visits every value in the resulting tree. For each string it encounters:
 
@@ -150,7 +151,7 @@ Converts a single file to a data URI string. MIME type is detected first via mag
 
 | MIME category | Encoding |
 |---|---|
-| `image/svg+xml`, `text/*`, `application/json`, `application/xml` | `data:<mime>;charset=utf-8,<percent-encoded>` |
+| MIME types explicitly listed in `TEXT_URI_MIME_TYPES` below | `data:<mime>;charset=utf-8,<percent-encoded>` |
 | Everything else | `data:<mime>;base64,<base64>` |
 
 SVG files are always forced to `image/svg+xml` and percent-encoded regardless of magic-byte detection.
@@ -185,6 +186,8 @@ text/javascript  application/json  application/xml  text/xml
 ---
 
 ## Dependencies
+
+The version labels below are historical documentation; `package.json` and the workspace lockfile define the installed dependency versions.
 
 | Package | Role |
 |---|---|

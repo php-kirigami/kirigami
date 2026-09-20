@@ -15,7 +15,7 @@ and limitations see [BUGS.md](BUGS.md).
 - **Electron UI** — a GUI to drive `kiri` (build/export/serve, plugin
   management, `kirigami.yaml` editing) without the terminal, for users
   outside an editor entirely. The VS Code half of this idea is no longer
-  just an idea — see `packages/vscode` and
+  just an idea — see [packages/vscode](../packages/vscode/README.md) and
   [EXTENSION-VSCODE.md](EXTENSION-VSCODE.md) for its v1 scaffold. The
   Electron half is still just an idea.
 - **Automatic Google Analytics (gtag) integration** — a config option
@@ -35,10 +35,7 @@ and limitations see [BUGS.md](BUGS.md).
   (esbuild already supports it natively). Needs scoping: build-time-only
   static HTML vs. client hydration, and how it fits alongside the existing
   PHP pages.
-- **`kirigami.type: "task"` / `"command"`** — packages that add a task
-  type or a `kiri` subcommand, and their loading (`"plugin"` is already in
-  place). The broader idea: a plugin declaring its own task / bundling its
-  own JS, without depending on a project esbuild task.
+- **Custom task types (`kirigami.type: "task"`)** — extend the fixed task loader so a package can supply a task type. Command plugins already exist through the SDK command registry and CLI dispatch; they are no longer future work.
 - **`prepros:before-render` hook** — JS hook before render (the
   post-render `prepros:html` hook already exists).
 - **Official Google Docs → Markdown action/script** — a service that
@@ -56,8 +53,7 @@ and limitations see [BUGS.md](BUGS.md).
 - **Wire the `jsonk` PHP-WASM extension into `php-prepros`.** Also already
   built (v0.1.4) — native JSON-schema validation (pattern/patternProperties/
   format:"regex", external `$ref` resolution via curl, apcu-backed fetch
-  cache) plus a drop-in `json_encode()`/`json_decode()` replacement. Not
-  yet consumed anywhere. Candidate: replace `SCHEMA`'s pure-PHP validator
+  cache) plus a drop-in `json_encode()`/`json_decode()` replacement. Its JSON replacement is already present in the runtime; `SCHEMA` does not yet use its native schema-validation API. Candidate: replace `SCHEMA`'s pure-PHP validator
   (see the "stay lite" convention in [docs/CONTEXT.md](CONTEXT.md), which
   this would need to update) — worth checking whether `jsonk`'s validation
   coverage actually matches what `kirigami.schema.json` / plugin

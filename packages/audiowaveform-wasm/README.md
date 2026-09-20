@@ -37,15 +37,15 @@ Part of the **Kirigami** project ecosystem.
 ## Table of contents
 
 - [@kirigami/audiowaveform-wasm](#kirigamiaudiowaveform-wasm)
-  - [Overview](#overview)
-  - [Table of contents](#table-of-contents)
-  - [Requirements](#requirements)
-  - [Installation](#installation)
-  - [Usage](#usage)
-  - [Format support](#format-support)
-  - [ID3 tag support](#id3-tag-support)
-  - [License](#license)
-  - [Author](#author)
+- [Overview](#overview)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Format support](#format-support)
+  - [MP3 encoding modes tested](#mp3-encoding-modes-tested)
+- [ID3 tag support](#id3-tag-support)
+- [License](#license)
+- [Author](#author)
 
 ---
 
@@ -109,9 +109,11 @@ if (cover) {
 | M4A/AAC | ✅ Works |
 | WebM (Vorbis or Opus audio) | ✅ Works |
 
-Unsupported formats resolve to `null` — never throw.
+Unsupported input resolves to `null` when native decoding reports no result. Invalid argument types and WASM/runtime failures can still reject the promise.
 
 ### MP3 encoding modes tested
+
+This is the recorded format-verification matrix, not a regression suite executed by this repository’s npm test scripts.
 
 | Case | Status |
 | --- | --- |

@@ -105,28 +105,26 @@ build. Part of the **Kirigami** project ecosystem.
 ## Table of contents
 
 - [@kirigami/plugin-highlight](#kirigamiplugin-highlight)
-  - [Overview](#overview)
-  - [What's new in 0.1.7](#whats-new-in-017)
-  - [What's new in 0.1.6](#whats-new-in-016)
-  - [What's new in 0.1.5](#whats-new-in-015)
-  - [What's new in 0.1.4](#whats-new-in-014)
-  - [What's new in 0.1.3](#whats-new-in-013)
-  - [What's new in 0.1.2](#whats-new-in-012)
-  - [What's new in 0.1.1](#whats-new-in-011)
-  - [Table of contents](#table-of-contents)
-  - [Installation](#installation)
-  - [Configuration](#configuration)
-    - [Options](#options)
-  - [How it works](#how-it-works)
-  - [Theming](#theming)
-    - [Automatic (`theme: auto` / `dark` / `light`)](#automatic-theme-auto--dark--light)
-    - [Manual (`theme: none`)](#manual-theme-none)
-    - [The embedded font](#the-embedded-font)
-  - [The `<highlight>` tag](#the-highlight-tag)
-  - [Per-page and per-block control](#per-page-and-per-block-control)
-  - [Per-page control](#per-page-control)
-  - [Requirements](#requirements)
-  - [License](#license)
+- [Overview](#overview)
+- [What's new in 0.1.7](#whats-new-in-017)
+- [What's new in 0.1.6](#whats-new-in-016)
+- [What's new in 0.1.5](#whats-new-in-015)
+- [What's new in 0.1.4](#whats-new-in-014)
+- [What's new in 0.1.3](#whats-new-in-013)
+- [What's new in 0.1.2](#whats-new-in-012)
+- [What's new in 0.1.1](#whats-new-in-011)
+- [Installation](#installation)
+- [Configuration](#configuration)
+  - [Options](#options)
+- [How it works](#how-it-works)
+- [Theming](#theming)
+  - [Automatic (`theme: auto` / `dark` / `light`)](#automatic-theme-auto--dark--light)
+  - [Manual (`theme: none`)](#manual-theme-none)
+  - [The embedded font](#the-embedded-font)
+- [The `<highlight>` tag](#the-highlight-tag)
+- [Per-page and per-block control](#per-page-and-per-block-control)
+- [Requirements](#requirements)
+- [License](#license)
 
 ---
 
@@ -168,7 +166,7 @@ validates `options:` as you type** (once `name:` is set), via the
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `languages` | `string[]` \| `"all"` | a common set of 12 | Languages to register. `"all"` loads the full highlight.js build (~190 languages, slower). An unknown name is skipped with a warning. |
+| `languages` | `string[]` \| `"all"` | a common set of 12 | Languages to register. `"all"` loads the full highlight.js build (~190 languages, slower). An unknown language name fails registration/build. |
 | `theme` | `"auto"` \| `"dark"` \| `"light"` \| `"none"` | `"auto"` | Which theme stylesheet to append to the Sass build. `"none"` appends nothing — you `@use` it yourself. |
 | `autodetect` | `boolean` | `true` | Guess the language of code blocks that have no `language-…` class (restricted to the registered set). |
 | `embedFont` | `boolean` | `true` | Append the embedded JetBrains Mono `@font-face` (~39 KB woff2, base64) to the Sass build. |
@@ -209,8 +207,7 @@ The plugin registers `@kirigami/sdk` hooks:
   (`assets/copy.js`, ~1 KB) into every `esbuild` task. It wraps each
   `pre > code.hljs` in a `.hljs-copy-wrap` and adds a `.hljs-copy` button that
   writes the block's text to the clipboard. **If your project has no `esbuild`
-  task, the script has nowhere to go** — the build warns and the styles are
-  emitted but inert; add an `esbuild` task or set `copyButton: false`.
+  task, the script has nowhere to go** — the build warns and skips the copy-button script and styles; add an `esbuild` task or set `copyButton: false`.
 - **`prepros:php`** — always includes `php/page.php` (the `@highlight false`
   page opt-out: a `page_info` / `post_render` hook pair that leaves a marker
   comment for the `prepros:html` pass). With `tag` on it also includes

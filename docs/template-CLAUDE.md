@@ -35,13 +35,12 @@ content generic, commit no secrets, and assume anyone may clone it.
 
 - **Node `>= 24.0.0`**, **npm `>= 10.2.3`**. ESM only (`"type": "module"` in any
   JS you add).
-- **Comments and docs in English.** User-facing site copy follows the project's
-  own language.
+- **All project content in English**, including comments, documentation, site copy, and commit messages. Communicate with the user in French.
 - **Stay lite.** Kirigami's whole point is zero server and minimal deps — don't
   reach for a framework or a native-dep library when a `node:` builtin, a PHP
   helper class (below), or ~30 lines of code will do.
 - **Dev machine is Windows** (PowerShell) — mind path separators in any script.
-- The `kiri` CLI is provided by the `@kirigami/kirigami` dev dependency; run it
+- The `kiri` CLI is provided by the `@kirigami/cli` dev dependency; run it
   as `npx kiri <command>`.
 - `kiri watch` only **rebuilds** on change — it runs no HTTP server and no
   browser live-reload. Use `kiri serve` instead (or an editor preview server,
@@ -54,7 +53,7 @@ content generic, commit no secrets, and assume anyone may clone it.
 ```
 .
 ├── kirigami.yaml          # the one config file — see full reference below
-├── package.json           # dev dep: @kirigami/kirigami (+ plugins, if any)
+├── package.json           # dev dep: @kirigami/cli (+ plugins, if any)
 ├── assets/                # source assets NOT served as-is
 │   ├── images/            #   originals for the image autogenerator
 │   └── fonts/             #   font files inlined by the Sass font-*() functions
@@ -83,8 +82,10 @@ Naming rules inside `kirigami.root`:
 ### The `dist` export
 
 `kiri export` copies `kirigami.root` into `export.path` (default `dist/`),
-**excluding**: any file/dir whose name starts with `_` or `.`, `.scss` files,
+**excluding**: underscore-prefixed directories, files whose basename starts with `_` or `.`, `.scss` files,
 `.map` files, and non-minified `.js` files, plus every `export.ignore` pattern.
+Hidden directories and non-underscore PHP helpers are not automatically excluded. Add explicit `export.ignore` patterns for private files. The destination is emptied before copying: keep it outside the source tree.
+
 Token replacements happen during the copy: `###YEAR###` and `###TIMESTAMP###` in
 `.html`, `###TODAY###` in `sitemap.xml`. The banner is stamped on every exported
 `.js` / `.css` / `.html`.
@@ -99,8 +100,8 @@ Generic reference — safe to copy verbatim between projects.
 
 | Command | What it does |
 |---|---|
-| `npx kiri build` | Run every `tasks` entry once, in order, for development (no minify/export). If `prepros:` is set, renders all pages + `sitemap.xml` first. Fires the `before-build` trigger. Output written next to each entry under `kirigami.root`. |
-| `npx kiri export` | Production build. Fires `before-export` then `before-build`; forces the `prepros` task, all `tasks`, and a `dist` copy into `export.path`; stamps the banner; fires `after-export`. |
+| `npx kiri build` | Run every `tasks` entry once, in order, for development (in-place output; assets are minified by default). If `prepros:` is set, renders all pages + `sitemap.xml` first. Fires the `before-build` trigger. Output written next to each entry under `kirigami.root`. |
+| `npx kiri export` | Production build. Fires `before-export` then `before-build`; forces the implicit `prepros` task and a `dist` copy, and runs buildable or explicitly forced tasks into `export.path`; stamps the banner; fires `after-export`. |
 | `npx kiri watch` | Dev mode: watches files for `esbuild` / `sass` / `prepros` tasks and rebuilds on change (150 ms debounce, batched). `node_modules/`, `.git/`, `dist/` always ignored. `Ctrl+C` to stop. No server. |
 | `npx kiri serve` | Same as `kiri watch`, plus a local static server over `kirigami.root` and browser hot-reload (Server-Sent Events — a tab reloads once a batch finishes rebuilding). `--port` (default `4321`) / `--host` (default `127.0.0.1`). Zero-dependency: `node:http` + `node:fs`, no live-reload framework. |
 | `npx kiri run <script> [args…]` | Run `scripts/<script>.php` in the Kirigami PHP runtime (full class library, `PREPROS::$config->data` populated). Extra words become `$argv` entries. |
@@ -108,7 +109,9 @@ Generic reference — safe to copy verbatim between projects.
 | `npx kiri phpinfo` | Print `phpinfo()` from the embedded runtime. `--md` / `--json` for other formats. |
 | `npx kiri --version` | `kiri` version + bundled PHP version. |
 
-Every command has `--help`.
+Run `npx kiri build` before `npx kiri serve` or `npx kiri watch`; neither builds initially. The dev server serves the source tree, including PHP/hidden files, so keep the default loopback binding. `npx kiri mcp` starts the MCP server; `npx kiri install <plugin>` installs a plugin; `npx kiri cache purge [mask]` clears caches. Every command has `--help`.
+
+The current CLI split has known `create` dependency/banner lookup defects. Use a template checkout with an explicit `@kirigami/cli` dependency until those are fixed.
 
 ---
 
@@ -141,9 +144,13 @@ kirigami:
   keywords:    [static site, php]
   knowsabout:  [Topic one, Topic two]
 
-prepros:                          # PHP → HTML compiler. Present (even empty) ⇒ forced prepros task.
+prepros:                          # PHP → HTML compiler. When configured, adds an implicit forced render task.
   before:   _layouts/header.php   # PHP file (rel. to root) included before every page body
   after:    _layouts/footer.php   # PHP file included after every page body
+  types:
+    article:
+      before: _layouts/article-before.php
+      after: _layouts/article-after.php
   format:   true                  # pretty-print HTML output (4-space indent). default false
   head:     true                  # default true — auto-inject the theme guard + a <link>/<script> per sass/esbuild task into every page. `false` to opt out
   network:  false                 # allow outbound HTTP(S) in the WASM runtime (remote @tags, CURL, SCRAPER)
@@ -187,7 +194,7 @@ tasks:                            # ordered build pipeline, on top of implicit p
 | `esbuild` | Bundle + minify a JS/TS entry (`bundle`, `treeShaking`, `target es2020`). Build + watch. | `name`, `type`, `entry` | `force`, `head` | `<entry>.min.js` (+ `.map` outside export) |
 | `sass` | Compile a `.scss`/`.sass` entry (`style: compressed`), re-minified with csso on export. Build + watch. | `name`, `type`, `entry` | `force`, `head` | `<entry>.min.css` (+ `.css.map` outside export) |
 | `prepros` | Render pages + `sitemap.xml`. Watch-only unless forced/implicit. `target` renders just one file/subdir. | `name`, `type` | `target`, `force` | `*.html`, `sitemap.xml`, `robots.txt` |
-| `dist` | Copy `kirigami.root` into `path`, stamping the banner. Implicit during `kiri export` only. | `name`, `type`, `path` | `ignore`, `force` | the exported tree |
+| `dist` | Copy `kirigami.root` into `path`, stamping the banner. Added implicitly during `kiri export`; explicit forced entries are supported. | `name`, `type`, `path` | `ignore`, `force` | the exported tree |
 
 `sass` resolves `@use`/`@forward` through Sass's `NodePackageImporter` plus a
 custom importer that also accepts an implicit `styles/` prefix
@@ -268,7 +275,7 @@ injected as structured data instead of a string:
 With `prepros.network: true`, annotation values starting with `http://` /
 `https://` are fetched and parsed the same way.
 
-### `@content` and `@indent`
+### `@content`, `@indent`, and `@type`
 
 - **`@content`** — if a `content` variable resolves to a non-empty value
   (typically an auto-loaded `.md`/`.yaml`/`.json` annotation), it is used **as-is**
@@ -287,6 +294,8 @@ With `prepros.network: true`, annotation values starting with `http://` /
  * @indent  4
  */
 ```
+
+`@type article` selects `prepros.types.article`. The assembled output is global before → type before → body → type after → global after. Create all referenced layout files; omitted global `before`/`after` currently cause PHP warnings.
 
 ### Variables in scope while a page renders
 
@@ -338,6 +347,8 @@ Render pipeline per page: resolve PHPDOC + auto-load data → `page_info` hook �
 
 ### MD — Markdown → HTML
 
+`MD::` delegates to the native `mdhtml` extension (cmark-gfm). Footnotes now use `<section class="footnotes" data-footnotes>` instead of the old `<div class="footnotes">`; target `.footnotes` rather than a specific container tag in custom CSS.
+
 ```php
 $html = MD::toHtml(string $markdown): string;
 MD::registerPlugin(string $name, callable $cb);   // $cb(array $args, string $body): string
@@ -359,7 +370,7 @@ following lines ending in `%}`. Built in (`md.plugins.php`):
 | Shortcode | Renders |
 |---|---|
 | `{% callout info\|success\|warning\|danger ["Title"] content %}` | styled callout block |
-| `{% youtube <id> [w h] %}` | responsive YouTube `<iframe>` (default 560×315) |
+| `{% img-asset path [width height [cover]] %}` | Image generated through `IMG::asset()` |
 | `{% codepen <id> [user h] %}` | CodePen `<iframe>` (user default `anonymous`, h `400`) |
 | `{% checklist ["Title"] \n item \n item \n %}` | checkbox list |
 
@@ -373,6 +384,8 @@ Used automatically when `format: true`. Handles inline elements, `<script>`,
 `<style>`; writes boolean HTML5 attributes without a value.
 
 ### YAML
+
+PHP data files use the native `yaml` extension backed by LibYAML. Its YAML 1.1 implicit booleans include unquoted `y`, `n`, `yes`, `no`, `on`, `off`, `true`, and `false`, including mapping keys. Quote these words when you mean strings (for example, `"NO": Norway`). `YAML::parse()` / `parseFile()` / `loadFile()` preserve the wrapper’s array/object choice; native `yaml_parse()` / `yaml_parse_file()` have their own extension signatures. `yaml_load_file()` remains a wrapper alias. The project’s `kirigami.yaml` is parsed separately in Node through `struct-walker` and `js-yaml`.
 
 ```php
 YAML::parse(string $yaml, bool $assoc = false): mixed;
@@ -407,8 +420,7 @@ CACHE::delete(string $key): bool;
 CACHE::purge(): bool;                            // drop expired entries
 ```
 
-Survives incremental builds. Backs `SCRAPER` results and `CURL` cookie
-persistence. Use it to cache network fetches in your own tags/hooks.
+Survives incremental builds. Backs `SCRAPER` results. `CURL` cookies use a separate `.cookie.txt` file. Use it to cache network fetches in your own tags/hooks.
 
 ### IMG
 
@@ -462,6 +474,8 @@ ARR::find_key(mixed $data, string $key): mixed;  // depth-first, first match at 
 
 ### CURL
 
+The current helper disables TLS certificate verification. Do not assume its HTTPS responses have authenticated the remote server; this is an open implementation defect.
+
 ```php
 CURL::urlExists(string $url, ?string $mimeRegex = null): bool;   // HEAD, true on 2xx/3xx
 CURL::getInfo(string $url): array|false;
@@ -492,8 +506,8 @@ Light obfuscation only (contact data, etc.) — not encryption.
 ### STD
 
 ```php
-STD::succeed(array|string $props = []): void;   // exit 0, JSON to stdout
-STD::error(array|string $props = []): void;     // exit 1, JSON to stderr
+STD::succeed(array|string $props = []): void;   // exit 0, JSON to /internal/prepros_result.json
+STD::error(array|string $props = []): void;     // exit 1, JSON to /internal/prepros_result.json
 ```
 
 Internal to the build runner; useful in a `kiri run` script that must end early
@@ -557,7 +571,7 @@ PREPROS::registerHook('post_render', function (string $html): string {
 | Hook | Fires | `$data` | Return |
 |---|---|---|---|
 | `page_info` | after PHPDOC parse, before render | `[$filePath, $pageObject]` | `$pageObject` |
-| `pre_render` | before PHP execution | raw source `string` | `string` |
+| `pre_render` | before PHP execution | raw source `string` | ignored by the current render call |
 | `post_render` | after tag processing, before `HTML::format()` | assembled HTML `string` | `string` |
 
 Multiple callbacks per hook run in registration order, chained.
@@ -606,8 +620,7 @@ default) for JS-side plugin caching.
 below), mirrors every token onto `:root` (`--bg`, `--accent`, …), builds
 `--icon-<name>` custom properties, and ships a minimal reset. `@kirigami/canva/utils`
 adds pure helpers: `wash()`, `hex6()`, `hexbin()`, `str-replace()`,
-`url-encode()`, `svg-url()`, `apply-colors()`. (`styles/main` and the `Burger` JS
-component are still stubs.)
+`url-encode()`, `svg-url()`, `apply-colors()`. (`styles/main` is implemented; the `Burger` JS component remains a stub.)
 
 Browser JS (canva ≥ 2.0.0 subpaths, no `scripts/` segment):
 `@kirigami/canva/dom` (`create()`), `@kirigami/canva/helpers` (`busy()`,
@@ -654,6 +667,8 @@ originals in `assets/images/`; never hand-edit `src/images/`.
 ---
 
 ## Deployment (`php-kirigami/kiribuild`)
+
+Include `@kirigami/cli` in the project dependencies so the action finds a local `kiri`. The sibling action’s global-install fallback still targets the old core package and needs migration for the CLI split.
 
 This project ships `.github/workflows/page.yml`. On every push to `main` it:
 builds with [`php-kirigami/kiribuild@v2`](https://github.com/php-kirigami/kiribuild)
@@ -726,7 +741,7 @@ for its inputs.
 
 ## Files that may be committed
 
-Kirigami leaves working files at the project root: `.cache.db` (CACHE),
+Review cache contents before committing them; cookie jars can contain authentication data and must not be published with a template or site. Kirigami leaves working files at the project root: `.cache.db` (CACHE),
 `.node.db` (`@kirigami/sdk` Cache), `.cookie.txt` (CURL jar). A project may or
 may not `.gitignore` these — check the repo's own `.gitignore` before "cleaning
 them up". `kiri create` never copies them into a new project. Run
@@ -737,7 +752,7 @@ them up". `kiri create` never copies them into a new project. Run
 `kirigami.root` (so a plain preview server can serve `src/`), and many projects
 commit those. The managed `<head>` gives each asset ref a `?###TIMESTAMP###`
 cache-buster that is **left literal at build time and only expanded on
-`kiri export`** (into `dist/`) — so rebuilding never rewrites the committed page.
+`kiri export`** (into `dist/`) — so timestamps alone do not rewrite the committed page.
 Don't "fix" a `?###TIMESTAMP###` you see in a committed `.html`; a real number
 there means someone committed an export.
 
@@ -745,4 +760,4 @@ there means someone committed an export.
 
 ## License
 
-MIT © Maxime Larrivée-Roy, 2026 — except `@kirigami/php-wasm` (GPL-2.0-or-later).
+Set the site’s own license explicitly. Kirigami packages are MIT except PHP-WASM (GPL-2.0-or-later), audiowaveform-wasm (GPL-3.0-or-later), and bestframe (LGPL-2.1-or-later). Preserve upstream notices.

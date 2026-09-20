@@ -1,8 +1,18 @@
 # Status
 
+## Documentation refresh — 2026-09-20
+
+Reviewed all 32 repository-owned Markdown files against the current source and manifests. Updated the core/CLI split, MCP and VS Code status, native YAML/Markdown references, page types, SDK command registration, runtime helpers, examples, license inventory, and documentation navigation. Historical version entries remain historical; no package versions were changed. Runtime extension availability was checked with `node packages/cli/bin/kiri.js phpinfo -m`.
+
+Audit A15 is addressed in the monorepo documentation. Other audit findings remain open; documenting their behavior does not fix the code. Registry publication, organization-profile publication, live site deployment, and a real VS Code Extension Host test are not part of this documentation pass. Remaining documentation/release work is tracked in [DOCTODO.md](DOCTODO.md).
+
+Earlier entries record the state at the time of implementation. In particular, reload freshness claims are limited by the later A06 finding: PHP state remains cached.
+
 Running log of what's shipped recently, most recent at the bottom. This is
 a changelog, not a reference — for durable facts see [CONTEXT.md](CONTEXT.md),
 for the "why" behind a choice see [DECISIONS.md](DECISIONS.md).
+
+Audit reference: [2026-09-20 repository audit](AUDIT-2026-09-20.md).
 
 ## Release history (2026-09-10 to 2026-09-11)
 
@@ -212,3 +222,13 @@ the sibling repo `audiowaveform-wasm-compiler`.
   GUI in this environment), so the actual command/status-bar/watcher
   behavior inside VS Code itself is still unverified — see the plan's
   verification steps 3–6 for what to check first.
+
+## 2026-09-20 — Repository audit and language preference
+
+Recorded the repository audit in docs/AUDIT-2026-09-20.md and indexed its open
+findings in docs/BUGS.md. Verified JavaScript/PHP syntax, dependency resolution,
+registry audit, the extension build, and isolated runtime reproductions.
+Production fixes remain open. Added AGENTS.md and aligned CLAUDE.md and
+docs/CONTEXT.md: project content and commit messages are English; conversations
+with the user are French. The preference is also stored in the user's global
+Codex AGENTS.md.

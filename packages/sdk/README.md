@@ -54,23 +54,24 @@ Part of the **Kirigami** project ecosystem.
 ## Table of contents
 
 - [@kirigami/sdk](#kirigamisdk)
-  - [Overview](#overview)
-  - [What's new in 0.2.1](#whats-new-in-021)
-  - [What's new in 0.2.0](#whats-new-in-020)
-  - [Table of contents](#table-of-contents)
-  - [Installation](#installation)
-  - [Usage in a plugin](#usage-in-a-plugin)
-  - [Available hooks](#available-hooks)
-  - [API](#api)
-    - [`on(hookName, fn)`](#onhookname-fn)
-    - [`off(hookName, fn)`](#offhookname-fn)
-    - [`run(hookName, ...args)`](#runhookname-args)
-    - [`runWaterfall(hookName, value, ...args)`](#runwaterfallhookname-value-args)
-    - [`has(hookName)`](#hashookname)
-    - [`HOOKS`](#hooks)
-  - [Cache](#cache)
-  - [Requirements](#requirements)
-  - [License](#license)
+- [Overview](#overview)
+- [What's new in 0.2.1](#whats-new-in-021)
+- [What's new in 0.2.0](#whats-new-in-020)
+- [Installation](#installation)
+- [Usage in a plugin](#usage-in-a-plugin)
+- [Available hooks](#available-hooks)
+- [API](#api)
+  - [`reset(hookName?)`](#resethookname)
+  - [Command registry](#command-registry)
+  - [`on(hookName, fn)`](#onhookname-fn)
+  - [`off(hookName, fn)`](#offhookname-fn)
+  - [`run(hookName, ...args)`](#runhookname-args)
+  - [`runWaterfall(hookName, value, ...args)`](#runwaterfallhookname-value-args)
+  - [`has(hookName)`](#hashookname)
+  - [`HOOKS`](#hooks)
+- [Cache](#cache)
+- [Requirements](#requirements)
+- [License](#license)
 
 ---
 
@@ -91,6 +92,7 @@ import { fileURLToPath } from 'node:url';
 
 const pluginDir = path.dirname(fileURLToPath(import.meta.url));
 
+export default function register() {
 on(HOOKS.SASS_BEFORE, () => path.join(pluginDir, 'styles/before.scss'));
 on(HOOKS.SASS_AFTER,  () => path.join(pluginDir, 'styles/after.scss'));
 
@@ -105,6 +107,7 @@ on(HOOKS.ESBUILD_AFTER, () => path.join(pluginDir, 'client/init.js'));
 
 // Rewrite the rendered HTML of every page (waterfall — return the new string).
 on(HOOKS.PREPROS_HTML, (html, { file }) => html.replaceAll('<table>', '<table class="striped">'));
+}
 ```
 
 A listener can return:
@@ -150,7 +153,17 @@ listener, kirigami-core doesn't even read the files back.
 
 ---
 
+Register hooks inside the plugin’s default registration function so reload can register them again after resetting the shared registry. Registries are process-wide.
+
 ## API
+
+### `reset(hookName?)`
+
+Remove all listeners for one hook, or every hook when omitted. The core owns this during reload; plugins should normally retain and call their own unsubscribe functions.
+
+### Command registry
+
+`registerCommand(name, { description, run })` registers a plugin command. `run(args, project)` receives raw arguments and the loaded project. A duplicate name or non-function `run` throws. `getCommand(name)` returns the command or `null`; `listCommands()` returns all entries; `resetCommands(name?)` removes one or all. Register commands inside the default plugin function, with `kirigami.type: "command"` in its manifest.
 
 ### `on(hookName, fn)`
 
@@ -198,7 +211,7 @@ import { Cache } from '@kirigami/sdk';
 import path from 'node:path';
 
 // A file dedicated to the plugin instead of sharing the core's.
-const cache = new Cache(path.join(pluginDir, '.my-plugin.db'));
+const cache = new Cache(path.join(process.cwd(), '.my-plugin.db'));
 
 cache.set('meta_home', { hello: 'world' }, 3600); // 1h TTL, in seconds (0 = never expires)
 cache.get('meta_home'); // { hello: 'world' }, or null if missing/expired

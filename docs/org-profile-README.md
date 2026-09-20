@@ -22,7 +22,7 @@
 
 - **Real PHP templating** — includes, loops, Markdown, YAML — compiled directly to clean HTML, no server needed at runtime.
 - **Integrated asset pipeline** with esbuild for JS and Sass for styles, wired in from the start.
-- **A `watch` mode with hot-reload**, so changes show up instantly during development.
+- **A `serve` mode with browser reload**, so changes show up instantly during development.
 - **A single-command production export** — a fully static site ready to deploy anywhere (GitHub Pages, Netlify, any static host), with a license banner and an auto-generated sitemap.
 - **Instant project scaffolding** from official templates via `kiri create`.
 - **Continuous deployment** through the official [`kiribuild`](https://github.com/php-kirigami/kiribuild) GitHub Action.
@@ -46,7 +46,7 @@ All packages live in the [`kirigami`](https://github.com/php-kirigami/kirigami/t
 
 | Package | Description |
 |---|---|
-| [`@kirigami/kirigami`](https://www.npmjs.com/package/@kirigami/kirigami) | The heart of the project: the `kiri` CLI (build, export, watch, run, create, phpinfo). |
+| [`@kirigami/kirigami`](https://www.npmjs.com/package/@kirigami/kirigami) | The programmatic `Project` engine shared by the CLI, MCP server, and editor extension. |
 | [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirigami/php-prepros) | The PHP → HTML compiler that powers the CLI — template rendering, sitemap generation, and a full PHP class library. |
 | [`@kirigami/php-wasm`](https://www.npmjs.com/package/@kirigami/php-wasm) | A custom PHP WebAssembly build for Node.js (JSPI only, no browser support). Distributed under **GPL-2.0-or-later**. |
 | [`@kirigami/struct-walker`](https://www.npmjs.com/package/@kirigami/struct-walker) | Recursively walks YAML/JSON structures, resolving relative file references and converting assets to data URIs. |
@@ -60,7 +60,7 @@ All packages live in the [`kirigami`](https://github.com/php-kirigami/kirigami/t
 Install the CLI:
 
 ```bash
-npm install -D @kirigami/kirigami
+npm install -D @kirigami/cli
 ```
 
 Drop a `kirigami.yaml` at the root of your project:
@@ -77,10 +77,11 @@ prepros:
   format: true
 ```
 
-Write your `_*.php` pages inside `src/`, then:
+Create the referenced layout files, write your `_*.php` pages inside `src/`, then:
 
 ```bash
-npx kiri watch     # dev mode with hot-reload
+npx kiri build     # initial development build
+npx kiri serve     # local preview with browser reload
 npx kiri export    # fully static site, ready to deploy
 ```
 
@@ -90,10 +91,16 @@ Full documentation lives in the [main repository README](https://github.com/php-
 
 ## License
 
-Everything is distributed under the [MIT license](https://github.com/php-kirigami/kirigami/blob/main/LICENSE), except for [`@kirigami/php-wasm`](https://www.npmjs.com/package/@kirigami/php-wasm), which is **GPL-2.0-or-later**.
+Most packages use MIT. The exceptions are `@kirigami/php-wasm` (GPL-2.0-or-later), `@kirigami/audiowaveform-wasm` (GPL-3.0-or-later), and `@kirigami/bestframe` (LGPL-2.1-or-later). See each package’s `LICENSE` and README for upstream notices.
+
+
 
 ---
 
 ## Author
 
 MIT © Maxime Larrivée-Roy, 2026
+
+## Current interfaces
+
+The engine is `@kirigami/kirigami`; install `@kirigami/cli` for `kiri`. `@kirigami/mcp` exposes project tools, and the editor scaffold is `kirigami-vscode` (`packages/vscode`). The monorepo also includes `@kirigami/audiowaveform-wasm`, `@kirigami/bestframe`, and the highlight, extlink, and embed plugins. This is the source for the organization profile; editing it does not publish the profile.

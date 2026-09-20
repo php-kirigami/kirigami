@@ -27,7 +27,7 @@ pull the metadata.
 
 Both the scrape result and the thumbnail are cached to disk on first use and
 meant to be committed, so a later build — including CI, from a fresh checkout
-— never re-crawls a URL it has already resolved.
+— cached metadata avoids repeated page scraping while cached entries remain valid. Missing generated images can still trigger a network download.
 
 Part of the **Kirigami** project ecosystem.
 
@@ -61,20 +61,19 @@ Part of the **Kirigami** project ecosystem.
 ## Table of contents
 
 - [@kirigami/plugin-extlink](#kirigamiplugin-extlink)
-  - [Overview](#overview)
-  - [What's new in 0.1.3](#whats-new-in-013)
-  - [What's new in 0.1.2](#whats-new-in-012)
-  - [What's new in 0.1.1](#whats-new-in-011)
-  - [Table of contents](#table-of-contents)
-  - [Installation](#installation)
-  - [Configuration](#configuration)
-    - [Options](#options)
-  - [The `<extlink>` tag](#the-extlink-tag)
-  - [The `{% extlink %}` shortcut](#the-extlink-shortcut)
-  - [How it works](#how-it-works)
-  - [Styling](#styling)
-  - [Requirements](#requirements)
-  - [License](#license)
+- [Overview](#overview)
+- [What's new in 0.1.3](#whats-new-in-013)
+- [What's new in 0.1.2](#whats-new-in-012)
+- [What's new in 0.1.1](#whats-new-in-011)
+- [Installation](#installation)
+- [Configuration](#configuration)
+  - [Options](#options)
+- [The `<extlink>` tag](#the-extlink-tag)
+- [The `{% extlink %}` shortcut](#the--extlink--shortcut)
+- [How it works](#how-it-works)
+- [Styling](#styling)
+- [Requirements](#requirements)
+- [License](#license)
 
 ---
 
@@ -157,6 +156,8 @@ code path — same disk cache, same behavior either way.
 ---
 
 ## How it works
+
+Cache hits do not guarantee a fully offline build: generated image output must also exist. Image paths follow `image.source` and `image.dest`. This plugin uses `SCRAPER`/`CURL`; their current TLS verification defect is tracked in the [audit](../../docs/AUDIT-2026-09-20.md).
 
 On first use of a given URL, the tag:
 

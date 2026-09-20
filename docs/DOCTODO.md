@@ -1,49 +1,64 @@
-# Doc TODO
+# Documentation maintenance
 
-Documentation debt specifically — pending doc updates that code changes left
-behind. Distinct from [TODO.md](TODO.md) (small code action items) and the
-step-8 "update every README.md" pass in
-[INSTRUCTIONS.md](INSTRUCTIONS.md#workflow), which this file feeds.
+This inventory covers all 32 repository-owned Markdown files, including `.github/CONTRIBUTING.md` and the untracked future-roadmap document. Dependency documentation in `node_modules`, Git internals, and generated package archives are outside the project documentation scope.
 
-- **`docs/template-CLAUDE.md`'s `YAML::` section is stale** after the
-  native-`yaml`-extension switch (see [DECISIONS.md](DECISIONS.md)). It
-  documents `YAML::parse()`/`parseFile()`/`loadFile()`/`yaml_load_file()`
-  (around line 378 and line 517) but says nothing about the YAML 1.1
-  implicit-boolean behavior ("Norway problem": bare `y`/`n`, or the full
-  `yes`/`no`/`true`/`false`/`on`/`off`, as either a value or a mapping key).
-  This is exactly the audience that needs the warning — template authors
-  write `.yaml`/`.yml` data files consumed through these functions. Once
-  updated, fan it out to every `../template-*/` repo and the org site as
-  `CLAUDE.md`, per the fan-out rule in [CONTEXT.md](CONTEXT.md).
-- **`packages/php-prepros/README.md`'s "What's new in X.Y.Z"** — add an
-  entry for the `YAML::` native-backend switch once `php-prepros` is
-  actually version-bumped for release (not yet — this landed mid-refactor
-  on `refactor/core-api`). Don't add the changelog entry before the bump;
-  it'll drift from the real version number otherwise.
-- **Same changelog gap for the `MD::` native-backend switch** (see
-  [DECISIONS.md](DECISIONS.md)) — fold it into the same future changelog
-  entry once `php-prepros` is version-bumped, including the footnote-markup
-  change (now GitHub's real `<section class="footnotes">` shape) since
-  that's user-visible for anyone with custom CSS targeting the old
-  `<div class="footnotes">` by tag rather than by class.
-- **`docs/template-CLAUDE.md` doesn't mention the `MD::` native-backend
-  switch either** — lower urgency than the `YAML::` gap above (no
-  known behavioral footgun for template authors, everything's
-  diff-tested/documented in `php-mdhtml`'s `CLAUDE.md`), but the footnote
-  HTML shape change is worth a one-line mention if `template-CLAUDE.md`
-  documents `[^1]` footnote output anywhere. Fan out per the usual rule
-  in [CONTEXT.md](CONTEXT.md) once updated.
-- **Not a doc gap, just a reminder for whoever reads this next:**
-  `kirigami.yaml` itself is parsed in Node by `@kirigami/struct-walker`
-  (js-yaml), not by the PHP `YAML::` class — the native-backend switch
-  doesn't touch it. Only `.yaml`/`.yml` files loaded from *inside* PHP
-  templates (`YAML::parseFile()`/`loadFile()`/`yaml_load_file()`,
-  `prepros.plugins.php`'s data-tag handling) go through the new backend.
-- **`docs/template-CLAUDE.md` doesn't mention page types yet** (new
-  `prepros.types` / `@type` feature, see [STATUS.md](STATUS.md) and
-  [DECISIONS.md](DECISIONS.md)). Add a `types:` line to its example
-  `prepros:` yaml block and a one-line mention of `@type` next to
-  `@content`/`@indent`, then fan out to `../template-*/` and the org site
-  per [CONTEXT.md](CONTEXT.md) — deliberately deferred until the feature
-  is actually used by a template, per the workflow's step-14 ordering
-  ([INSTRUCTIONS.md](INSTRUCTIONS.md#workflow)).
+## Completed — 2026-09-20
+
+- Reconciled the core API, CLI, MCP, and VS Code documentation with current implementation.
+- Documented native YAML/Markdown behavior, footnote markup, page types, plugin registration, and current runtime limits.
+- Compared PHP-WASM’s previously committed README snapshot with current `kiri phpinfo -m`; added an unversioned next-release note. Only `bz2` was newly listed in that direct comparison.
+- Corrected installation examples and the license inventory (audit A15).
+- Kept existing package versions and historical version headings unchanged.
+
+## Remaining work
+
+- At release time, move the unversioned PHP-prepros and PHP-WASM notes into the actual release entry after an explicitly authorized version bump.
+- Publish the updated organization-profile source and regenerate/deploy the public site during the release workflow. Local Markdown edits do not publish external pages.
+- Verify documentation examples against the eventual published packages and the migrated `kiribuild` fallback.
+- Update the documented limitations as the code defects in [BUGS.md](BUGS.md) are fixed.
+- Synchronize the shared reference to sibling templates and the organization site in a separate authorized task. The user explicitly restricted this pass to the current repository; no sibling files were modified.
+
+## Verification
+
+- All local Markdown file links and heading anchors checked successfully.
+- 20 YAML examples parsed; seven complete project configurations passed the local schema (including plugin option schemas).
+- Native PHP checks confirmed YAML boolean/string behavior and Markdown footnote markup.
+- The documented manual PHP loader example executed successfully.
+- No manifests, lockfiles, or version declarations were modified.
+
+## Review inventory
+
+| File | Status |
+|---|---|
+| [.github/CONTRIBUTING.md](../.github/CONTRIBUTING.md) | Reviewed and updated |
+| [AGENTS.md](../AGENTS.md) | Reviewed and updated |
+| [CLAUDE.md](../CLAUDE.md) | Reviewed and updated |
+| [README.md](../README.md) | Reviewed and updated |
+| [docs/AUDIT-2026-09-20.md](AUDIT-2026-09-20.md) | Reviewed and updated |
+| [docs/BUGS.md](BUGS.md) | Reviewed and updated |
+| [docs/CONTEXT.md](CONTEXT.md) | Reviewed and updated |
+| [docs/DECISIONS.md](DECISIONS.md) | Reviewed and updated |
+| [docs/DOCTODO.md](DOCTODO.md) | Reviewed and updated |
+| [docs/EXTENSION-VSCODE.md](EXTENSION-VSCODE.md) | Reviewed and updated |
+| [docs/INSTRUCTIONS.md](INSTRUCTIONS.md) | Reviewed and updated |
+| [docs/ROADMAP-FUTURE.md](ROADMAP-FUTURE.md) | Reviewed and updated |
+| [docs/ROADMAP.md](ROADMAP.md) | Reviewed and updated |
+| [docs/STATUS.md](STATUS.md) | Reviewed and updated |
+| [docs/TODO.md](TODO.md) | Reviewed and updated |
+| [docs/org-profile-README.md](org-profile-README.md) | Reviewed and updated |
+| [docs/template-CLAUDE.md](template-CLAUDE.md) | Reviewed and updated |
+| [packages/audiowaveform-wasm/README.md](../packages/audiowaveform-wasm/README.md) | Reviewed and updated |
+| [packages/bestframe/README.md](../packages/bestframe/README.md) | Reviewed and updated |
+| [packages/canva/README.md](../packages/canva/README.md) | Reviewed and updated |
+| [packages/cli/README.md](../packages/cli/README.md) | Reviewed and updated |
+| [packages/kirigami/README.md](../packages/kirigami/README.md) | Reviewed and updated |
+| [packages/mcp/README.md](../packages/mcp/README.md) | Reviewed and updated |
+| [packages/php-prepros/README.md](../packages/php-prepros/README.md) | Reviewed and updated |
+| [packages/php-wasm/README.md](../packages/php-wasm/README.md) | Reviewed and updated |
+| [packages/plugin-embed/README.md](../packages/plugin-embed/README.md) | Reviewed and updated |
+| [packages/plugin-extlink/README.md](../packages/plugin-extlink/README.md) | Reviewed and updated |
+| [packages/plugin-highlight/README.md](../packages/plugin-highlight/README.md) | Reviewed and updated |
+| [packages/sdk/README.md](../packages/sdk/README.md) | Reviewed and updated |
+| [packages/struct-walker/README.md](../packages/struct-walker/README.md) | Reviewed and updated |
+| [packages/vscode/CHANGELOG.md](../packages/vscode/CHANGELOG.md) | Reviewed and updated |
+| [packages/vscode/README.md](../packages/vscode/README.md) | Reviewed and updated |

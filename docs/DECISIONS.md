@@ -1,5 +1,7 @@
 # Decisions
 
+This is an architectural decision log. Versioned entries describe historical changes; the [audit](AUDIT-2026-09-20.md) and [open bugs](BUGS.md) qualify current implementation limits.
+
 Architectural decisions and the reasoning behind them, so a question doesn't
 get re-litigated later without knowing it was already settled. For "what
 shipped and when," see [STATUS.md](STATUS.md).
@@ -60,8 +62,7 @@ itself) — reviving `MD_LEGACY` for real use would need that wired back.
 
 ## Core-API / CLI split (`refactor/core-api`)
 
-`@kirigami/kirigami` is now the pure engine (`Project.load()/.reload()/
-.validate()/.build()/.serve()/.watch()/.export()/.run()`); the CLI was
+`@kirigami/kirigami` is now the pure engine (`load()` / `Kirigami.load()` returning a `Project` with `.reload()`, `.validate()`, `.build()`, `.serve()`, `.watch()`, `.export()`, and `.run()`); the CLI was
 extracted into a new package, `@kirigami/cli` (command `kiri` unchanged —
 no renaming). `build`/`serve`/`watch`/`export`/`run` in the CLI are now
 pure wrappers around `Project`. Rationale: any other interface (an editor
@@ -224,8 +225,7 @@ registering MCP servers, so the extension could *additionally* register
 not the extension's primary path to the API.
 
 `serve`/`watch` are excluded from the tool set: both start a long-running
-process (HTTP server, filesystem watcher) that doesn't return, which
-doesn't fit a request/response MCP tool call. Revisiting that needs a
+resource (HTTP server or filesystem watcher). The methods return handles, but MCP needs explicit lifecycle tools to own and stop those resources. Revisiting that needs a
 background-process model (spawn + `status`/`stop` tools), not attempted
 here.
 
@@ -234,7 +234,7 @@ rather than trusting `Project`'s own lazy `#loaded` cache — an MCP server
 is long-lived across many independent tool calls, and the expected agent
 loop (edit a file, call a tool, read the result, edit again) means a
 config snapshot from an earlier call is exactly the kind of staleness that
-would silently mislead the agent.
+would silently mislead the agent. The later audit (A06) found that this reload does not reset the PHP runtime/configuration/includes caches; full freshness remains an implementation goal.
 
 ## `packages/vscode` v1 scaffold: `Project.serve()`'s `onBuildResult`, and three esbuild-bundling gotchas
 

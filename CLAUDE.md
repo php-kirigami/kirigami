@@ -13,10 +13,10 @@ evolving material lives in `docs/`, split by topic:
 | [docs/BUGS.md](docs/BUGS.md) | Known open issues / questions needing a decision |
 | [docs/TODO.md](docs/TODO.md) | Small, concrete, near-term action items |
 | [docs/DOCTODO.md](docs/DOCTODO.md) | Documentation debt — pending doc updates code changes left behind |
-| [docs/EXTENSION-VSCODE.md](docs/EXTENSION-VSCODE.md) | VS Code extension design notes — not started yet |
+| [docs/EXTENSION-VSCODE.md](docs/EXTENSION-VSCODE.md) | VS Code extension implementation, limitations, and remaining work |
 
 `docs/template-CLAUDE.md` is a different thing entirely — it's the
-`CLAUDE.md` gabarit copied verbatim into every `../template-*/` sibling
+`CLAUDE.md` template copied verbatim into every `../template-*/` sibling
 repo and the org site (end-user Kirigami *sites*, not this monorepo). See
 [docs/CONTEXT.md](docs/CONTEXT.md) for the fan-out rule.
 
@@ -29,9 +29,10 @@ Node.js — full detail in [docs/CONTEXT.md](docs/CONTEXT.md).
 ## Non-negotiable conventions
 
 - **English everywhere in the repo**: code, comments, READMEs, `docs/*.md`.
-  Deliberately still French: everything under `assets/kiri/` (an old
-  standalone CLI copy, left untouched) and commit messages (Québécois).
-- **ESM only** — every JS package is `"type": "module"`.
+  Commit messages and changes to the legacy `assets/kiri/` tree are English too.
+  **Conversations with the user are in French.** This preference applies
+  across all projects and supersedes the previous French-content exceptions.
+- **ESM source** — runtime packages use `"type": "module"`; the VS Code extension bundles to CommonJS.
 - **Node `>=24.0.0`** for every package.
 - **Stay lite** — minimise dependencies, no native deps; check for a
   `node:` builtin or ~30 lines of code before adding a lib.

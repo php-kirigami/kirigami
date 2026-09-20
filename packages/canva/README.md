@@ -183,38 +183,37 @@ Part of the **Kirigami** project ecosystem.
 ## Table of contents
 
 - [@kirigami/canva](#kirigamicanva)
-  - [Overview](#overview)
-  - [What's new in 2.6.0](#whats-new-in-260)
-  - [What's new in 2.5.2](#whats-new-in-252)
-  - [What's new in 2.5.1](#whats-new-in-251)
-  - [What's new in 2.5.0](#whats-new-in-250)
-  - [What's new in 2.4.0](#whats-new-in-240)
-  - [What's new in 2.3.0](#whats-new-in-230)
-  - [What's new in 2.2.0](#whats-new-in-220)
-  - [What's new in 2.1.0](#whats-new-in-210)
-  - [What's new in 2.0.0](#whats-new-in-200)
-  - [What's new in 1.1.1](#whats-new-in-111)
-  - [What's new in 1.1.0](#whats-new-in-110)
-  - [Table of contents](#table-of-contents)
-  - [Installation](#installation)
-  - [Package layout](#package-layout)
-  - [Styles](#styles)
-    - [`styles/conf`](#stylesconf)
-    - [Dark theme](#dark-theme)
-    - [`styles/utils`](#stylesutils)
-    - [`styles/prose`](#stylesprose)
-    - [`styles/main`](#stylesmain)
-    - [`styles/lightswitch`](#styleslightswitch)
-  - [Scripts](#scripts)
-    - [`dom`](#dom)
-    - [`helpers`](#helpers)
-    - [`theme`](#theme)
-    - [`observer`](#observer)
-    - [`reveal`](#reveal)
-    - [`components/burger`](#componentsburger)
-  - [Build](#build)
-  - [Requirements](#requirements)
-  - [License](#license)
+- [Overview](#overview)
+- [What's new in 2.6.0](#whats-new-in-260)
+- [What's new in 2.5.2](#whats-new-in-252)
+- [What's new in 2.5.1](#whats-new-in-251)
+- [What's new in 2.5.0](#whats-new-in-250)
+- [What's new in 2.4.0](#whats-new-in-240)
+- [What's new in 2.3.0](#whats-new-in-230)
+- [What's new in 2.2.0](#whats-new-in-220)
+- [What's new in 2.1.0](#whats-new-in-210)
+- [What's new in 2.0.0](#whats-new-in-200)
+- [What's new in 1.1.1](#whats-new-in-111)
+- [What's new in 1.1.0](#whats-new-in-110)
+- [Installation](#installation)
+- [Package layout](#package-layout)
+- [Styles](#styles)
+  - [`styles/conf`](#stylesconf)
+  - [Dark theme](#dark-theme)
+  - [`styles/utils`](#stylesutils)
+  - [`styles/prose`](#stylesprose)
+  - [`styles/main`](#stylesmain)
+  - [`styles/lightswitch`](#styleslightswitch)
+- [Scripts](#scripts)
+  - [`dom`](#dom)
+  - [`helpers`](#helpers)
+  - [`theme`](#theme)
+  - [`observer`](#observer)
+  - [`reveal`](#reveal)
+  - [`components/burger`](#componentsburger)
+- [Build](#build)
+- [Requirements](#requirements)
+- [License](#license)
 
 ---
 
@@ -357,8 +356,7 @@ like the light tokens:
     $ink:     #2f3640,
     $accent:  #c7402c,
 
-    // simplest: just switch it on
-    $dark:    true,
+    // Use either a custom map below or $dark: true, not both.
 
     // …or tune individual dark tokens
     $dark: (
@@ -563,6 +561,8 @@ addEventListener('canva:themechange', (e) => {
 ```
 
 ### `observer`
+
+Handlers that construct HTML from authoring attributes must validate or escape those values. The observer invokes your transformation; it does not sanitize the returned markup.
 
 ```js
 import { register } from '@kirigami/canva/observer';

@@ -37,12 +37,12 @@ Part of the **Kirigami** project ecosystem.
 ## Table of contents
 
 - [@kirigami/mcp](#kirigamimcp)
-  - [Overview](#overview)
-  - [Table of contents](#table-of-contents)
-  - [Usage](#usage)
-  - [Tools](#tools)
-  - [Why no `serve`/`watch`](#why-no-servewatch)
-  - [JavaScript API](#javascript-api)
+- [Overview](#overview)
+- [Usage](#usage)
+- [Tools](#tools)
+- [Why no `serve`/`watch`](#why-no-servewatch)
+- [JavaScript API](#javascript-api)
+- [License](#license)
 
 ---
 
@@ -69,8 +69,7 @@ Or run this package directly, e.g. from an MCP client's own config:
 ```
 
 Either way, the server needs to run with the Kirigami project's root as its
-working directory (`kirigami.yaml` resolved from there) — set by the client's
-`cwd`, exactly like launching `kiri` itself from that folder.
+working directory (`kirigami.yaml` resolved from there) — use the client’s supported working-directory setting or a launcher that changes directory before importing Kirigami. The `cwd` key above is client-specific, not a universal MCP setting.
 
 ---
 
@@ -81,16 +80,15 @@ working directory (`kirigami.yaml` resolved from there) — set by the client's
 | `kirigami_config` | Re-reads and returns the resolved `kirigami.yaml` plus the active plugin list. Call this first to understand a project. |
 | `kirigami_validate` | Re-reads and validates `kirigami.yaml` against the schema, without loading plugins. |
 | `kirigami_build` | Same as `kiri build` — runs every configured task once, in place. |
-| `kirigami_export` | Same as `kiri export` — forces every task plus a copy into `export.path` (optionally overridden per call). |
+| `kirigami_export` | Same as `kiri export` — runs buildable or explicitly forced tasks plus implicit rendering and a copy into `export.path` (optionally overridden per call). |
 | `kirigami_run` | Same as `kiri run <command>` — runs `scripts/<command>.php` inside the PHP-WASM runtime, with extra args as `$argv`. |
 | `kirigami_list_scripts` | Lists every `scripts/<name>.php` file the project actually has (not just the ones with a `scripts:` yaml entry), each with its `trigger`/`mount` metadata if declared. Use before `kirigami_run` to discover valid names. |
 | `kirigami_list_tasks` | Lists the tasks `kirigami_build`/`kirigami_run_task` would run — `tasks:` entries plus the implicit `"render-all"` prepros task. Use before `kirigami_run_task`. |
 | `kirigami_run_task` | Runs exactly one task by name, bypassing `before-build` and every other task — for re-running (or first-running) a single piece of the pipeline instead of the whole build. |
 
-Every tool except `kirigami_validate` reloads `kirigami.yaml` (and, where
-relevant, plugins) before acting — an agent's usual loop is edit a file,
-call a tool, read the result, edit again, so a tool answering from a stale
-config snapshot would be actively misleading.
+Every tool except `kirigami_validate` calls the project reload path; validation re-reads core config without plugin registration. PHP configuration/runtime state is still cached separately, so restart the MCP process after changes affecting PHP.
+
+Tool results contain JSON in text content. Inspect the payload’s `success` field: a structured `success: false` result is not automatically an MCP `isError` response. Thrown errors are reported as tool errors.
 
 `kirigami_run`/`kirigami_run_task` execute any named script/task the
 project defines — only point this server at a project you trust.
@@ -99,18 +97,14 @@ project defines — only point this server at a project you trust.
 
 ## Why no `serve`/`watch`
 
-`Project.serve()`/`.watch()` (in `@kirigami/kirigami`) start a long-running
-local server / filesystem watcher — neither fits a request/response MCP
-tool call, which is expected to return. Exposing them would need a
-background-process model plus `status`/`stop` tools, which this package
-doesn't attempt yet.
+`Project.serve()` and `.watch()` return handles promptly, but leave background resources running. MCP tools for them would need explicit resource ownership, status, and stop operations; those tools are not implemented.
 
 ---
 
 ## JavaScript API
 
 ```js
-import { createServer, serveStdio } from '@kirigami/mcp';
+import { createServer } from '@kirigami/mcp';
 import { load } from '@kirigami/kirigami';
 
 // Full control over the McpServer instance (e.g. to add your own tools
@@ -118,7 +112,14 @@ import { load } from '@kirigami/kirigami';
 const project = await load();
 const server = createServer(project, { name: 'kirigami', version: '0.1.0' });
 
-// Or the one-liner bin/kiri-mcp.js and `kiri mcp` both use — loads the
+```
+
+Alternatively, start the standard stdio transport:
+
+```js
+import { serveStdio } from '@kirigami/mcp';
+
+// The one-liner bin/kiri-mcp.js and `kiri mcp` both use — loads the
 // project at process.cwd() and connects a StdioServerTransport:
 await serveStdio();
 ```

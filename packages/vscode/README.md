@@ -4,7 +4,7 @@
 
 ---
 
-# @kirigami/vscode
+# kirigami-vscode
 
 A VS Code extension for **Kirigami** — build, export, run, and preview a
 Kirigami static site without leaving the editor.
@@ -20,13 +20,15 @@ Kirigami static site without leaving the editor.
 
 ## Overview
 
-`@kirigami/vscode` wraps `@kirigami/kirigami`'s `Project` API — the same
+This is an implemented development scaffold, not a verified packaged extension. Compilation succeeds, but activation with a stubbed VS Code module fails on the bundled schema path; working-directory capture also needs correction. A real Extension Development Host run is still required.
+
+`kirigami-vscode` wraps `@kirigami/kirigami`'s `Project` API — the same
 one `@kirigami/cli` (terminal) and `@kirigami/mcp` (AI agent) already
 wrap — directly, in-process, the same way `@kirigami/cli` does. See
 `docs/DECISIONS.md`'s `@kirigami/mcp` section in the monorepo for why this
 doesn't go through `@kirigami/mcp`'s stdio server instead.
 
-Activates automatically in any workspace whose root has a `kirigami.yaml`,
+The scaffold is configured to activate automatically in any workspace whose root has a `kirigami.yaml`,
 and gives you Command Palette actions for the one-shot operations plus a
 status bar toggle for the dev server with live build state.
 
@@ -48,15 +50,14 @@ Part of the **Kirigami** project ecosystem.
 
 ## Table of contents
 
-- [@kirigami/vscode](#kirigamivscode)
-  - [Overview](#overview)
-  - [Table of contents](#table-of-contents)
-  - [Commands](#commands)
-  - [Status bar](#status-bar)
-  - [Requirements](#requirements)
-  - [Development](#development)
-  - [Known limitations](#known-limitations)
-  - [License](#license)
+- [kirigami-vscode](#kirigami-vscode)
+- [Overview](#overview)
+- [Commands](#commands)
+- [Status bar](#status-bar)
+- [Requirements](#requirements)
+- [Development](#development)
+- [Known limitations](#known-limitations)
+- [License](#license)
 
 ---
 
@@ -98,8 +99,7 @@ server.
 
 ## Requirements
 
-Node `>=24.0.0` (informational — the extension host embeds its own Node,
-this isn't enforced) and VS Code `^1.90.0`.
+The manifest declares Node `>=24.0.0` and VS Code `^1.90.0`. The extension runs in the editor’s embedded Node runtime; an external Node installation does not upgrade it. Verify JSPI and `node:sqlite` availability in the actual extension host. The declared editor range alone does not establish compatibility.
 
 ---
 
@@ -123,6 +123,11 @@ a folder containing a `kirigami.yaml` in that host window (e.g.
 ---
 
 ## Known limitations
+
+- Bundled schema/resource paths and early working-directory capture block reliable activation (audit A08).
+- Run Script can report success despite a returned `success: false` (A14).
+- PHP runtime/config state is not fully reset by project reload (A06).
+- Preview does not perform an initial build; use Build first.
 
 - Single workspace folder only — binds to `workspaceFolders[0]`; multi-root
   isn't supported by `Project` itself yet.
