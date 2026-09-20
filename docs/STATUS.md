@@ -276,3 +276,9 @@ Validation on Windows / Node 26 with the current working-tree WASM binary:
 - Export regression suite: seven tests passed. `npm run compile --workspace=kirigami-vscode` passed with the new reset bridge; real-host activation remains unverified (A08).
 
 No package versions or generated WASM/loader files were changed by this fix. End-to-end HTTPS remains the separate A03 follow-up; Node 24 and Unix were not exercised.
+
+## Optional layouts and PHP diagnostics — A07
+
+Missing global `prepros.before`/`after` fields now default to `null` before PHP hooks/includes run. PHP-prepros disables inline error display while retaining stderr logging, so warnings no longer contaminate generated HTML. The aggregate render/sitemap task retains both phases' warnings, stderr and debug output. A sitemap failure keeps its error and the preceding render's diagnostics and produced-file list. Nonfatal warnings remain nonfatal and are available on the prepros entry in `Project.build()` / `Project.export()` results.
+
+Validation: `node --test --test-isolation=none packages/kirigami/test/minimal-render.test.js` passes all five scenarios (six test-runner entries including the parent): empty `prepros` build/export, all global layout combinations, render/page/sitemap warnings, sitemap failure after successful rendering, and render failure. The real WASM A06 reload regression also passes. Tested on Windows / Node 26; no versions changed.

@@ -15,6 +15,8 @@ final class PREPROS
     public static function loadConfig(object $config)
     {
         self::$config = $config;
+        self::$config->before ??= null;
+        self::$config->after ??= null;
         self::$root = realpath($config->root) . S;
         if (!empty($config->includes)) foreach ($config->includes as $path) {
             if (!is_file(realpath(self::$root . $path))) continue;

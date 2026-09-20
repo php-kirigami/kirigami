@@ -555,7 +555,7 @@ reference and per-page `@ld_*` tags: [`LD` → `jsonld` config](#jsonld-config).
 
 ### `prepros` block
 
-Use existing global `before` and `after` files. Although the schema allows omission, an empty `prepros: {}` currently emits PHP warnings into rendered output.
+Global `before` and `after` files are optional and default to `null`; an empty `prepros: {}` renders without a layout. When provided, these paths must refer to existing files. PHP warnings are logged to stderr and returned as diagnostics, without being inserted into generated HTML.
 
 Options for the PHP → HTML compiler. **Read by `php-prepros`.** Declaring this block (even empty) also makes `kiri` prepend a forced `prepros` task on every build/export/watch.
 

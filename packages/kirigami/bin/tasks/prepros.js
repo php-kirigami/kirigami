@@ -37,10 +37,15 @@ export default async function build(__root, task, exportPath = null) {
 		if (!renderResults.success) return renderResults;
 		await applyHtmlHooks(renderResults.files, exportPath);
 		const sitemapResults = await sitemap();
-		if (!sitemapResults.success) return sitemapResults;
+		const diagnostics = {};
+		for (const key of ['warnings', 'stderr', 'debug']) {
+			const messages = [renderResults[key], sitemapResults[key]].filter(Boolean);
+			if (messages.length) diagnostics[key] = messages.join('\n');
+		}
 		return {
-			success: true,
-			files: [...renderResults.files, ...sitemapResults.files],
+			...sitemapResults,
+			...diagnostics,
+			files: [...(renderResults.files || []), ...(sitemapResults.files || [])],
 		};
 	}
 }

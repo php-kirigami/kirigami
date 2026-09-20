@@ -219,6 +219,11 @@ Inspect `success` as well as catching exceptions. A resolved promise is not nece
 
 Current limitations: one project per process, working directory established **before importing the engine**, and shared plugin registries. Await project operations in sequence; only PHP-prepros operations/resets are internally serialized. `reload()` refreshes PHP configuration, mounts, network mode, and plugin includes, but JavaScript plugin code remains subject to Node's module cache (restart after code changes). Watch additions/deletions and repeated watcher setup also have known defects. See [the audit](../../docs/AUDIT-2026-09-20.md) for reproductions.
 
+An empty `prepros: {}` supports rendering without layout files. PHP warnings
+remain nonfatal and appear on the prepros task entry in `results`, including
+warnings from rendering and sitemap generation. Diagnostics are kept out of
+generated HTML; a failed sitemap preserves the preceding render diagnostics.
+
 Export rejects equal, ancestor, or descendant source/output paths before clearing the destination, including symlink/junction aliases. PHP files (case-insensitive `.php`) and dot-prefixed directories are excluded from the copy. Add `export.ignore` rules for any other project-specific private files. The development server also serves source files and is intended for loopback use.
 
 ---

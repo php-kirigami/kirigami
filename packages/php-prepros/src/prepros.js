@@ -84,7 +84,8 @@ const initializePHPInstance = async () => {
         __php.setIniValues({
             log_errors:        1,
             html_errors:       0,
-            display_errors:    1,
+            // Diagnostics belong on stderr, never inside generated HTML.
+            display_errors:    0,
             error_reporting:   32767,
             error_log:         'php://stderr',
             memory_limit:      '2G',
