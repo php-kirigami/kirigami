@@ -1557,7 +1557,7 @@ $email  = ARR::find_key($config, 'email'); // finds `email` however deep it's ne
 
 ### CURL
 
-The current helper disables TLS certificate verification (audit A03). Network access does not imply verified HTTPS peer identity; this remains an implementation defect.
+CURL verifies HTTPS certificate chains and hostnames, including redirects. The network-enabled WASM runtime supplies Node’s root certificates through `curl.cainfo` and `openssl.cafile`. Untrusted certificates and hostname mismatches are rejected; there is no insecure fallback. `getInfo()` returns `false` when cURL fails, and `getContents()` preserves its existing failure return values.
 
 Low-level HTTP client built on PHP's cURL extension, used internally by `SCRAPER`. Ships with a realistic browser `User-Agent`/header set and a cookie jar persisted at `.cookie.txt` (auto-registered via `PREPROS::exportFile()`).
 

@@ -7,16 +7,13 @@ decision from Maxime before they can be closed. Fixed bugs move to
 ## Repository audit — 2026-09-20
 
 See [the full audit](AUDIT-2026-09-20.md) for evidence, reproduction results,
-source locations, corrective actions, and verification limits. The audit did not change production code. Documentation finding A15 was addressed by the subsequent Markdown refresh; A01 and A02 were subsequently fixed by export path validation and source-file exclusions; the remaining code findings are open.
+source locations, corrective actions, and verification limits. The audit did not change production code. Documentation finding A15 was addressed by the subsequent Markdown refresh; A01/A02 were subsequently fixed by export path validation and source-file exclusions; A03 was fixed by enabling CURL peer/hostname verification; A04 was fixed by strict plugin-name validation and shell-free npm invocation; A05 was fixed by resolving starter dependencies and banner assets from their installed packages; the remaining code findings are open.
 
-- **P1 / A03:** PHP CURL helpers disable TLS peer and hostname verification.
-- **P1 / A05:** Starter dependencies use the CLI version as the core version,
-  emit `@kirigami/canva: ^undefined`, and omit the CLI package.
 - **P1 / A06:** `Project.reload()` leaves PHP configuration/includes stale.
 - **P1 / A07:** Empty `prepros: {}` embeds missing-layout-property warnings
   into successfully generated HTML.
 - **P1 / A08:** The compiled VS Code bundle cannot resolve the core schema.
-- **P2 / A04, A09–A14, A16:** Shell interpolation in plugin installation; malformed
+- **P2 / A09–A14, A16:** Malformed
   development URLs; served PHP source; missing add/delete watch handling;
   duplicate watch tasks; uncaught async watch failures; hidden script failures
   in VS Code; incomplete regression coverage and missing CI gates (focused export tests now exist).
@@ -55,3 +52,7 @@ source locations, corrective actions, and verification limits. The audit did not
   thing to check is the Output channel's activation log line
   (`node ${process.version}`, no error) before trusting anything built on
   top of it.
+
+## WASM HTTPS integration follow-up
+
+During A03 verification, local HTTPS requests from the current working-tree WASM binary timed out before the network proxy received a connection. The binary and generated loader already had local modifications before this fix and were left untouched; the cause has not been established. Native PHP exercises of the actual CURL helper pass certificate, hostname, redirect, and download checks. WASM tests verify the injected CA contents and active ini directives, but do not establish successful end-to-end HTTPS. Investigate the networking path before claiming that integration is verified.

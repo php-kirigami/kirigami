@@ -16,6 +16,7 @@
     "access": "public"
   },
   "exports": {
+    "./package.json": "./package.json",
     "./styles/*": "./dist/styles/*.scss",
     "./scripts/*": "./dist/scripts/*.js",
     "./*": "./dist/scripts/*.js"

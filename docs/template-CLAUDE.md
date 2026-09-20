@@ -111,7 +111,7 @@ Generic reference — safe to copy verbatim between projects.
 
 Run `npx kiri build` before `npx kiri serve` or `npx kiri watch`; neither builds initially. The dev server serves the source tree, including PHP/hidden files, so keep the default loopback binding. `npx kiri mcp` starts the MCP server; `npx kiri install <plugin>` installs a plugin; `npx kiri cache purge [mask]` clears caches. Every command has `--help`.
 
-The current CLI split has known `create` dependency/banner lookup defects. Use a template checkout with an explicit `@kirigami/cli` dependency until those are fixed.
+When a template has no `package.json`, `kiri create` generates one with explicit CLI, core, and Canva dependencies based on the installed package versions. Missing starter banners come from the core package. Existing template/project manifests keep their dependency choices.
 
 ---
 
@@ -474,7 +474,7 @@ ARR::find_key(mixed $data, string $key): mixed;  // depth-first, first match at 
 
 ### CURL
 
-The current helper disables TLS certificate verification. Do not assume its HTTPS responses have authenticated the remote server; this is an open implementation defect.
+CURL verifies HTTPS certificate chains and hostnames, including redirects. The network-enabled WASM runtime supplies Node’s root certificates through `curl.cainfo` and `openssl.cafile`. Untrusted certificates and hostname mismatches are rejected; there is no insecure fallback. `getInfo()` returns `false` when cURL fails, and `getContents()` preserves its existing failure return values.
 
 ```php
 CURL::urlExists(string $url, ?string $mimeRegex = null): bool;   // HEAD, true on 2xx/3xx

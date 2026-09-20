@@ -157,7 +157,7 @@ code path — same disk cache, same behavior either way.
 
 ## How it works
 
-Cache hits do not guarantee a fully offline build: generated image output must also exist. Image paths follow `image.source` and `image.dest`. This plugin uses `SCRAPER`/`CURL`; their current TLS verification defect is tracked in the [audit](../../docs/AUDIT-2026-09-20.md).
+Cache hits do not guarantee a fully offline build: generated image output must also exist. Image paths follow `image.source` and `image.dest`. This plugin uses `SCRAPER`/`CURL`, which now verify HTTPS certificate chains and hostnames. Invalid certificates cause fetch failure instead of an insecure retry.
 
 On first use of a given URL, the tag:
 

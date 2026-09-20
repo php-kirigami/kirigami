@@ -240,3 +240,25 @@ Export now rejects identical or nested source/destination paths, checking both l
 The copy excludes `.php` files case-insensitively and dot-prefixed directories, preserving the existing underscore/source-asset filters and explicit ignore rules. Hidden public directories such as `.well-known` are excluded too; there is no exception mechanism in this change.
 
 Regression command: `node --test --test-isolation=none packages/kirigami/test/dist.test.js`. Tests cover destructive overlaps, junction aliases, a missing output under an alias, public/private file selection, replacement of stale output, and rejection before API triggers. No package versions changed. Sibling documentation synchronization remains deferred at the user’s request.
+
+## TLS verification — A03
+
+Enabled certificate-chain and hostname verification in `CURL::getInfo()` and `CURL::getContents()` without adding an insecure opt-out. Failed metadata requests now return `false` instead of an apparently usable cURL info array.
+
+Validation: `node --test --test-isolation=none packages/php-prepros/test/curl-tls.test.js` passes using a local HTTPS server and a temporary generated certificate. Native PHP runs the helper with only its WASM cookie path relocated into the fixture directory. Tests cover untrusted certificates, a trusted certificate, mismatched hostnames, redirects to a mismatched hostname, and file downloads. The test also verifies that WASM receives Node’s CA bundle and active `curl.cainfo`/`openssl.cafile` directives. It requires a local PHP executable (`PHP_BINARY` can override `php`) with the cURL extension available.
+
+The current working-tree WASM binary timed out before reaching the proxy in end-to-end HTTPS trials; no runtime/binary changes were made to hide this limitation. Follow-up is recorded in BUGS.md. No versions changed, and no sibling documents were synchronized.
+
+## Plugin installation safety — A04
+
+`kiri install` validates all plugin arguments before registry access or installation. It accepts lowercase bare names, `@kirigami/plugin-*`, `kirigami-plugin-*`, and `@scope/kirigami-plugin-*`; URLs, paths, version suffixes, options masquerading as names, and shell syntax are rejected. Registry versions are validated before forming package specifications. Full names still support offline/private-registry fallback. Boolean `--save` now works before or after names.
+
+npm runs through `execFileSync` with separate arguments and `shell: false`; Windows resolves `npm-cli.js` from the npm environment, PATH installation directories, or the Node installation and executes it with Node. Missing npm produces an explicit error, with no shell fallback.
+
+Validation: all eight tests pass with `node --test --test-isolation=none packages/cli/test/install.test.js` on Windows / Node 26. Tests stub registry requests and installation, and use a real local Node subprocess to verify Windows argument delivery and failure propagation. No registry packages were installed; Unix execution and Node 24 were not exercised. No versions changed.
+
+## Starter project generation — A05
+
+`kiri create` now generates missing starter manifests with explicit `@kirigami/cli`, `@kirigami/kirigami`, and `@kirigami/canva` dependencies, using each installed package's version. Package resolution follows the CLI/core dependency graph rather than assuming a workspace layout. Canva now exports its `package.json` for this lookup. The fallback banner comes from core's assets and retains its build-time tokens. Existing manifests and banners retain their previous preservation/merge behavior.
+
+Validation: all four tests pass with `node --test --test-isolation=none packages/cli/test/create.test.js` on Windows / Node 26. Coverage includes an isolated nested package fixture and the real create command using local archive fixtures, with `--no-git --no-install`. The command creates missing starter files, points YAML at the generated banner, and preserves existing dependency/script/banner values. GitHub downloads, registry installation, Node 24, and Unix execution were not tested. No package versions changed; sibling documentation synchronization remains deferred.

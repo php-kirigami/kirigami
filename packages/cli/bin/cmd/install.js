@@ -1,14 +1,23 @@
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
-import { c, log, parseArgs, printCommandHelp } from "../utils.js";
+import { runNpm } from "../npm.js";
+import { c, log, printCommandHelp } from "../utils.js";
 import {
 	resolvePlugin, ownerPackageDir, readJson, compareVersions, kiriVersion,
 } from "@kirigami/kirigami/internal/plugins";
 
-// Same naming convention kirigami.schema.json enforces for a `plugins:` entry
-// (see `properties.plugins.items.properties.name.pattern`) — kept in sync by hand.
-const PLUGIN_NAME_RE = /^(?:@kirigami\/plugin-[^/]+|[^/]+\/kirigami-plugin-[^/]+|kirigami-plugin-[^/]+)$/;
+// Installation accepts registry names only, never npm URLs, paths or aliases.
+const PART = "[a-z0-9][a-z0-9._-]*";
+const PLUGIN_NAME_RE = new RegExp(`^(?:@kirigami/plugin-${PART}|@${PART}/kirigami-plugin-${PART}|kirigami-plugin-${PART})$`);
+const BARE_NAME_RE = new RegExp(`^${PART}$`);
+const VERSION_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+
+function validateInput(input) {
+	if (typeof input !== "string" || input.length > 214 || /\s/.test(input) ||
+		!(PLUGIN_NAME_RE.test(input) || BARE_NAME_RE.test(input))) {
+		throw new Error(`Invalid plugin name: ${JSON.stringify(input)}. Use a bare name or a full Kirigami plugin package name without a version.`);
+	}
+}
 
 const HELP = {
 	name: "install",
@@ -32,10 +41,13 @@ const HELP = {
 
 
 export default async function install(args) {
-	const { flags, command, subcommand, positional: rest } = parseArgs(args);
-	// parseArgs slots the first two non-flag args into command/subcommand and
-	// only the remainder into `positional` — collect all of them as plugin names.
-	const inputs = [command, subcommand, ...rest].filter(Boolean);
+	const flags = {};
+	const inputs = [];
+	for (const arg of args) {
+		if (arg === "--save") flags.save = true;
+		else if (arg === "--help" || arg === "-h") flags.help = true;
+		else inputs.push(arg);
+	}
 
 	if (flags.help || flags.h) {
 		printCommandHelp(HELP);
@@ -45,6 +57,8 @@ export default async function install(args) {
 	if (!inputs.length) {
 		throw `Missing plugin name. Try ${c.cyan("kiri install --help")}.`;
 	}
+	// Validate the whole batch before any registry request or installation.
+	inputs.forEach(validateInput);
 
 	if (!fs.existsSync(path.join(process.cwd(), "package.json"))) {
 		throw `No package.json found in ${process.cwd()} — run this inside a Kirigami project.`;
@@ -77,13 +91,15 @@ export default async function install(args) {
 // ("highlight", "plugin-highlight") and only accept the first candidate that
 // actually exists on npm — silently installing a guessed-wrong package would
 // be worse than asking for the full name.
-async function resolvePluginName(input) {
+export async function resolvePluginName(input) {
+	validateInput(input);
 	if (PLUGIN_NAME_RE.test(input)) {
 		return { name: input, latest: await fetchLatestVersion(input) };
 	}
 
 	const bare = input.replace(/^(@kirigami\/)?plugin-/, "").replace(/^kirigami-plugin-/, "");
 	for (const candidate of [`@kirigami/plugin-${bare}`, `kirigami-plugin-${bare}`]) {
+		if (candidate.length > 214 || !PLUGIN_NAME_RE.test(candidate)) continue;
 		const latest = await fetchLatestVersion(candidate);
 		if (latest) return { name: candidate, latest };
 	}
@@ -104,7 +120,7 @@ async function installOne(name, latest, flags) {
 			: `Installing ${c.cyan(name)}${latest ? c.dim(` v${latest}`) : ""}...`);
 
 		try {
-			execSync(`npm install ${flags.save ? "" : "--save-dev "}${spec}`, {
+			runNpm(["install", flags.save ? "--save-prod" : "--save-dev", "--", spec], {
 				cwd: process.cwd(),
 				stdio: "inherit",
 			});
@@ -127,7 +143,8 @@ async function fetchLatestVersion(name) {
 		const url = `https://registry.npmjs.org/${name.replace("/", "%2f")}/latest`;
 		const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
 		if (!res.ok) return null;
-		return (await res.json()).version ?? null;
+		const version = (await res.json()).version;
+		return typeof version === "string" && !/\s/.test(version) && VERSION_RE.test(version) ? version : null;
 	} catch {
 		return null;
 	}

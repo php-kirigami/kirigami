@@ -63,7 +63,7 @@ npx kiri --help
 
 For a global installation, use `npm install -g @kirigami/cli`. In a project, prefer the locally installed binary through `npx kiri`.
 
-Run `npx kiri build` before starting `npx kiri serve` or `npx kiri watch`: neither performs the initial build. Creation is currently affected by incorrect dependency/banner lookup after the CLI split; see [A05](../../docs/AUDIT-2026-09-20.md). Until fixed, use a template checkout and explicitly install the CLI.
+Run `npx kiri build` before starting `npx kiri serve` or `npx kiri watch`: neither performs the initial build.
 
 The development server serves source files, including PHP and hidden files. Keep it on the default loopback address for local development. Export rejects equal, ancestor, or descendant source/output paths before clearing the destination, including symlink/junction aliases. PHP files (case-insensitive `.php`) and dot-prefixed directories are excluded from the copy. Add `export.ignore` rules for any other project-specific private files.
 
@@ -176,6 +176,11 @@ every time. Then, unless the target is already inside a git worktree (or
 `--no-install`. `.cache.db`, `.node.db`, `.cookie.txt` and `package-lock.json`
 are never copied from the template.
 
+The generated starter manifest includes `@kirigami/cli` (which provides `kiri`),
+`@kirigami/kirigami`, and `@kirigami/canva`, each with a caret range based on its
+installed version. The starter banner is copied from the core package's assets.
+Existing template/project manifests keep their dependency choices.
+
 Every official template ships its own `CLAUDE.md` at the project root, copied
 along with everything else — a fresh `kiri create` is **Claude Ready** out of
 the box, no setup needed to start a Claude Code session in it.
@@ -191,6 +196,16 @@ A bare name (`highlight`) is resolved against the `@kirigami/plugin-*` /
 `kirigami-plugin-*` conventions and checked on npm; a full package name is
 used as-is. Already installed → checks npm for a newer version and updates
 if there is one.
+
+Accepted full names are `@kirigami/plugin-<name>`,
+`kirigami-plugin-<name>`, and `@scope/kirigami-plugin-<name>`. Names must be
+lowercase; version suffixes, URLs, local paths, and shell syntax are rejected
+before any package is installed. Full names can still be passed when the
+public registry is unavailable (for example, for a private registry).
+
+npm is invoked without a shell. On Windows, the CLI locates `npm-cli.js`
+through the npm environment, PATH installation directories, or the Node
+installation and runs it with Node. npm must be installed and discoverable.
 
 ```bash
 kiri install highlight

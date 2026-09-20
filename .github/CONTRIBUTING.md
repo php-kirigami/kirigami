@@ -28,7 +28,7 @@ cd kirigami
 npm install    # npm workspaces — one install covers every package
 ```
 
-Only packages with a compilation step have build scripts. Run `npm run build -w @kirigami/canva` for Canva and `npm run compile -w kirigami-vscode` for the extension. Other runtime packages execute their source directly. Focused export regression tests run with `node --test --test-isolation=none packages/kirigami/test/dist.test.js`. Broader coverage is still missing, and several package `test` scripts are placeholders. Verify affected behavior with a focused reproduction and a disposable project, then record the commands and results in your PR.
+Only packages with a compilation step have build scripts. Run `npm run build -w @kirigami/canva` for Canva and `npm run compile -w kirigami-vscode` for the extension. Other runtime packages execute their source directly. Focused export regression tests run with `node --test --test-isolation=none packages/kirigami/test/dist.test.js`. TLS helper tests run with `node --test --test-isolation=none packages/php-prepros/test/curl-tls.test.js`; they require local PHP with cURL (`PHP_BINARY` may select it), local loopback sockets, and subprocess support. They verify native helper behavior and WASM trust configuration separately. Broader coverage is still missing, and several package `test` scripts are placeholders. Verify affected behavior with a focused reproduction and a disposable project, then record the commands and results in your PR.
 
 > The maintainer develops on Windows (PowerShell). If you add a script, mind
 > path separators — normalize `path.sep` to `/` where the existing code does.

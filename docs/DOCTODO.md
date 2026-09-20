@@ -9,8 +9,12 @@ This inventory covers all 32 repository-owned Markdown files, including `.github
 - Compared PHP-WASM’s previously committed README snapshot with current `kiri phpinfo -m`; added an unversioned next-release note. Only `bz2` was newly listed in that direct comparison.
 - Corrected installation examples and the license inventory (audit A15).
 - Kept existing package versions and historical version headings unchanged.
+- Updated CLI installation documentation and audit tracking for A04's registry-name validation and shell-free npm invocation.
+- Updated CLI creation documentation and the local shared template reference for A05's manifest/banner resolution fixes. Sibling synchronization remains deferred.
 
 ## Remaining work
+
+- TLS helper docs now reflect A03’s secure defaults. Keep the native-PHP verification / WASM end-to-end limitation explicit until the networking follow-up is resolved.
 
 - Export documentation now reflects the A01/A02 fixes and focused regression tests. The shared-template updates remain local to this repository; sibling synchronization is still deferred.
 

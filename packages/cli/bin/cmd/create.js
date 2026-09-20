@@ -6,12 +6,10 @@ import path from "path";
 import picomatch from "picomatch";
 import { execSync } from "child_process";
 import { Octokit } from "@octokit/rest";
-import { fileURLToPath } from 'url';
+import { writeMinimalPackageJson, copyStarterBanner } from '../starter.js';
 import { Cache } from "@kirigami/sdk";
 import { deriveRepo } from "@kirigami/kirigami/internal/config";
 import { c, log, parseArgs, printCommandHelp, isInteractive, ask, confirm, select } from "../utils.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Files that may sit at the root of a template but must never be copied into
 // the new project (local caches, dev cookie jar, npm lockfile regenerated on
@@ -310,12 +308,6 @@ function toPackageName(s) {
 		.replace(/^[-_.]+|[-_.]+$/g, '') || 'kirigami-site';
 }
 
-// Reads kiri's own package.json (this file is bin/cmd/create.js) so a generated
-// package.json pins the @kirigami/* versions that match the running CLI.
-function kiriManifest() {
-	return JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf8'));
-}
-
 // Asks (or takes from flags) the four fields the wizard writes into both
 // package.json and kirigami.yaml. An empty answer means "leave the template's".
 async function collectMeta(target, { interactive, flags }) {
@@ -435,37 +427,11 @@ function applyMeta(target, meta, { fillOnly, created }) {
 	return [...new Set(changed)];
 }
 
-// Written when the template ships no package.json (e.g. template-default).
-function writeMinimalPackageJson(target, meta) {
-	const kiri = kiriManifest();
-	const pkg = {
-		name: meta.slug,
-		version: '1.0.0',
-		description: meta.description || '',
-		author: meta.author || '',
-		license: 'MIT',
-		type: 'module',
-		private: true,
-		engines: { node: '>=24.0.0', npm: '>=10.2.3' },
-		scripts: { build: 'kiri build', watch: 'kiri watch', export: 'kiri export' },
-		devDependencies: {
-			'@kirigami/kirigami': `^${kiri.version}`,
-			'@kirigami/canva': `^${kiri.dependencies['@kirigami/canva']}`,
-		},
-	};
-	fs.writeFileSync(path.join(target, 'package.json'), JSON.stringify(pkg, null, 2) + '\n');
-}
-
 // Written when the template ships no banner.txt. The ### ### tokens are left in
 // place — `kiri build` / `kiri export` fill them (date, project, author, email,
 // repo, base URL) from the config every time.
 function writeStarterBanner(target) {
-	const dest = path.join(target, 'banner.txt');
-	if (fs.existsSync(dest)) return false;
-	const tpl = path.join(__dirname, '..', '..', 'assets', 'banner-template.txt');
-	if (!fs.existsSync(tpl)) return false;
-
-	fs.writeFileSync(dest, fs.readFileSync(tpl, 'utf8'));
+	if (!copyStarterBanner(target)) return false;
 
 	// Point kirigami.yaml at it, unless a `banner:` key is already there.
 	const yamlPath = path.join(target, 'kirigami.yaml');
