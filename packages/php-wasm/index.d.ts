@@ -143,6 +143,13 @@ export interface KirigamiNetworkPHP extends KirigamiPHP {
 export declare function getPHPRuntime(): Promise<KirigamiPHP>;
 
 /**
+ * Creates an independent runtime. The caller owns it and must call `exit()`
+ * when finished; this also closes its network proxy and sockets, if enabled.
+ * Does not replace or dispose the shared runtimes returned by the getters.
+ */
+export declare function createPHPRuntime(options?: { network?: boolean }): Promise<KirigamiPHP>;
+
+/**
  * Instantiates and returns a PHP runtime instance configured with full outbound networking.
  *
  * Automatically provisions a zero-dependency local WebSocket-to-TCP proxy on a free port,

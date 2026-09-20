@@ -9,7 +9,7 @@
 // build time), so Node's real ESM loader — which does honor "import" — loads
 // the genuine, unbundled package straight from node_modules at runtime.
 // Every named export @kirigami/php-prepros's index.js actually has (see
-// its own `export { render, sitemap, runenv, mountPath, processImages }`) —
+// its own render/sitemap/runenv/mountPath/processImages/resetRuntime exports) —
 // kept in sync manually since a dynamic, non-literal import() can't be
 // re-exported with `export *`.
 const specifier = "@kirigami/php-prepros";
@@ -37,4 +37,9 @@ export async function mountPath(...args) {
 export async function processImages(...args) {
 	const mod = await import(specifier);
 	return mod.processImages(...args);
+}
+
+export async function resetRuntime(...args) {
+	const mod = await import(specifier);
+	return mod.resetRuntime(...args);
 }

@@ -189,6 +189,18 @@ function startOutboundProxy(port) {
             res.writeHead(403).end('Only WebSocket connections accepted.\n');
         });
 
+        const sockets = new Set();
+        const track = socket => {
+            sockets.add(socket);
+            socket.once('close', () => sockets.delete(socket));
+        };
+        server.on('connection', track);
+        // Include upgraded WebSockets and outbound TCP sockets in teardown.
+        server.shutdown = () => {
+            for (const socket of sockets) socket.destroy();
+            server.close();
+        };
+
         server.on('upgrade', async (request, socket, head) => {
             // console.error(`[proxy] upgrade: ${request.url}`);
             // WebSocket handshake
@@ -211,6 +223,7 @@ function startOutboundProxy(port) {
                 try   { destIp = await lookupIPv4(destHost); }
                 catch { socket.destroy(); return; }
             }
+            if (socket.destroyed) return;
 
             let wsBuffer = head.length ? head : Buffer.alloc(0);
             const recvQueue = [];
@@ -252,6 +265,7 @@ function startOutboundProxy(port) {
                 // console.error(`[proxy] TCP connected → ${destIp}:${destPort}`);
                 flush();
             });
+            track(tcpSocket);
             tcpSocket.on('data',  (data) => {
                 // console.error(`[proxy] TCP→WS ${data.length} bytes`);
                 try { socket.write(wsFrame(data)); } catch { tcpSocket.end(); }
@@ -293,25 +307,28 @@ const getPHPRuntimeWithNetwork = async () => {
     const proxyPort  = await getFreePort();
     const httpServer = await startOutboundProxy(proxyPort);
 
-    const runtime = await loadPHPRuntime(
-        await import('../jspi/php_8_5.js'),
-        {
-            websocket: {
-                url: (_sock, host, port) =>
-                    `ws://127.0.0.1:${proxyPort}/?host=${host}&port=${port}`,
-                subprotocol: 'binary',
-                decorator:   addSocketOptionsSupportToWebSocketClass,
-            },
-        }
-    );
+    try {
+        const runtime = await loadPHPRuntime(
+            await import('../jspi/php_8_5.js'),
+            {
+                websocket: {
+                    url: (_sock, host, port) =>
+                        `ws://127.0.0.1:${proxyPort}/?host=${host}&port=${port}`,
+                    subprotocol: 'binary',
+                    decorator:   addSocketOptionsSupportToWebSocketClass,
+                },
+            }
+        );
 
-    const php = new PHP(runtime);
-    injectCaBundle(php);
-
-    // Reference for a clean shutdown if needed: php._networkProxyServer.close()
-    php._networkProxyServer = httpServer;
-
-    return php;
+        const php = new PHP(runtime);
+        php.addEventListener('runtime.beforeExit', () => httpServer.shutdown());
+        injectCaBundle(php);
+        php._networkProxyServer = httpServer;
+        return php;
+    } catch (error) {
+        httpServer.shutdown();
+        throw error;
+    }
 };
 
 export { getPHPRuntime, getPHPRuntimeWithNetwork, setPhpIniValues, getPhpIniValue };

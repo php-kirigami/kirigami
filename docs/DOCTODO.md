@@ -11,6 +11,7 @@ This inventory covers all 32 repository-owned Markdown files, including `.github
 - Kept existing package versions and historical version headings unchanged.
 - Updated CLI installation documentation and audit tracking for A04's registry-name validation and shell-free npm invocation.
 - Updated CLI creation documentation and the local shared template reference for A05's manifest/banner resolution fixes. Sibling synchronization remains deferred.
+- Updated core, MCP, extension, and PHP runtime documentation for A06's coordinated reload/reset behavior and its remaining concurrency/module-cache limits.
 
 ## Remaining work
 

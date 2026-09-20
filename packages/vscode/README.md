@@ -126,7 +126,7 @@ a folder containing a `kirigami.yaml` in that host window (e.g.
 
 - Bundled schema/resource paths and early working-directory capture block reliable activation (audit A08).
 - Run Script can report success despite a returned `success: false` (A14).
-- PHP runtime/config state is not fully reset by project reload (A06).
+- Core reload now resets PHP runtime/config state and plugin includes (A06 fixed); the extension's configuration watcher still needs real-host verification.
 - Preview does not perform an initial build; use Build first.
 
 - Single workspace folder only — binds to `workspaceFolders[0]`; multi-root

@@ -202,7 +202,7 @@ Exports: `Project`, `load()`, and `Kirigami.load()`. There is no static `Project
 
 | Member | Contract |
 |---|---|
-| `reload()` | Reload core configuration and register plugins again; returns the project. |
+| `reload()` | Reload configuration and register plugins again; invalidate PHP configuration, mounts/runtime, and plugin includes. Returns the project. |
 | `validate()` | Re-read and validate configuration without reloading plugins; resolves to `true` or throws. |
 | `build()` | Run `before-build`, implicit rendering, and buildable or forced tasks. Returns `{ success, trigger, results }`. |
 | `export({ path }?)` | Run export/build triggers, implicit rendering and copy, eligible explicit tasks, then `after-export`. Returns `success`, `dist`, trigger results and task results. A path override remains in the loaded config. |
@@ -217,7 +217,7 @@ Inspect `success` as well as catching exceptions. A resolved promise is not nece
 
 `serve()` and `watch()` do not build initially. Call `build()` first. `onBuildResult` receives `{ status: 'start', rule, type }` followed by `{ status: 'done', rule, type, ...result }` for completed watch callbacks. A thrown callback currently bypasses the done event.
 
-Current limitations: one project per process, working directory established **before importing the engine**, shared plugin registries, and PHP state that is not reset by `reload()`. Restart the process after configuration changes affecting PHP. Watch additions/deletions and repeated watcher setup also have known defects. See [the audit](../../docs/AUDIT-2026-09-20.md) for reproductions.
+Current limitations: one project per process, working directory established **before importing the engine**, and shared plugin registries. Await project operations in sequence; only PHP-prepros operations/resets are internally serialized. `reload()` refreshes PHP configuration, mounts, network mode, and plugin includes, but JavaScript plugin code remains subject to Node's module cache (restart after code changes). Watch additions/deletions and repeated watcher setup also have known defects. See [the audit](../../docs/AUDIT-2026-09-20.md) for reproductions.
 
 Export rejects equal, ancestor, or descendant source/output paths before clearing the destination, including symlink/junction aliases. PHP files (case-insensitive `.php`) and dot-prefixed directories are excluded from the copy. Add `export.ignore` rules for any other project-specific private files. The development server also serves source files and is intended for loopback use.
 

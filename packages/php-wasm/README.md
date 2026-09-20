@@ -101,6 +101,7 @@ This package is a **drop-in replacement** for the loader module consumed by [`@p
 | `jspi()` | Detects JSPI support in the current runtime (re-exported from `wasm-feature-detect`) |
 | `getPHPRuntime()` | Returns a standard PHP instance. **Memoized singleton** — the first call creates it, subsequent calls return the same instance |
 | `getPHPRuntimeWithNetwork()` | Returns a PHP instance bound to a local TCP outbound proxy using Node built-ins and `ws` with SSL root certificates injected. **Memoized singleton**, separate from `getPHPRuntime()` |
+| `createPHPRuntime({ network? }?)` | Creates an independent owned runtime, without changing either singleton. Call `php.exit()` when finished; this also closes its network proxy and sockets when networking is enabled |
 | `getLoadedExtensions()` | Returns the names of every loaded PHP extension, sorted case-insensitively (e.g. `["Core", "curl", "gd", "imagick", "openssl", …]`) |
 | `exec(code, network?)` | Executes a PHP code snippet against the standard runtime, or the network-enabled one if `network` is `true`. Returns `{ returnCode, stdout, stderr }` |
 | `phpversion()` | Returns the running PHP interpreter's version string, e.g. `"8.5.10"` |

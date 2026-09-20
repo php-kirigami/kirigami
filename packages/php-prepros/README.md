@@ -801,8 +801,16 @@ missing or older than the source — see [`IMG`](#img) for the naming convention
 ## JavaScript API
 
 ```js
-import { render, sitemap, runenv, mountPath, processImages } from '@kirigami/php-prepros';
+import { render, sitemap, runenv, mountPath, processImages, resetRuntime } from '@kirigami/php-prepros';
 ```
+
+PHP operations are queued in call order, including mounts and result extraction.
+`await resetRuntime()` waits for preceding PHP work, disposes the owned runtime
+and its network proxy, and clears cached configuration and mounts. The next
+operation initializes a fresh runtime from `kirigami.yaml`. Core
+`Project.reload()` calls this and also clears the plugin PHP include list.
+It does not clear persistent cache/cookie files on disk. This remains a
+single-project API whose working directory must be set before import.
 
 ### `render(file?, phpIncludes?)`
 
@@ -883,7 +891,7 @@ await render();
 
 - `localPath` — path to a local file or directory. Relative paths are resolved against the project root.
 - `virtualDir` — optional destination path inside the WASM filesystem. Defaults to `/project/<localPath relative to the project root>` when omitted.
-- `php` — optional WASM PHP instance to mount into. Defaults to the shared singleton instance (the same one used internally by `render()`/`sitemap()`/`runenv()`), creating it if needed.
+- `php` — optional WASM PHP instance to mount into. Defaults to PHP-prepros's owned instance (the same one used internally by `render()`/`sitemap()`/`runenv()`), creating it if needed. This is separate from PHP-WASM's shared getter instances and is replaced after `resetRuntime()`.
 
 Mounting a **directory** only copies files whose extension is one of the defaults (`.php`, `.json`, `.yaml`, `.yml`, `.md`, `.db`, `.txt`) or listed in `prepros.mountext`, same as automatic root mounting. Mounting a **single file directly** copies it regardless of extension — this is the simplest way to make an arbitrary asset (an image, a font, a CSV, …) available to PHP without adding its extension to `prepros.mountext` project-wide.
 

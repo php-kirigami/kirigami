@@ -6,7 +6,7 @@ Reviewed all 32 repository-owned Markdown files against the current source and m
 
 Audit A15 is addressed in the monorepo documentation. Other audit findings remain open; documenting their behavior does not fix the code. Registry publication, organization-profile publication, live site deployment, and a real VS Code Extension Host test are not part of this documentation pass. Remaining documentation/release work is tracked in [DOCTODO.md](DOCTODO.md).
 
-Earlier entries record the state at the time of implementation. In particular, reload freshness claims are limited by the later A06 finding: PHP state remains cached.
+Earlier entries record the state at the time of implementation. The later A06 finding identified stale PHP state after reload; its correction is recorded below under PHP reload freshness.
 
 Running log of what's shipped recently, most recent at the bottom. This is
 a changelog, not a reference — for durable facts see [CONTEXT.md](CONTEXT.md),
@@ -262,3 +262,17 @@ Validation: all eight tests pass with `node --test --test-isolation=none package
 `kiri create` now generates missing starter manifests with explicit `@kirigami/cli`, `@kirigami/kirigami`, and `@kirigami/canva` dependencies, using each installed package's version. Package resolution follows the CLI/core dependency graph rather than assuming a workspace layout. Canva now exports its `package.json` for this lookup. The fallback banner comes from core's assets and retains its build-time tokens. Existing manifests and banners retain their previous preservation/merge behavior.
 
 Validation: all four tests pass with `node --test --test-isolation=none packages/cli/test/create.test.js` on Windows / Node 26. Coverage includes an isolated nested package fixture and the real create command using local archive fixtures, with `--no-git --no-install`. The command creates missing starter files, points YAML at the generated banner, and preserves existing dependency/script/banner values. GitHub downloads, registry installation, Node 24, and Unix execution were not tested. No package versions changed; sibling documentation synchronization remains deferred.
+
+## PHP reload freshness — A06
+
+`Project.reload()` now clears the core configuration, PHP runtime/configuration, and cached plugin PHP include list. Plugin hooks are registered from the new configuration. Failed reloads leave the project unloaded so the next build retries instead of using stale state. PHP-prepros uses an owned runtime from the new `createPHPRuntime()` factory; disposing it leaves PHP-WASM's shared getter instances intact. Network runtime exit closes its proxy and both WebSocket and outbound TCP connections. The next PHP operation remounts the current source tree and selects the current network mode.
+
+PHP-prepros operations and resets are queued together, preventing disposal during a PHP request or its mounts. Empty plugin include lists replace previous lists. This does not serialize entire `Project` operations or bypass Node's JavaScript module cache; callers should await project operations, and JavaScript plugin code changes still require a process restart.
+
+Validation on Windows / Node 26 with the current working-tree WASM binary:
+
+- `node --test --test-isolation=none packages/kirigami/test/reload.test.js`: real PHP rendering across repeated builds/reloads, changed data/root/mount extensions, deleted files, plugin disable/re-enable/include changes, network mode changes, queued resets, and error recovery.
+- `node --test --test-isolation=none packages/php-wasm/test/runtime-lifecycle.test.js`: two tests for owned/shared runtime isolation and network proxy/socket teardown.
+- Export regression suite: seven tests passed. `npm run compile --workspace=kirigami-vscode` passed with the new reset bridge; real-host activation remains unverified (A08).
+
+No package versions or generated WASM/loader files were changed by this fix. End-to-end HTTPS remains the separate A03 follow-up; Node 24 and Unix were not exercised.

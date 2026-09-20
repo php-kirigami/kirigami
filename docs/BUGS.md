@@ -7,9 +7,8 @@ decision from Maxime before they can be closed. Fixed bugs move to
 ## Repository audit — 2026-09-20
 
 See [the full audit](AUDIT-2026-09-20.md) for evidence, reproduction results,
-source locations, corrective actions, and verification limits. The audit did not change production code. Documentation finding A15 was addressed by the subsequent Markdown refresh; A01/A02 were subsequently fixed by export path validation and source-file exclusions; A03 was fixed by enabling CURL peer/hostname verification; A04 was fixed by strict plugin-name validation and shell-free npm invocation; A05 was fixed by resolving starter dependencies and banner assets from their installed packages; the remaining code findings are open.
+source locations, corrective actions, and verification limits. The audit did not change production code. Documentation finding A15 was addressed by the subsequent Markdown refresh; A01/A02 were subsequently fixed by export path validation and source-file exclusions; A03 was fixed by enabling CURL peer/hostname verification; A04 was fixed by strict plugin-name validation and shell-free npm invocation; A05 was fixed by resolving starter dependencies and banner assets from their installed packages; A06 was fixed by coordinated PHP runtime/configuration and plugin include invalidation; the remaining code findings are open.
 
-- **P1 / A06:** `Project.reload()` leaves PHP configuration/includes stale.
 - **P1 / A07:** Empty `prepros: {}` embeds missing-layout-property warnings
   into successfully generated HTML.
 - **P1 / A08:** The compiled VS Code bundle cannot resolve the core schema.

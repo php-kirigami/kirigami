@@ -13,6 +13,9 @@ export const canbuild = false;
 // passed to render() so php-prepros mounts + include_once's them before any
 // page renders (a plugin can then PREPROS::registerTag() from PHP).
 let _phpIncludes;
+export function clearPhpIncludesCache() {
+	_phpIncludes = undefined;
+}
 async function phpIncludes(__root) {
 	if (_phpIncludes) return _phpIncludes;
 	const config = await getConfig();

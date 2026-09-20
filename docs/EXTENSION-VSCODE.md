@@ -19,7 +19,7 @@ Compilation succeeds. A Node activation test with a stub `vscode` module fails b
 
 A real Extension Development Host run has not been completed. The manifest’s editor range does not guarantee its embedded Node supports `node:sqlite` and JSPI. An external Node installation does not change the extension host’s Node.
 
-Run Script currently ignores a structured `success: false` result (A14). Core reload also leaves PHP configuration/runtime state cached (A06), so the configuration watcher cannot guarantee fresh PHP output. Watch callbacks that throw can bypass the final build-state notification (A13).
+Run Script currently ignores a structured `success: false` result (A14). Core reload now invalidates PHP configuration/runtime and plugin includes (A06 fixed), with a corresponding reset bridge in the extension shim. Real-host configuration watcher behavior still needs verification. Watch callbacks that throw can bypass the final build-state notification (A13).
 
 ## Development and verification
 

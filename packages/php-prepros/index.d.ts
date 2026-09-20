@@ -182,10 +182,17 @@ export function runenv(script: string, paths?: string[], ...args: string[]): Pro
  * @param virtualDir  Destination path inside the WASM filesystem. Defaults
  *                     to `/project/<localPath relative to the project root>`
  *                     when omitted.
- * @param php  WASM PHP instance to mount into. Defaults to the shared
- *             singleton instance (creating it if needed).
+ * @param php  WASM PHP instance to mount into. Defaults to PHP-prepros's
+ *             owned instance (creating it if needed).
  */
 export function mountPath(localPath: string, virtualDir?: string, php?: unknown): Promise<void>;
+
+/**
+ * Waits for queued PHP operations, disposes the owned runtime and clears its
+ * cached configuration and mounts. The next operation creates a fresh runtime.
+ * Project.reload() also invalidates core's plugin PHP include list.
+ */
+export function resetRuntime(): Promise<void>;
 
 
 /**

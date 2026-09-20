@@ -234,7 +234,13 @@ rather than trusting `Project`'s own lazy `#loaded` cache — an MCP server
 is long-lived across many independent tool calls, and the expected agent
 loop (edit a file, call a tool, read the result, edit again) means a
 config snapshot from an earlier call is exactly the kind of staleness that
-would silently mislead the agent. The later audit (A06) found that this reload does not reset the PHP runtime/configuration/includes caches; full freshness remains an implementation goal.
+would silently mislead the agent. The later audit (A06) found that this reload did not reset the PHP runtime/configuration/includes caches; the subsequent fix now invalidates those caches too.
+
+## PHP-prepros owns a disposable runtime
+
+A06 requires replacing the PHP configuration, filesystem mounts, and plugin includes together. Merely dropping the local runtime reference would reacquire the same PHP-WASM singleton, retaining old mounts and message handlers. PHP-prepros therefore uses `createPHPRuntime()` to own an independent instance, disposed on reload and recreated lazily. Shared PHP-WASM getters retain their existing semantics for other consumers. Runtime exit also closes the network proxy and its sockets.
+
+PHP-prepros queues whole operations (mounts, execution, result extraction) and resets together so reload cannot dispose an active PHP request. This is a PHP boundary guarantee, not a whole-project concurrency contract: hooks, config, watchers and JavaScript module caches still have their existing process-wide constraints.
 
 ## `packages/vscode` v1 scaffold: `Project.serve()`'s `onBuildResult`, and three esbuild-bundling gotchas
 

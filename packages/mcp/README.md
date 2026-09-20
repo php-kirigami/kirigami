@@ -86,7 +86,7 @@ working directory (`kirigami.yaml` resolved from there) — use the client’s s
 | `kirigami_list_tasks` | Lists the tasks `kirigami_build`/`kirigami_run_task` would run — `tasks:` entries plus the implicit `"render-all"` prepros task. Use before `kirigami_run_task`. |
 | `kirigami_run_task` | Runs exactly one task by name, bypassing `before-build` and every other task — for re-running (or first-running) a single piece of the pipeline instead of the whole build. |
 
-Every tool except `kirigami_validate` calls the project reload path; validation re-reads core config without plugin registration. PHP configuration/runtime state is still cached separately, so restart the MCP process after changes affecting PHP.
+Every tool except `kirigami_validate` calls the project reload path, which also invalidates PHP configuration, mounts/runtime, and plugin includes; validation re-reads core config without plugin registration. Await tool operations in sequence: there is no whole-project operation queue. JavaScript plugin code changes still require restarting the MCP process because Node caches imported modules.
 
 Tool results contain JSON in text content. Inspect the payload’s `success` field: a structured `success: false` result is not automatically an MCP `isError` response. Thrown errors are reported as tool errors.
 

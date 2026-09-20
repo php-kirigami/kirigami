@@ -24,7 +24,7 @@
 // here.
 // ---------------------------------------------------------------------------
 
-// Il manque le index.d.ts
+// TypeScript declarations are still missing.
 
 
 import path from "node:path";
@@ -35,6 +35,8 @@ import { runscript } from "./bin/libs/runscript.js";
 import { createDevServer } from "./bin/libs/devserver.js";
 import { buildWatchRules, createWatchers } from "./bin/libs/watchengine.js";
 import { assertSafeExportPaths } from "./bin/tasks/dist.js";
+import { clearPhpIncludesCache } from "./bin/tasks/prepros.js";
+import { resetRuntime } from "@kirigami/php-prepros";
 import { findFiles } from "./bin/utils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -76,16 +78,18 @@ export class Project {
 	}
 
 
-	// ===> Il faudra aussi recharger l'instance PHP de php-wasm 
-	// Loads (or re-loads) kirigami.yaml and the project's plugins. Safe to call
-	// again after the file or an installed plugin changed on disk — each call
-	// forces a fresh read instead of trusting getConfig()'s own cache, and
-	// (from the second call on) resets the @kirigami/sdk hook registry before
-	// plugins re-register, so hooks don't pile up duplicates.
+	// Reload configuration and plugin registrations, invalidating PHP state too.
+	// JavaScript plugin modules remain subject to Node's import cache. Callers
+	// must await whole-project operations; the PHP queue only protects PHP work.
 	async reload() {
-		if (this.#loaded) clearConfigCache();
+		this.#loaded = false;
+		this.#config = null;
+		this.#plugins = [];
+		clearConfigCache();
+		await resetRuntime();
+		clearPhpIncludesCache();
 		this.#config = await getConfig();
-		this.#plugins = await loadPlugins(this.#config, { reload: this.#loaded });
+		this.#plugins = await loadPlugins(this.#config, { reload: true });
 		this.#loaded = true;
 		return this;
 	}

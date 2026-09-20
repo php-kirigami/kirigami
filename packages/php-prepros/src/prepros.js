@@ -5,7 +5,7 @@ import path, { dirname } from "path";
 import { spawn } from 'child_process';
 import { fileURLToPath, pathToFileURL } from "url";
 import { walkFile } from '@kirigami/struct-walker';
-import { getPHPRuntime, getPHPRuntimeWithNetwork } from "@kirigami/php-wasm";
+import { createPHPRuntime } from "@kirigami/php-wasm";
 
 
 const __modules = new Map;
@@ -15,6 +15,23 @@ const __configpath = path.join(__project, 'kirigami.yaml');
 let   __root   = null;
 let   __php    = null;
 let   __config = null;
+
+// Mounts, PHP requests and resets share mutable state. Queue the entire
+// operation so reload cannot dispose a runtime between mounting and execution.
+let pending = Promise.resolve();
+const serial = operation => (...args) => {
+    const result = pending.then(() => operation(...args));
+    pending = result.catch(() => {});
+    return result;
+};
+
+const reset = async () => {
+    const php = __php;
+    __php = null;
+    __root = null;
+    __config = null;
+    if (php) php.exit();
+};
 
 
 // Load and cache kirigami.yaml on first use. Deferred (not run at import) so
@@ -29,7 +46,7 @@ const loadConfig = async () => {
 }
 
 
-const getPHPInstance = async () => {
+const initializePHPInstance = async () => {
     const config = await loadConfig();
     if(!__php) {
         if(config?.kirigami?.root === undefined) throw `Missing prepros:root property in config file: ${__configpath}`;
@@ -61,7 +78,7 @@ const getPHPInstance = async () => {
         // page's <head> with a <link>/<script> per sass/esbuild task output.
         preprosConfig.tasks = config.tasks || [];
 
-        __php = await (preprosConfig.network ? getPHPRuntimeWithNetwork() : getPHPRuntime());
+        __php = await createPHPRuntime({ network: Boolean(preprosConfig.network) });
         __php.setSpawnHandler((command, args, options) => spawn(command, args, options));
         __php.preprosConfig = preprosConfig;
         __php.setIniValues({
@@ -111,6 +128,15 @@ const getPHPInstance = async () => {
     }
     return __php;
 }
+
+const getPHPInstance = async () => {
+    try {
+        return await initializePHPInstance();
+    } catch (error) {
+        await reset();
+        throw error;
+    }
+};
 
 
 const mountPath = async (localPath, virtualDir, php) => {
@@ -280,18 +306,17 @@ const render = async (file = '.', phpIncludes = []) => {
     // Extra PHP files contributed by plugins (the kiri 'prepros:php' hook):
     // mounted outside /project and include_once'd once, before any page
     // renders, so they can PREPROS::registerTag()/registerHook() from PHP.
-    if (Array.isArray(phpIncludes) && phpIncludes.length) {
-        const php = await getPHPInstance();
-        const mounted = [];
-        for (let i = 0; i < phpIncludes.length; i++) {
-            const abs = path.resolve(phpIncludes[i]);
-            if (!fs.existsSync(abs)) continue;
-            const virt = `/plugins/${i}_${path.basename(abs)}`;
-            await mountPath(abs, virt, php);
-            mounted.push(virt);
-        }
-        php.preprosConfig.phpIncludes = mounted;
+    const php = await getPHPInstance();
+    const mounted = [];
+    const includes = Array.isArray(phpIncludes) ? phpIncludes : [];
+    for (let i = 0; i < includes.length; i++) {
+        const abs = path.resolve(includes[i]);
+        if (!fs.existsSync(abs)) continue;
+        const virt = `/plugins/${i}_${path.basename(abs)}`;
+        await mountPath(abs, virt, php);
+        mounted.push(virt);
     }
+    php.preprosConfig.phpIncludes = mounted;
 
     return run([fsvm]);
 }
@@ -304,4 +329,13 @@ const sitemap = async () => {
 }
 
 
-export { runenv, render, sitemap, mountPath, processImages };
+const queuedRunenv = serial(runenv);
+const queuedRender = serial(render);
+const queuedSitemap = serial(sitemap);
+const queuedMountPath = serial(mountPath);
+const queuedProcessImages = serial(processImages);
+const resetRuntime = serial(reset);
+export {
+    queuedRunenv as runenv, queuedRender as render, queuedSitemap as sitemap,
+    queuedMountPath as mountPath, queuedProcessImages as processImages, resetRuntime,
+};
