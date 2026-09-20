@@ -219,7 +219,7 @@ Inspect `success` as well as catching exceptions. A resolved promise is not nece
 
 Current limitations: one project per process, working directory established **before importing the engine**, shared plugin registries, and PHP state that is not reset by `reload()`. Restart the process after configuration changes affecting PHP. Watch additions/deletions and repeated watcher setup also have known defects. See [the audit](../../docs/AUDIT-2026-09-20.md) for reproductions.
 
-Export empties its destination without checking source/destination overlap. Use a separate output directory. PHP helpers and hidden directories can be copied unless explicitly excluded. The development server also serves source files and is intended for loopback use.
+Export rejects equal, ancestor, or descendant source/output paths before clearing the destination, including symlink/junction aliases. PHP files (case-insensitive `.php`) and dot-prefixed directories are excluded from the copy. Add `export.ignore` rules for any other project-specific private files. The development server also serves source files and is intended for loopback use.
 
 ---
 
@@ -400,8 +400,10 @@ run during a plain `kiri build` unless forced — the implicit task added by the
 
 ### dist task
 
+Dot-prefixed public directories such as `.well-known` are excluded too; there is no exception mechanism in the current export filter.
+
 Empties `path`, then copies `kirigami.root` into it preserving structure.
-**Excluded:** underscore-prefixed directories, files whose basename starts with `_` or `.`, `.scss` files, `.map`
+**Excluded:** underscore- or dot-prefixed directories, files whose basename starts with `_` or `.`, `.php` files, `.scss` files, `.map`
 files, and non-minified `.js` files, plus every `export.ignore` pattern. The
 project banner is stamped onto copied `.js` / `.css` (`/*! … */`) and `.html`
 (`<!-- … -->`) files. Token replacements in output: `###YEAR###` and

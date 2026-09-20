@@ -34,6 +34,7 @@ import { loadPlugins } from "./bin/libs/plugins.js";
 import { runscript } from "./bin/libs/runscript.js";
 import { createDevServer } from "./bin/libs/devserver.js";
 import { buildWatchRules, createWatchers } from "./bin/libs/watchengine.js";
+import { assertSafeExportPaths } from "./bin/tasks/dist.js";
 import { findFiles } from "./bin/utils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -131,8 +132,8 @@ export class Project {
 		return { success: true, trigger: beforeBuild, results };
 	}
 
-	// Same task loop as build(), forced (every task runs, even build-only
-	// ones like "dist") and writing into "export:path" (default "dist",
+	// Same task eligibility as build(), with forced implicit render/copy tasks,
+	// writing into "export:path" (default "dist",
 	// resolved against process.cwd() — same anchor kirigami.yaml itself
 	// loads from, not config.root) instead of in place. Runs "before-export"
 	// then "before-build" first, "after-export" last; stops at the first
@@ -144,6 +145,12 @@ export class Project {
 		if (!config.export) config.export = {};
 		config.export.path = exportPath || config.export.path || "dist";
 		const dist = path.resolve(process.cwd(), config.export.path);
+		// Reject unsafe output before running hooks or rendering any pages.
+		try {
+			assertSafeExportPaths(config.root, dist);
+		} catch (error) {
+			return { success: false, dist, error: error.message, beforeExport: null, beforeBuild: null, afterExport: null, results: [] };
+		}
 
 		const beforeExport = await runTrigger(config, "before-export");
 		if (!beforeExport.success) return { success: false, dist, beforeExport, beforeBuild: null, afterExport: null, results: [] };

@@ -232,3 +232,11 @@ Production fixes remain open. Added AGENTS.md and aligned CLAUDE.md and
 docs/CONTEXT.md: project content and commit messages are English; conversations
 with the user are French. The preference is also stored in the user's global
 Codex AGENTS.md.
+
+## Export safety — A01 and A02
+
+Export now rejects identical or nested source/destination paths, checking both lexical and real filesystem paths (including junctions and nonexistent output descendants). The public API checks before export hooks or rendering, and the dist task rechecks immediately before clearing its output. Absolute paths retain their meaning instead of being rewritten by `replaceRoot()`.
+
+The copy excludes `.php` files case-insensitively and dot-prefixed directories, preserving the existing underscore/source-asset filters and explicit ignore rules. Hidden public directories such as `.well-known` are excluded too; there is no exception mechanism in this change.
+
+Regression command: `node --test --test-isolation=none packages/kirigami/test/dist.test.js`. Tests cover destructive overlaps, junction aliases, a missing output under an alias, public/private file selection, replacement of stale output, and rejection before API triggers. No package versions changed. Sibling documentation synchronization remains deferred at the user’s request.

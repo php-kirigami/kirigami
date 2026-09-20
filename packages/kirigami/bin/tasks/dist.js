@@ -1,9 +1,6 @@
-import fs from 'fs'; 	
+import fs from 'fs';
 import path from "path";
 import ignore from 'ignore';
-import { replaceRoot, joinWith } from '../utils.js';
-
-const ROOT = process.cwd();
 
 
 export const taskname = 'DIST';
@@ -12,9 +9,10 @@ export const canbuild = false;
 
 
 export default async function dist(__root, task, exportPath = null) {
-	const __dist = `${replaceRoot(task.path).replace(/\/+$/, '')}/`
 	task.ignore = task.ignore || [];
 	try {
+		const __dist = path.resolve(task.path);
+		assertSafeExportPaths(__root, __dist);
 		const stats = { copied: 0, skipped: 0, files: [] };
 		const ig = await loadGitignore(__dist, task.ignore);
 		await emptyDir(__dist);
@@ -32,7 +30,41 @@ export default async function dist(__root, task, exportPath = null) {
 }
 
 
-export async function validate(__root, task) { }
+export async function validate(__root, task) {
+	assertSafeExportPaths(__root, task.path);
+}
+
+// Resolve existing ancestors too: the output directory may not exist yet,
+// and a symlink/junction above it can point back into the source tree.
+function canonicalPath(input) {
+	const absolute = path.resolve(input);
+	try {
+		fs.lstatSync(absolute);
+	} catch (error) {
+		if (error.code !== 'ENOENT') throw error;
+		const parent = path.dirname(absolute);
+		if (parent === absolute) throw error;
+		return path.join(canonicalPath(parent), path.basename(absolute));
+	}
+	return fs.realpathSync.native(absolute);
+}
+
+function contains(parent, child) {
+	const relative = path.relative(parent, child);
+	return relative === '' || (!path.isAbsolute(relative)
+		&& relative !== '..' && !relative.startsWith(`..${path.sep}`));
+}
+
+export function assertSafeExportPaths(source, destination) {
+	const src = path.resolve(source);
+	const dest = path.resolve(destination);
+	const realSource = canonicalPath(src);
+	const realDestination = canonicalPath(dest);
+	if (contains(src, dest) || contains(dest, src)
+		|| contains(realSource, realDestination) || contains(realDestination, realSource)) {
+		throw new Error(`Unsafe export destination "${dest}": source and destination must not overlap (source: "${src}").`);
+	}
+}
 
 
 async function loadGitignore(dist, extraPatterns = []) {
@@ -60,6 +92,7 @@ function shouldExcludeFile(relFromSrc, absPath) {
 	const lower = absPath.toLowerCase();
 	if (path.basename(lower).startsWith('_')) return true;
 	if (path.basename(lower).startsWith('.')) return true;
+	if (lower.endsWith('.php')) return true;
 	if (lower.endsWith('.scss')) return true;
 	if (lower.endsWith('.map')) return true;
 	if (lower.endsWith('.js') && !lower.endsWith('.min.js')) return true;
@@ -94,6 +127,7 @@ async function walkAndCopy(dir, src, dest, ig, stats, bannerContent = null) {
 		if (de.isDirectory()) {
 			if (ig.ignores(relPosix + '/')) continue;
 			if (de.name.startsWith('_')) continue;
+			if (de.name.startsWith('.')) continue;
 			await walkAndCopy(abs, src, dest, ig, stats, bannerContent);
 		}
 		else if (de.isFile()) {

@@ -12,6 +12,8 @@ This inventory covers all 32 repository-owned Markdown files, including `.github
 
 ## Remaining work
 
+- Export documentation now reflects the A01/A02 fixes and focused regression tests. The shared-template updates remain local to this repository; sibling synchronization is still deferred.
+
 - At release time, move the unversioned PHP-prepros and PHP-WASM notes into the actual release entry after an explicitly authorized version bump.
 - Publish the updated organization-profile source and regenerate/deploy the public site during the release workflow. Local Markdown edits do not publish external pages.
 - Verify documentation examples against the eventual published packages and the migrated `kiribuild` fallback.

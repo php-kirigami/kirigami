@@ -288,7 +288,7 @@ Both are free-form objects passed straight through to the underlying build call,
 
 ### `export:` — production export options
 
-The destination is emptied before copying; keep it separate from the source tree. Exclusion is not a general private-file filter: non-underscore PHP helpers and hidden directories may be copied. Add explicit `export.ignore` rules for private source material.
+Export rejects equal, ancestor, or descendant source/output paths before clearing the destination, including symlink/junction aliases. PHP files (case-insensitive `.php`) and dot-prefixed directories are excluded from the copy. Add `export.ignore` rules for any other project-specific private files.
 
 | Key | Description |
 |---|---|

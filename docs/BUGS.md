@@ -7,10 +7,8 @@ decision from Maxime before they can be closed. Fixed bugs move to
 ## Repository audit — 2026-09-20
 
 See [the full audit](AUDIT-2026-09-20.md) for evidence, reproduction results,
-source locations, corrective actions, and verification limits. The audit did not change production code. Documentation finding A15 was addressed by the subsequent Markdown refresh; all code findings remain open.
+source locations, corrective actions, and verification limits. The audit did not change production code. Documentation finding A15 was addressed by the subsequent Markdown refresh; A01 and A02 were subsequently fixed by export path validation and source-file exclusions; the remaining code findings are open.
 
-- **P1 / A01:** Export can delete its own sources when paths overlap.
-- **P1 / A02:** Export includes PHP helpers and hidden-directory contents.
 - **P1 / A03:** PHP CURL helpers disable TLS peer and hostname verification.
 - **P1 / A05:** Starter dependencies use the CLI version as the core version,
   emit `@kirigami/canva: ^undefined`, and omit the CLI package.
@@ -21,7 +19,7 @@ source locations, corrective actions, and verification limits. The audit did not
 - **P2 / A04, A09–A14, A16:** Shell interpolation in plugin installation; malformed
   development URLs; served PHP source; missing add/delete watch handling;
   duplicate watch tasks; uncaught async watch failures; hidden script failures
-  in VS Code; missing regression/CI gates.
+  in VS Code; incomplete regression coverage and missing CI gates (focused export tests now exist).
 - **P3 / A17–A18:** WASM tarballs include local backups; unavailable browser
   storage prevents oEmbed metadata fetching.
 

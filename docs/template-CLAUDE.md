@@ -82,9 +82,9 @@ Naming rules inside `kirigami.root`:
 ### The `dist` export
 
 `kiri export` copies `kirigami.root` into `export.path` (default `dist/`),
-**excluding**: underscore-prefixed directories, files whose basename starts with `_` or `.`, `.scss` files,
+**excluding**: underscore- or dot-prefixed directories, files whose basename starts with `_` or `.`, `.php` files, `.scss` files,
 `.map` files, and non-minified `.js` files, plus every `export.ignore` pattern.
-Hidden directories and non-underscore PHP helpers are not automatically excluded. Add explicit `export.ignore` patterns for private files. The destination is emptied before copying: keep it outside the source tree.
+Export rejects equal, ancestor, or descendant source/output paths before clearing the destination, including symlink/junction aliases. PHP files (case-insensitive `.php`) and dot-prefixed directories are excluded from the copy. Add `export.ignore` rules for any other project-specific private files.
 
 Token replacements happen during the copy: `###YEAR###` and `###TIMESTAMP###` in
 `.html`, `###TODAY###` in `sitemap.xml`. The banner is stamped on every exported
