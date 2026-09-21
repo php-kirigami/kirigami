@@ -296,3 +296,9 @@ The editor bundle now starts an external Node worker in the project directory be
 Validation on Windows / external Node 26.8.2: compilation succeeds; `node --test --test-isolation=none packages/vscode/test/activation.test.cjs` passes after relocating the extension away from workspace dependencies, covering all five commands, PHP build/export/run, configuration reload, and server cleanup. `packages/vscode/test/run-host.ps1` passes with VS Code 1.138.0 / host Node 24.18.1, covering activation, validation, PHP build/export, the empty-script path, and server start/stop. The host fixture uses an isolated profile and retains logs.
 
 Interactive preview/status/config-watcher checks, older editors, other platforms, and actual VSIX packaging remain unverified. No package versions changed.
+
+## Development server request failures (A09)
+
+Malformed percent encodings, invalid UTF-8 encodings, and NUL pathnames now return 400 without escaping the request callback. HTML and custom-404 reads are guarded; an absent 404 page retains the built-in fallback. Stream errors return 500 before headers or terminate only the affected response after partial output. Closing a response destroys its file stream.
+
+Validation: `node --test --test-isolation=none packages/kirigami/test/devserver.test.js` passes all three tests on Windows / Node 26.8.2. Real HTTP requests exercise invalid and valid encoded paths, custom/default 404 pages, and continued service after each failure. Deterministically injected read/stream failures cover missing or unreadable HTML, unreadable custom 404 content, and failures before/after partial output. Filesystem races are simulated, not timing-dependent reproductions. A10 source-file exposure remains separate. No package versions changed.

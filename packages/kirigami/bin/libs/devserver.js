@@ -76,8 +76,7 @@ function injectReloadScript(html) {
 
 // Resolves a URL pathname to a file under `root`, trying `index.html` for a
 // directory (or extension-less path). Never resolves outside `root`.
-function resolveFile(root, pathname) {
-	const decoded = decodeURIComponent(pathname.split("?")[0]);
+function resolveFile(root, decoded) {
 	const rel = decoded.replace(/^\/+/, "");
 	const abs = path.normalize(path.join(root, rel));
 	if (!(abs === root || abs.startsWith(root + path.sep))) return null; // path traversal guard
@@ -126,27 +125,52 @@ export async function createDevServer({ root, port = 4321, host = "127.0.0.1" })
 			return;
 		}
 
-		const file = resolveFile(root, req.url || "/");
-		if (!file) {
-			const notFound = path.join(root, "404.html");
-			res.writeHead(404, { "Content-Type": "text/html; charset=utf-8" });
-			if (fs.existsSync(notFound)) {
-				res.end(injectReloadScript(fs.readFileSync(notFound, "utf8")));
-			} else {
-				res.end("<h1>404</h1><p>Not found.</p>");
-			}
+		let pathname;
+		try {
+			pathname = decodeURIComponent((req.url || "/").split("?")[0]);
+			if (pathname.includes("\0")) throw new URIError("Invalid pathname");
+		} catch {
+			res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+			res.end("Bad request.");
 			return;
 		}
 
-		const ext = path.extname(file).toLowerCase();
-		const type = MIME[ext] || "application/octet-stream";
-		if (ext === ".html" || ext === ".htm") {
-			res.writeHead(200, { "Content-Type": type });
-			res.end(injectReloadScript(fs.readFileSync(file, "utf8")));
-		} else {
-			res.writeHead(200, { "Content-Type": type });
-			fs.createReadStream(file).pipe(res);
-		}
+		const fail = () => {
+			if (res.destroyed) return;
+			if (res.headersSent) { res.destroy(); return; }
+			res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+			res.end("Unable to read requested file.");
+		};
+		try {
+			const file = resolveFile(root, pathname);
+			if (!file) {
+				const notFound = path.join(root, "404.html");
+				let html;
+				try { html = injectReloadScript(fs.readFileSync(notFound, "utf8")); }
+				catch (error) {
+					if (error.code !== "ENOENT") throw error;
+					html = "<h1>404</h1><p>Not found.</p>";
+				}
+				res.writeHead(404, { "Content-Type": "text/html; charset=utf-8" });
+				res.end(html);
+				return;
+			}
+
+			const ext = path.extname(file).toLowerCase();
+			const type = MIME[ext] || "application/octet-stream";
+			if (ext === ".html" || ext === ".htm") {
+				const html = injectReloadScript(fs.readFileSync(file, "utf8"));
+				res.writeHead(200, { "Content-Type": type });
+				res.end(html);
+			} else {
+				const stream = fs.createReadStream(file);
+				stream.on("error", fail);
+				res.on("close", () => stream.destroy());
+				// Keep headers replaceable until the stream actually sends data.
+				res.setHeader("Content-Type", type);
+				stream.pipe(res);
+			}
+		} catch { fail(); }
 	});
 
 	await new Promise((resolve, reject) => {

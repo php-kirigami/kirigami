@@ -215,6 +215,8 @@ Exports: `Project`, `load()`, and `Kirigami.load()`. There is no static `Project
 
 Inspect `success` as well as catching exceptions. A resolved promise is not necessarily a successful build. Task results include `task`, `type` and `taskname` plus task-specific output.
 
+The development server returns 400 for malformed URL path encodings or NUL pathnames. File-read and stream failures return 500 before headers are sent; failures after partial output close that response. These failures do not stop subsequent requests. Missing pages use `404.html` when available, otherwise the built-in 404 response.
+
 `serve()` and `watch()` do not build initially. Call `build()` first. `onBuildResult` receives `{ status: 'start', rule, type }` followed by `{ status: 'done', rule, type, ...result }` for completed watch callbacks. A thrown callback currently bypasses the done event.
 
 Current limitations: one project per process, working directory established **before importing the engine**, and shared plugin registries. Await project operations in sequence; only PHP-prepros operations/resets are internally serialized. `reload()` refreshes PHP configuration, mounts, network mode, and plugin includes, but JavaScript plugin code remains subject to Node's module cache (restart after code changes). Watch additions/deletions and repeated watcher setup also have known defects. See [the audit](../../docs/AUDIT-2026-09-20.md) for reproductions.
