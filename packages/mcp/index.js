@@ -16,13 +16,20 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { load } from "@kirigami/kirigami";
+import fs from 'fs';
+import path from 'path';
+import { load } from "@kirigami/kirigami"; // --->>> Il faut faire les index.d.ts pour ce package
 
 const ok = (data) => ({ content: [{ type: "text", text: JSON.stringify(data, null, 2) }] });
 const fail = (error) => ({
 	content: [{ type: "text", text: typeof error === "string" ? error : (error?.message || String(error)) }],
 	isError: true,
 });
+
+
+
+// --->>> À ajouter: un tool pour reload pour éviter de reloader les configs pour rien
+// --->>> Peut-être ajouter un bouton reload dans l'extension vscode
 
 
 // Builds an McpServer wired to an already-loaded `Project` (see
@@ -41,8 +48,52 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 		},
 		async () => {
 			try {
-				await project.reload();
+				await project.reload(); // pas besoin de reloader
 				return ok({ config: project.config, plugins: project.plugins });
+			} catch (e) { return fail(e); }
+		}
+	);
+
+	// Lightweight project manifest / about tool: returns a concise summary of the
+	// project so an external agent can understand what's here without fetching
+	// and parsing every file. Safe: doesn't execute project code, only reads
+	// a few well-known docs and package.json.
+	server.registerTool(
+		"kirigami_about",
+		{
+			title: "Kirigami project manifest",
+			description: "Returns a short structured manifest (name, version, README excerpt, docs/CONTEXT, LICENSE excerpt, tasks and scripts) so an agent can quickly learn what Kirigami is and what it can do.",
+		},
+		async () => {
+			try {
+				await project.reload();
+				const projectDir = process.cwd();
+				const readTrunc = (p, max = 2000) => {
+					try {
+						if (!fs.existsSync(p)) return null;
+						let c = fs.readFileSync(p, 'utf8');
+						if (c.length > max) return c.slice(0, max) + '\n...[truncated]';
+						return c;
+					} catch (e) { return null; }
+				};
+				const pkgPath = path.join(projectDir, 'package.json');
+				let pkg = {};
+				if (fs.existsSync(pkgPath)) {
+					try { pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')); } catch(e) { pkg = {}; }
+				}
+				const manifest = {
+					name: pkg.name || project?.config?.kirigami?.project || null,
+					version: pkg.version || null,
+					description: pkg.description || null,
+					readme: readTrunc(path.join(projectDir, 'README.md')),
+					context: readTrunc(path.join(projectDir, 'docs', 'CONTEXT.md')),
+					instructions: readTrunc(path.join(projectDir, 'docs', 'INSTRUCTIONS.md')),
+					license: readTrunc(path.join(projectDir, 'LICENSE'), 4000),
+					tasks: Array.isArray(project.tasks) ? project.tasks.map(t => ({ name: t.name, type: t.type })) : [],
+					scripts: project.scripts || [],
+					config: project.config ? { kirigami: project.config.kirigami, prepros: project.config.prepros } : null,
+				};
+				return ok(manifest);
 			} catch (e) { return fail(e); }
 		}
 	);
@@ -106,7 +157,7 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 		},
 		async ({ command, args = [] }) => {
 			try {
-				await project.reload();
+				await project.reload(); // pas besoin de reloader
 				return ok(await project.run(command, args));
 			} catch (e) { return fail(e); }
 		}
@@ -120,7 +171,7 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 		},
 		async () => {
 			try {
-				await project.reload();
+				await project.reload(); // pas besoin de reloader
 				return ok({ scripts: project.scripts });
 			} catch (e) { return fail(e); }
 		}
@@ -134,7 +185,7 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 		},
 		async () => {
 			try {
-				await project.reload();
+				await project.reload(); // pas besoin de reloader
 				return ok({ tasks: project.tasks });
 			} catch (e) { return fail(e); }
 		}
@@ -151,7 +202,7 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 		},
 		async ({ name }) => {
 			try {
-				await project.reload();
+				await project.reload(); // pas besoin de reloader
 				return ok(await project.runTask(name));
 			} catch (e) { return fail(e); }
 		}
