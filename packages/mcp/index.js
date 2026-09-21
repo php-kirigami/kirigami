@@ -58,6 +58,161 @@ function readTextIfExists(filePath) {
 	}
 }
 
+function getDocCachePath(projectDir) {
+	return path.join(projectDir, '.kirigami', 'mcp-doc-index.json');
+}
+
+function collectDocFiles(projectDir) {
+	const seen = new Set();
+	const add = (filePath) => {
+		if (!filePath) return;
+		const normalized = path.resolve(filePath);
+		if (seen.has(normalized)) return;
+		seen.add(normalized);
+	};
+
+	const queue = [projectDir];
+	while (queue.length) {
+		const current = queue.pop();
+		let entries;
+		try {
+			entries = fs.readdirSync(current, { withFileTypes: true });
+		} catch {
+			continue;
+		}
+		for (const entry of entries) {
+			const entryPath = path.join(current, entry.name);
+			if (entry.isDirectory()) {
+				if (entry.name === '.git' || entry.name === 'node_modules' || entry.name === '.kirigami') continue;
+				if (entry.name === 'docs' || entry.name === 'packages' || entry.name === 'src' || entry.name === 'assets' || entry.name === 'scripts') {
+					queue.push(entryPath);
+					continue;
+				}
+				queue.push(entryPath);
+			} else if (entry.isFile()) {
+				const lower = entry.name.toLowerCase();
+				if (lower === 'readme.md' || lower.endsWith('.md')) add(entryPath);
+			}
+		}
+	}
+
+	for (const rel of listProjectDocs(projectDir)) {
+		add(rel);
+	}
+
+	return [...seen].sort((a, b) => a.localeCompare(b)).filter((filePath) => {
+		const rel = projectRelative(projectDir, filePath).toLowerCase();
+		return rel === 'readme.md' || rel.startsWith('docs/') || rel.startsWith('packages/') || rel.startsWith('src/') || rel.startsWith('assets/') || rel.startsWith('scripts/');
+	});
+}
+
+export function buildDocIndex(projectDir, { cachePath = getDocCachePath(projectDir) } = {}) {
+	const files = collectDocFiles(projectDir);
+	const payload = {
+		version: 1,
+		generatedAt: new Date().toISOString(),
+		files: [],
+	};
+
+	for (const filePath of files) {
+		const text = readTextIfExists(filePath) || '';
+		if (!text.trim()) continue;
+		const normalized = text.replace(/\r\n/g, '\n');
+		const lower = normalized.toLowerCase();
+		const tokens = lower.match(/[\w-]{2,}/g) || [];
+		const counts = new Map();
+		for (const token of tokens) {
+			counts.set(token, (counts.get(token) || 0) + 1);
+		}
+		const excerpt = normalized.replace(/\s+/g, ' ').trim().slice(0, 220);
+		const relPath = projectRelative(projectDir, filePath);
+		payload.files.push({
+			path: relPath,
+			mtimeMs: fs.existsSync(filePath) ? fs.statSync(filePath).mtimeMs : 0,
+			excerpt,
+			tokenCounts: Object.fromEntries([...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 50)),
+			textLower: lower,
+		});
+	}
+
+	if (cachePath) {
+		fs.mkdirSync(path.dirname(cachePath), { recursive: true });
+		fs.writeFileSync(cachePath, JSON.stringify(payload, null, 2));
+	}
+
+	return payload;
+}
+
+export function searchDocIndex(index, query, scope = 'all', limit = 10) {
+	if (!index || !Array.isArray(index.files)) return [];
+	const needle = (query || '').trim().toLowerCase();
+	if (!needle) return [];
+	const terms = [...new Set(needle.match(/[\w-]{2,}/g) || [])];
+	if (!terms.length) return [];
+
+	const matches = [];
+	for (const file of index.files) {
+		const rel = file.path.toLowerCase();
+		if (scope === 'docs' && !rel.startsWith('docs/')) continue;
+		if (scope === 'readme' && rel !== 'readme.md' && !rel.startsWith('readme.')) continue;
+		if (scope === 'packages' && !rel.startsWith('packages/')) continue;
+		if (scope === 'all' || scope === undefined || scope === null) {
+			// keep all files
+		}
+
+		const fileText = file.textLower || '';
+		let score = 0;
+		for (const term of terms) {
+			score += file.tokenCounts?.[term] || 0;
+		}
+		const exact = fileText.includes(needle) ? needle.length : 0;
+		if (score === 0 && exact === 0) continue;
+		matches.push({
+			path: file.path,
+			score: score + exact,
+			excerpt: file.excerpt || '',
+		});
+	}
+
+	return matches
+		.sort((a, b) => b.score - a.score)
+		.slice(0, limit)
+		.map((match) => ({
+			path: match.path,
+			excerpt: match.excerpt,
+			score: match.score,
+		}));
+}
+
+export function loadDocIndex(projectDir) {
+	const cachePath = getDocCachePath(projectDir);
+	try {
+		const raw = fs.readFileSync(cachePath, 'utf8');
+		const index = JSON.parse(raw);
+		if (!index || !Array.isArray(index.files)) return buildDocIndex(projectDir, { cachePath });
+		const files = collectDocFiles(projectDir);
+		const indexByPath = new Map((index.files || []).map((file) => [file.path, file]));
+		let stale = files.length !== index.files.length;
+		if (!stale) {
+			for (const filePath of files) {
+				const rel = projectRelative(projectDir, filePath);
+				const cached = indexByPath.get(rel);
+				if (!cached) {
+					stale = true;
+					break;
+				}
+				if (fs.statSync(filePath).mtimeMs > (cached.mtimeMs || 0)) {
+					stale = true;
+					break;
+				}
+			}
+		}
+		return stale ? buildDocIndex(projectDir, { cachePath }) : index;
+	} catch {
+		return buildDocIndex(projectDir, { cachePath });
+	}
+}
+
 function docTopicHints() {
 	return {
 		general: [
@@ -201,29 +356,9 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 		async ({ query, scope = 'all', limit = 10 }) => {
 			try {
 				const projectDir = process.cwd();
-				const candidates = listProjectDocs(projectDir).filter((filePath) => {
-					const rel = projectRelative(projectDir, filePath).toLowerCase();
-					if (scope === 'docs') return rel.startsWith('docs/');
-					if (scope === 'readme') return rel === 'readme.md';
-					if (scope === 'packages') return rel.startsWith('packages/');
-					return true;
-				});
-				const needle = query.toLowerCase();
-				const matches = [];
-				for (const filePath of candidates) {
-					const text = readTextIfExists(filePath) || '';
-					if (!text) continue;
-					const lower = text.toLowerCase();
-					const index = lower.indexOf(needle);
-					if (index === -1) continue;
-					const start = Math.max(0, index - 120);
-					const end = Math.min(text.length, index + 240);
-					matches.push({
-						path: projectRelative(projectDir, filePath),
-						excerpt: (text.slice(start, end).replace(/\s+/g, ' ')).trim(),
-					});
-				}
-				return ok({ query, scope, matches: matches.slice(0, limit) });
+				const index = loadDocIndex(projectDir);
+				const matches = searchDocIndex(index, query, scope, limit);
+				return ok({ query, scope, matches, indexGeneratedAt: index.generatedAt || null });
 			} catch (e) { return fail(e); }
 		}
 	);

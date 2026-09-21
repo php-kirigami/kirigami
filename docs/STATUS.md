@@ -8,6 +8,12 @@ Audit A15 is addressed in the monorepo documentation. Other audit findings remai
 
 Earlier entries record the state at the time of implementation. The later A06 finding identified stale PHP state after reload; its correction is recorded below under PHP reload freshness.
 
+## MCP doc search index — 2026-09-20
+
+`@kirigami/mcp` now builds and caches a lightweight full-text document index for `kirigami_search_docs` instead of scanning every Markdown file on each tool call. The index is regenerated when source files change (mtime-based refresh) and is stored under `.kirigami/mcp-doc-index.json` for the current project. This keeps discovery fast for agents while preserving the same doc excerpts that were already returned by the tool.
+
+Validation: targeted Node smoke test confirmed the index builds successfully and `searchDocIndex()` returns hits for a real repo query (`kirigami mcp`).
+
 Running log of what's shipped recently, most recent at the bottom. This is
 a changelog, not a reference — for durable facts see [CONTEXT.md](CONTEXT.md),
 for the "why" behind a choice see [DECISIONS.md](DECISIONS.md).

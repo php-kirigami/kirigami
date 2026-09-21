@@ -1,6 +1,7 @@
 /node_modules/
 *.tgz
 /packs/
+/.kirigami/
 
 # esbuild output for packages/vscode's extension host bundle
 packages/vscode/dist/
