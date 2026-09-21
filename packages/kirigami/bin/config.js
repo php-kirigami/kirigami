@@ -111,6 +111,14 @@ async function validateConfig(config, configPath) {
 	const modules = [];
 	const projectDir = path.dirname(configPath);
 
+	function validateIncludedFile(key, rel) {
+		if (rel === undefined || rel === null || rel === '') return;
+		const abs = path.resolve(__root, rel);
+		if (!fs.existsSync(abs) || !fs.statSync(abs).isFile()) {
+			throwConfigError(configPath, `Invalid "${key}" property: ${JSON.stringify(rel)} does not exist.`);
+		}
+	}
+
 	// Verify kirigami section
 	if(!config.kirigami) throwConfigError(configPath, `Missing "kirigami" configuration section.`);
 
@@ -145,6 +153,17 @@ async function validateConfig(config, configPath) {
 	if(!config.image.format) config.image.format = 'webp';
 	if(!config.image.source) config.image.source = 'assets/images/';
 	if(!config.image.dest) config.image.dest = 'images/';
+
+	// Verify prepros include wrappers, which are resolved relative to the project root.
+	if (config.prepros) {
+		validateIncludedFile('prepros:before', config.prepros.before);
+		validateIncludedFile('prepros:after', config.prepros.after);
+		for (const [typeName, typeConfig] of Object.entries(config.prepros.types || {})) {
+			if (!typeConfig || typeof typeConfig !== 'object') continue;
+			validateIncludedFile(`prepros:types.${typeName}.before`, typeConfig.before);
+			validateIncludedFile(`prepros:types.${typeName}.after`, typeConfig.after);
+		}
+	}
 
 	// Verify tasks
 	if(config.tasks) {
