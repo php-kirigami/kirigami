@@ -1,6 +1,14 @@
 # Documentation maintenance
 
-This inventory covers all 32 repository-owned Markdown files, including `.github/CONTRIBUTING.md` and the untracked future-roadmap document. Dependency documentation in `node_modules`, Git internals, and generated package archives are outside the project documentation scope.
+Track documentation work left by implementation changes. Dependency documentation, generated bundles, and package archives are outside this inventory. The review table below records the 2026-09-20 pass; it is not a claim that every file has been revalidated after every code change. `ROADMAP-FUTURE.md` is tracked in Git.
+
+## Completed — 2026-09-21
+
+- Aligned the 11 remaining project-owned package license texts, README declarations, root metadata, and documentation inventory with GPL-3.0-or-later (A15). Corrected the remaining MIT inventory in the contributor guide during this follow-up.
+- Documented the manual full-suite command, native PHP/cURL and VS Code build prerequisites, process isolation, and the Windows/Node 26 verification boundary in the contributor guide (48 tests passed).
+- Documented PHP extension discovery paths, artifact selection, caching, and observed binary-load warnings in the PHP-WASM README.
+- Removed completed keyword and layout-validation tasks from TODO.md after checking manifests, configuration validation, and passing regression tests. A16 automation remains code work in TODO.md and BUGS.md.
+- Separated release-dependent documentation work below from checks already completed. No package versions were changed.
 
 ## Completed — 2026-09-20
 
@@ -30,19 +38,18 @@ This inventory covers all 32 repository-owned Markdown files, including `.github
 
 ## Remaining work
 
-- Finalize VSIX distribution/license documentation after packaging verification. A15 package license texts and README declarations now match their manifests.
+| Prerequisite | Documentation to finish | Completion evidence |
+|---|---|---|
+| VSIX packaging and interactive-host verification | Update EXTENSION-VSCODE.md and the extension README with packaging commands, included runtime licenses, supported platforms, and verified host behavior. | Inspect an actual VSIX and record the host/platform checks; compilation alone is insufficient. |
+| WASM HTTPS networking fix | Update the TLS verification limitations in BUGS.md and the PHP-WASM/PHP-prepros READMEs. | End-to-end WASM requests pass certificate, hostname, redirect, and download checks. Native PHP checks are already documented. |
+| A16 automation and runtime discovery isolation | Replace the manual-suite limitations in the contributor guide with the implemented test/CI commands; update discovery documentation if its API changes. | CI results for the supported matrix and reproducible discovery behavior. |
+| Authorized package release | Move PHP-prepros/PHP-WASM unversioned notes into the actual release entries and verify examples against published packages and the migrated kiribuild fallback. | Published versions and clean-consumer example runs; do not assign versions in a documentation-only pass. |
+| Sibling-repository synchronization | Copy the shared template reference into template/site CLAUDE.md files, preserving project-specific headers, and check CLI/export/license guidance. | Reviewed diffs in each sibling repository. No sibling files were modified in this pass. |
+| Organization profile and site publication | Publish the profile source and regenerate/deploy the public site through the release workflow. | Verify the deployed pages; local Markdown edits do not count as publication. |
 
-- TLS helper docs now reflect A03’s secure defaults. Keep the native-PHP verification / WASM end-to-end limitation explicit until the networking follow-up is resolved.
+Export safety, TLS secure defaults, A06–A14 behavior, and package license alignment are already documented. Keep those limitations current when the corresponding implementation changes; they are not unfinished documentation fixes by themselves.
 
-- Export documentation now reflects the A01/A02 fixes and focused regression tests. The shared-template updates remain local to this repository; sibling synchronization is still deferred.
-
-- At release time, move the unversioned PHP-prepros and PHP-WASM notes into the actual release entry after an explicitly authorized version bump.
-- Publish the updated organization-profile source and regenerate/deploy the public site during the release workflow. Local Markdown edits do not publish external pages.
-- Verify documentation examples against the eventual published packages and the migrated `kiribuild` fallback.
-- Update the documented limitations as the code defects in [BUGS.md](BUGS.md) are fixed.
-- Synchronize the shared reference to sibling templates and the organization site in a separate authorized task. The user explicitly restricted this pass to the current repository; no sibling files were modified.
-
-## Verification
+## Historical verification — 2026-09-20
 
 - All local Markdown file links and heading anchors checked successfully.
 - 20 YAML examples parsed; seven complete project configurations passed the local schema (including plugin option schemas).
@@ -50,7 +57,7 @@ This inventory covers all 32 repository-owned Markdown files, including `.github
 - The documented manual PHP loader example executed successfully.
 - No manifests, lockfiles, or version declarations were modified.
 
-## Review inventory
+## Historical review inventory — 2026-09-20
 
 | File | Status |
 |---|---|

@@ -1,5 +1,9 @@
 # Status
 
+## Documentation backlog reconciliation — 2026-09-21
+
+Reorganized DOCTODO.md around concrete prerequisites and completion evidence, retaining the previous review and verification as historical records. Corrected the contributor guide's stale MIT inventory and documented the full regression command: 48 tests passed on Windows/Node 26.8.2 after VS Code compilation, with native PHP 8.5.10 for TLS checks. PHP-WASM now documents automatic extension discovery and its observed load warnings. Removed completed keywords and layout-validation TODOs after checking source and manifests. CI, VSIX packaging, end-to-end WASM HTTPS, release validation, and sibling publication remain separate follow-ups; this pass changes documentation only.
+
 ## GPL-3 package documentation and license alignment (A15) — 2026-09-21
 
 Following the maintainer's decision to use GPL 3 as broadly as possible, replaced the 11 remaining project-owned MIT package license texts with the repository's GPL v3 text and aligned their README badges and declarations with the existing GPL-3.0-or-later manifests. Added the root manifest license, synchronized workspace lockfile metadata, and updated the shared documentation inventory and repository notice. PHP-WASM and bestframe retain their existing GPL-2.0-or-later and LGPL-2.1-or-later binary package licenses; upstream notices are unchanged.

@@ -28,7 +28,18 @@ cd kirigami
 npm install    # npm workspaces — one install covers every package
 ```
 
-Only packages with a compilation step have build scripts. Run `npm run build -w @kirigami/canva` for Canva and `npm run compile -w kirigami-vscode` for the extension. Other runtime packages execute their source directly. Focused export regression tests run with `node --test --test-isolation=none packages/kirigami/test/dist.test.js`. TLS helper tests run with `node --test --test-isolation=none packages/php-prepros/test/curl-tls.test.js`; they require local PHP with cURL (`PHP_BINARY` may select it), local loopback sockets, and subprocess support. They verify native helper behavior and WASM trust configuration separately. Broader coverage is still missing, and several package `test` scripts are placeholders. Verify affected behavior with a focused reproduction and a disposable project, then record the commands and results in your PR.
+Only packages with a compilation step have build scripts. Run `npm run build -w @kirigami/canva` for Canva and `npm run compile -w kirigami-vscode` for the extension. Other runtime packages execute their source directly.
+
+Run the existing regression suite from the repository root:
+
+```bash
+npm run compile --workspace=kirigami-vscode
+node --test --test-concurrency=1 "packages/*/test/*.test.js" "packages/*/test/*.test.cjs"
+```
+
+The tests require subprocess support and local loopback sockets. TLS helper tests also require native PHP with cURL (`PHP_BINARY` may select it); they verify native helper behavior and WASM trust configuration separately, not end-to-end WASM HTTPS. Keep the default process isolation: several tests change the working directory and load process-global registries. For a focused check, pass a single test file instead of the two globs.
+
+On 2026-09-21, all 48 tests in 14 files passed on Windows with Node 26.8.2 and PHP 8.5.10, including the relocated VS Code integration test. This does not establish Node 24, Linux, or VSIX packaging compatibility. The repository still has no root `npm test` command or CI workflow, and six package test scripts remain placeholders (A16). Automatically discovered local PHP extension packages emitted load warnings during this run; see [runtime discovery](../packages/php-wasm/README.md#automatic-extension-discovery) when reproducing results. Record the commands, environment, and results in your PR.
 
 > The maintainer develops on Windows (PowerShell). If you add a script, mind
 > path separators — normalize `path.sep` to `/` where the existing code does.
@@ -123,7 +134,7 @@ is a real, complete example to read end to end if you're building your own.
 
 ## License
 
-Most packages use MIT. The exceptions are `@kirigami/php-wasm` (GPL-2.0-or-later), `@kirigami/audiowaveform-wasm` (GPL-3.0-or-later), and `@kirigami/bestframe` (LGPL-2.1-or-later). See each package’s `LICENSE` and README for upstream notices.
+Kirigami packages use GPL-3.0-or-later, except `@kirigami/php-wasm` (GPL-2.0-or-later) and `@kirigami/bestframe` (LGPL-2.1-or-later). See each package's `LICENSE` and README for upstream notices.
 
 ---
 

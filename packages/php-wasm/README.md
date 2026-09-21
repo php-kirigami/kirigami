@@ -54,6 +54,7 @@ Part of the **Kirigami** project ecosystem.
 - [PHP version](#php-version)
 - [Related](#related)
 - [Runtime extension inspection](#runtime-extension-inspection)
+  - [Automatic extension discovery](#automatic-extension-discovery)
 - [License](#license)
 
 ---
@@ -319,6 +320,14 @@ console.log(await getLoadedExtensions());
 ```
 
 The standard and network helpers each cache their runtime. Closing the network proxy is final for that cached instance; it is not a per-request cleanup step followed by automatic reopening.
+
+### Automatic extension discovery
+
+At runtime creation, the loader searches for directories named `phpext-*`, including those under `@kirigami`, in `node_modules` and `packages` under the current working directory and its ancestors. It also examines sibling directories at those levels and attempts `npm root -g` for global packages. A failed global lookup is ignored. Discovery is therefore broader than the current project's declared dependencies; a nearby compiler checkout can affect the runtime.
+
+For each package, `manifest.json` may provide an extension `name` and an `artifacts` array with `phpVersion` and `sourcePath`. The loader prefers an artifact matching the runtime's PHP major/minor version, then a matching patch version, then a generic artifact. If no usable manifest artifact is found, it recursively selects the first `.so` file. It stages the resolved extensions under `/internal/shared/extensions` and adds `extension` directives to the VM's generated `php.ini`.
+
+Artifact selection does not establish binary compatibility, and the current API has no discovery opt-out or explicit search-root option. On 2026-09-21, the local regression run passed while discovered extensions emitted startup warnings about an undefined `vfprintf` export. Use `getLoadedExtensions()` to check what actually loaded; finding or staging a `.so` does not prove that PHP accepted it. Cached runtimes are not rescanned for every execution.
 
 ---
 
