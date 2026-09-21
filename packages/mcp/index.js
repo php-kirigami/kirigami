@@ -65,6 +65,16 @@ function docTopicHints() {
 			{ path: 'docs/CONTEXT.md', reason: 'Architecture, monorepo layout, runtime model and conventions.' },
 			{ path: 'docs/INSTRUCTIONS.md', reason: 'Development workflow, release procedure, README template.' },
 		],
+		site: [
+			{ path: 'README.md', reason: 'Project overview plus the site-building mental model.' },
+			{ path: 'docs/CONTEXT.md', reason: 'Monorepo package boundaries and how the engine fits together.' },
+			{ path: 'packages/kirigami/README.md', reason: 'Core API and project conventions for building static sites.' },
+		],
+		pages: [
+			{ path: 'packages/kirigami/README.md', reason: 'Page rendering, prepros wrapper model and per-page PHPDoc conventions.' },
+			{ path: 'docs/CONTEXT.md', reason: 'The project root, root config and page generation model.' },
+			{ path: 'docs/DECISIONS.md', reason: 'Design decisions around page types and layout wrapping.' },
+		],
 		build: [
 			{ path: 'README.md', reason: 'High-level build/export flow and the project entrypoints.' },
 			{ path: 'docs/INSTRUCTIONS.md', reason: 'Versioning and build/release workflow.' },
@@ -158,6 +168,16 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 					context: readTrunc(path.join(projectDir, 'docs', 'CONTEXT.md')),
 					instructions: readTrunc(path.join(projectDir, 'docs', 'INSTRUCTIONS.md')),
 					license: readTrunc(path.join(projectDir, 'LICENSE'), 4000),
+					projectShape: {
+						root: ['kirigami.yaml', 'src/', 'src/_index.php', 'src/_layouts/', 'assets/', 'scripts/'],
+						description: 'A Kirigami project usually has a root kirigami.yaml, a src/ tree of PHP pages, optional _layouts/ includes, scripts/, and asset directories.',
+						pagePattern: 'Use PHP page files under kirigami.root, usually named _index.php / _about.php / _products.php and wrapped by prepros.before / after or page types.',
+					},
+					pageRules: [
+						'Pages live under kirigami.root and are PHP templates rendered by @kirigami/php-prepros.',
+						'Use prepros.before / prepros.after or prepros.types.<name>.before / .after to wrap pages with a global layout.',
+						'A page can opt into a type with @type <name> in its PHPDoc header.',
+					],
 					tasks: Array.isArray(project.tasks) ? project.tasks.map(t => ({ name: t.name, type: t.type })) : [],
 					scripts: project.scripts || [],
 					config: project.config ? { kirigami: project.config.kirigami, prepros: project.config.prepros } : null,
@@ -214,7 +234,7 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 			title: "Suggested docs for a task",
 			description: "Returns the best documentation files to read next for a common Kirigami task such as build, package layout, MCP, extension development, troubleshooting or licensing.",
 			inputSchema: {
-				topic: z.enum(['general', 'build', 'package', 'mcp', 'extension', 'troubleshooting', 'license']).optional().default('general').describe("Task area to map to relevant docs."),
+				topic: z.enum(['general', 'site', 'pages', 'build', 'package', 'mcp', 'extension', 'troubleshooting', 'license']).optional().default('general').describe("Task area to map to relevant docs."),
 			},
 		},
 		async ({ topic = 'general' } = {}) => {
