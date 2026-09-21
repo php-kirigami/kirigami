@@ -255,6 +255,42 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 	);
 
 	server.registerTool(
+		"kirigami_site_blueprint",
+		{
+			title: "Kirigami site blueprint",
+			description: "Returns a minimal recommended project skeleton and the expected file layout for a new Kirigami static site. Includes the root config, page files, layouts, and a simple example page structure that an agent can scaffold immediately.",
+		},
+		async () => {
+			try {
+				const blueprint = {
+					goal: 'Create a minimal Kirigami site with a root config, a source page tree, and optional layout wrappers.',
+					structure: {
+						'kirigami.yaml': 'Project config: project name, baseurl, root: src, optional prepros.before / before / after / types.',
+						'src/': 'Root directory for all rendered PHP pages.',
+						'src/_index.php': 'Home page template.',
+						'src/_about.php': 'Another page template.',
+						'src/_layouts/header.php': 'Optional global page header / opening wrapper.',
+						'src/_layouts/footer.php': 'Optional global page footer / closing wrapper.',
+						'src/_layouts/types/article.before.php': 'Optional page-type wrapper for article pages.',
+						'src/_layouts/types/article.after.php': 'Closing wrapper for article pages.',
+						'assets/': 'Images, fonts, CSS and other static assets.',
+						'scripts/': 'Optional PHP scripts runnable via kiri run <name> or MCP.',
+					},
+					exampleConfig: `kirigami:\n  project: My Site\n  baseurl: https://example.com\n  root: src\nprepros:\n  before: _layouts/header.php\n  after: _layouts/footer.php\n  types:\n    article:\n      before: _layouts/types/article.before.php\n      after: _layouts/types/article.after.php\n`,
+					examplePage: `<?php\n/**\n * @title About\n * @description Example page\n * @type article\n */\n?>\n<h1>About</h1>\n<p>Hello from Kirigami.</p>\n`,
+					pageConventions: [
+						'Everything under kirigami.root is rendered as a PHP page or included layout.',
+						'Use prepros.before / after for a global layout shell.',
+						'Use @type <name> in the PHPDoc header to enable a type-specific wrapper.',
+						'Build tasks can include sass, esbuild, and the implicit prepros task.',
+					],
+				};
+				return ok(blueprint);
+			} catch (e) { return fail(e); }
+		}
+	);
+
+	server.registerTool(
 		"kirigami_validate",
 		{
 			title: "Validate kirigami.yaml",
