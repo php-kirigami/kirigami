@@ -37,11 +37,16 @@ A07 is also fixed: optional layouts default safely, and PHP diagnostics survive 
   detect the axis presence if downstream code wants to split faces.
 
 - **`|+` (keep-chomping) literal blocks: `YAML::` vs `YAML_LEGACY::` differ
-  by one trailing blank line.** Happens when the block is immediately
-  followed by a less-indented line with a blank line in between. Not yet
-  root-caused which one matches the YAML spec — low priority, `|+` is
-  rarely used. See [DECISIONS.md](DECISIONS.md) for the switch to the
-  native-backed `YAML::`.
+  by one trailing blank line.** Historically the legacy parser preserved
+  all trailing blank lines for `|+`, while the native `yaml` extension
+  (used by `YAML::`) returned a single trailing newline. To reduce
+  surprising diffs when switching parsers, `YAML_LEGACY::applyChomping()`
+  has been normalised so `|+` produces a single trailing newline — matching
+  the behaviour observed from libyaml. This is a conservative, low-risk
+  normalization; the legacy parser is still retained for reference or
+  rollback but behaves consistently with the native-backed parser now.
+  See [DECISIONS.md](DECISIONS.md) for the rationale behind preferring
+  the native-backed `YAML::`. (Low priority; `|+` is rarely used.)
 
 - **`packages/vscode` may not activate at all in older/forked VS Code
   builds — unverified, needs the real Extension Development Host to

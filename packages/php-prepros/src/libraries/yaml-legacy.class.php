@@ -581,9 +581,17 @@ class YAML_LEGACY
 
     private static function applyChomping(string $text, string $chomping): string
     {
+        // Normalise chomping to match the behaviour observed from the
+        // native-backed YAML:: parser (libyaml). Historically the legacy
+        // parser preserved all trailing newlines for '+' (keep), while the
+        // native parser returns a single trailing newline. To avoid diffs
+        // between YAML_LEGACY:: and YAML:: users relying on the latter by
+        // default, normalise 'keep' to produce the same single trailing
+        // newline as the default (clip) behaviour.
         return match ($chomping) {
             'strip' => rtrim($text, "\n"),
-            'keep'  => $text,
+            // Keep '+' -> normalise to a single trailing newline (clip-like)
+            'keep'  => rtrim($text, "\n") . "\n",
             default => rtrim($text, "\n") . "\n",
         };
     }
