@@ -72,6 +72,8 @@ Part of the **Kirigami** project ecosystem.
   - [`runenv(script, paths?, ...args)`](#runenvscript-paths-args)
   - [`mountPath(localPath, virtualDir?, php?)`](#mountpathlocalpath-virtualdir-php)
   - [`processImages(jobs)`](#processimagesjobs)
+  - [`resetRuntime()`](#resetruntime)
+  - [TypeScript declarations](#typescript-declarations)
 - [PHP classes reference](#php-classes-reference)
   - [PREPROS](#prepros)
   - [MD](#md)
@@ -814,21 +816,24 @@ single-project API whose working directory must be set before import.
 
 ### `render(file?, phpIncludes?)`
 
-`phpIncludes` is an optional list of PHP include files supplied by plugins. The core collects these through the `prepros:php` hook.
-
-`phpIncludes` is an optional list of PHP include files supplied by plugins. The core collects these through the `prepros:php` hook.
+`phpIncludes` defaults to `[]`. The core collects it through `prepros:php`;
+direct callers supply local PHP file paths (absolute or relative to the
+working directory). Existing paths are mounted under `/plugins/` and included
+before rendering; missing paths are silently skipped. Each render replaces
+the runtime include list, which remains on its configuration until another
+render or reset. Direct calls do not load the core plugin registry for you.
 
 Compile a single PHP page or a whole directory.
 
 ```js
 // Compile one page
-const result = await render('about/_index.php');
+const pageResult = await render('about/_index.php');
 
 // Compile everything under src/
-const result = await render('.');
+const treeResult = await render('.');
 
 // Compile everything (uses kirigami.root from config)
-const result = await render();
+const defaultResult = await render();
 ```
 > Paths used by `render()` are all relative to the `kirigami.root` configuration.
 
@@ -838,18 +843,36 @@ const result = await render();
 ```ts
 interface PreprosResult {
   success: boolean;
-  files:   string[];   // relative paths of every file written
-  error?:  string;     // present only on failure
+  files?:  string[];   // project-relative paths; may be absent on parsing failure
+  error?:  string;
+  debug?:  string;     // captured PHP stdout
+  stderr?: string;     // diagnostics attached to failures
+  warnings?: string;   // nonfatal stderr on success
+  page?:   string | null;     // PHP-render failure context, when available
+  where?:  string;     // PHP source location, when available
 }
 ```
 
+Setup and filesystem failures can reject before a result exists; PHP failures
+usually return `success: false`. Check both channels. Files may already have
+been copied to the host before a later error; operations are not transactional.
+The runtime returns `debug`/`stderr`, not the older declared `response` field.
+
+Directory rendering selects `_*.php` files only when every directory between
+`kirigami.root` and the page has a name without a leading underscore. Sitemap
+selection uses the same rule. Direct requests for private pages fail; rendering
+a private directory produces no pages. The configured source root itself may
+start with `_` (for example `_src`). Previously generated private HTML is not
+deleted by this selection rule; remove stale outputs when migrating a site.
+
 ### `sitemap()`
 
-Generate `sitemap.xml` at the source root.
+Generate `sitemap.xml` and `robots.txt` at the source root, plus `humans.txt`
+when author configuration provides content. It accepts no directory argument.
 
 ```js
 const result = await sitemap();
-// result.files === ['src/sitemap.xml', 'src/robots.txt']
+// With kirigami.root: src, files includes src/sitemap.xml and src/robots.txt.
 ```
 
 ### `runenv(script, paths?, ...args)`
@@ -858,18 +881,27 @@ Run an arbitrary PHP script — not a page template — inside the very same san
 
 ```js
 // Run a standalone PHP script
-const result = await runenv('scripts/purge-cache.php');
+const purgeResult = await runenv('scripts/purge-cache.php');
 
 // Also mount explicit extra files into the sandbox before running
-const result = await runenv('scripts/build-og-images.php', ['assets/photos/hero.jpg']);
+const imageResult = await runenv('scripts/build-og-images.php', ['assets/photos/hero.jpg']);
 
 // Extra arguments are appended and available as $argv[2], $argv[3], … in the script
-const result = await runenv('scripts/import.php', [], '--force');
+const importResult = await runenv('scripts/import.php', [], '--force');
 ```
 
 - `script` — path to a PHP file **inside the project**, executed with `require_once`.
-- `paths` — optional array of explicit local file paths to mount into the sandbox before the script runs.
+- `paths` — optional array of explicit local file paths, not directories. Missing
+  files are skipped; a directory can cause a filesystem rejection. Use
+  `mountPath()` first for recursive directory mounting.
 - `...args` — extra string arguments appended to the script's `$argv`.
+
+Script and extra-file paths resolve against the project captured at import.
+Before initializing PHP or copying files, `runenv()` rejects paths outside
+that project, including symbolic links whose real targets are outside it.
+Directories are rejected; missing optional files are skipped. This check does
+not make PHP scripts untrusted-code sandboxes or restrict explicit `mountPath()`
+calls.
 
 **Returns** `Promise<PreprosResult>`, following the same shape as `render()`. Inside the script, call `PREPROS::exportFile()` for any file you want listed in `result.files`.
 
@@ -919,15 +951,38 @@ const { files, colors } = await processImages([
   { op: 'palette', src: 'hero.jpg', count: 5 },
 ]);
 
-// files  → ['src/images/hero-1200w.webp']   (also copied back to the host)
+// files includes 'src/images/hero-1200w.webp' and may include '.cache.db'.
 // colors → { 'hero.jpg:5': ['#1e3a5f', '#c8a24b', …] }
 ```
 
 - `jobs` — array of `resize` / `palette` jobs (see the shape above). An **empty
   array is a no-op** and does **not** start the WASM runtime.
+- Omitted `jobs` also returns `{ success: true, files: [], colors: {} }`
+  without starting PHP. Non-array input currently does the same; this is not
+  strict input validation.
 - Staleness is the caller's responsibility: every `resize` job listed is executed.
+- `resize`: `width`/`height` default to `0` (preserve size when both are zero),
+  `cover` to `false`, and lossy encoder quality to `82`. `dests` contains
+  absolute `/project/...` output paths. `palette` defaults `count` to `5`.
+- The PHP worker handles `palette` explicitly and treats any other `op` as a
+  resize; pass only the two documented operations. Processing stops at the
+  first exception. Always check `success` before using files or colors.
 
 **Returns** `Promise<PreprosResult & { colors: Record<string, string[]> }>`.
+
+### `resetRuntime()`
+
+Returns `Promise<void>`. Queued after preceding operations, it disposes the
+owned runtime, mounts, and cached configuration. It does not change the project
+path captured at import, clear disk caches, or reset the SDK hook registry.
+
+### TypeScript declarations
+
+The shipped `index.d.ts` includes `render(file?, phpIncludes?)`, argument-free
+`sitemap()`, explicit-file `runenv()` mounts, and the current diagnostic fields.
+`PreprosResult.files` is optional because response parsing can fail before a
+file list exists. `ImageBatchResult.files` is always normalized to an array.
+The obsolete `response` field is replaced by `debug` and `stderr`.
 
 ---
 

@@ -36,6 +36,33 @@ build. Part of the **Kirigami** project ecosystem.
 
 ---
 
+## Table of contents
+
+- [@kirigami/plugin-highlight](#kirigamiplugin-highlight)
+- [Overview](#overview)
+- [What's new in 0.1.7](#whats-new-in-017)
+- [What's new in 0.1.6](#whats-new-in-016)
+- [What's new in 0.1.5](#whats-new-in-015)
+- [What's new in 0.1.4](#whats-new-in-014)
+- [What's new in 0.1.3](#whats-new-in-013)
+- [What's new in 0.1.2](#whats-new-in-012)
+- [What's new in 0.1.1](#whats-new-in-011)
+- [Installation](#installation)
+- [Configuration](#configuration)
+  - [Options](#options)
+- [How it works](#how-it-works)
+- [Copy-button behavior](#copy-button-behavior)
+- [Theming](#theming)
+  - [Automatic (`theme: auto` / `dark` / `light`)](#automatic-theme-auto--dark--light)
+  - [Manual (`theme: none`)](#manual-theme-none)
+  - [The embedded font](#the-embedded-font)
+- [The `<highlight>` tag](#the-highlight-tag)
+- [Per-page and per-block control](#per-page-and-per-block-control)
+- [Requirements](#requirements)
+- [License](#license)
+
+---
+
 ## What's new in 0.1.7
 
 - Dependency bump to
@@ -102,32 +129,6 @@ build. Part of the **Kirigami** project ecosystem.
 
 ---
 
-## Table of contents
-
-- [@kirigami/plugin-highlight](#kirigamiplugin-highlight)
-- [Overview](#overview)
-- [What's new in 0.1.7](#whats-new-in-017)
-- [What's new in 0.1.6](#whats-new-in-016)
-- [What's new in 0.1.5](#whats-new-in-015)
-- [What's new in 0.1.4](#whats-new-in-014)
-- [What's new in 0.1.3](#whats-new-in-013)
-- [What's new in 0.1.2](#whats-new-in-012)
-- [What's new in 0.1.1](#whats-new-in-011)
-- [Installation](#installation)
-- [Configuration](#configuration)
-  - [Options](#options)
-- [How it works](#how-it-works)
-- [Theming](#theming)
-  - [Automatic (`theme: auto` / `dark` / `light`)](#automatic-theme-auto--dark--light)
-  - [Manual (`theme: none`)](#manual-theme-none)
-  - [The embedded font](#the-embedded-font)
-- [The `<highlight>` tag](#the-highlight-tag)
-- [Per-page and per-block control](#per-page-and-per-block-control)
-- [Requirements](#requirements)
-- [License](#license)
-
----
-
 ## Installation
 
 ```bash
@@ -167,11 +168,20 @@ validates `options:` as you type** (once `name:` is set), via the
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `languages` | `string[]` \| `"all"` | a common set of 12 | Languages to register. `"all"` loads the full highlight.js build (~190 languages, slower). An unknown language name fails registration/build. |
-| `theme` | `"auto"` \| `"dark"` \| `"light"` \| `"none"` | `"auto"` | Which theme stylesheet to append to the Sass build. `"none"` appends nothing — you `@use` it yourself. |
+| `theme` | `"auto"` \| `"dark"` \| `"light"` \| `"none"` | `"auto"` | Which theme stylesheet to append to the Sass build. `"none"` skips the palette; font and copy-button styles are controlled separately. |
 | `autodetect` | `boolean` | `true` | Guess the language of code blocks that have no `language-…` class (restricted to the registered set). |
 | `embedFont` | `boolean` | `true` | Append the embedded JetBrains Mono `@font-face` (~39 KB woff2, base64) to the Sass build. |
 | `copyButton` | `boolean` | `true` | Hover "Copy" button on every code block. Bundles a ~1 KB script into every `esbuild` task (you need one) and appends the button styles to the Sass build. |
 | `tag` | `boolean` | `true` | Register the `<highlight lang="…">…</highlight>` authoring tag (PHP-side). |
+
+Configured aliases include `html`/`htm`/`svg` → `xml`, `js`/`jsx` → `javascript`,
+`ts`/`tsx` → `typescript`, `md` → `markdown`, `yml` → `yaml`,
+`sh`/`zsh` → `bash`, and `py` → `python`. Other names must resolve to a
+highlight.js module or an already registered alias. Invalid configuration
+fails registration even on a site without code blocks. An unregistered
+language on an individual block instead produces escaped, uncolored code.
+Registered modules persist for the Node process lifetime; an explicit list
+restricts autodetection but does not unload previously registered languages.
 
 The default `languages` set is: `php`, `javascript`, `typescript`, `bash`,
 `json`, `yaml`, `css`, `scss`, `xml` (HTML), `markdown`, `sql`, `python`.
@@ -218,6 +228,21 @@ The plugin registers `@kirigami/sdk` hooks:
 highlight.js is a **dev dependency of your build** only. Nothing from it reaches
 the deployed site except the class names in the HTML, the CSS that styles them,
 and (with `copyButton`) the small copy script.
+
+---
+
+## Copy-button behavior
+
+The script scans existing `pre > code.hljs` blocks when it runs (or on
+`DOMContentLoaded`). It does not watch for blocks inserted later. Repeated
+execution skips enhanced blocks and blocks with an adjacent button.
+It copies the displayed text with one trailing newline removed. Success shows
+`Copied`; rejection shows `Press ⌘C`, then resets after 1.6 seconds. That
+fallback does not select the code or perform another copy operation.
+
+Include the generated JavaScript in the page and provide a working
+`navigator.clipboard.writeText` environment. A Sass task is needed for the
+bundled theme, font, and button styles.
 
 ---
 

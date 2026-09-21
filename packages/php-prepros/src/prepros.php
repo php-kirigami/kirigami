@@ -14,12 +14,10 @@ try {
     else if (is_dir($target)) {
         $prj = new PREPROS($config);
         foreach (FS::dig($target . '/*.php', true) as $file) {
-            $parent = pathinfo(pathinfo($file, PATHINFO_DIRNAME), PATHINFO_BASENAME);
-            if (strpos($parent, '_') === 0) continue;
-            if (strpos(pathinfo($file, PATHINFO_FILENAME), '_') !== 0) continue;
+            if (!PREPROS::isPage($file)) continue;
             PREPROS::render($file);
         }
-    } elseif (preg_match('#^_(.*)\.php$#i', pathinfo($target, PATHINFO_BASENAME), $m)) {
+    } elseif (PREPROS::isPage($target)) {
         PREPROS::render($target);
     } else {
         throw new Exception("Invalid target.");

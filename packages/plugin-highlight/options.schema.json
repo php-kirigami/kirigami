@@ -7,7 +7,7 @@
   "additionalProperties": false,
   "properties": {
     "languages": {
-      "description": "Languages to register with highlight.js. Either an explicit list of language names, or the string \"all\" for the full build (~190 languages, slower). Unknown names are skipped with a warning.",
+      "description": "Languages to register with highlight.js. Either an explicit list of language names, or the string \"all\" for the full build (~190 languages, slower). Unknown names fail plugin registration, even if no page contains a code block.",
       "default": ["php", "javascript", "typescript", "bash", "json", "yaml", "css", "scss", "xml", "markdown", "sql", "python"],
       "oneOf": [
         {
@@ -19,7 +19,7 @@
       ]
     },
     "theme": {
-      "description": "Which theme stylesheet to append to every sass task. \"auto\" = light baseline + dark under prefers-color-scheme/[data-theme]. \"none\" appends nothing (you @use the mixin yourself).",
+      "description": "Which theme stylesheet to append to every sass task. \"auto\" = light baseline + dark under prefers-color-scheme/[data-theme]. \"none\" skips the palette (you @use the mixin yourself); embedFont and copyButton still control their own styles.",
       "type": "string",
       "enum": ["auto", "dark", "light", "none"],
       "default": "auto"

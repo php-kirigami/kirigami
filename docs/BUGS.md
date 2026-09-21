@@ -28,3 +28,10 @@ A08 resource paths and working-directory capture are fixed with a staged ESM run
 ## WASM HTTPS integration follow-up
 
 During A03 verification, local HTTPS requests from the current working-tree WASM binary timed out before the network proxy received a connection. The binary and generated loader already had local modifications before this fix and were left untouched; the cause has not been established. Native PHP exercises of the actual CURL helper pass certificate, hostname, redirect, and download checks. WASM tests verify the injected CA contents and active ini directives, but do not establish successful end-to-end HTTPS. Investigate the networking path before claiming that integration is verified.
+
+## Media package inspection — 2026-09-21
+
+`npm pack --dry-run --ignore-scripts` listed only the intended seven files for
+each of audiowaveform-wasm and bestframe in this working tree. This narrows the
+current A17 packaging evidence for those two packages; it does not verify
+PHP-WASM packaging or any already published tarball.

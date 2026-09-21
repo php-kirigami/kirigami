@@ -172,11 +172,7 @@ const mountPath = async (localPath, virtualDir, php) => {
 const run = async (args = [], script = null, mountfiles = []) => {
     const php = await getPHPInstance();
 
-    await Promise.all(mountfiles.map(async item => {
-        const file = path.resolve(item);
-        if(!fs.existsSync(file)) return;
-        if(!path.relative(__project, file)) return;
-        const dest = path.join('/project', file.replace(__project, '')).replaceAll('\\', '/');
+    await Promise.all(mountfiles.map(async ({ file, dest }) => {
         const buf = fs.readFileSync(file);
         const parentDir = dest.substring(0, dest.lastIndexOf('/'));
         if (parentDir) php.mkdirTree(parentDir);
@@ -268,14 +264,33 @@ const extractPhpError = (text) => {
 }
 
 
+// Require both the authored path and its real target to stay inside the project.
+// Validate the whole input list before booting PHP or copying any file.
+const projectFile = (input, optional = false) => {
+    const file = path.resolve(__project, input);
+    const inside = (root, target) => {
+        const relative = path.relative(root, target);
+        return relative && relative !== '..' && !relative.startsWith('..' + path.sep)
+            && !path.isAbsolute(relative);
+    };
+    if (!inside(__project, file)) throw new Error('PHP file outside project');
+    if (!fs.existsSync(file)) {
+        if (optional) return null;
+        throw new Error("Can't find PHP file");
+    }
+    if (!inside(fs.realpathSync(__project), fs.realpathSync(file))) {
+        throw new Error('PHP file outside project');
+    }
+    if (!fs.statSync(file).isFile()) throw new TypeError('Expected a project file, not a directory');
+    return { file, dest: '/project/' + path.relative(__project, file).split(path.sep).join('/') };
+};
+
 const runenv = async (script, paths = [], ...args) => {
-    if(!script) throw "Missing PHP file.";
-    const file = path.resolve(script);
-    if(!path.relative(__project, file)) throw "PHP file outside project";
-    if(!fs.existsSync(file)) throw "Can't find PHP file";
-    const dest = path.join('/project', file.replace(__project, '')).replaceAll('\\', '/');
-    return run([dest, ...args], '/prepros/runenv.php', [file, ...paths]);
-}
+    if (!script) throw new Error('Missing PHP file.');
+    const entry = projectFile(script);
+    const mounts = [entry, ...paths.map(file => projectFile(file, true)).filter(Boolean)];
+    return run([entry.dest, ...args], '/prepros/runenv.php', mounts);
+};
 
 
 // Run a batch of image jobs (resize / palette) through /prepros/imagebatch.php,

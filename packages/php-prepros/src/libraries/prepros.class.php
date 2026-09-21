@@ -30,6 +30,25 @@ final class PREPROS
     }
 
 
+    // Only page files beneath the configured source root are publishable.
+    // Check every relative directory, but not the configured root's own name.
+    public static function isPage(string $file): bool
+    {
+        $file = realpath($file);
+        if (!$file || !is_file($file)) return false;
+        $file = str_replace('\\', '/', $file);
+        $root = str_replace('\\', '/', self::$root);
+        if (!str_starts_with($file, $root)) return false;
+        $parts = explode('/', substr($file, strlen($root)));
+        $name = array_pop($parts);
+        if (!preg_match('/^_.*\.php$/i', $name)) return false;
+        foreach ($parts as $part) {
+            if (str_starts_with($part, '_')) return false;
+        }
+        return true;
+    }
+
+
     public static function render(string $file)
     {
         $dir = pathinfo($file, PATHINFO_DIRNAME) . S;
@@ -112,9 +131,7 @@ final class PREPROS
         $paths = [];
         $root = realpath(self::$root);
         foreach (FS::dig($root . '/_index.php') as $file) {
-            $parent = pathinfo(pathinfo($file, PATHINFO_DIRNAME), PATHINFO_BASENAME);
-            if (strpos($parent, '_') === 0) continue;
-            if (strpos(pathinfo($file, PATHINFO_FILENAME), '_') !== 0) continue;
+            if (!self::isPage($file)) continue;
             $paths[] = str_replace('\\', '/', ltrim(str_replace($root, '', pathinfo(realpath($file), PATHINFO_DIRNAME)), DIRECTORY_SEPARATOR));
         }
         if (empty($paths)) $paths[] = '';

@@ -24,7 +24,7 @@ Built for the **[Kirigami](https://github.com/php-kirigami)** static site genera
 
 - ✅ **Node.js** only, no browser target
 - ✅ **Buffer or file-path input** — file paths are read from disk; the WASM module is loaded lazily and reused, without temporary output files
-- ✅ **Multithreaded** decode, matching the real CPU core count of whatever machine this runs on
+- ✅ **Multithreaded** decode, using the available CPU count up to the binary’s build-time limit
 - ✅ **Four mainstream web video codecs**: H.264, VP9, HEVC, AV1 — in MP4, Matroska (`.mkv`), and WebM containers
 - ✅ **A real AI model picks the frame**, not just "highest contrast" or "N seconds in" — a MobileNet-based NIMA aesthetic model, embedded directly in the WASM binary (no separate model file to fetch)
 - ✅ **Fallback frame for decodable input** — even if every sampled frame fails the technical filters, you get the least-bad one back instead of nothing
@@ -45,6 +45,7 @@ Part of the **Kirigami** project ecosystem.
 - [Installation](#installation)
 - [Usage](#usage)
 - [Options](#options)
+- [Runtime and failure behavior](#runtime-and-failure-behavior)
 - [Result](#result)
 - [Codec & container support](#codec--container-support)
 - [How the frame gets picked](#how-the-frame-gets-picked)
@@ -103,6 +104,40 @@ If the source video can't be decoded at all (unsupported codec/container, corrup
 | `width` | `number` | `640` | Target output width in pixels — height is computed to preserve the source's aspect ratio. |
 | `format` | `'jpeg' \| 'png'` | `'jpeg'` | Output image format. PNG is lossless. |
 | `quality` | `number` | `85` | JPEG quality, 0-100 (libjpeg-style, higher = better). Ignored for `format: 'png'`. |
+
+---
+
+## Runtime and failure behavior
+
+`bestFrame(input, options = {})` is the only function export. `input` is a
+local path string or `Uint8Array` (including Buffer); URLs, ArrayBuffer, and
+streams are not accepted. Relative paths use the working directory at call
+time. A file is read fully into memory and then copied into WASM memory.
+
+The wrapper does not validate numeric options. Use positive integer `samples`
+and `width`, JPEG quality from 0 to 100, and the documented format names.
+Only the exact string `png` selects PNG; any other runtime value selects
+JPEG. Defaults apply to omitted/undefined fields, not to `null`.
+
+A native no-result pointer becomes `null`. Invalid input types, file read
+errors, module initialization failures, and native/WASM exceptions reject.
+The result image is copied into a Node Buffer before native result memory is
+freed. Metadata is a string-valued object, preserving the container's key
+case, or `null`; score is not a normalized percentage or fixed quality grade.
+
+The package ships `dist/libbestframe.js` and `dist/libbestframe.wasm`.
+The loader also starts worker threads from `libbestframe.js` itself, so keep
+both files together when deploying. Run examples from a `.mjs` file or an ESM
+project. Node's `--input-type=module` option is inherited by those file-based
+workers and causes `ERR_INPUT_TYPE_NOT_ALLOWED` in the current setup.
+
+The module is lazy and reused; no public reset/dispose API is provided.
+Although the function returns a Promise and decoding uses workers, the
+native processing call blocks the calling JavaScript thread until it returns.
+
+The local 2026-09-21 check decoded a synthetic H.264/MP4 clip to both JPEG and
+PNG, checked Buffer/dimension/metadata results, and exercised invalid input.
+It did not rerun every codec combination listed below.
 
 ---
 

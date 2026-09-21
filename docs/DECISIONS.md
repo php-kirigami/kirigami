@@ -322,3 +322,25 @@ version conflict, removed).
 The original import-meta shim collapsed every module-relative resource path onto the host bundle, breaking schema and task resolution. Compilation now bundles only the editor adapter and stages the core dependency tree with its original ESM layout and resources. A dedicated external Node 24+ worker starts in the project directory before importing core. This preserves current core working-directory assumptions without mutating the shared Extension Host or depending on its SQLite/JSPI capabilities. IPC serializes requested operations and forwards logs and watch-build events. The old PHP-prepros bundling shim is removed.
 
 Staging copies installed platform dependencies and records versions/licenses in `dist/runtime/inventory.json`; it is not yet a verified cross-platform VSIX release pipeline. Watch mode rebuilds the editor adapter only; restart compilation to refresh staged core/worker files.
+
+## Script inputs and private page ancestry — 2026-09-21
+
+`runenv()` accepts only regular script/extra files within the project captured
+at import. Both lexical containment and realpath containment are checked before
+runtime initialization, so directory traversal, prefix siblings, and external
+symlinks are rejected. Internal links remain usable; missing optional files
+remain ignored. `mountPath()` remains an explicit broader mounting API, and
+this does not turn PHP execution into an untrusted-code sandbox.
+
+Page selection and sitemap selection share `PREPROS::isPage()`. Every directory
+below the configured source root must be public, not just the immediate parent.
+The root itself may start with `_`; it is configuration, not a content path.
+Explicit requests for private page files fail. This corrects the accidental
+rendering of ordinary descendants beneath private directories without deleting
+previously generated output.
+
+Canva watch now serializes full output rebuilds after debounced source changes.
+For this small asset package, rebuilding the whole tree keeps deletion/rename
+handling consistent across JavaScript, maps, declarations, and styles without
+several competing cleanup paths. Rebuild failures are reported and later edits
+can recover; output replacement is not atomic.

@@ -26,28 +26,12 @@ and plugin packages: essentially, an in-memory hook registry.
 them via `on(hookName, fn)`. Since both depend on the same instance of this
 module (via the monorepo's npm workspaces, or as a regular dependency once
 published), they share the same in-memory registry — the plugin doesn't need
-to know anything about kirigami-core's internal structure.
+to know anything about kirigami-core's internal structure. Core and plugins
+must resolve the same installed SDK module: separate physical copies or
+versions have separate registries; npm dependency declarations alone do not
+guarantee a shared instance.
 
 Part of the **Kirigami** project ecosystem.
-
----
-
-## What's new in 0.2.1
-
-- `homepage` + README pointed at the site (metadata only).
-
----
-
-## What's new in 0.2.0
-
-- `esbuild:before` / `esbuild:after` / `esbuild:plugins` hooks — the esbuild
-  task now has the same extension points as sass, so a plugin can inject
-  client-side JavaScript.
-- `prepros:html` hook — transform the final HTML of each rendered page;
-  `prepros:php` hook — contribute a PHP file to the prepros runtime (register
-  authoring tags / hooks from PHP). Both used by `@kirigami/plugin-highlight`.
-- `runWaterfall()` — pipe a value through listeners (vs. `run()`, which
-  collects), and `has()` — check whether a hook has any listener.
 
 ---
 
@@ -70,8 +54,28 @@ Part of the **Kirigami** project ecosystem.
   - [`has(hookName)`](#hashookname)
   - [`HOOKS`](#hooks)
 - [Cache](#cache)
+- [TypeScript declarations](#typescript-declarations)
 - [Requirements](#requirements)
 - [License](#license)
+
+---
+
+## What's new in 0.2.1
+
+- `homepage` + README pointed at the site (metadata only).
+
+---
+
+## What's new in 0.2.0
+
+- `esbuild:before` / `esbuild:after` / `esbuild:plugins` hooks — the esbuild
+  task now has the same extension points as sass, so a plugin can inject
+  client-side JavaScript.
+- `prepros:html` hook — transform the final HTML of each rendered page;
+  `prepros:php` hook — contribute a PHP file to the prepros runtime (register
+  authoring tags / hooks from PHP). Both used by `@kirigami/plugin-highlight`.
+- `runWaterfall()` — pipe a value through listeners (vs. `run()`, which
+  collects), and `has()` — check whether a hook has any listener.
 
 ---
 
@@ -123,9 +127,10 @@ next one.
 
 ## Available hooks
 
-Each hook below is fired with a single argument, `hookContext`, shaped as
+Sass and esbuild hooks receive one argument, `hookContext`, shaped as
 `{ __root, task, exportPath, config }` (the same values `build()` receives
-for the current task, plus the resolved kirigami.yaml config).
+for the current task, plus the resolved kirigami.yaml config). The two
+prepros hooks use the separate signatures shown in the table.
 
 | Hook | Task | Fired with | Expected return value |
 |---|---|---|---|
@@ -159,16 +164,20 @@ Register hooks inside the plugin’s default registration function so reload can
 
 ### `reset(hookName?)`
 
-Remove all listeners for one hook, or every hook when omitted. The core owns this during reload; plugins should normally retain and call their own unsubscribe functions.
+Remove all listeners for one hook, or every hook when omitted. This does not
+clear commands (`resetCommands()` does that) or persistent caches. Resetting
+a registry does not cancel a dispatch that has already started. Do not mutate
+registrations during dispatch: listeners are iterated from a live `Set`. The core owns this during reload; plugins should normally retain and call their own unsubscribe functions.
 
 ### Command registry
 
-`registerCommand(name, { description, run })` registers a plugin command. `run(args, project)` receives raw arguments and the loaded project. A duplicate name or non-function `run` throws. `getCommand(name)` returns the command or `null`; `listCommands()` returns all entries; `resetCommands(name?)` removes one or all. Register commands inside the default plugin function, with `kirigami.type: "command"` in its manifest.
+`registerCommand(name, { description, run })` registers a plugin command. `run(args, project)` receives raw arguments and the loaded project. A duplicate name or non-function `run` throws. `getCommand(name)` returns the command or `null`; `listCommands()` returns all entries; `resetCommands(name?)` removes one or all. Register commands inside the default plugin function, with `kirigami.type: "command"` in its manifest. Entries have `{ name, description, run }`; descriptions default to an empty string, and listing preserves registration order. Returned entries are the stored mutable objects. The registry does not execute commands or validate their arguments.
 
 ### `on(hookName, fn)`
 
 Registers a listener. Returns a function to unregister it (equivalent to
-calling `off(hookName, fn)`).
+calling `off(hookName, fn)`). The same function object is registered only
+once per hook; separate closures are separate listeners.
 
 ### `off(hookName, fn)`
 
@@ -177,7 +186,10 @@ Unregisters a listener previously added with `on()`.
 ### `run(hookName, ...args)`
 
 Runs every listener registered for a hook, in registration order, and
-flattens their results into a single array. Used internally by
+flattens their results **one level** into a single array. Top-level
+`null`/`undefined` results are skipped; nested arrays and nulls inside returned
+arrays are preserved. A thrown error or rejected promise stops dispatch and
+rejects `run()`; the same failure rule applies to `runWaterfall()`. Used internally by
 kirigami-core — a plugin normally doesn't need to call `run()` itself.
 
 ### `runWaterfall(hookName, value, ...args)`
@@ -221,7 +233,7 @@ cache.purge('meta_*');  // deletes every "meta_" entry, expired or not
 cache.close();          // closes the underlying SQLite connection
 ```
 
-`new Cache()` with no argument opens `.node.db` in the current working
+`new Cache()` with no argument uses `.node.db` in the current working
 directory — the same file kirigami-core uses. Pass an explicit path to keep a
 plugin's cache separate.
 
@@ -240,8 +252,29 @@ glob like `'meta_*'` to drop a whole namespace at once (`*` is the only
 wildcard). `purge()` with no argument keeps its original meaning — sweep
 expired entries only. Both forms return the number of rows deleted.
 
-Every value goes through `JSON.stringify`/`JSON.parse` — so only serializable
-data (no functions, class instances, `Buffer`, etc.).
+Values round-trip through `JSON.stringify`/`JSON.parse`: use JSON-compatible
+data. Dates, class instances, and Buffers lose their original type; circular
+values and BigInt throw. Stored `null`, missing entries, expired entries, and
+unparseable stored JSON all read as `null`.
+
+Construction performs no I/O; the first operation opens the database. Create
+its parent directory yourself. The table is initialized only for a new file,
+so do not point it at an existing empty file or unrelated database. Calls are
+synchronous; SQLite errors propagate. `del()` returns whether a row existed.
+TTL uses whole seconds: an entry remains readable at its expiry second and
+expires after it. Reads do not delete expired rows; `purge()` does. Use `0`
+or a positive TTL; negative values are not validated and are not swept by
+`purge()`.
+
+---
+
+## TypeScript declarations
+
+The shipped `index.d.ts` covers hooks, reset, `Cache`, and the command registry.
+`Command<TProject, TResult>` describes the host project and command result
+without importing the core package into the SDK. They default to `unknown`;
+provide your host type when registering or retrieving a typed command.
+Registration and lookup do not perform runtime type validation of the host.
 
 ---
 

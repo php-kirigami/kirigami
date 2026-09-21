@@ -35,6 +35,44 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## Table of contents
+
+- [@kirigami/canva](#kirigamicanva)
+- [Overview](#overview)
+- [What's new in 2.6.0](#whats-new-in-260)
+- [What's new in 2.5.2](#whats-new-in-252)
+- [What's new in 2.5.1](#whats-new-in-251)
+- [What's new in 2.5.0](#whats-new-in-250)
+- [What's new in 2.4.0](#whats-new-in-240)
+- [What's new in 2.3.0](#whats-new-in-230)
+- [What's new in 2.2.0](#whats-new-in-220)
+- [What's new in 2.1.0](#whats-new-in-210)
+- [What's new in 2.0.0](#whats-new-in-200)
+- [What's new in 1.1.1](#whats-new-in-111)
+- [What's new in 1.1.0](#whats-new-in-110)
+- [Installation](#installation)
+- [Package layout](#package-layout)
+- [Styles](#styles)
+  - [`styles/conf`](#stylesconf)
+  - [Dark theme](#dark-theme)
+  - [`styles/utils`](#stylesutils)
+  - [`styles/prose`](#stylesprose)
+  - [`styles/main`](#stylesmain)
+  - [`styles/lightswitch`](#styleslightswitch)
+- [Scripts](#scripts)
+  - [`dom`](#dom)
+  - [`helpers`](#helpers)
+  - [`theme`](#theme)
+  - [`observer`](#observer)
+  - [`reveal`](#reveal)
+  - [`components/burger`](#componentsburger)
+- [Browser and Node boundaries](#browser-and-node-boundaries)
+- [Build](#build)
+- [Requirements](#requirements)
+- [License](#license)
+
+---
+
 ## What's new in 2.6.0
 
 - **`styles/lightswitch` — animated theme toggle.** A pill-shaped switch whose
@@ -180,43 +218,6 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
-## Table of contents
-
-- [@kirigami/canva](#kirigamicanva)
-- [Overview](#overview)
-- [What's new in 2.6.0](#whats-new-in-260)
-- [What's new in 2.5.2](#whats-new-in-252)
-- [What's new in 2.5.1](#whats-new-in-251)
-- [What's new in 2.5.0](#whats-new-in-250)
-- [What's new in 2.4.0](#whats-new-in-240)
-- [What's new in 2.3.0](#whats-new-in-230)
-- [What's new in 2.2.0](#whats-new-in-220)
-- [What's new in 2.1.0](#whats-new-in-210)
-- [What's new in 2.0.0](#whats-new-in-200)
-- [What's new in 1.1.1](#whats-new-in-111)
-- [What's new in 1.1.0](#whats-new-in-110)
-- [Installation](#installation)
-- [Package layout](#package-layout)
-- [Styles](#styles)
-  - [`styles/conf`](#stylesconf)
-  - [Dark theme](#dark-theme)
-  - [`styles/utils`](#stylesutils)
-  - [`styles/prose`](#stylesprose)
-  - [`styles/main`](#stylesmain)
-  - [`styles/lightswitch`](#styleslightswitch)
-- [Scripts](#scripts)
-  - [`dom`](#dom)
-  - [`helpers`](#helpers)
-  - [`theme`](#theme)
-  - [`observer`](#observer)
-  - [`reveal`](#reveal)
-  - [`components/burger`](#componentsburger)
-- [Build](#build)
-- [Requirements](#requirements)
-- [License](#license)
-
----
-
 ## Installation
 
 ```bash
@@ -248,7 +249,7 @@ segment is optional there (Node's own resolver still needs it).
 
 ```
 @kirigami/canva
-└── dist/                      # the only published/consumed directory
+└── dist/                      # runtime assets; manifest, README and LICENSE also ship
     ├── scripts/               # exposed as @kirigami/canva/<name>
     │   ├── dom.js             # + dom.js.map, dom.d.ts when present
     │   ├── helpers.js
@@ -265,15 +266,32 @@ segment is optional there (Node's own resolver still needs it).
         └── lightswitch.scss
 ```
 
-`dist/` is generated from `src/` by [`build.js`](./build.js): scripts are
+`dist/` is generated from `src/` by the repository’s `build.js`: scripts are
 transpiled one-to-one with esbuild (no bundling), `.d.ts` files are copied
 through, and `styles/` is copied verbatim.
 
-The `exports` map (`{ "./styles/*": …, "./*": "./dist/scripts/*.js" }`) drops
-the `scripts/` segment: `dist/scripts/dom.js` is imported as
-`@kirigami/canva/dom`. Styles keep their `styles/` prefix for Node — but the
-`sass` task's importer makes it optional (see above), and since `./styles/*`
-is matched before the `./*` catch-all, style `@use`s are never shadowed by it.
+The current manifest exports these subpaths (without file extensions):
+
+| Import | Shipped target |
+|---|---|
+| `@kirigami/canva/<name>` | `dist/scripts/<name>.js` |
+| `@kirigami/canva/scripts/<name>` | The same script; the compatibility path is present in the current manifest |
+| `@kirigami/canva/styles/<name>` | `dist/styles/<name>.scss` |
+| `@kirigami/canva/package.json` | Package manifest |
+
+The available names are those in the tree above, including
+`components/burger`. There is no root `@kirigami/canva` export. The historical
+2.0.0 note about removed `scripts/*` paths does not describe the current
+manifest. For Sass outside Kirigami, use Dart Sass's Node package importer
+and an explicit style path:
+
+```scss
+@use 'pkg:@kirigami/canva/styles/utils' as utils;
+```
+
+Enable `new sass.NodePackageImporter()` in the compiler options. With
+Kirigami's custom importer, bare style aliases such as `@kirigami/canva/conf`
+also work. They are Sass aliases, not JavaScript entry points.
 
 ---
 
@@ -489,7 +507,7 @@ Runtime knobs (set on the element or `:root`):
 ## Scripts
 
 ESM modules, browser target (`es2022`), exposed under `@kirigami/canva/*`
-(the `scripts/` segment is not part of the import path). Each source file
+and the compatible `@kirigami/canva/scripts/*` paths. Each source file
 compiles to its own dist file — import them individually.
 
 ### `dom`
@@ -585,10 +603,17 @@ out as siblings before the tag is swapped. So this is enough:
 ```
 
 ```js
-register('youtube', (el) => `
-	<iframe class="youtube" allowfullscreen loading="lazy"
-		src="https://www.youtube-nocookie.com/embed/${el.getAttribute('id')}">
-	</iframe>`);
+register('youtube', (el) => {
+    const id = el.getAttribute('id') || '';
+    if (!/^[\w-]{11}$/.test(id)) return;
+    const iframe = document.createElement('iframe');
+    iframe.className = 'youtube';
+    iframe.allowFullscreen = true;
+    iframe.loading = 'lazy';
+    iframe.title = 'YouTube video';
+    iframe.src = `https://www.youtube-nocookie.com/embed/${id}`;
+    return iframe;
+});
 ```
 
 Registration order does not matter — a handler registered after the page has
@@ -613,6 +638,14 @@ plugins use to add authoring shortcuts.
 `options.voidLike` (default `true`) — treat the tag as non-closing and lift any
 accidental nested children out as siblings before replacing. Set `false` when
 the tag genuinely wraps content you want to keep inside the replacement.
+
+Handlers are synchronous: returned Promises are not awaited. Each source
+element is marked as seen before invoking its handler, so returning `undefined`
+or throwing does not arrange a retry. Handler exceptions are logged. A second
+registration for the same tag replaces the handler for unseen elements;
+unregistering or stopping does not restore replaced DOM. `scan()` works while
+stopped, but automatic catch-up on registration requires a running observer.
+Only child additions are observed, not attribute changes.
 
 Each replacement also fires a `canva:observed` `CustomEvent` on `document`
 (`detail: { tag, source, nodes }`).
@@ -643,8 +676,10 @@ Pair it with a CSS rule that hides `[data-reveal]` and shows
 |---|---|---|
 | `reveal` | `reveal(target = document) → void` | Reveals every `[data-reveal]` under `target`. Elements already carrying `is-in` are skipped, so call it again after inserting more content. |
 
-`prefers-reduced-motion: reduce`, a missing `IntersectionObserver`, or the
-internal safety timeout each fall back to revealing everything at once.
+`prefers-reduced-motion: reduce` or a missing `IntersectionObserver` reveals
+all selected descendants immediately. The 1.5-second safety timeout reveals
+all remaining selected descendants even when still offscreen. `reveal(target)`
+does not include `target` itself, only its matching descendants.
 
 ### `components/burger`
 
@@ -657,15 +692,40 @@ shared nav-toggle component.
 
 ---
 
+## Browser and Node boundaries
+
+`dom`, `theme`, `observer`, and `reveal` access browser globals during import;
+do not import them in a plain Node process. `helpers` can be imported in Node
+for `dedent`, but its other helpers require DOM/Image APIs when called. The
+Burger stub has no behavior. Adjacent `.d.ts` files are shipped with scripts;
+there is no root declaration barrel.
+
+`busy` and `working` are not reference-counted across separate calls: the first
+completed call can remove the class while another is still pending.
+`getTheme()` falls back to `auto` when storage cannot be read, but does not
+validate arbitrary stored strings. `setTheme()` still applies the DOM change
+when persistence fails; a later import cannot restore that unsaved choice.
+
+---
+
 ## Build
 
 ```bash
-npm run build      # one-shot: wipes and regenerates dist/
-npm run watch      # rebuild on change under src/
+npm run build --workspace @kirigami/canva  # wipes and regenerates dist/
+npm run watch --workspace @kirigami/canva  # rebuild on change under src/
 ```
 
-`build.js` depends only on `esbuild`, `chokidar` and `fast-glob` (all dev
-dependencies).
+These commands run from the monorepo; an installed npm package contains the
+built assets, not `build.js` or `src/`. The script depends on `esbuild`,
+`chokidar`, and `fast-glob` (development dependencies).
+
+A one-shot build exits unsuccessfully if JavaScript compilation, declaration
+copying, or style copying fails. Watch starts after a successful initial build,
+debounces changes, and serializes complete rebuilds of `dist/`, removing stale
+scripts, maps, declarations, and styles after deletions or renames. A failed
+watch rebuild is reported and later edits can recover without restarting.
+Rebuilds clear `dist/` first, so output can be temporarily absent or incomplete;
+this is not an atomic publication mechanism.
 
 ---
 

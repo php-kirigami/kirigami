@@ -42,6 +42,7 @@ Part of the **Kirigami** project ecosystem.
 - [Tools](#tools)
 - [Why no `serve`/`watch`](#why-no-servewatch)
 - [JavaScript API](#javascript-api)
+  - [Documentation index helpers](#documentation-index-helpers)
 - [License](#license)
 
 ---
@@ -88,10 +89,11 @@ working directory (`kirigami.yaml` resolved from there) — use the client’s s
 | `kirigami_about` | Returns a compact project manifest (README/docs/LICENSE summary, package metadata, tasks and scripts) so an AI agent can orient itself immediately. |
 | `kirigami_search_docs` | Searches the docs/ and README files for a query and returns matching paths plus short excerpts. It now uses a cached full-text index that refreshes when files change. |
 | `kirigami_doc_hints` | Suggests the most relevant docs for a topic such as build, package, MCP, extension, troubleshooting or licensing. |
+| `kirigami_site_blueprint` | Returns a suggested site tree, example configuration, and example PHP page. It does not create files or validate that the suggested layout files exist. |
 
-Every tool except `kirigami_validate` calls the project reload path, which also invalidates PHP configuration, mounts/runtime, and plugin includes; validation re-reads core config without plugin registration. Await tool operations in sequence: there is no whole-project operation queue. JavaScript plugin code changes still require restarting the MCP process because Node caches imported modules.
+Configuration, build/export, script/task listing and execution, and `kirigami_about` reload the project before answering. Reload invalidates PHP state and re-registers plugins, so even `about` can execute plugin registration code. `kirigami_validate` only validates core configuration. Documentation search, hints, and the site blueprint do not reload the project. The standard stdio launcher still loads a project before starting the server. Await project operations in sequence: there is no whole-project operation queue. JavaScript plugin code changes require restarting the MCP process because Node caches imported modules.
 
-Tool results contain JSON in text content. Inspect the payload’s `success` field: a structured `success: false` result is not automatically an MCP `isError` response. Thrown errors are reported as tool errors.
+Tool results contain JSON in text content. Inspect the payload's `success` field for operations: a structured `success: false` result is not automatically an MCP `isError` response. Validation instead returns `{ valid: true }` or `{ valid: false, error }`, including when validation throws. Other caught exceptions are reported as tool errors.
 
 `kirigami_run`/`kirigami_run_task` execute any named script/task the
 project defines — only point this server at a project you trust.
@@ -100,7 +102,7 @@ project defines — only point this server at a project you trust.
 
 ## Why no `serve`/`watch`
 
-`Project.serve()` and `.watch()` return handles promptly, but leave background resources running. MCP tools for them would need explicit resource ownership, status, and stop operations; those tools are not implemented.
+`Project.serve()` and `.watch()` build initially, then return handles while leaving background resources running. MCP tools for them would need explicit resource ownership, status, and stop operations; those tools are not implemented.
 
 ---
 
@@ -126,6 +128,28 @@ import { serveStdio } from '@kirigami/mcp';
 // project at process.cwd() and connects a StdioServerTransport:
 await serveStdio();
 ```
+
+### Documentation index helpers
+
+These synchronous named exports can be used independently of a loaded Project:
+
+| Export | Behavior |
+|---|---|
+| `buildDocIndex(projectDir, { cachePath } = {})` | Scan Markdown, return an index, and write it to `.kirigami/mcp-doc-index.json` by default. Pass `cachePath: null` to avoid writing a cache. |
+| `loadDocIndex(projectDir)` | Reuse the default cache, rebuilding when file membership changes or a file has a newer modification time. |
+| `searchDocIndex(index, query, scope = 'all', limit = 10)` | Return ranked `{ path, score, excerpt }` matches without reading source files again. Empty or untokenizable queries return no matches. |
+
+```js
+import { buildDocIndex, searchDocIndex } from '@kirigami/mcp';
+
+const index = buildDocIndex(process.cwd(), { cachePath: null });
+const matches = searchDocIndex(index, 'initial build', 'docs', 5);
+console.log(matches);
+```
+
+The index includes the root README and Markdown under `docs`, `packages`, `src`, `assets`, and `scripts`. It skips `.git`, `node_modules`, and `.kirigami` directories; other generated Markdown under included paths can still be indexed. Root CLAUDE.md, AGENTS.md, and `.github` documentation are not included by the final path filter.
+
+Scopes are `all`, `docs`, `readme` (root README only), and `packages`. The MCP search tool validates a positive limit of at most 20; direct JavaScript calls do not apply that schema. Excerpts are the first 220 normalized characters of each document, not a passage around the match. Ranking uses up to 50 token frequencies per document plus full-query substring matches. Modification-time refresh is not content hashing: preserved or older timestamps can leave edited content cached. Search writes a cache by default, but does not modify source documentation. Built-in topic hints are a fixed list and may lag newly added guides.
 
 ---
 

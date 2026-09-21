@@ -32,6 +32,26 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
+## Table of contents
+
+- [@kirigami/plugin-embed](#kirigamiplugin-embed)
+- [Overview](#overview)
+- [What's new in 0.1.5](#whats-new-in-015)
+- [What's new in 0.1.4](#whats-new-in-014)
+- [What's new in 0.1.3](#whats-new-in-013)
+- [What's new in 0.1.1](#whats-new-in-011)
+- [Installation](#installation)
+- [Configuration](#configuration)
+  - [Options](#options)
+- [Usage](#usage)
+- [How it works](#how-it-works)
+- [Generated assets and failure behavior](#generated-assets-and-failure-behavior)
+- [Styling](#styling)
+- [Requirements](#requirements)
+- [License](#license)
+
+---
+
 ## What's new in 0.1.5
 
 - Dependency bump to
@@ -66,25 +86,6 @@ Part of the **Kirigami** project ecosystem.
   dominated the page next to normal widescreen ones. The real player, once
   clicked, still showed at its own true ratio, pillarboxed rather than
   stretched. (Superseded by 0.1.3's `maxWidth` cap, above.)
-
----
-
-## Table of contents
-
-- [@kirigami/plugin-embed](#kirigamiplugin-embed)
-- [Overview](#overview)
-- [What's new in 0.1.5](#whats-new-in-015)
-- [What's new in 0.1.4](#whats-new-in-014)
-- [What's new in 0.1.3](#whats-new-in-013)
-- [What's new in 0.1.1](#whats-new-in-011)
-- [Installation](#installation)
-- [Configuration](#configuration)
-  - [Options](#options)
-- [Usage](#usage)
-- [How it works](#how-it-works)
-- [Styling](#styling)
-- [Requirements](#requirements)
-- [License](#license)
 
 ---
 
@@ -169,6 +170,34 @@ Only YouTube and Vimeo providers are implemented. Other providers require a cust
 
 ---
 
+## Generated assets and failure behavior
+
+The `prepros:php` hook includes `php/embed.php` for the Markdown shortcuts.
+Without an `esbuild` task, registration warns and skips the browser script;
+the shortcuts still emit tags, but they do not become cards. Include the
+generated JavaScript in the page.
+
+With `style: true`, each `sass:after` call writes `.generated-vars.scss` in
+the installed plugin directory and appends it with `assets/_embed.scss`.
+The generated file sets `--embed-max-width` and, when requested, an
+`!important` aspect-ratio rule. The install directory must be writable.
+Builds sharing that installation share the file; their options are not
+isolated there. `style: false` skips both files and ignores the sizing options.
+
+The browser accepts YouTube IDs matching 10–12 word/hyphen characters and
+Vimeo IDs containing only digits. Missing or malformed IDs leave the HTML
+tag unchanged; a Markdown shortcut without an ID emits a comment.
+
+Metadata cache entries have no expiry. Invalid JSON triggers a refetch;
+failed cache writes are ignored, but a failed `localStorage` read prevents
+fetching (audit A18). Requests are subject to browser network and CORS rules;
+this plugin supplies no proxy, timeout, or retry. A failed request logs to
+the console and leaves the play button usable without metadata. Playback
+uses `youtube-nocookie.com` or `player.vimeo.com` with autoplay requested.
+Metadata and thumbnail requests occur before the click.
+
+---
+
 ## Styling
 
 The bundled `.embed` card (`.embed__title`, `.embed__play`, `.embed__player`)
@@ -183,7 +212,9 @@ target those same class names to restyle it from scratch.
 The current localStorage read can throw in restricted browser contexts and prevent metadata retrieval (audit A18). This is a known limitation, not an automatic in-memory fallback.
 
 - Node.js `>= 24.0.0`
-- `@kirigami/kirigami` `^1.5.3`
+- npm `>= 10.2.3`
+- `@kirigami/kirigami` `>= 1.5.1` (declared `kirigami.minVersion`)
+- A `sass` task for the bundled styles
 - An `esbuild` task in `kirigami.yaml`
 
 ---

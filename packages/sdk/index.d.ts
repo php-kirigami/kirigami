@@ -91,3 +91,30 @@ export declare class Cache {
 	/** Closes the underlying database connection. */
 	close(): void;
 }
+
+/** Clear one hook, or all hooks; commands and persistent caches are unaffected. */
+export declare function reset(hookName?: string): void;
+
+/** A command receives raw arguments and the host's loaded project. */
+export interface Command<TProject = unknown, TResult = unknown> {
+    name: string;
+    description: string;
+    run: (args: string[], project: TProject) => TResult | Promise<TResult>;
+}
+
+/** Register once by name; duplicate names and non-function runners throw. */
+export declare function registerCommand<TProject = unknown, TResult = unknown>(
+    name: string,
+    command: Pick<Command<TProject, TResult>, 'run'> & { description?: string }
+): void;
+
+/** Returns the stored mutable entry, or null. The caller supplies the host type. */
+export declare function getCommand<TProject = unknown, TResult = unknown>(
+    name: string
+): Command<TProject, TResult> | null;
+
+/** Returns stored entries in registration order. */
+export declare function listCommands<TProject = unknown, TResult = unknown>(): Command<TProject, TResult>[];
+
+/** Clear one command, or all commands; hooks are unaffected. */
+export declare function resetCommands(name?: string): void;

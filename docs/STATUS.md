@@ -1,5 +1,102 @@
 # Status
 
+## Package contract fixes — 2026-09-21
+
+Addressed the five follow-ups from the README audit. SDK declarations now
+cover reset and generic command registration/lookup. PHP-prepros declarations
+match render includes, sitemap arguments, file-only script mounts, optional
+result diagnostics, and normalized image file lists. Audio metadata prose now
+allows an all-null tag object without changing the binary's behavior.
+
+`runenv()` validates script and extra files against lexical and canonical
+project boundaries before initializing PHP, rejecting directories and external
+links while preserving internal links and missing optional files. Rendering
+and sitemap share a page predicate that excludes every private ancestor below
+the configured source root, including explicit private page requests.
+
+Canva now propagates compilation/copy failures to the one-shot exit status.
+Watch rebuilds are serialized and regenerate the full output tree so deleted
+scripts, maps, declarations, and styles disappear; a failed rebuild logs its
+error and subsequent changes recover. The READMEs describe the corrected
+behavior, and the five completed findings were removed from BUGS.md. No
+package versions or project dependencies were changed.
+
+Validation: 16 targeted Node tests passed on Windows / Node 26.8.2 across the
+new contract suites and existing minimal-render, reload, initial-build, and
+watch-rule regressions. The Canva integration verifies nonzero CLI failure,
+watch deletion cleanup, recovery, and copy-error propagation. A strict NodeNext
+TypeScript consumer checks package imports and positive/negative signatures;
+its compiler and Node types were installed only in a temporary directory.
+Private-page and script tests include an underscore-prefixed source root,
+nested private directories, external junctions, and accepted internal links.
+README links/anchors and diff whitespace were checked. These checks do not
+establish Linux or Node 24 compatibility.
+
+
+## Remaining package README audits — 2026-09-21
+
+Completed the six pending source/manifest/declaration reviews: PHP-prepros,
+SDK, struct-walker, Canva, audiowaveform-wasm, and bestframe. Updated JavaScript
+signatures, result/failure semantics, hook ordering and reset ownership, cache
+behavior, reference/data-URI resolution, dependency pins, exported paths,
+browser boundaries, and WASM runtime layout. Corrected executable examples
+and distinguished current contracts from historical release/format claims.
+Removed those audits from DOCTODO.md. New declaration, traversal, and Canva
+build defects are recorded separately in BUGS.md; no runtime code, declaration
+files, package versions, or lockfiles changed.
+
+Validation on Windows / Node 26.8.2:
+
+- SDK smoke checks covered listener deduplication, one-level collection,
+  waterfall ordering, independent hook/command resets, and SQLite cache
+  set/get/delete/purge/close/reopen behavior.
+- Struct-walker checks covered sibling and circular references, missing
+  references, SVG data URIs, empty YAML rejection, and scalar parsing.
+- PHP-prepros exercised all six JavaScript exports in a temporary project:
+  single/directory rendering, plugin includes, sitemap/robots, directory
+  mounting, script arguments/stdout, resize/palette jobs, and runtime reset.
+  Image jobs used a generated PNG; malformed image input also produced a
+  structured failure.
+- Canva's eight Sass examples without external font files compiled. Five
+  shipped styles matched source; all six script aliases and adjacent
+  declarations existed; `dedent` ran in Node. Browser interactions were
+  reviewed in source, not tested in an interactive browser.
+- Synthetic stereo PCM WAV extraction returned the documented mono min/max
+  shape. Invalid audio, untagged metadata, and absent cover art were checked.
+  A synthetic H.264/MP4 clip produced JPEG and PNG Buffers with dimensions and
+  metadata; invalid video and invalid input types followed the documented
+  failure paths. Other codec matrices remain historical verification.
+- npm dry-run packaging confirmed each media package's seven intended files,
+  including its loader/WASM pair. No tarball was published. Local Markdown
+  links/anchors and diff whitespace were checked.
+
+
+## Plugin documentation review and backlog cleanup — 2026-09-21
+
+Reviewed highlight, extlink, and embed against their JavaScript/PHP source, option schemas, and manifests. Documented language aliases and copy-button limits, extlink destination-image reuse and failure behavior, and embed generated styles, storage, and fetch behavior. Corrected minimum-version requirements and highlight schema descriptions without changing validation rules. Moved package tables of contents ahead of release history.
+
+Removed completed entries and the historical review inventory from DOCTODO.md; remaining README audits and prerequisite-dependent work stay explicit. Earlier completion records remain in this log and Git history. No package versions or runtime behavior changed.
+
+Validation: local checks passed for language aliases, invalid-language rejection, highlighting, block opt-out, schema JSON parsing, and all highlight README Sass examples (including the standalone font). README links and diff whitespace were checked. Browser/provider and end-to-end WASM network behavior were reviewed in source, not executed.
+
+## Historical verification — 2026-09-20
+
+- All local Markdown file links and heading anchors checked successfully.
+- 20 YAML examples parsed; seven complete project configurations passed the local schema (including plugin option schemas).
+- Native PHP checks confirmed YAML boolean/string behavior and Markdown footnote markup.
+- The documented manual PHP loader example executed successfully.
+- No manifests, lockfiles, or version declarations were modified.
+
+
+
+## Package README follow-up — 2026-09-21
+
+Made all 14 package READMEs explicit in DOCTODO.md's active scope, distinguishing targeted updates from a complete example audit. Corrected the core README's remaining server-filtering description. Expanded the MCP README with the site-blueprint tool, three exported documentation-index helpers, indexing/cache limits, and accurate per-tool reload and validation-result behavior, checked against packages/mcp/index.js.
+
+## Shared site reference synchronization — 2026-09-21
+
+Synchronized docs/template-CLAUDE.md into the CLAUDE.md files of the sibling template-default, template-demo, and php-kirigami.github.io repositories. Preserved project-specific headers and directory trees while refreshing generic reference, language conventions, and export guidance. Added a version caveat: sibling manifests still use the older core-only CLI dependency layout and declare MIT for their sites; the current monorepo reference does not imply those dependencies or site licenses were migrated. Verified shared-section equality, preserved headers, and diff whitespace. Changes remain local and uncommitted in the sibling repositories; no packages, site pages, or deployed content changed.
+
 ## Initial build for serve and watch — 2026-09-21
 
 `Project.serve()` and `watch()` now await the normal build pipeline, including `before-build`, before allocating HTTP/watch resources. `initialBuild: false` preserves explicit build-then-watch integrations. Failed builds reject with full diagnostics in `error.result`; serve emits initial start/done notifications marked `initial: true`. CLI readiness messages follow successful startup. VS Code reports startup failures and only marks preview running once the server handle exists.

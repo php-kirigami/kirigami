@@ -141,7 +141,21 @@ const result = await walkFile('./config/main.yaml', true);
 
 Returns `Promise<unknown>` — the fully resolved value (plain object, array, string, number, boolean, or `null`).
 
-Throws an `Error` if a circular reference is detected (e.g. `A → B → A`). Sibling references — two keys pointing at the same file — are allowed.
+Rejects if a circular file reference is detected (e.g. `A → B → A`). Sibling
+references are allowed and loaded independently; there is no shared file cache.
+Missing root files, unreadable files, invalid JSON/YAML, and empty YAML input
+also reject. A missing nested reference remains its original string.
+
+String values are trimmed for lookup, with case-insensitive extension checks;
+unresolved strings retain their original whitespace. Object keys are not
+resolved. Absolute paths and `..` can read outside the starting directory;
+there is no project-containment boundary or network fetch. Cycle detection
+uses resolved path strings, not canonical symlink targets. In-memory cycles
+created by YAML aliases are not handled by the file-reference guard.
+
+The root file uses JSON parsing only for `.json`; all other root extensions
+use YAML parsing. Nested references are limited to `.json`, `.yaml`, and
+`.yml`, even when `resolveAssets` is false.
 
 ---
 
@@ -154,13 +168,21 @@ Converts a single file to a data URI string. MIME type is detected first via mag
 | MIME types explicitly listed in `TEXT_URI_MIME_TYPES` below | `data:<mime>;charset=utf-8,<percent-encoded>` |
 | Everything else | `data:<mime>;base64,<base64>` |
 
-SVG files are always forced to `image/svg+xml` and percent-encoded regardless of magic-byte detection.
+Returns `Promise<string>` and reads the entire file synchronously before
+asynchronous MIME detection. Read or detector errors reject; extension fallback
+only applies when detection returns no MIME type. After successful detection,
+`.svg` forces `image/svg+xml`; `.svgz` is not decompressed or given that override.
+
+Text encoding normalizes line endings and escapes `%`, quotes, angle brackets,
+`#`, tabs, and newlines. It is minimal encoding, not `encodeURIComponent`:
+spaces and Unicode remain literal. Binary data uses base64.
 
 ---
 
 ### `TEXT_URI_MIME_TYPES`
 
-`Set<string>` of MIME types that use percent-encoding instead of base64. The default set:
+Mutable, process-wide `Set<string>` of MIME types that use percent-encoding
+instead of base64. Changes affect subsequent conversions. The default set:
 
 ```
 image/svg+xml  text/css       text/html    text/plain
@@ -171,7 +193,9 @@ text/javascript  application/json  application/xml  text/xml
 
 ### `ASSET_EXTS`
 
-`Set<string>` of file extensions that trigger data URI conversion. Covers:
+Mutable, process-wide `Set<string>` of lowercase file extensions that trigger
+data URI conversion when enabled. Both sets and both functions are named
+exports from the package root; there is no default export. Covers:
 
 - **Raster images** — `.png` `.jpg` `.jpeg` `.gif` `.webp` `.avif` `.ico` `.bmp` `.tiff` `.tif` `.heic` `.heif`
 - **Vector** — `.svg` `.svgz`
@@ -187,12 +211,12 @@ text/javascript  application/json  application/xml  text/xml
 
 ## Dependencies
 
-The version labels below are historical documentation; `package.json` and the workspace lockfile define the installed dependency versions.
+The manifest pins these dependency versions; the lockfile records the resolved installation.
 
 | Package | Role |
 |---|---|
-| [`js-yaml`](https://github.com/nodeca/js-yaml) `5.4.1` | YAML parsing and serialization |
-| [`file-type`](https://github.com/sindresorhus/file-type) `22.0.2` | MIME detection via magic bytes |
+| [`js-yaml`](https://github.com/nodeca/js-yaml) `5.4.2` | YAML parsing and serialization |
+| [`file-type`](https://github.com/sindresorhus/file-type) `22.1.0` | MIME detection via magic bytes |
 | [`mime-types`](https://github.com/jshttp/mime-types) `3.0.2` | MIME detection via extension (fallback) |
 
 ---

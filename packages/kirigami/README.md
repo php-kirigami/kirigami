@@ -234,7 +234,7 @@ remain nonfatal and appear on the prepros task entry in `results`, including
 warnings from rendering and sitemap generation. Diagnostics are kept out of
 generated HTML; a failed sitemap preserves the preceding render diagnostics.
 
-Export rejects equal, ancestor, or descendant source/output paths before clearing the destination, including symlink/junction aliases. PHP files (case-insensitive `.php`) and dot-prefixed directories are excluded from the copy. Add `export.ignore` rules for any other project-specific private files. The development server also serves source files and is intended for loopback use.
+Export rejects equal, ancestor, or descendant source/output paths before clearing the destination, including symlink/junction aliases. PHP files (case-insensitive `.php`) and dot-prefixed directories are excluded from the copy. Add `export.ignore` rules for any other project-specific private files. The development server denies private/source paths and checks canonical link targets, while allowing JavaScript and source maps for debugging. It is intended for loopback use.
 
 ---
 
