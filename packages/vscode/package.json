@@ -2,6 +2,7 @@
   "name": "kirigami-vscode",
   "displayName": "Kirigami",
   "description": "Build, export, run, and preview a Kirigami static site from VS Code.",
+  "keywords": ["vscode-extension","kirigami","static-site","editor"],
   "version": "0.1.0",
   "publisher": "php-kirigami",
   "license": "GPL-3.0-or-later",
