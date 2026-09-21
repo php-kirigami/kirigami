@@ -1,5 +1,15 @@
 # Status
 
+## GPL-3 package documentation and license alignment (A15) — 2026-09-21
+
+Following the maintainer's decision to use GPL 3 as broadly as possible, replaced the 11 remaining project-owned MIT package license texts with the repository's GPL v3 text and aligned their README badges and declarations with the existing GPL-3.0-or-later manifests. Added the root manifest license, synchronized workspace lockfile metadata, and updated the shared documentation inventory and repository notice. PHP-WASM and bestframe retain their existing GPL-2.0-or-later and LGPL-2.1-or-later binary package licenses; upstream notices are unchanged.
+
+A15 is closed in this repository. Validation compared all 14 workspace manifests, license texts, README declarations, and lockfile entries; CLI installation instructions still match the CLI's binary declaration. Package versions are unchanged. Sibling documentation synchronization and publication remain pending in [DOCTODO.md](DOCTODO.md).
+
+## A15 verification follow-up — 2026-09-21
+
+Verified that the root, core, and CLI READMEs direct terminal users to `@kirigami/cli`, matching its `bin.kiri` declaration. Reopened the licensing portion of A15: 11 GPL-3.0-or-later package manifests still have MIT LICENSE files and README declarations. No license text or package version was changed; reconciliation awaits confirmation of the intended package licenses. Remaining documentation updates are tracked in [DOCTODO.md](DOCTODO.md).
+
 ## Auto-loaded PHP extension packages — 2026-09-21
 
 `@kirigami/php-wasm` now scans project and global install roots for `@kirigami/phpext-*` packages when a runtime is created, stages each matching `.so` under `/internal/shared/extensions`, and writes the corresponding `extension=...` entries into the PHP WASM VM's generated `php.ini` so they are picked up automatically at startup. The extension discovery walks ancestor project directories and the global npm root, which covers both workspace installs and sibling repo checkouts like `../php-wasm-compiler/packages/phpext-*`.

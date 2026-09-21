@@ -760,4 +760,4 @@ there means someone committed an export.
 
 ## License
 
-Set the site’s own license explicitly. Kirigami packages are MIT except PHP-WASM (GPL-2.0-or-later), audiowaveform-wasm (GPL-3.0-or-later), and bestframe (LGPL-2.1-or-later). Preserve upstream notices.
+Set the site’s own license explicitly. Kirigami packages use GPL-3.0-or-later except PHP-WASM (GPL-2.0-or-later) and bestframe (LGPL-2.1-or-later). Preserve upstream notices.

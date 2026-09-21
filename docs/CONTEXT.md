@@ -63,7 +63,7 @@ Extension version annotations above are retained from the earlier build inventor
 
 ## Licensing
 
-Most packages use MIT. The exceptions are `@kirigami/php-wasm` (GPL-2.0-or-later), `@kirigami/audiowaveform-wasm` (GPL-3.0-or-later), and `@kirigami/bestframe` (LGPL-2.1-or-later). See each package’s `LICENSE` and README for upstream notices.
+Kirigami packages use GPL-3.0-or-later, except `@kirigami/php-wasm` (GPL-2.0-or-later) and `@kirigami/bestframe` (LGPL-2.1-or-later). These binary packages retain their existing upstream license terms. See each package's `LICENSE` and README for upstream notices.
 
 ## Code conventions
 

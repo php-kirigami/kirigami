@@ -30,7 +30,7 @@ This inventory covers all 32 repository-owned Markdown files, including `.github
 
 ## Remaining work
 
-- Finalize VSIX distribution/license documentation after packaging verification; the existing extension manifest declares GPL-3.0-or-later while its LICENSE and README still say MIT.
+- Finalize VSIX distribution/license documentation after packaging verification. A15 package license texts and README declarations now match their manifests.
 
 - TLS helper docs now reflect A03’s secure defaults. Keep the native-PHP verification / WASM end-to-end limitation explicit until the networking follow-up is resolved.
 

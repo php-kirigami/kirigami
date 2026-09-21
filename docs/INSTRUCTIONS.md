@@ -86,7 +86,7 @@ Whenever a change spans several repos, ship them in this order:
 6. `---`
 7. `## What's new in X.Y.Z` — optional, for released version history. Describe pending changes under `## Unreleased`; do not invent or bump a version during a documentation pass.
 8. Content sections, **each separated by `---`**.
-9. `## License` — the license declared by the package, including upstream notices. PHP-WASM uses GPL-2.0-or-later, audiowaveform-wasm GPL-3.0-or-later, and bestframe LGPL-2.1-or-later; the other packages use MIT.
+9. `## License` — the license declared by the package, including upstream notices. PHP-WASM uses GPL-2.0-or-later and bestframe LGPL-2.1-or-later; all other packages use GPL-3.0-or-later. Preserve upstream notices.
 
 Canva's `styles/main.scss` is implemented. Only `Burger` remains a stub.
 

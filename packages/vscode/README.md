@@ -9,7 +9,7 @@
 A VS Code extension for **Kirigami** — build, export, run, and preview a
 Kirigami static site without leaving the editor.
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](./LICENSE)
 [![Node.js >=24.0.0](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](https://nodejs.org)
 [![VS Code >=1.90.0](https://img.shields.io/badge/vscode-%5E1.90.0-blue)](https://code.visualstudio.com)
 [![Website](https://img.shields.io/badge/website-php--kirigami.github.io-1f6b4a)](https://php-kirigami.github.io)
@@ -142,4 +142,4 @@ Automated test commands and remaining host checks are documented in [the extensi
 
 ## License
 
-MIT © Maxime Larrivée-Roy, 2026
+GPL-3.0-or-later © Maxime Larrivée-Roy, 2026

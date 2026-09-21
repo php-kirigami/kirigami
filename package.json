@@ -2,6 +2,7 @@
   "type": "module",
   "name": "kirigami",
   "private": false,
+  "license": "GPL-3.0-or-later",
   "workspaces": [
     "packages/*"
   ],
