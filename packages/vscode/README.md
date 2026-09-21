@@ -126,7 +126,7 @@ a folder containing a `kirigami.yaml` in that host window (e.g.
 
 - A08 resource paths and working-directory capture are fixed; runtime dependencies are copied under `dist/runtime` during compilation. Recompile after core or worker edits; watch mode only rebuilds the host bundle.
 - Runtime staging uses dependencies installed for the build platform; cross-platform VSIX packaging remains unverified.
-- Run Script can report success despite a returned `success: false` (A14).
+- Run Script reports structured failures with an error notification and full result in the Output channel (A14 fixed). Interactive notification checks remain pending.
 - Core reload now resets PHP runtime/config state and plugin includes (A06 fixed); the extension's configuration watcher still needs real-host verification.
 - Preview does not perform an initial build; use Build first.
 

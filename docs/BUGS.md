@@ -11,10 +11,11 @@ source locations, corrective actions, and verification limits. The audit did not
 
 A07 is also fixed: optional layouts default safely, and PHP diagnostics survive task aggregation without entering generated HTML. A09 is fixed: malformed URL paths return 400, and file-read/stream failures no longer terminate the development server. A10 is fixed: the server denies private/source paths and checks canonical link targets, including the custom 404 fallback.
 
-- **P2 / A14, A16:** Hidden script failures
-  in VS Code; incomplete regression coverage and missing CI gates (focused export tests now exist).
+- **P2 / A16:** Incomplete regression coverage and missing CI gates (focused regression suites now exist).
 - **P3 / A17–A18:** WASM tarballs include local backups; unavailable browser
   storage prevents oEmbed metadata fetching.
+
+A14 is fixed: VS Code Run Script reports structured failures as errors, logs the returned diagnostics, and only announces success for `success: true`.
 
 A13 is fixed: watcher callback rejections are contained, serve attempts a terminal failure notification, and startup/close paths release resources and await active callbacks.
 

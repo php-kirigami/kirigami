@@ -23,6 +23,7 @@ test('relocated extension activates and runs all commands without workspace depe
 	const info = [];
 	let changed;
 	let status;
+	let cancelScript = false;
 	const disposable = { dispose() {} };
 	const vscode = {
 		workspace: {
@@ -34,7 +35,7 @@ test('relocated extension activates and runs all commands without workspace depe
 			createOutputChannel: () => ({ ...disposable, append: s => logs.push(s), appendLine: s => logs.push(s), show() {} }),
 			createStatusBarItem: () => (status = { ...disposable, show() {} }),
 			showErrorMessage: s => errors.push(s), showInformationMessage: s => info.push(s),
-			showQuickPick: async items => typeof items[0] === 'object' ? items[0] : undefined,
+			showQuickPick: async items => typeof items[0] === 'object' && !cancelScript ? items[0] : undefined,
 		},
 		commands: { registerCommand(name, fn) { commands.set(name, fn); return disposable; } },
 		StatusBarAlignment: { Right: 1 }, ThemeColor: class {}, RelativePattern: class {},
@@ -68,6 +69,22 @@ test('relocated extension activates and runs all commands without workspace depe
 	assert.match(status.text, /circle-outline/);
 	assert.deepEqual(errors, []);
 	assert.ok(info.length >= 4);
+	const successes = info.length;
+	fs.writeFileSync(path.join(project, 'scripts/check.php'), '<?php throw new Exception("A14 script failure");');
+	await commands.get('kirigami.run')();
+	assert.equal(errors.length, 1);
+	assert.match(errors[0], /check.*failed/);
+	assert.equal(info.length, successes, 'A failed result must not produce a success notification');
+	assert.ok(logs.some(line => /run check: failed\./.test(line) && /A14 script failure/.test(line)));
+	cancelScript = true;
+	await commands.get('kirigami.run')();
+	assert.equal(errors.length, 1, 'Cancel must not execute the failing script');
+	assert.equal(info.length, successes);
+	cancelScript = false;
+	fs.writeFileSync(path.join(project, 'scripts/check.php'), '<?php echo "Recovered";');
+	await commands.get('kirigami.run')();
+	assert.equal(info.length, successes + 1);
+	assert.equal(errors.length, 1);
 	await extension.deactivate();
 	await assert.rejects(fetch('http://127.0.0.1:4321/'));
 });

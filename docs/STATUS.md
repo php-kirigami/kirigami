@@ -330,3 +330,9 @@ Scheduled watch batches catch and log callback rejections without preventing lat
 Internal watcher startup errors reject the readiness promise only after cleanup. Watch/serve await readiness; a failed serve startup closes its HTTP server. Watcher close is idempotent, drops queued/late events, closes all handles, and waits for active callbacks. Serve closes HTTP in a finally block even if watcher close fails. A callback that never settles still delays close; no forced cancellation was added.
 
 Validation on Windows / Node 26.8.2: all five tests in `node --test --test-isolation=none packages/kirigami/test/watch-errors.test.js` pass. Injected watcher handles cover callback rejection/recovery, in-flight close, and synchronous/asynchronous startup failures. The serve test uses a real HTTP listener and PHP rendering, verifies failure notifications including rejecting observers, a successful later build, and port reuse after failed startup. The real Chokidar/PHP/esbuild/Sass A11 lifecycle regression also passes. No versions changed.
+
+## VS Code script failure reporting (A14)
+
+Run Script now requires `success: true` before displaying its completion notification. Structured failures display an error and append the full returned result to the Kirigami Output channel, preserving error details and other diagnostics. Thrown-operation handling remains in place.
+
+Validation: extension compilation and `node --test --test-isolation=none packages/vscode/test/activation.test.cjs` pass on Windows / Node 26.8.2. The relocated compiled extension uses its real worker/PHP runtime with a stub VS Code API: a throwing PHP script produces an error notification and detailed log without success, cancellation does not execute it, and a corrected script subsequently succeeds. Existing activation/build/export/reload/server checks also pass. A14 notification behavior was not rechecked interactively in the real Extension Host. No package versions changed.

@@ -58,8 +58,13 @@ export function registerCommands(context, { output, statusBar }) {
 		output.show(true);
 		output.appendLine(`Kirigami: run ${pick.label}…`);
 		try {
-			await project.run(pick.label);
-			vscode.window.showInformationMessage(`Kirigami: ${pick.label} finished.`);
+			const result = await project.run(pick.label);
+			if (result?.success === true) {
+				vscode.window.showInformationMessage(`Kirigami: ${pick.label} finished.`);
+			} else {
+				vscode.window.showErrorMessage(`Kirigami: ${pick.label} failed — see the Kirigami output channel.`);
+				output.appendLine(`run ${pick.label}: failed.\n${JSON.stringify(result, null, 2)}`);
+			}
 		} catch (err) {
 			vscode.window.showErrorMessage(`Kirigami: ${pick.label} failed — ${err?.message || err}`);
 			output.appendLine(`run ${pick.label}: threw — ${err?.stack || err}`);

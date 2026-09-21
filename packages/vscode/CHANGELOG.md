@@ -7,6 +7,8 @@ toggle, kirigami.yaml reload watcher.
 
 ## Unreleased
 
+- Fixed Run Script success notifications for failed results (A14); errors and returned diagnostics appear in the Kirigami Output channel.
+
 - Fixed A08 resource resolution and working-directory capture using staged ESM runtime dependencies and an external Node worker.
 - Added relocated integration coverage and a Windows real-host smoke runner; verified with VS Code 1.138.0.
 
