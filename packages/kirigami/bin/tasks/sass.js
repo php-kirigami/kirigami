@@ -494,7 +494,7 @@ function getFont(absPath) {
 // derived properties the Sass functions need, as plain data, and it's that
 // intermediate result (a plain object) that gets cached and reused.
 // ---------------------------------------------------------------------------
-function computeFontData(font) {
+export function computeFontData(font) {
 	const [weightMin, weightMax] = axisRange(font, 'wght', [400, 400]);
 	const [stretchMin, stretchMax] = axisRange(font, 'wdth', [100, 100]);
 	const [italMin, italMax] = axisRange(font, 'ital', [0, 0]);
@@ -561,7 +561,7 @@ function getFormatKeyword(absPath) {
 
 
 
-function detectFontStyle(font) {
+export function detectFontStyle(font) {
 	const axes = font.variationAxes || {};
 
 	// Case 2: slnt axis (continuous slant)
