@@ -4,7 +4,7 @@
   "description": "Build, export, run, and preview a Kirigami static site from VS Code.",
   "version": "0.1.0",
   "publisher": "php-kirigami",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "author": "Maxime Larrivée-Roy",
   "homepage": "https://php-kirigami.github.io",
   "repository": {
@@ -21,7 +21,17 @@
   "categories": ["Other"],
   "activationEvents": ["workspaceContains:kirigami.yaml"],
   "main": "./dist/extension.js",
+  "capabilities": { "untrustedWorkspaces": { "supported": false } },
   "contributes": {
+    "configuration": {
+      "title": "Kirigami",
+      "properties": {
+        "kirigami.nodePath": {
+          "type": "string", "default": "node", "scope": "machine",
+          "description": "Node.js 24+ executable used to run the Kirigami engine. Restart the extension after changing this setting."
+        }
+      }
+    },
     "commands": [
       { "command": "kirigami.build", "title": "Kirigami: Build", "category": "Kirigami" },
       { "command": "kirigami.export", "title": "Kirigami: Export", "category": "Kirigami" },

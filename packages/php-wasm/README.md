@@ -324,4 +324,6 @@ The standard and network helpers each cache their runtime. Closing the network p
 
 ## License
 
-`GPL-2.0-or-later` — same as the upstream WordPress Playground project. See [LICENSE](./LICENSE) for the full text.
+This package is distributed under `GPL-2.0-or-later` and is treated as a separate runtime component from the project core. See [LICENSE](./LICENSE) for the full text.
+
+The repository root is licensed under `GPL-3.0-or-later`, but `@kirigami/php-wasm` remains independently licensed because it contains a compiled PHP/WASM runtime and binary assets with their own provenance and compatibility constraints. See [NOTICE](./NOTICE) for the package-level summary.

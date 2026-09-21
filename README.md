@@ -8,7 +8,7 @@
 
 **A static site generator that turns PHP into fast, dependency-free HTML — no server required.**
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg)](./LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](#requirements)
 
 </div>
@@ -371,10 +371,14 @@ its inputs.
 
 ## License
 
-Most packages use MIT. The exceptions are `@kirigami/php-wasm` (GPL-2.0-or-later), `@kirigami/audiowaveform-wasm` (GPL-3.0-or-later), and `@kirigami/bestframe` (LGPL-2.1-or-later). See each package’s `LICENSE` and README for upstream notices.
+The project core is licensed under `GPL-3.0-or-later`.
+
+`packages/php-wasm` is intentionally kept as a separate runtime package and keeps its own license terms in [`packages/php-wasm/LICENSE`](./packages/php-wasm/LICENSE). The same approach applies to other binary or upstream-derived packages, such as `@kirigami/audiowaveform-wasm` and `@kirigami/bestframe`.
+
+This separation is deliberate: the main Kirigami project is distributed as GPL-3 software, while the PHP/WASM runtime is treated as a distinct binary component with its own provenance and licensing constraints. See [`NOTICE`](./NOTICE) for the repository-level licensing summary.
 
 ---
 
 ## Author
 
-MIT © Maxime Larrivée-Roy, 2026
+GPL-3.0-or-later © Maxime Larrivée-Roy, 2026

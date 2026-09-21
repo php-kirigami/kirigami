@@ -2,7 +2,7 @@
   "name": "@kirigami/cli",
   "version": "0.1.0",
   "description": "The kiri command-line interface for Kirigami — a thin terminal wrapper around @kirigami/kirigami's programmatic API.",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "author": "Maxime Larrivée-Roy",
   "homepage": "https://php-kirigami.github.io",
   "type": "module",

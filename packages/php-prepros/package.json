@@ -15,7 +15,7 @@
     "github-pages",
     "pages"
   ],
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "author": "Maxime Larrivée-Roy",
   "type": "module",
   "main": "index.js",

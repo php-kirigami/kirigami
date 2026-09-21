@@ -2,7 +2,7 @@
   "name": "@kirigami/kirigami",
   "version": "2.1.0",
   "description": "Tools to build static website with PHP",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "author": "Maxime Larrivée-Roy",
   "homepage": "https://php-kirigami.github.io",
   "type": "module",
