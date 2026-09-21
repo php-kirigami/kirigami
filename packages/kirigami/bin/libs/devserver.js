@@ -74,12 +74,25 @@ function injectReloadScript(html) {
 		: html + RELOAD_SCRIPT;
 }
 
-// Resolves a URL pathname to a file under `root`, trying `index.html` for a
-// directory (or extension-less path). Never resolves outside `root`.
+// Apply the same checks to requested names and canonical symlink targets.
+// JavaScript and source maps remain available for local browser debugging.
+function isPublicPath(relative) {
+	return relative.split(/[\\/]/).every(part => !part.startsWith('.')
+		&& !part.startsWith('_') && !part.includes(':') && !/[. ]$/.test(part)
+		&& !/\.(php|phtml|phar|scss|sass)$/i.test(part));
+}
+
+function isInside(root, file) {
+	const relative = path.relative(root, file);
+	return !path.isAbsolute(relative) && relative !== '..' && !relative.startsWith(`..${path.sep}`);
+}
+
+// Resolve only public files, including directory index and symlink targets.
 function resolveFile(root, decoded) {
 	const rel = decoded.replace(/^\/+/, "");
+	if (!isPublicPath(rel)) return null;
 	const abs = path.normalize(path.join(root, rel));
-	if (!(abs === root || abs.startsWith(root + path.sep))) return null; // path traversal guard
+	if (!isInside(root, abs)) return null;
 
 	const candidates = abs.endsWith(path.sep) || decoded.endsWith("/")
 		? [path.join(abs, "index.html")]
@@ -87,7 +100,9 @@ function resolveFile(root, decoded) {
 
 	for (const file of candidates) {
 		try {
-			if (fs.statSync(file).isFile()) return file;
+			const real = fs.realpathSync.native(file);
+			if (!isInside(root, real) || !isPublicPath(path.relative(root, real))) continue;
+			if (fs.statSync(real).isFile()) return real;
 		} catch { /* try the next candidate */ }
 	}
 	return null;
@@ -110,6 +125,7 @@ function resolveFile(root, decoded) {
  * safe to call with zero connected clients (a no-op).
  */
 export async function createDevServer({ root, port = 4321, host = "127.0.0.1" }) {
+	root = fs.realpathSync.native(root);
 	const clients = new Set();
 
 	const server = http.createServer((req, res) => {
@@ -144,9 +160,9 @@ export async function createDevServer({ root, port = 4321, host = "127.0.0.1" })
 		try {
 			const file = resolveFile(root, pathname);
 			if (!file) {
-				const notFound = path.join(root, "404.html");
+				const notFound = resolveFile(root, "/404.html");
 				let html;
-				try { html = injectReloadScript(fs.readFileSync(notFound, "utf8")); }
+				try { html = notFound ? injectReloadScript(fs.readFileSync(notFound, "utf8")) : "<h1>404</h1><p>Not found.</p>"; }
 				catch (error) {
 					if (error.code !== "ENOENT") throw error;
 					html = "<h1>404</h1><p>Not found.</p>";

@@ -79,3 +79,63 @@ test('stream failures before and after response headers do not stop the server',
 		assert.equal((await request('/')).status, 200);
 	}
 });
+
+test('private source paths are denied while public assets and directory indexes work', async t => {
+	const { root, request } = await fixture(t);
+	const privateFiles = ['helper.php', 'UPPER.PHP', 'template.phtml', 'archive.phar', '.env', '.git/config', '_data/data.json', 'nested/_page.html', 'nested/.secret/key.txt', 'styles/source.scss', 'styles/source.sass'];
+	for (const file of privateFiles) {
+		fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+		fs.writeFileSync(path.join(root, file), 'PRIVATE CONTENT');
+	}
+	for (const file of [...privateFiles, '%68elper%2ephp', '%2eenv', '%5fdata/data.json', 'nested%5c.secret%5ckey.txt', 'helper.php.', 'helper.php%20', 'helper.php::$DATA', '../outside.txt', '%2e%2e/outside.txt']) {
+		const response = await request('/' + file);
+		assert.equal(response.status, 404, file);
+		assert.doesNotMatch(response.body, /PRIVATE CONTENT/);
+	}
+	for (const file of ['public/index.html', 'assets/app.js', 'assets/app.js.map', 'assets/site.css', 'assets/data.json', 'assets/image.svg']) {
+		fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+		fs.writeFileSync(path.join(root, file), 'PUBLIC CONTENT');
+		const response = await request('/' + file);
+		assert.equal(response.status, 200, file);
+		assert.match(response.body, /PUBLIC CONTENT/);
+	}
+	for (const url of ['/public', '/public/']) assert.equal((await request(url)).status, 200);
+});
+
+test('junctions cannot expose outside or private targets, including the 404 fallback', async t => {
+	const { root, request } = await fixture(t);
+	const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'kirigami-outside-'));
+	t.after(() => fs.rmSync(outside, { recursive: true, force: true }));
+	fs.writeFileSync(path.join(outside, 'index.html'), 'OUTSIDE SECRET');
+	fs.mkdirSync(path.join(root, '_private'));
+	fs.writeFileSync(path.join(root, '_private/index.html'), 'PRIVATE SECRET');
+	fs.mkdirSync(path.join(root, 'public'));
+	fs.writeFileSync(path.join(root, 'public/index.html'), 'PUBLIC TARGET');
+	const kind = process.platform === 'win32' ? 'junction' : 'dir';
+	fs.symlinkSync(outside, path.join(root, 'escape'), kind);
+	fs.symlinkSync(path.join(root, '_private'), path.join(root, 'alias'), kind);
+	fs.symlinkSync(path.join(root, 'public'), path.join(root, 'allowed'), kind);
+	fs.symlinkSync(outside, path.join(root, '404.html'), kind);
+	for (const url of ['/escape/', '/escape/index.html', '/alias/', '/alias/index.html', '/404.html', '/missing']) {
+		const response = await request(url);
+		assert.equal(response.status, 404, url);
+		assert.doesNotMatch(response.body, /SECRET/);
+	}
+	assert.match((await request('/allowed/')).body, /PUBLIC TARGET/);
+});
+
+test('public-looking file symlinks cannot expose PHP, including the custom 404', async t => {
+	const { root, request } = await fixture(t);
+	fs.writeFileSync(path.join(root, 'secret.php'), 'PHP SECRET');
+	try { fs.symlinkSync(path.join(root, 'secret.php'), path.join(root, 'page.html'), 'file'); }
+	catch (error) {
+		if (error.code !== 'EPERM') throw error;
+		t.skip('File symlinks require Windows Developer Mode or symlink privileges.');
+		return;
+	}
+	assert.equal((await request('/page.html')).status, 404);
+	fs.symlinkSync(path.join(root, 'secret.php'), path.join(root, '404.html'), 'file');
+	const response = await request('/missing');
+	assert.equal(response.status, 404);
+	assert.doesNotMatch(response.body, /PHP SECRET/);
+});

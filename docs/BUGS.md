@@ -9,13 +9,13 @@ decision from Maxime before they can be closed. Fixed bugs move to
 See [the full audit](AUDIT-2026-09-20.md) for evidence, reproduction results,
 source locations, corrective actions, and verification limits. The audit did not change production code. Documentation finding A15 was addressed by the subsequent Markdown refresh; A01/A02 were subsequently fixed by export path validation and source-file exclusions; A03 was fixed by enabling CURL peer/hostname verification; A04 was fixed by strict plugin-name validation and shell-free npm invocation; A05 was fixed by resolving starter dependencies and banner assets from their installed packages; A06 was fixed by coordinated PHP runtime/configuration and plugin include invalidation; the remaining code findings are open.
 
-A07 is also fixed: optional layouts default safely, and PHP diagnostics survive task aggregation without entering generated HTML. A09 is fixed: malformed URL paths return 400, and file-read/stream failures no longer terminate the development server.
+A07 is also fixed: optional layouts default safely, and PHP diagnostics survive task aggregation without entering generated HTML. A09 is fixed: malformed URL paths return 400, and file-read/stream failures no longer terminate the development server. A10 is fixed: the server denies private/source paths and checks canonical link targets, including the custom 404 fallback.
 
-- **P2 / A10-A14, A16:** Served PHP source; missing add/delete watch handling;
+- **P2 / A11-A14, A16:** Missing add/delete watch handling;
   duplicate watch tasks; uncaught async watch failures; hidden script failures
   in VS Code; incomplete regression coverage and missing CI gates (focused export tests now exist).
 - **P3 / A17–A18:** WASM tarballs include local backups; unavailable browser
-  storage prevents oEmbed metadata fetching.
+  storage prevents oEmbed metadata fetching. (On s'en fout du browser, on target seulement NodeJS)
 
 ## Previously recorded issues
 

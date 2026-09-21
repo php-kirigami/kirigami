@@ -215,6 +215,8 @@ Exports: `Project`, `load()`, and `Kirigami.load()`. There is no static `Project
 
 Inspect `success` as well as catching exceptions. A resolved promise is not necessarily a successful build. Task results include `task`, `type` and `taskname` plus task-specific output.
 
+The development server denies dot/underscore-prefixed path components and `.php`, `.phtml`, `.phar`, `.scss`, and `.sass` sources (extensions are case-insensitive). Requested names and canonical symlink/junction targets must both be public and remain within the source root; custom `404.html` content follows the same checks. Denied paths return 404. Dot-prefixed public directories such as `.well-known` are also excluded. JavaScript and source maps remain available for local debugging. These filesystem checks do not isolate the server from concurrent hostile local filesystem changes.
+
 The development server returns 400 for malformed URL path encodings or NUL pathnames. File-read and stream failures return 500 before headers are sent; failures after partial output close that response. These failures do not stop subsequent requests. Missing pages use `404.html` when available, otherwise the built-in 404 response.
 
 `serve()` and `watch()` do not build initially. Call `build()` first. `onBuildResult` receives `{ status: 'start', rule, type }` followed by `{ status: 'done', rule, type, ...result }` for completed watch callbacks. A thrown callback currently bypasses the done event.

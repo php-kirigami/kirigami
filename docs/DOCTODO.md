@@ -18,6 +18,8 @@ This inventory covers all 32 repository-owned Markdown files, including `.github
 
 - Updated core server behavior and audit tracking for A09, including regression scope and the separate A10 exposure issue.
 
+- Updated A10 public-file filtering, canonical containment, and development-only JavaScript/source-map behavior in core documentation and audit tracking.
+
 ## Remaining work
 
 - Finalize VSIX distribution/license documentation after packaging verification; the existing extension manifest declares GPL-3.0-or-later while its LICENSE and README still say MIT.
