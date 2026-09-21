@@ -26,7 +26,76 @@ const fail = (error) => ({
 	isError: true,
 });
 
+function projectRelative(projectDir, filePath) {
+	return path.relative(projectDir, filePath).split(path.sep).join('/');
+}
 
+function listProjectDocs(projectDir) {
+	const root = path.resolve(projectDir);
+	const candidates = [
+		'README.md',
+		'docs/CONTEXT.md',
+		'docs/INSTRUCTIONS.md',
+		'docs/STATUS.md',
+		'docs/DECISIONS.md',
+		'docs/BUGS.md',
+		'docs/TODO.md',
+		'docs/ROADMAP.md',
+		'docs/EXTENSION-VSCODE.md',
+		'packages/mcp/README.md',
+		'packages/cli/README.md',
+		'packages/kirigami/README.md',
+		'packages/vscode/README.md',
+	];
+	return candidates.filter((rel) => fs.existsSync(path.join(root, rel))).map((rel) => path.join(root, rel));
+}
+
+function readTextIfExists(filePath) {
+	try {
+		return fs.readFileSync(filePath, 'utf8');
+	} catch {
+		return null;
+	}
+}
+
+function docTopicHints() {
+	return {
+		general: [
+			{ path: 'README.md', reason: 'Overview of the project and the package ecosystem.' },
+			{ path: 'docs/CONTEXT.md', reason: 'Architecture, monorepo layout, runtime model and conventions.' },
+			{ path: 'docs/INSTRUCTIONS.md', reason: 'Development workflow, release procedure, README template.' },
+		],
+		build: [
+			{ path: 'README.md', reason: 'High-level build/export flow and the project entrypoints.' },
+			{ path: 'docs/INSTRUCTIONS.md', reason: 'Versioning and build/release workflow.' },
+			{ path: 'packages/kirigami/README.md', reason: 'Project API and build-task documentation.' },
+		],
+		package: [
+			{ path: 'docs/CONTEXT.md', reason: 'Package table and monorepo relationships.' },
+			{ path: 'packages/kirigami/README.md', reason: 'Core engine package: project API and runtime.' },
+			{ path: 'packages/cli/README.md', reason: 'CLI wrappers and command usage.' },
+		],
+		mcp: [
+			{ path: 'packages/mcp/README.md', reason: 'MCP server contract, usage and tools.' },
+			{ path: 'docs/CONTEXT.md', reason: 'MCP is described as a sibling face over the core Project API.' },
+			{ path: 'docs/DECISIONS.md', reason: 'Design rationale for the MCP package split.' },
+		],
+		extension: [
+			{ path: 'docs/EXTENSION-VSCODE.md', reason: 'VS Code extension implementation details and current limitations.' },
+			{ path: 'packages/vscode/README.md', reason: 'User-facing extension documentation and status notes.' },
+		],
+		troubleshooting: [
+			{ path: 'docs/BUGS.md', reason: 'Open issues and unresolved limitations.' },
+			{ path: 'docs/TODO.md', reason: 'Near-term code tasks and known gaps.' },
+			{ path: 'docs/STATUS.md', reason: 'Recent shipped fixes and current operational status.' },
+		],
+		license: [
+			{ path: 'LICENSE', reason: 'Project-core license.' },
+			{ path: 'NOTICE', reason: 'Repo-level licensing split notice.' },
+			{ path: 'packages/php-wasm/LICENSE', reason: 'Runtime package license when treated separately.' },
+		],
+	};
+}
 
 // --->>> À ajouter: un tool pour reload pour éviter de reloader les configs pour rien
 // --->>> Peut-être ajouter un bouton reload dans l'extension vscode
@@ -94,6 +163,73 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 					config: project.config ? { kirigami: project.config.kirigami, prepros: project.config.prepros } : null,
 				};
 				return ok(manifest);
+			} catch (e) { return fail(e); }
+		}
+	);
+
+	server.registerTool(
+		"kirigami_search_docs",
+		{
+			title: "Search Kirigami docs",
+			description: "Search the project's Markdown docs and README files for a query, returning matching paths and short excerpts. Useful when an agent needs the right docs for build, package layout, MCP, VS Code, or troubleshooting.",
+			inputSchema: {
+				query: z.string().min(1).describe("Query string to search for in docs and README files."),
+				scope: z.enum(["all", "docs", "readme", "packages"]).optional().default("all").describe("Restrict the search to a subset of files."),
+				limit: z.number().int().positive().max(20).optional().default(10).describe("Maximum number of matches to return."),
+			},
+		},
+		async ({ query, scope = 'all', limit = 10 }) => {
+			try {
+				const projectDir = process.cwd();
+				const candidates = listProjectDocs(projectDir).filter((filePath) => {
+					const rel = projectRelative(projectDir, filePath).toLowerCase();
+					if (scope === 'docs') return rel.startsWith('docs/');
+					if (scope === 'readme') return rel === 'readme.md';
+					if (scope === 'packages') return rel.startsWith('packages/');
+					return true;
+				});
+				const needle = query.toLowerCase();
+				const matches = [];
+				for (const filePath of candidates) {
+					const text = readTextIfExists(filePath) || '';
+					if (!text) continue;
+					const lower = text.toLowerCase();
+					const index = lower.indexOf(needle);
+					if (index === -1) continue;
+					const start = Math.max(0, index - 120);
+					const end = Math.min(text.length, index + 240);
+					matches.push({
+						path: projectRelative(projectDir, filePath),
+						excerpt: (text.slice(start, end).replace(/\s+/g, ' ')).trim(),
+					});
+				}
+				return ok({ query, scope, matches: matches.slice(0, limit) });
+			} catch (e) { return fail(e); }
+		}
+	);
+
+	server.registerTool(
+		"kirigami_doc_hints",
+		{
+			title: "Suggested docs for a task",
+			description: "Returns the best documentation files to read next for a common Kirigami task such as build, package layout, MCP, extension development, troubleshooting or licensing.",
+			inputSchema: {
+				topic: z.enum(['general', 'build', 'package', 'mcp', 'extension', 'troubleshooting', 'license']).optional().default('general').describe("Task area to map to relevant docs."),
+			},
+		},
+		async ({ topic = 'general' } = {}) => {
+			try {
+				const projectDir = process.cwd();
+				const hints = docTopicHints()[topic] || docTopicHints().general;
+				const recommended = hints.map((entry) => {
+					const full = path.join(projectDir, entry.path);
+					return {
+						path: entry.path,
+						exists: fs.existsSync(full),
+						reason: entry.reason,
+					};
+				});
+				return ok({ topic, recommended });
 			} catch (e) { return fail(e); }
 		}
 	);

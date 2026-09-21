@@ -85,6 +85,9 @@ working directory (`kirigami.yaml` resolved from there) — use the client’s s
 | `kirigami_list_scripts` | Lists every `scripts/<name>.php` file the project actually has (not just the ones with a `scripts:` yaml entry), each with its `trigger`/`mount` metadata if declared. Use before `kirigami_run` to discover valid names. |
 | `kirigami_list_tasks` | Lists the tasks `kirigami_build`/`kirigami_run_task` would run — `tasks:` entries plus the implicit `"render-all"` prepros task. Use before `kirigami_run_task`. |
 | `kirigami_run_task` | Runs exactly one task by name, bypassing `before-build` and every other task — for re-running (or first-running) a single piece of the pipeline instead of the whole build. |
+| `kirigami_about` | Returns a compact project manifest (README/docs/LICENSE summary, package metadata, tasks and scripts) so an AI agent can orient itself immediately. |
+| `kirigami_search_docs` | Searches the docs/ and README files for a query and returns matching paths plus short excerpts. |
+| `kirigami_doc_hints` | Suggests the most relevant docs for a topic such as build, package, MCP, extension, troubleshooting or licensing. |
 
 Every tool except `kirigami_validate` calls the project reload path, which also invalidates PHP configuration, mounts/runtime, and plugin includes; validation re-reads core config without plugin registration. Await tool operations in sequence: there is no whole-project operation queue. JavaScript plugin code changes still require restarting the MCP process because Node caches imported modules.
 
