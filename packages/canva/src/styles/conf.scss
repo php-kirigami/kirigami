@@ -72,7 +72,10 @@ $icons-defaults: (
 	// nothing here does yet. Fall back to "normal" rather than emit that
 	// sentinel as literal (invalid) CSS.
 	$font-style: font-style-detect($path);
-	@if $font-style == "ital-axis" { $font-style: "normal"; }
+	// If this font exposes a binary `ital` axis, treat it as a runtime concern
+	// for now and fall back to a safe `normal` value here. Use the
+	// `font-has-ital-axis($path)` helper to detect variable-font `ital`.
+	@if font-has-ital-axis($path) { $font-style: "normal"; }
 
 	@font-face {
 		font-family: $family;

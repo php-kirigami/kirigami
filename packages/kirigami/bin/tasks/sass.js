@@ -194,6 +194,25 @@ export default async function build(__root, task, exportPath = null) {
 					return new sass.SassString(getFont(abs).style);
 				},
 
+				// Returns true if the font has a binary `ital` variation axis (variable ital)
+				'font-has-ital-axis($path)': (args) => {
+					const abs = resolveFontPath(args[0].assertString('path').text);
+					const info = getFont(abs);
+					try {
+						return new sass.SassBoolean(!!info.hasItalAxis);
+					} catch (e) {
+						// Fallback: return a truthy string if boolean class unavailable
+						return new sass.SassString(info.hasItalAxis ? 'true' : '');
+					}
+				},
+
+				// Returns the ital axis min/max as a string "min max" for diagnostics
+				'font-ital-axis-range($path)': (args) => {
+					const abs = resolveFontPath(args[0].assertString('path').text);
+					const info = getFont(abs);
+					return new sass.SassString(info.italAxisRange || '0 0');
+				},
+
 				'img-asset($path, $width: null, $height: null, $cover: false)': (args) => {
 					const srcRelPath = args[0].assertString('path').text.replace(/\\/g, '/');
 					const widthArg = args[1];
@@ -478,12 +497,16 @@ function getFont(absPath) {
 function computeFontData(font) {
 	const [weightMin, weightMax] = axisRange(font, 'wght', [400, 400]);
 	const [stretchMin, stretchMax] = axisRange(font, 'wdth', [100, 100]);
+	const [italMin, italMax] = axisRange(font, 'ital', [0, 0]);
+	const hasItal = !!(font.variationAxes && font.variationAxes['ital']);
 
 	return {
 		weightRange: `${weightMin} ${weightMax}`,
 		stretchRange: `${stretchMin}% ${stretchMax}%`,
 		unicodeRange: buildUnicodeRange(font.characterSet),
 		style: detectFontStyle(font),
+		hasItalAxis: hasItal,
+		italAxisRange: `${italMin} ${italMax}`,
 	};
 }
 

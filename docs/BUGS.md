@@ -22,12 +22,19 @@ A07 is also fixed: optional layouts default safely, and PHP diagnostics survive 
 ## Previously recorded issues
 
 - **`font-style-detect()`'s `"ital-axis"` sentinel — open question.**
-  Currently guarded back to `normal` when a variable font exposes a
-  binary `ital` axis (see [DECISIONS.md](DECISIONS.md)). If a project ever
-  actually uses a font with that axis, should the `@font-face` `@each`
-  loop in `canva/conf.scss` split into two blocks (one per `ital` value),
-  or is there a better approach? No project has hit this yet, so left
-  unresolved on purpose rather than guessed at.
+  Previously this returned a sentinel string (`"ital-axis"`) that the
+  Sass templates guarded back to `normal` to avoid emitting invalid CSS.
+  To make the intent explicit and enable future handling the Sass helper
+  `font-has-ital-axis($path)` has been added and the `canva` stylesheet
+  now uses it to fall back to `normal`.
+
+  If a project actually needs full support for variable fonts exposing a
+  binary `ital` axis, the correct approach is still to emit two distinct
+  `@font-face` blocks (one per `ital` value) so browsers can choose the
+  correct face based on font-variation settings. That is a design decision
+  left open (and requires generating two `src` entries). For now, the
+  conservative fallback avoids invalid CSS while exposing a small API to
+  detect the axis presence if downstream code wants to split faces.
 
 - **`|+` (keep-chomping) literal blocks: `YAML::` vs `YAML_LEGACY::` differ
   by one trailing blank line.** Happens when the block is immediately
