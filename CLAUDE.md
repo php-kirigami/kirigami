@@ -6,6 +6,9 @@ evolving material lives in `docs/`, split by topic:
 | File | What's in it |
 |---|---|
 | [docs/CONTEXT.md](docs/CONTEXT.md) | What Kirigami is, monorepo/sibling-repo layout, packages table, licensing, code conventions |
+| [docs/INTERNALS.md](docs/INTERNALS.md) | Internal execution, state ownership, task ordering, PHP boundary, and watcher lifecycle |
+| [docs/API.md](docs/API.md) | Project API contracts, results, failures, and embedding lifecycle |
+| [docs/USER-GUIDE.md](docs/USER-GUIDE.md) | First site, preview, layouts, export, and troubleshooting |
 | [docs/INSTRUCTIONS.md](docs/INSTRUCTIONS.md) | The dev workflow, releasing procedure, README template |
 | [docs/STATUS.md](docs/STATUS.md) | Running log of what's shipped recently |
 | [docs/DECISIONS.md](docs/DECISIONS.md) | Architectural decisions and the reasoning behind them |

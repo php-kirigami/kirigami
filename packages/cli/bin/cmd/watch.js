@@ -12,6 +12,7 @@ const HELP = {
 		{ flag: "--help, -h", desc: "Show this help section" },
 	],
 	notes: [
+		"Builds once before watching; an initial build failure stops startup.",
 		"Watches only tasks whose type supports it (esbuild, sass, prepros, …).",
 		"Changes are debounced (150ms) and batched per task.",
 		"node_modules/, .git/ and dist/ are always ignored; Ctrl+C stops cleanly.",
@@ -45,11 +46,10 @@ export default async function watch(args) {
 			log.step(`${c.green("✔")} ${name}${version ? c.dim(` v${version}`) : ""}`));
 	}
 
-	console.log("\n");
-	log.info('Waiting for file change...\n');
-
 	const watcher = await project.watch();
 	__close = watcher.close;
+	console.log("\n");
+	log.info('Waiting for file change...\n');
 }
 
 

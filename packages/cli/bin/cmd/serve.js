@@ -14,6 +14,7 @@ const HELP = {
 		{ flag: "--help, -h",     desc: "Show this help section" },
 	],
 	notes: [
+		"Builds once before serving; an initial build failure stops startup.",
 		"Everything `kiri watch` does, plus: serves `kirigami.root` as static files",
 		"and reloads any open tab after a rebuild (Server-Sent Events, no WebSocket lib).",
 		"A plain rebuild-files-only workflow (no browser) is `kiri watch`.",

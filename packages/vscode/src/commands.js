@@ -75,7 +75,12 @@ export function registerCommands(context, { output, statusBar }) {
 		if (statusBar.getServer()) {
 			await stopServer();
 		} else {
-			await startServer();
+			try { await startServer(); }
+			catch (error) {
+				statusBar.setState('error', String(error?.message || error).slice(0, 200));
+				output.appendLine(`serve: failed — ${error?.stack || error}`);
+				vscode.window.showErrorMessage('Kirigami: preview failed — see the Kirigami output channel.');
+			}
 		}
 	}
 
@@ -89,7 +94,7 @@ export function registerCommands(context, { output, statusBar }) {
 					return;
 				}
 				if (event.success) {
-					statusBar.setState("running");
+					if (!event.initial) statusBar.setState("running");
 				} else {
 					statusBar.setState("error", String(event.error).slice(0, 200));
 				}

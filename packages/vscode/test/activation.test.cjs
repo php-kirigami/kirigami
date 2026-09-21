@@ -62,6 +62,7 @@ test('relocated extension activates and runs all commands without workspace depe
 	await changed();
 	await commands.get('kirigami.build')();
 	assert.equal(fs.readFileSync(path.join(project, 'src/index.html'), 'utf8'), '<p>After</p>');
+	fs.unlinkSync(path.join(project, 'src/index.html'));
 	await commands.get('kirigami.toggleServer')();
 	assert.match(status.text, /radio-tower/);
 	assert.match(await (await fetch('http://127.0.0.1:4321/')).text(), /<p>After<\/p>/);
@@ -85,6 +86,16 @@ test('relocated extension activates and runs all commands without workspace depe
 	await commands.get('kirigami.run')();
 	assert.equal(info.length, successes + 1);
 	assert.equal(errors.length, 1);
+	fs.writeFileSync(path.join(project, 'src/_index.php'), '<?php throw new Exception("Initial preview failure");');
+	await commands.get('kirigami.toggleServer')();
+	assert.equal(errors.length, 2);
+	assert.match(status.text, /error/);
+	assert.ok(logs.some(line => /Initial preview failure/.test(line)));
+	await assert.rejects(fetch('http://127.0.0.1:4321/'));
+	fs.writeFileSync(path.join(project, 'src/_index.php'), '<p>Recovered preview</p>');
+	await commands.get('kirigami.toggleServer')();
+	assert.match(await (await fetch('http://127.0.0.1:4321/')).text(), /Recovered preview/);
+	await commands.get('kirigami.toggleServer')();
 	await extension.deactivate();
 	await assert.rejects(fetch('http://127.0.0.1:4321/'));
 });

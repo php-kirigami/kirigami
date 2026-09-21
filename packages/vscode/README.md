@@ -128,7 +128,7 @@ a folder containing a `kirigami.yaml` in that host window (e.g.
 - Runtime staging uses dependencies installed for the build platform; cross-platform VSIX packaging remains unverified.
 - Run Script reports structured failures with an error notification and full result in the Output channel (A14 fixed). Interactive notification checks remain pending.
 - Core reload now resets PHP runtime/config state and plugin includes (A06 fixed); the extension's configuration watcher still needs real-host verification.
-- Preview does not perform an initial build; use Build first.
+- Preview builds before starting the server; a failed initial build reports an error and leaves the server stopped.
 
 - Single workspace folder only — binds to `workspaceFolders[0]`; multi-root
   isn't supported by `Project` itself yet.

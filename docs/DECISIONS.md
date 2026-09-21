@@ -1,5 +1,9 @@
 # Decisions
 
+## Serve and watch own their initial build
+
+Development startup now awaits the same `build()` pipeline used explicitly, including triggers and normal task eligibility, before opening server/watch resources. This prevents a fresh checkout or stale output from appearing ready. An initial failure rejects startup instead of leaving a running preview with invalid output. Embedders that have already built can pass `initialBuild: false`; startup notifications are distinguished from per-rule rebuilds by `initial: true`. The PHP runtime remains project-owned and reusable after failure, while no new HTTP/watch handles have been allocated.
+
 This is an architectural decision log. Versioned entries describe historical changes; the [audit](AUDIT-2026-09-20.md) and [open bugs](BUGS.md) qualify current implementation limits.
 
 Architectural decisions and the reasoning behind them, so a question doesn't

@@ -1,5 +1,17 @@
 # Status
 
+## Initial build for serve and watch — 2026-09-21
+
+`Project.serve()` and `watch()` now await the normal build pipeline, including `before-build`, before allocating HTTP/watch resources. `initialBuild: false` preserves explicit build-then-watch integrations. Failed builds reject with full diagnostics in `error.result`; serve emits initial start/done notifications marked `initial: true`. CLI readiness messages follow successful startup. VS Code reports startup failures and only marks preview running once the server handle exists.
+
+Validation: six targeted core tests pass, including fresh PHP output before serving/watching, opt-out, structured and thrown failures, observer errors, and watcher startup cleanup. The recompiled relocated VS Code integration passes initial rendering, failure reporting with no listening server, and successful retry. Documentation and CLI help reflect the new default; no package versions changed. Real Extension Host validation of this change remains pending.
+
+## Internal, API, and user documentation — 2026-09-21
+
+Added INTERNALS.md for execution order and state ownership, API.md for the core Project contract and failure/lifecycle handling, and USER-GUIDE.md for a minimal site through production export. These documents describe current source behavior, including process-wide state, in-place PHP rendering before export, non-transactional output, and the absence of an initial build in serve/watch. Connected the guides to CLAUDE.md and root/core READMEs; corrected the stale private-file exposure statement in the CLI README. Published-package verification remains a release follow-up.
+
+Validation: extracted the user guide's YAML and PHP blocks into a disposable project and successfully loaded, built, and exported it through the local ESM API, checking the rendered title. Local documentation links/anchors and diff whitespace were checked. This does not verify npm installation or deployment from published packages.
+
 ## Documentation backlog reconciliation — 2026-09-21
 
 Reorganized DOCTODO.md around concrete prerequisites and completion evidence, retaining the previous review and verification as historical records. Corrected the contributor guide's stale MIT inventory and documented the full regression command: 48 tests passed on Windows/Node 26.8.2 after VS Code compilation, with native PHP 8.5.10 for TLS checks. PHP-WASM now documents automatic extension discovery and its observed load warnings. Removed completed keywords and layout-validation TODOs after checking source and manifests. CI, VSIX packaging, end-to-end WASM HTTPS, release validation, and sibling publication remain separate follow-ups; this pass changes documentation only.

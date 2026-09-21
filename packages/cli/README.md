@@ -63,9 +63,9 @@ npx kiri --help
 
 For a global installation, use `npm install -g @kirigami/cli`. In a project, prefer the locally installed binary through `npx kiri`.
 
-Run `npx kiri build` before starting `npx kiri serve` or `npx kiri watch`: neither performs the initial build.
+`npx kiri serve` and `npx kiri watch` build once before starting. An initial build failure stops startup and reports diagnostics.
 
-The development server serves source files, including PHP and hidden files. Keep it on the default loopback address for local development. Export rejects equal, ancestor, or descendant source/output paths before clearing the destination, including symlink/junction aliases. PHP files (case-insensitive `.php`) and dot-prefixed directories are excluded from the copy. Add `export.ignore` rules for any other project-specific private files.
+The development server denies private/source paths, including PHP and hidden files, and checks canonical link targets. JavaScript and source maps remain available for debugging. Keep it on the default loopback address for local development. Export rejects equal, ancestor, or descendant source/output paths before clearing the destination, including symlink/junction aliases. PHP files (case-insensitive `.php`) and dot-prefixed directories are excluded from the copy. Add `export.ignore` rules for any other project-specific private files. See [the user guide](../../docs/USER-GUIDE.md) for a complete minimal site.
 
 ---
 

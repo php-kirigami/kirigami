@@ -19,6 +19,8 @@ The programmatic build engine of the **Kirigami** static site generator.
 
 ## Overview
 
+For the cross-package execution model, see [Internal execution](../../docs/INTERNALS.md). The [Project API reference](../../docs/API.md) covers return values, failures, and resource ownership; the [user guide](../../docs/USER-GUIDE.md) provides a minimal site walkthrough.
+
 The core engine loads `kirigami.yaml`, validates configuration, registers plugins, renders PHP pages, runs asset tasks, and exposes build, export, watch, and preview operations through `Project`.
 
 Use [the CLI](../cli/README.md) for terminal commands. This package is the programmatic integration point for the Kirigami ecosystem.
@@ -193,7 +195,7 @@ const project = await load();
 const result = await project.build();
 if (!result.success) throw new Error(JSON.stringify(result));
 
-const server = await project.serve({ port: 0 });
+const server = await project.serve({ port: 0, initialBuild: false });
 console.log(server.url);
 // Call await server.close() when the preview is no longer needed.
 ```
@@ -223,7 +225,7 @@ Watch tasks process additions, changes, file removals, and directory removals. P
 
 `serve()` and `watch()` await watcher readiness and release acquired resources if startup fails. Closing discards pending events and waits for active callbacks before finishing; callbacks that never settle can delay shutdown.
 
-`serve()` and `watch()` do not build initially. Call `build()` first. `onBuildResult` receives `{ status: 'start', rule, type }` followed by `{ status: 'done', rule, type, ...result }` for completed watch callbacks. A thrown build callback or start observer produces a failed done notification. A rejecting done observer is logged without stopping later batches. Failed builds do not trigger browser reloads.
+`serve()` and `watch()` build once before acquiring server/watch resources. Pass `{ initialBuild: false }` to skip this when output is already current. A failed initial build rejects with diagnostics in `error.result`. Initial serve notifications use `initial: true`, `rule: "initial-build"`, and `type: "build"`; their done event contains the full build result. `onBuildResult` receives `{ status: 'start', rule, type }` followed by `{ status: 'done', rule, type, ...result }` for completed watch callbacks. A thrown build callback or start observer produces a failed done notification. A rejecting done observer is logged without stopping later batches. Failed builds do not trigger browser reloads.
 
 Current limitations: one project per process, working directory established **before importing the engine**, and shared plugin registries. Await project operations in sequence; only PHP-prepros operations/resets are internally serialized. `reload()` refreshes PHP configuration, mounts, network mode, and plugin includes, but JavaScript plugin code remains subject to Node's module cache (restart after code changes). Repeated watcher setup preserves the configured task list; the implicit PHP rule is added only to the local watch-rule list (A12 fixed). See [the audit](../../docs/AUDIT-2026-09-20.md) for reproductions.
 

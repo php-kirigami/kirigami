@@ -111,7 +111,7 @@ test('serve reports terminal failures and releases the HTTP port after startup f
 	const events = [];
 	let startFailure = false;
 	let doneFailure = false;
-	server = await project.serve({ port: 0, onBuildResult: async event => {
+	server = await project.serve({ port: 0, initialBuild: false, onBuildResult: async event => {
 		events.push(event);
 		if (startFailure && event.status === 'start') throw new Error('Start observer failed');
 		if (doneFailure && event.status === 'done') throw new Error('Done observer failed');

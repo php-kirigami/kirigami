@@ -109,7 +109,7 @@ Generic reference — safe to copy verbatim between projects.
 | `npx kiri phpinfo` | Print `phpinfo()` from the embedded runtime. `--md` / `--json` for other formats. |
 | `npx kiri --version` | `kiri` version + bundled PHP version. |
 
-Run `npx kiri build` before `npx kiri serve` or `npx kiri watch`; neither builds initially. The dev server serves the source tree, including PHP/hidden files, so keep the default loopback binding. `npx kiri mcp` starts the MCP server; `npx kiri install <plugin>` installs a plugin; `npx kiri cache purge [mask]` clears caches. Every command has `--help`.
+`npx kiri serve` and `npx kiri watch` perform an initial build and stop startup if it fails. The dev server denies private/source paths, including PHP and hidden files; keep the default loopback binding. `npx kiri mcp` starts the MCP server; `npx kiri install <plugin>` installs a plugin; `npx kiri cache purge [mask]` clears caches. Every command has `--help`.
 
 When a template has no `package.json`, `kiri create` generates one with explicit CLI, core, and Canva dependencies based on the installed package versions. Missing starter banners come from the core package. Existing template/project manifests keep their dependency choices.
 

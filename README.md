@@ -17,6 +17,8 @@
 
 ## Overview
 
+Read the [user guide](docs/USER-GUIDE.md) to build a first site, the [Project API reference](docs/API.md) to embed the engine, or the [internal execution guide](docs/INTERNALS.md) to work on Kirigami itself.
+
 **Kirigami** lets you build static websites using a language you already know — **PHP** — and compiles them straight into clean, production-ready HTML. There's no server to provision, no runtime to patch, and no infrastructure to maintain: the PHP engine runs entirely in **WebAssembly** (via `@kirigami/php-wasm`), directly inside the Node.js process. You get the full expressiveness of PHP templating with the simplicity, speed, and portability of a static site.
 
 Here's what Kirigami brings to your workflow:

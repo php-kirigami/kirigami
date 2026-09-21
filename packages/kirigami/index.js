@@ -188,19 +188,41 @@ export class Project {
 	}
 
 
+	// Build before allocating server/watch resources. Preserve nested diagnostics
+	// on the rejection so embedders can inspect the complete failed build.
+	async #initialBuild(onBuildResult) {
+		const event = { rule: 'initial-build', type: 'build', initial: true };
+		let result;
+		try {
+			await onBuildResult?.({ ...event, status: 'start' });
+			result = await this.build();
+		} catch (error) {
+			result = { success: false, error: error?.message || String(error), results: [] };
+		}
+		if (!result.success) {
+			const error = new Error(`Initial build failed: ${JSON.stringify(result)}`);
+			error.result = result;
+			try { await onBuildResult?.({ ...result, ...event, status: 'done', error: error.message }); }
+			catch (observerError) { error.cause = observerError; }
+			throw error;
+		}
+		await onBuildResult?.({ ...result, ...event, status: 'done' });
+	}
+
 	// Starts the same watch+hot-reload dev server `kiri serve` uses. Returns
 	// { address, port, url, close() } — `port: 0` lets the OS pick a free port,
 	// reflected back in the returned `port`/`url` (see devserver.js). Meant for
 	// an embedder (VS Code preview webview, MCP `kirigami_serve` tool) that
 	// needs to know where the server ended up listening.
 	//
-	// `onBuildResult`, if given, is called for every watch-triggered rebuild —
+	// `onBuildResult`, if given, is called for the initial build and rebuilds —
 	// once with { status: "start" } right before it runs, once with
 	// { status: "done", success, files, warnings, error } right after — so an
 	// embedder (e.g. a VS Code status bar item) can reflect real build state
 	// instead of re-parsing console output.
-	async serve({ port = 4321, host = "127.0.0.1", onBuildResult } = {}) {
+	async serve({ port = 4321, host = "127.0.0.1", onBuildResult, initialBuild = true } = {}) {
 		if (!this.#loaded) await this.reload();
+		if (initialBuild) await this.#initialBuild(onBuildResult);
 		const config = this.#config;
 
 		const devserver = await createDevServer({ root: config.root, port, host });
@@ -247,8 +269,9 @@ export class Project {
 
 	// Same watch machinery as serve(), minus the HTTP server/hot-reload —
 	// rebuilds files on disk on change, nothing else. Returns { close() }.
-	async watch() {
+	async watch({ initialBuild = true } = {}) {
 		if (!this.#loaded) await this.reload();
+		if (initialBuild) await this.#initialBuild();
 		const rules = await buildWatchRules(this.#config);
 		const handle = createWatchers(rules);
 		try { await handle.ready; }

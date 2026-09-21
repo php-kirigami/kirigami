@@ -33,7 +33,7 @@ code packages/vscode
 
 Open `packages/vscode` as the workspace root so its launch/tasks configuration resolves correctly. Press F5, then open a disposable Kirigami site in the development host. Verify build failures, configuration changes, script selection, status transitions, browser preview, and deactivation cleanup.
 
-Build before starting preview: `serve()` does not perform an initial build. Export requires a dedicated destination separate from source files; the core rejects overlapping paths before running export triggers.
+Preview runs an initial build before starting its server and reports failures in the Output channel. Export requires a dedicated destination separate from source files; the core rejects overlapping paths before running export triggers.
 
 Automated checks from the repository root:
 

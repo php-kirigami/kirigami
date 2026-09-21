@@ -4,6 +4,10 @@ Track documentation work left by implementation changes. Dependency documentatio
 
 ## Completed — 2026-09-21
 
+- Updated internal/API/user guides, CLI help, core/CLI/VS Code READMEs, and the shared template reference for the initial serve/watch build, opt-out, notifications, and failure semantics. The existing sibling synchronization follow-up includes this change; real-host preview verification is still pending.
+
+- Added [internal execution documentation](INTERNALS.md), the [Project API reference](API.md), and a [first-site user guide](USER-GUIDE.md), in that order. Linked them from repository/package entry points and corrected the CLI README's obsolete development-server exposure description.
+
 - Aligned the 11 remaining project-owned package license texts, README declarations, root metadata, and documentation inventory with GPL-3.0-or-later (A15). Corrected the remaining MIT inventory in the contributor guide during this follow-up.
 - Documented the manual full-suite command, native PHP/cURL and VS Code build prerequisites, process isolation, and the Windows/Node 26 verification boundary in the contributor guide (48 tests passed).
 - Documented PHP extension discovery paths, artifact selection, caching, and observed binary-load warnings in the PHP-WASM README.
