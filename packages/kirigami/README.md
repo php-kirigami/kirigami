@@ -219,9 +219,11 @@ The development server denies dot/underscore-prefixed path components and `.php`
 
 The development server returns 400 for malformed URL path encodings or NUL pathnames. File-read and stream failures return 500 before headers are sent; failures after partial output close that response. These failures do not stop subsequent requests. Missing pages use `404.html` when available, otherwise the built-in 404 response.
 
+Watch tasks process additions, changes, file removals, and directory removals. PHP additions/removals reset the runtime and rebuild the whole site and sitemap; HTML belonging to removed/renamed page sources tracked since watcher startup is deleted. Unrelated HTML is preserved; historical orphan outputs without a source at watcher startup are not swept. JavaScript/Sass dependencies are rebuilt on addition/removal; failed builds retain their previous bundles.
+
 `serve()` and `watch()` do not build initially. Call `build()` first. `onBuildResult` receives `{ status: 'start', rule, type }` followed by `{ status: 'done', rule, type, ...result }` for completed watch callbacks. A thrown callback currently bypasses the done event.
 
-Current limitations: one project per process, working directory established **before importing the engine**, and shared plugin registries. Await project operations in sequence; only PHP-prepros operations/resets are internally serialized. `reload()` refreshes PHP configuration, mounts, network mode, and plugin includes, but JavaScript plugin code remains subject to Node's module cache (restart after code changes). Watch additions/deletions and repeated watcher setup also have known defects. See [the audit](../../docs/AUDIT-2026-09-20.md) for reproductions.
+Current limitations: one project per process, working directory established **before importing the engine**, and shared plugin registries. Await project operations in sequence; only PHP-prepros operations/resets are internally serialized. `reload()` refreshes PHP configuration, mounts, network mode, and plugin includes, but JavaScript plugin code remains subject to Node's module cache (restart after code changes). Repeated watcher setup still has a known task-accumulation defect (A12). See [the audit](../../docs/AUDIT-2026-09-20.md) for reproductions.
 
 An empty `prepros: {}` supports rendering without layout files. PHP warnings
 remain nonfatal and appear on the prepros task entry in `results`, including

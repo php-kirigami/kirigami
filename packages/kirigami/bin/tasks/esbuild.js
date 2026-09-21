@@ -120,7 +120,7 @@ export function getWatcher(__root, task) {
 		patterns: patterns,
 		ignored: [joinWith(dir, '**/*.min.js')],
 		callback: async (events) => {
-			if(!events.filter(e => e.type != 'add').length) return;
+			if (!events.length) return;
 			console.log(`[${task.name}] batch`, events.length, events.map(e => e.file));
 			const results = await build(__root, task);
 			if(results.success) {

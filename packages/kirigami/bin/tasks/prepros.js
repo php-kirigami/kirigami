@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { joinWith, replaceRoot, log, c, printTaskError } from '../utils.js';
-import { render, sitemap } from "@kirigami/php-prepros";
+import { render, sitemap, resetRuntime } from "@kirigami/php-prepros";
 import { has as hasHook, run as runHook, runWaterfall, HOOKS } from '@kirigami/sdk';
 import { getConfig } from '../config.js';
 
@@ -76,16 +76,59 @@ async function applyHtmlHooks(files, exportPath) {
 
 export async function validate(__root, task) { }
 
+// Match the renderer's page-to-HTML convention. Never traverse directory links
+// or remove a directory: cleanup is restricted to individual known page outputs.
+function pageOutputs(root) {
+	const pages = new Map();
+	function visit(dir) {
+		for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+			if (entry.name.startsWith('.')) continue;
+			const file = path.join(dir, entry.name);
+			if (entry.isDirectory()) visit(file);
+			else if (entry.isFile() && /^_.*\.php$/i.test(entry.name) && !path.basename(dir).startsWith('_')) {
+				pages.set(file, path.join(dir, entry.name.replace(/^_+/, '').replace(/\.php$/i, '.html')));
+			}
+		}
+	}
+	if (fs.existsSync(root)) visit(root);
+	return pages;
+}
+
+function removeObsoletePages(root, previous, current) {
+	const retained = new Set(current.values());
+	const removed = [];
+	const realRoot = fs.realpathSync.native(root);
+	for (const [source, output] of previous) {
+		if (current.has(source) || retained.has(output) || !fs.existsSync(output)) continue;
+		const relative = path.relative(realRoot, fs.realpathSync.native(output));
+		if (path.isAbsolute(relative) || relative === '..' || relative.startsWith(`..${path.sep}`)) continue;
+		if (!fs.lstatSync(output).isFile()) continue;
+		fs.unlinkSync(output);
+		removed.push(replaceRoot(output));
+	}
+	return removed;
+}
 
 export function getWatcher(__root, task) {
+	let pages = pageOutputs(__root);
 	const root = __root.replace(process.cwd(), '').replace(/\\/g, '/').replace(/^\//g, '');
 	const patterns = [joinWith(root, '**/_*.php'), joinWith(root, '**/*.yaml'), joinWith(root, '**/*.yml'), joinWith(root, '**/*.md'), joinWith(root, '**/*.json')]
 	return {
 		name: task.name,
 		patterns: patterns,
 		callback: async (events) => {
-			if(!events.filter(e => e.type != 'add').length) return;
+			if (!events.length) return;
 			console.log(`[${task.name}] batch`, events.length, events.map(e => e.file));
+			if (events.some(e => e.type !== 'change')) {
+				const current = pageOutputs(__root);
+				const removed = removeObsoletePages(__root, pages, current);
+				// A fresh mount drops deleted files and refreshes page/data discovery.
+				await resetRuntime();
+				const results = await build(__root, { ...task, target: null });
+				if (results.success) pages = current;
+				else printTaskError(results);
+				return { ...results, files: [...(results.files || []), ...removed] };
+			}
 			const paths = events.map(e => {
 				const dir = path.dirname(e.file.replace(root, '')).replace(/^\//, '');
 				return task.deep ? path.dirname(dir) : dir;

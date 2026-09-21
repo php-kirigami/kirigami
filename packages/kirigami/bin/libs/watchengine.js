@@ -174,7 +174,7 @@ export function createWatchers(rules, options = {}) {
 			const rel = toPosix(path.relative(opt.cwd, absPath));
 
 			if (isIgnored(rel)) return;
-			if (!isIncluded(rel)) return;
+			if (type !== 'unlinkDir' && !isIncluded(rel)) return;
 
 			if (opt.debug) console.log(`[${name}] queue ${type} ${rel}`);
 
@@ -195,15 +195,19 @@ export function createWatchers(rules, options = {}) {
 
 		watcher.on("add",    (p) => queue("add",    p));
 		watcher.on("change", (p) => queue("change", p));
+		watcher.on("unlink", (p) => queue("unlink", p));
+		watcher.on("unlinkDir", (p) => queue("unlinkDir", p));
 		watcher.on("error",  (err) => console.error(`[${name}] watch error:`, err));
 
 		handles.push({
 			watcher,
+			ready: new Promise(resolve => watcher.once('ready', resolve)),
 			stopTimers: () => { clearTimeout(timer); pending.clear(); },
 		});
 	}
 
 	return {
+		ready: Promise.all(handles.map(h => h.ready)),
 		close: async () => {
 			for (const h of handles) h.stopTimers();
 			await Promise.all(handles.map((h) => h.watcher.close()));
