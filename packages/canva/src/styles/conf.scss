@@ -72,19 +72,40 @@ $icons-defaults: (
 	// nothing here does yet. Fall back to "normal" rather than emit that
 	// sentinel as literal (invalid) CSS.
 	$font-style: font-style-detect($path);
-	// If this font exposes a binary `ital` axis, treat it as a runtime concern
-	// for now and fall back to a safe `normal` value here. Use the
-	// `font-has-ital-axis($path)` helper to detect variable-font `ital`.
-	@if font-has-ital-axis($path) { $font-style: "normal"; }
-
-	@font-face {
-		font-family: $family;
-		font-style: #{$font-style};
-		font-display: block;
-		font-weight: #{font-weight-range($path)};
-		font-stretch: #{font-stretch-range($path)};
-		src: inline-file($path) format("#{font-format($path)}");
-		unicode-range: #{font-unicode-range($path)};
+	// If this font exposes a binary `ital` axis, emit two @font-face blocks
+	// so browsers can select the appropriate face. Each face sets the
+	// 'ital' variation value explicitly via font-variation-settings.
+	@if font-has-ital-axis($path) {
+		@font-face {
+			font-family: $family;
+			font-style: normal;
+			font-display: block;
+			font-variation-settings: "'ital' 0";
+			font-weight: #{font-weight-range($path)};
+			font-stretch: #{font-stretch-range($path)};
+			src: inline-file($path) format("#{font-format($path)}");
+			unicode-range: #{font-unicode-range($path)};
+		}
+		@font-face {
+			font-family: $family;
+			font-style: italic;
+			font-display: block;
+			font-variation-settings: "'ital' 1";
+			font-weight: #{font-weight-range($path)};
+			font-stretch: #{font-stretch-range($path)};
+			src: inline-file($path) format("#{font-format($path)}");
+			unicode-range: #{font-unicode-range($path)};
+		}
+	} @else {
+		@font-face {
+			font-family: $family;
+			font-style: #{$font-style};
+			font-display: block;
+			font-weight: #{font-weight-range($path)};
+			font-stretch: #{font-stretch-range($path)};
+			src: inline-file($path) format("#{font-format($path)}");
+			unicode-range: #{font-unicode-range($path)};
+		}
 	}
 }
 
