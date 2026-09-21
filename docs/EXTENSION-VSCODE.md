@@ -19,7 +19,7 @@ A08 resource resolution and working-directory capture are fixed. Compilation sta
 
 A relocated stub-host integration test passes all five commands, PHP rendering, config reload, and server cleanup without workspace dependencies. The real-host smoke test passes on Windows with VS Code 1.138.0 (host Node 24.18.1, external Node 26.8.2): activation, validate/build/export, the empty-script path, and server start/stop. Older editors, visual state transitions, browser preview, and real-host config watching remain unverified. Configure `kirigami.nodePath` to an external Node 24+ executable with JSPI; embedded-host SQLite/JSPI support is no longer required.
 
-Run Script currently ignores a structured `success: false` result (A14). Core reload now invalidates PHP configuration/runtime and plugin includes (A06 fixed), inside the worker. Real-host configuration watcher behavior still needs verification. Watch callbacks that throw can bypass the final build-state notification (A13).
+Run Script currently ignores a structured `success: false` result (A14). Core reload now invalidates PHP configuration/runtime and plugin includes (A06 fixed), inside the worker. Real-host configuration watcher behavior still needs verification. A13 is fixed: thrown watch callbacks now produce a failed final build notification; observer rejections are contained by the scheduler.
 
 ## Development and verification
 
@@ -47,7 +47,7 @@ The Windows host runner uses an isolated temporary profile and site, and retains
 
 ## Remaining work
 
-1. Propagate structured operation failures and guarantee build-state completion on errors.
+1. Propagate structured Run Script failures (A14). Core watch-build completion on thrown errors is fixed (A13).
 2. Complete the real-host validation above.
 3. Add and verify VSIX packaging, including runtime assets and dependency licenses. The npm release script currently scans this non-private workspace too; a separate extension release path is not implemented.
 4. Consider diagnostics, tasks integration, multi-root support, and optional MCP registration after the existing commands are reliable.

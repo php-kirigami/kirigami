@@ -118,100 +118,140 @@ export function createWatchers(rules, options = {}) {
 	};
 
 	const handles = [];
+	let startupError;
+	let closed = false;
+	let closing;
+	const close = () => closing ??= (async () => {
+		closed = true;
+		for (const h of handles) h.stopTimers();
+		const outcomes = await Promise.allSettled(handles.map(async h => {
+			try { await h.watcher.close(); }
+			finally { await h.idle(); }
+		}));
+		const failure = outcomes.find(result => result.status === 'rejected');
+		if (failure) throw failure.reason;
+	})();
 
-	for (const rule of rules) {
-		if (!rule || typeof rule.callback !== "function") {
-			throw new Error("Each rule must have a callback(events, ctx).");
-		}
-
-		const name = rule.name || "rule";
-		const patterns = normalizePatterns(rule.patterns);
-
-		// include: a single picomatch matcher for all of the rule's patterns
-		const isIncluded = picomatch(patterns, { dot: true });
-
-		// ignore: global + rule
-		const isIgnored = buildIgnorePredicate([
-			...(opt.globalIgnored || []),
-			...(normalizePatterns(rule.ignored || [])),
-		]);
-
-		// baseDirs derived from the patterns
-		const baseDirs = Array.from(
-			new Set(patterns.map(globBaseDir).map((d) => d || "."))
-		).map((d) => path.resolve(opt.cwd, d));
-
-		if (opt.debug) {
-			console.log(`\n[${name}] starting watcher`);
-			console.log("  cwd      :", opt.cwd);
-			console.log("  patterns :", patterns);
-			console.log("  baseDirs :", baseDirs);
-			console.log("  ignored  :", [...(opt.globalIgnored || []), ...(rule.ignored || [])]);
-			console.log("");
-		}
-
-		// --- debounce / batch ---
-		const pending = new Map();
-		let timer = null;
-		let running = false;
-		let rerun = false;
-
-		const flush = async () => {
-			if (running) { rerun = true; return; }
-			running = true;
-			try {
-				do {
-					rerun = false;
-					const batch = Array.from(pending.values());
-					pending.clear();
-					if (batch.length) await rule.callback(batch, { rule });
-				} while (rerun);
-			} finally {
-				running = false;
+	try {
+		for (const rule of rules) {
+			if (!rule || typeof rule.callback !== "function") {
+				throw new Error("Each rule must have a callback(events, ctx).");
 			}
-		};
 
-		const queue = (type, absPath) => {
-			const rel = toPosix(path.relative(opt.cwd, absPath));
+			const name = rule.name || "rule";
+			const patterns = normalizePatterns(rule.patterns);
 
-			if (isIgnored(rel)) return;
-			if (type !== 'unlinkDir' && !isIncluded(rel)) return;
+			// include: a single picomatch matcher for all of the rule's patterns
+			const isIncluded = picomatch(patterns, { dot: true });
 
-			if (opt.debug) console.log(`[${name}] queue ${type} ${rel}`);
+			// ignore: global + rule
+			const isIgnored = buildIgnorePredicate([
+				...(opt.globalIgnored || []),
+				...(normalizePatterns(rule.ignored || [])),
+			]);
 
-			pending.set(`${type}:${rel}`, { type, file: rel });
-			clearTimeout(timer);
-			timer = setTimeout(flush, rule.debounceMs ?? 150);
-		};
+			// baseDirs derived from the patterns
+			const baseDirs = Array.from(
+				new Set(patterns.map(globBaseDir).map((d) => d || "."))
+			).map((d) => path.resolve(opt.cwd, d));
 
-		// ⚠️  We don't pass "ignored" to chokidar — filtering happens in queue()
-		const watcher = chokidar.watch(baseDirs, {
-			ignoreInitial: opt.ignoreInitial,
-			awaitWriteFinish: opt.awaitWriteFinish,
-			persistent: true,
-			usePolling: opt.usePolling,
-			interval: opt.interval,
-			binaryInterval: opt.binaryInterval,
-		});
+			if (opt.debug) {
+				console.log(`\n[${name}] starting watcher`);
+				console.log("  cwd      :", opt.cwd);
+				console.log("  patterns :", patterns);
+				console.log("  baseDirs :", baseDirs);
+				console.log("  ignored  :", [...(opt.globalIgnored || []), ...(rule.ignored || [])]);
+				console.log("");
+			}
 
-		watcher.on("add",    (p) => queue("add",    p));
-		watcher.on("change", (p) => queue("change", p));
-		watcher.on("unlink", (p) => queue("unlink", p));
-		watcher.on("unlinkDir", (p) => queue("unlinkDir", p));
-		watcher.on("error",  (err) => console.error(`[${name}] watch error:`, err));
+			// --- debounce / batch ---
+			const pending = new Map();
+			let timer = null;
+			let running = false;
+			let rerun = false;
+			let active = Promise.resolve();
 
-		handles.push({
-			watcher,
-			ready: new Promise(resolve => watcher.once('ready', resolve)),
-			stopTimers: () => { clearTimeout(timer); pending.clear(); },
-		});
+			const flush = async () => {
+				if (running) { rerun = true; return; }
+				running = true;
+				try {
+					do {
+						rerun = false;
+						const batch = Array.from(pending.values());
+						pending.clear();
+						if (batch.length && !closed) {
+							try { await rule.callback(batch, { rule }); }
+							catch (error) { console.error(`[${name}] build failed:`, error); }
+						}
+					} while (rerun && !closed);
+				} finally {
+					running = false;
+				}
+			};
+
+			const queue = (type, absPath) => {
+				if (closed) return;
+				const rel = toPosix(path.relative(opt.cwd, absPath));
+
+				if (isIgnored(rel)) return;
+				if (type !== 'unlinkDir' && !isIncluded(rel)) return;
+
+				if (opt.debug) console.log(`[${name}] queue ${type} ${rel}`);
+
+				pending.set(`${type}:${rel}`, { type, file: rel });
+				clearTimeout(timer);
+				timer = setTimeout(() => {
+					if (running) { rerun = true; return; }
+					active = flush().catch(error => console.error(`[${name}] watch error:`, error));
+				}, rule.debounceMs ?? 150);
+			};
+
+			// ⚠️  We don't pass "ignored" to chokidar — filtering happens in queue()
+			const watcher = chokidar.watch(baseDirs, {
+				ignoreInitial: opt.ignoreInitial,
+				awaitWriteFinish: opt.awaitWriteFinish,
+				persistent: true,
+				usePolling: opt.usePolling,
+				interval: opt.interval,
+				binaryInterval: opt.binaryInterval,
+			});
+
+			watcher.on("add",    (p) => queue("add",    p));
+			watcher.on("change", (p) => queue("change", p));
+			watcher.on("unlink", (p) => queue("unlink", p));
+			watcher.on("unlinkDir", (p) => queue("unlinkDir", p));
+			let settleReady;
+			const ready = new Promise((resolve, reject) => {
+				settleReady = resolve;
+				watcher.once('ready', resolve);
+				watcher.on('error', error => {
+					reject(error);
+					console.error(`[${name}] watch error:`, error);
+				});
+			});
+
+			handles.push({
+				watcher,
+				ready,
+				idle: () => active,
+				stopTimers: () => { clearTimeout(timer); pending.clear(); settleReady(); },
+			});
+		}
+	} catch (error) {
+		startupError = error;
 	}
 
+	const ready = Promise.all([
+		...handles.map(h => h.ready),
+		startupError ? Promise.reject(startupError) : Promise.resolve(),
+	]).catch(async error => {
+		await close();
+		throw error;
+	});
+	// Direct callers may only use close(); startup errors still remain awaitable.
+	void ready.catch(() => {});
 	return {
-		ready: Promise.all(handles.map(h => h.ready)),
-		close: async () => {
-			for (const h of handles) h.stopTimers();
-			await Promise.all(handles.map((h) => h.watcher.close()));
-		},
+		ready,
+		close,
 	};
 }

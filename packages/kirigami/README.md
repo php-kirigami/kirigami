@@ -221,7 +221,9 @@ The development server returns 400 for malformed URL path encodings or NUL pathn
 
 Watch tasks process additions, changes, file removals, and directory removals. PHP additions/removals reset the runtime and rebuild the whole site and sitemap; HTML belonging to removed/renamed page sources tracked since watcher startup is deleted. Unrelated HTML is preserved; historical orphan outputs without a source at watcher startup are not swept. JavaScript/Sass dependencies are rebuilt on addition/removal; failed builds retain their previous bundles.
 
-`serve()` and `watch()` do not build initially. Call `build()` first. `onBuildResult` receives `{ status: 'start', rule, type }` followed by `{ status: 'done', rule, type, ...result }` for completed watch callbacks. A thrown callback currently bypasses the done event.
+`serve()` and `watch()` await watcher readiness and release acquired resources if startup fails. Closing discards pending events and waits for active callbacks before finishing; callbacks that never settle can delay shutdown.
+
+`serve()` and `watch()` do not build initially. Call `build()` first. `onBuildResult` receives `{ status: 'start', rule, type }` followed by `{ status: 'done', rule, type, ...result }` for completed watch callbacks. A thrown build callback or start observer produces a failed done notification. A rejecting done observer is logged without stopping later batches. Failed builds do not trigger browser reloads.
 
 Current limitations: one project per process, working directory established **before importing the engine**, and shared plugin registries. Await project operations in sequence; only PHP-prepros operations/resets are internally serialized. `reload()` refreshes PHP configuration, mounts, network mode, and plugin includes, but JavaScript plugin code remains subject to Node's module cache (restart after code changes). Repeated watcher setup preserves the configured task list; the implicit PHP rule is added only to the local watch-rule list (A12 fixed). See [the audit](../../docs/AUDIT-2026-09-20.md) for reproductions.
 

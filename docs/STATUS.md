@@ -322,3 +322,11 @@ Validation: `node --test --test-isolation=none packages/kirigami/test/watch-life
 `buildWatchRules()` now constructs a local task list before prepending implicit prepros. Repeated watch/serve setup no longer mutates `config.tasks`, accumulates implicit tasks, or contaminates later task listings/builds. Explicit tasks keep their order and are not deduplicated.
 
 Validation: both tests pass with `node --test --test-isolation=none packages/kirigami/test/watch-rules.test.js` on Windows / Node 26.8.2. Coverage includes frozen configuration/tasks, repeated calls, explicit prepros alongside the implicit rule, non-watchable tasks, and disabling prepros between calls. These tests exercise rule construction directly; they do not claim additional real-host validation. A13 asynchronous watcher failure handling remains open. No versions changed.
+
+## Watcher error and resource lifecycle (A13)
+
+Scheduled watch batches catch and log callback rejections without preventing later batches. `Project.serve()` converts thrown build callbacks and start notifications into failed terminal results; it attempts the done notification once, and the scheduler contains a rejection from that observer too. Failed builds no longer trigger browser reload broadcasts.
+
+Internal watcher startup errors reject the readiness promise only after cleanup. Watch/serve await readiness; a failed serve startup closes its HTTP server. Watcher close is idempotent, drops queued/late events, closes all handles, and waits for active callbacks. Serve closes HTTP in a finally block even if watcher close fails. A callback that never settles still delays close; no forced cancellation was added.
+
+Validation on Windows / Node 26.8.2: all five tests in `node --test --test-isolation=none packages/kirigami/test/watch-errors.test.js` pass. Injected watcher handles cover callback rejection/recovery, in-flight close, and synchronous/asynchronous startup failures. The serve test uses a real HTTP listener and PHP rendering, verifies failure notifications including rejecting observers, a successful later build, and port reuse after failed startup. The real Chokidar/PHP/esbuild/Sass A11 lifecycle regression also passes. No versions changed.

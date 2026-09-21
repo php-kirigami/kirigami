@@ -204,28 +204,45 @@ export class Project {
 		const config = this.#config;
 
 		const devserver = await createDevServer({ root: config.root, port, host });
-		const rules = await buildWatchRules(config);
-		const watchers = rules.map((rule) => ({
-			...rule,
-			callback: async (...cbArgs) => {
-				if (onBuildResult) await onBuildResult({ status: "start", rule: rule.name, type: rule.type });
-				const result = await rule.callback(...cbArgs);
-				if (rule.type === "sass") devserver.broadcastCssReload();
-				else devserver.broadcastReload();
-				if (onBuildResult) await onBuildResult({ status: "done", rule: rule.name, type: rule.type, ...result });
-			},
-		}));
-		const { close: closeWatchers } = createWatchers(watchers);
+		let watchHandle;
+		try {
+			const rules = await buildWatchRules(config);
+			const watchers = rules.map((rule) => ({
+				...rule,
+				callback: async (...cbArgs) => {
+					let result;
+					try {
+						if (onBuildResult) await onBuildResult({ status: "start", rule: rule.name, type: rule.type });
+						result = await rule.callback(...cbArgs);
+						if (result?.success !== false) {
+							if (rule.type === "sass") devserver.broadcastCssReload();
+							else devserver.broadcastReload();
+						}
+					} catch (error) {
+						result = { success: false, error: error?.message || String(error), files: [] };
+						console.error(`[${rule.name}] build failed:`, error);
+					}
+					if (onBuildResult) await onBuildResult({ ...result, status: "done", rule: rule.name, type: rule.type });
+					return result;
+				},
+			}));
+			watchHandle = createWatchers(watchers);
+			await watchHandle.ready;
 
-		return {
-			address: devserver.address,
-			port: devserver.port,
-			url: devserver.url,
-			async close() {
-				await closeWatchers();
-				await devserver.close();
-			},
-		};
+			return {
+				address: devserver.address,
+				port: devserver.port,
+				url: devserver.url,
+				async close() {
+					try { await watchHandle.close(); }
+					finally { await devserver.close(); }
+				},
+			};
+		} catch (error) {
+			try { await watchHandle?.close(); }
+			finally { await devserver.close(); }
+			throw error;
+		}
 	}
 
 	// Same watch machinery as serve(), minus the HTTP server/hot-reload —
@@ -233,8 +250,10 @@ export class Project {
 	async watch() {
 		if (!this.#loaded) await this.reload();
 		const rules = await buildWatchRules(this.#config);
-		const { close } = createWatchers(rules);
-		return { close };
+		const handle = createWatchers(rules);
+		try { await handle.ready; }
+		catch (error) { await handle.close(); throw error; }
+		return { close: handle.close };
 	}
 
 	// Runs scripts/<command>.php inside the PHP-WASM runtime — the same

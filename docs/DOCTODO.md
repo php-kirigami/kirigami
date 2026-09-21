@@ -24,6 +24,8 @@ This inventory covers all 32 repository-owned Markdown files, including `.github
 
 - Updated A12 rule-construction behavior and regression evidence; removed the fixed task-accumulation limitation from core documentation.
 
+- Updated A13 failure notifications, startup readiness, cleanup semantics, and verification scope in core and extension documentation.
+
 ## Remaining work
 
 - Finalize VSIX distribution/license documentation after packaging verification; the existing extension manifest declares GPL-3.0-or-later while its LICENSE and README still say MIT.
