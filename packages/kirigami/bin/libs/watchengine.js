@@ -17,20 +17,21 @@ const tasksDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 
 // Builds one watch "rule" per watchable task (esbuild, sass, prepros, …),
 // prepending the implicit `prepros` task the same way `build`/`export` do.
-// Mutates nothing on `config` beyond what `watch`/`serve` already expect.
+// Use a local list so repeated watch/serve setup leaves configured tasks intact.
 export async function buildWatchRules(config) {
+	const tasks = [...config.tasks];
 	if (config.prepros) {
 		const task = {
 			name: "prepros",
 			type: "prepros",
 			config: config.prepros,
 		};
-		config.tasks = [task, ...config.tasks];
+		tasks.unshift(task);
 	}
 
 	const modules = {};
 	const watchers = [];
-	for (const task of config.tasks) {
+	for (const task of tasks) {
 		if (!modules[task.type]) {
 			const taskPath = path.join(tasksDir, `${task.type}.js`);
 			modules[task.type] = await import(pathToFileURL(taskPath).href);

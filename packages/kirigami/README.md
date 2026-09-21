@@ -223,7 +223,7 @@ Watch tasks process additions, changes, file removals, and directory removals. P
 
 `serve()` and `watch()` do not build initially. Call `build()` first. `onBuildResult` receives `{ status: 'start', rule, type }` followed by `{ status: 'done', rule, type, ...result }` for completed watch callbacks. A thrown callback currently bypasses the done event.
 
-Current limitations: one project per process, working directory established **before importing the engine**, and shared plugin registries. Await project operations in sequence; only PHP-prepros operations/resets are internally serialized. `reload()` refreshes PHP configuration, mounts, network mode, and plugin includes, but JavaScript plugin code remains subject to Node's module cache (restart after code changes). Repeated watcher setup still has a known task-accumulation defect (A12). See [the audit](../../docs/AUDIT-2026-09-20.md) for reproductions.
+Current limitations: one project per process, working directory established **before importing the engine**, and shared plugin registries. Await project operations in sequence; only PHP-prepros operations/resets are internally serialized. `reload()` refreshes PHP configuration, mounts, network mode, and plugin includes, but JavaScript plugin code remains subject to Node's module cache (restart after code changes). Repeated watcher setup preserves the configured task list; the implicit PHP rule is added only to the local watch-rule list (A12 fixed). See [the audit](../../docs/AUDIT-2026-09-20.md) for reproductions.
 
 An empty `prepros: {}` supports rendering without layout files. PHP warnings
 remain nonfatal and appear on the prepros task entry in `results`, including

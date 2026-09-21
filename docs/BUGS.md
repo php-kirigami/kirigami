@@ -11,10 +11,12 @@ source locations, corrective actions, and verification limits. The audit did not
 
 A07 is also fixed: optional layouts default safely, and PHP diagnostics survive task aggregation without entering generated HTML. A09 is fixed: malformed URL paths return 400, and file-read/stream failures no longer terminate the development server. A10 is fixed: the server denies private/source paths and checks canonical link targets, including the custom 404 fallback.
 
-- **P2 / A12-A14, A16:** Duplicate watch tasks; uncaught async watch failures; hidden script failures
+- **P2 / A13-A14, A16:** Uncaught async watch failures; hidden script failures
   in VS Code; incomplete regression coverage and missing CI gates (focused export tests now exist).
 - **P3 / A17–A18:** WASM tarballs include local backups; unavailable browser
   storage prevents oEmbed metadata fetching.
+
+A12 is fixed: watch-rule construction uses a local task list, so repeated setup does not accumulate implicit PHP tasks or mutate configured task listings.
 
 A11 is fixed: watch rules handle additions and file/directory removals; PHP structural changes refresh mounts, remove obsolete known page outputs, and rebuild pages plus sitemap.
 
