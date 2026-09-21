@@ -1,5 +1,9 @@
 # Status
 
+## Auto-loaded PHP extension packages — 2026-09-21
+
+`@kirigami/php-wasm` now scans project and global install roots for `@kirigami/phpext-*` packages when a runtime is created, stages each matching `.so` under `/internal/shared/extensions`, and writes the corresponding `extension=...` entries into the PHP WASM VM's generated `php.ini` so they are picked up automatically at startup. The extension discovery walks ancestor project directories and the global npm root, which covers both workspace installs and sibling repo checkouts like `../php-wasm-compiler/packages/phpext-*`.
+
 ## Documentation refresh — 2026-09-20
 
 Reviewed all 32 repository-owned Markdown files against the current source and manifests. Updated the core/CLI split, MCP and VS Code status, native YAML/Markdown references, page types, SDK command registration, runtime helpers, examples, license inventory, and documentation navigation. Historical version entries remain historical; no package versions were changed. Runtime extension availability was checked with `node packages/cli/bin/kiri.js phpinfo -m`.

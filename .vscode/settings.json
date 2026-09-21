@@ -1,4 +1,32 @@
 {
 	"intelephense.diagnostics.undefinedProperties": false,
-	"intelephense.diagnostics.undefinedFunctions": false
+	"intelephense.diagnostics.undefinedFunctions": false,
+	"chat.tools.terminal.autoApprove": {
+		"git add": true,
+		"git commit": true,
+		"/^node --test packages/kirigami/test/font-style-detect\\.test\\.js$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^node --test packages/kirigami/test/config-validation\\.test\\.js packages/kirigami/test/font-style-detect\\.test\\.js$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^node --input-type=module -e \"import '\\./packages/mcp/index\\.js'; console\\.log\\('mcp module ok'\\);\"$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^node --input-type=module -e \"import \\{ getPHPRuntime \\} from '\\./packages/php-wasm/index\\.js'; const php = await getPHPRuntime\\(\\); console\\.log\\('runtime-ok', typeof php\\.readFileAsText\\); await php\\.exit\\(\\);\"$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^cd C:\\\\projects\\\\kirigami\\\\kirigami; @'\nimport \\{ getPHPRuntime \\} from '\\./packages/php-wasm/index\\.js';\nconst php = await getPHPRuntime\\(\\);\nphp\\.writeFile\\('/tmp/check\\.php', '<\\?php echo extension_loaded\\(\\\\'sodium\\\\'\\) \\? \"1\" : \"0\";'\\);\nconst out = await php\\.runStream\\(\\{ scriptPath: '/tmp/check\\.php' \\}\\);\nconsole\\.log\\('RESULT=' \\+ await out\\.stdoutText\\);\nawait php\\.exit\\(\\);\n'@ \\| node --input-type=module$/": {
+			"approve": true,
+			"matchCommandLine": true
+		},
+		"/^cd C:\\\\projects\\\\kirigami\\\\kirigami; @'\nimport \\{ getPHPRuntime \\} from '\\./packages/php-wasm/index\\.js';\nconst php = await getPHPRuntime\\(\\);\nconst path = '/internal/shared/extensions/sodium\\.ini';\ntry \\{\n  const out = php\\.readFileAsText\\(path\\);\n  console\\.log\\('INI=' \\+ out\\.replace\\(/\\\\r/g, ''\\)\\);\n\\} catch \\(error\\) \\{\n  console\\.log\\('MISSING', error\\.message\\);\n\\}\nawait php\\.exit\\(\\);\n'@ \\| node --input-type=module$/": {
+			"approve": true,
+			"matchCommandLine": true
+		}
+	}
 }

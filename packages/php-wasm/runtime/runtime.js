@@ -12,12 +12,15 @@
  *                     └─ TCP to the real destination
  */
 
-import { PHP, loadPHPRuntime }    from '@php-wasm/universal';
+import { PHP, loadPHPRuntime, resolvePHPExtension, withResolvedPHPExtensions } from '@php-wasm/universal';
 import { createServer }           from 'node:http';
 import { createConnection, isIP } from 'node:net';
 import { lookup }                 from 'node:dns';
 import { createHash }             from 'node:crypto';
 import { rootCertificates }       from 'node:tls';
+import { execFileSync }           from 'node:child_process';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 
 // ─── CA bundle ───────────────────────────────────────────────────────────────
 
@@ -75,6 +78,159 @@ function setPhpIniValues(php, values, iniPath = PHP_INI_PATH) {
     }
 
     php.writeFile(iniPath, lines.join('\n') + '\n');
+}
+
+// ─── Auto-discovered PHP extensions ─────────────────────────────────────────
+
+function safeReadDir(dir) {
+    try { return readdirSync(dir, { withFileTypes: true }); }
+    catch { return []; }
+}
+
+function addPackageDirs(dir, seen) {
+    if (!dir || !existsSync(dir)) return;
+
+    for (const entry of safeReadDir(dir)) {
+        if (!entry.isDirectory()) continue;
+        const childPath = join(dir, entry.name);
+
+        if (entry.name.startsWith('phpext-')) {
+            seen.add(childPath);
+            continue;
+        }
+
+        if (entry.name === '@kirigami') {
+            addPackageDirs(childPath, seen);
+        }
+    }
+}
+
+function discoverPHPExtensionPackageDirs() {
+    const seen = new Set();
+    const roots = new Set();
+    let current = resolve(process.cwd());
+
+    while (true) {
+        roots.add(current);
+        const parent = dirname(current);
+        if (parent === current) break;
+        current = parent;
+    }
+
+    for (const root of roots) {
+        addPackageDirs(join(root, 'node_modules'), seen);
+        addPackageDirs(join(root, 'packages'), seen);
+
+        const parent = dirname(root);
+        if (parent !== root) {
+            for (const entry of safeReadDir(parent)) {
+                if (!entry.isDirectory()) continue;
+                addPackageDirs(join(parent, entry.name, 'packages'), seen);
+                addPackageDirs(join(parent, entry.name, 'node_modules'), seen);
+            }
+        }
+    }
+
+    try {
+        const globalRoot = execFileSync('npm', ['root', '-g'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+        if (globalRoot) {
+            addPackageDirs(globalRoot, seen);
+            addPackageDirs(join(globalRoot, '@kirigami'), seen);
+        }
+    } catch {
+        // Ignore missing global npm or a no-node-install environment.
+    }
+
+    return [...seen];
+}
+
+function pickExtensionArtifact(manifest, packageDir, phpMajorMinor) {
+    if (!manifest || !Array.isArray(manifest.artifacts)) {
+        return null;
+    }
+
+    if (!phpMajorMinor) phpMajorMinor = '';
+    const versionCandidates = phpMajorMinor ? [phpMajorMinor, `${phpMajorMinor}.0`] : [];
+    for (const candidate of versionCandidates) {
+        const match = manifest.artifacts.find((artifact) => artifact && artifact.phpVersion === candidate);
+        if (match && match.sourcePath) return join(packageDir, match.sourcePath);
+    }
+
+    const fallback = manifest.artifacts.find((artifact) => artifact && artifact.phpVersion && phpMajorMinor && String(artifact.phpVersion).startsWith(`${phpMajorMinor}.`));
+    if (fallback && fallback.sourcePath) return join(packageDir, fallback.sourcePath);
+
+    const generic = manifest.artifacts.find((artifact) => artifact && artifact.sourcePath);
+    if (generic) return join(packageDir, generic.sourcePath);
+
+    return null;
+}
+
+function findExtensionSoFile(packageDir, phpMajorMinor) {
+    const manifestPath = join(packageDir, 'manifest.json');
+    if (existsSync(manifestPath)) {
+        try {
+            const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+            const artifactPath = pickExtensionArtifact(manifest, packageDir, phpMajorMinor);
+            if (artifactPath && existsSync(artifactPath)) return artifactPath;
+        } catch {
+            // Fall back to a direct directory walk below.
+        }
+    }
+
+    let match = null;
+    function walk(dir) {
+        if (match) return;
+        for (const entry of safeReadDir(dir)) {
+            const fullPath = join(dir, entry.name);
+            if (entry.isDirectory()) {
+                walk(fullPath);
+                if (match) return;
+                continue;
+            }
+            if (entry.name.endsWith('.so')) {
+                match = fullPath;
+                return;
+            }
+        }
+    }
+    walk(packageDir);
+    return match;
+}
+
+async function resolveInstalledPHPExtensions(phpMajorMinor) {
+    const extensions = [];
+
+    for (const packageDir of discoverPHPExtensionPackageDirs()) {
+        const manifestPath = join(packageDir, 'manifest.json');
+        let manifest = null;
+        if (existsSync(manifestPath)) {
+            try {
+                manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+            } catch {
+                manifest = null;
+            }
+        }
+
+        const soPath = findExtensionSoFile(packageDir, phpMajorMinor);
+        if (!soPath) continue;
+
+        const extensionName = (manifest && manifest.name) || packageDir.split(/[\\/]/).at(-1).replace(/^phpext-/, '');
+        const soBytes = readFileSync(soPath);
+        const extension = await resolvePHPExtension({
+            phpVersion: phpMajorMinor || undefined,
+            name: extensionName,
+            source: { format: 'so', name: extensionName, bytes: soBytes },
+            loadWithIniDirective: 'extension',
+        });
+        extensions.push(extension);
+    }
+
+    return extensions;
+}
+
+async function withDiscoveredPHPExtensions(options = {}, phpMajorMinor) {
+    const extensions = await resolveInstalledPHPExtensions(phpMajorMinor);
+    return extensions.length ? withResolvedPHPExtensions(options, extensions) : options;
 }
 
 // ─── SOCKFS framing protocol ────────────────────────────────────────────────
@@ -298,8 +454,32 @@ function getFreePort() {
 
 // ─── Exports ─────────────────────────────────────────────────────────────────
 
+function detectPhpMajorMinorFromLoader(loaderModule) {
+    try {
+        if (loaderModule && typeof loaderModule.phpVersionString === 'string') {
+            const parts = loaderModule.phpVersionString.split('.');
+            if (parts.length >= 2) return `${parts[0]}.${parts[1]}`;
+        }
+
+        if (loaderModule && typeof loaderModule.dependencyFilename === 'string') {
+            // dependencyFilename often contains a segment like '8_5_10'
+            const m = loaderModule.dependencyFilename.match(/(\d+_\d+)(?:_\d+)?/);
+            if (m) return m[1].replace('_', '.');
+        }
+    } catch {
+        // ignore and fallback to undefined
+    }
+    return undefined;
+}
+
 const getPHPRuntime = async () => {
-    const runtime = await loadPHPRuntime(await import('../jspi/php_8_5.js'));
+    const loader = await import('../jspi/php_8_5.js');
+    const phpMajorMinor = detectPhpMajorMinorFromLoader(loader);
+
+    const runtime = await loadPHPRuntime(
+        loader,
+        await withDiscoveredPHPExtensions({}, phpMajorMinor)
+    );
     return new PHP(runtime);
 };
 
@@ -308,16 +488,19 @@ const getPHPRuntimeWithNetwork = async () => {
     const httpServer = await startOutboundProxy(proxyPort);
 
     try {
+        const loader = await import('../jspi/php_8_5.js');
+        const phpMajorMinor = detectPhpMajorMinorFromLoader(loader);
+
         const runtime = await loadPHPRuntime(
-            await import('../jspi/php_8_5.js'),
-            {
+            loader,
+            await withDiscoveredPHPExtensions({
                 websocket: {
                     url: (_sock, host, port) =>
                         `ws://127.0.0.1:${proxyPort}/?host=${host}&port=${port}`,
                     subprotocol: 'binary',
                     decorator:   addSocketOptionsSupportToWebSocketClass,
                 },
-            }
+            }, phpMajorMinor)
         );
 
         const php = new PHP(runtime);

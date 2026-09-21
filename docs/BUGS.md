@@ -13,7 +13,7 @@ A07 is also fixed: optional layouts default safely, and PHP diagnostics survive 
 
 - **P2 / A16:** Incomplete regression coverage and missing CI gates (focused regression suites now exist).
 - **P3 / A17–A18:** WASM tarballs include local backups; unavailable browser
-  storage prevents oEmbed metadata fetching.
+  storage prevents oEmbed metadata fetching. (On s'en fout du browser, on target seulement NodeJS)
 
 A14 is fixed: VS Code Run Script reports structured failures as errors, logs the returned diagnostics, and only announces success for `success: true`.
 
@@ -22,35 +22,6 @@ A13 is fixed: watcher callback rejections are contained, serve attempts a termin
 A12 is fixed: watch-rule construction uses a local task list, so repeated setup does not accumulate implicit PHP tasks or mutate configured task listings.
 
 A11 is fixed: watch rules handle additions and file/directory removals; PHP structural changes refresh mounts, remove obsolete known page outputs, and rebuild pages plus sitemap.
-
-## Previously recorded issues
-
-- **`font-style-detect()`'s `"ital-axis"` sentinel — open question.**
-  Previously this returned a sentinel string (`"ital-axis"`) that the
-  Sass templates guarded back to `normal` to avoid emitting invalid CSS.
-  To make the intent explicit and enable future handling the Sass helper
-  `font-has-ital-axis($path)` has been added and the `canva` stylesheet
-  now uses it to fall back to `normal`.
-
-  If a project actually needs full support for variable fonts exposing a
-  binary `ital` axis, the correct approach is still to emit two distinct
-  `@font-face` blocks (one per `ital` value) so browsers can choose the
-  correct face based on font-variation settings. That is a design decision
-  left open (and requires generating two `src` entries). For now, the
-  conservative fallback avoids invalid CSS while exposing a small API to
-  detect the axis presence if downstream code wants to split faces.
-
-- **`|+` (keep-chomping) literal blocks: `YAML::` vs `YAML_LEGACY::` differ
-  by one trailing blank line.** Historically the legacy parser preserved
-  all trailing blank lines for `|+`, while the native `yaml` extension
-  (used by `YAML::`) returned a single trailing newline. To reduce
-  surprising diffs when switching parsers, `YAML_LEGACY::applyChomping()`
-  has been normalised so `|+` produces a single trailing newline — matching
-  the behaviour observed from libyaml. This is a conservative, low-risk
-  normalization; the legacy parser is still retained for reference or
-  rollback but behaves consistently with the native-backed parser now.
-  See [DECISIONS.md](DECISIONS.md) for the rationale behind preferring
-  the native-backed `YAML::`. (Low priority; `|+` is rarely used.)
 
 A08 resource paths and working-directory capture are fixed with a staged ESM runtime and external Node worker. Relocated integration and real VS Code 1.138.0 smoke tests pass on Windows. Older editors, interactive host behavior, and VSIX packaging remain validation follow-ups; see [the extension guide](EXTENSION-VSCODE.md).
 

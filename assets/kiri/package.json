@@ -2,6 +2,7 @@
   "name": "@kirigami/kirigami",
   "version": "0.1.0",
   "description": "Kirigami CLI — point d'entrée du projet",
+  "keywords": ["kirigami","cli","kiri","developer","tooling"],
   "type": "module",
   "bin": {
     "kiri": "./bin/kiri.js"
