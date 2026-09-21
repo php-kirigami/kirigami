@@ -288,3 +288,11 @@ No package versions or generated WASM/loader files were changed by this fix. End
 Missing global `prepros.before`/`after` fields now default to `null` before PHP hooks/includes run. PHP-prepros disables inline error display while retaining stderr logging, so warnings no longer contaminate generated HTML. The aggregate render/sitemap task retains both phases' warnings, stderr and debug output. A sitemap failure keeps its error and the preceding render's diagnostics and produced-file list. Nonfatal warnings remain nonfatal and are available on the prepros entry in `Project.build()` / `Project.export()` results.
 
 Validation: `node --test --test-isolation=none packages/kirigami/test/minimal-render.test.js` passes all five scenarios (six test-runner entries including the parent): empty `prepros` build/export, all global layout combinations, render/page/sitemap warnings, sitemap failure after successful rendering, and render failure. The real WASM A06 reload regression also passes. Tested on Windows / Node 26; no versions changed.
+
+## VS Code runtime resources and activation (A08)
+
+The editor bundle now starts an external Node worker in the project directory before loading core. Runtime staging preserves ESM package-relative schemas, task modules, PHP libraries, WASM files, and dependency license files. The shared Extension Host working directory is unchanged. Commands use the IPC adapter; shutdown closes the server and PHP runtime before terminating the worker.
+
+Validation on Windows / external Node 26.8.2: compilation succeeds; `node --test --test-isolation=none packages/vscode/test/activation.test.cjs` passes after relocating the extension away from workspace dependencies, covering all five commands, PHP build/export/run, configuration reload, and server cleanup. `packages/vscode/test/run-host.ps1` passes with VS Code 1.138.0 / host Node 24.18.1, covering activation, validation, PHP build/export, the empty-script path, and server start/stop. The host fixture uses an isolated profile and retains logs.
+
+Interactive preview/status/config-watcher checks, older editors, other platforms, and actual VSIX packaging remain unverified. No package versions changed.

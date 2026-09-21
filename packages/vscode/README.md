@@ -20,11 +20,11 @@ Kirigami static site without leaving the editor.
 
 ## Overview
 
-This is an implemented development scaffold, not a verified packaged extension. Compilation succeeds, but activation with a stubbed VS Code module fails on the bundled schema path; working-directory capture also needs correction. A real Extension Development Host run is still required.
+This development extension has passed relocated integration tests and a real VS Code 1.138.0 smoke test on Windows. VSIX packaging and the remaining interactive checks are still pending.
 
 `kirigami-vscode` wraps `@kirigami/kirigami`'s `Project` API — the same
 one `@kirigami/cli` (terminal) and `@kirigami/mcp` (AI agent) already
-wrap — directly, in-process, the same way `@kirigami/cli` does. See
+wrap — in a dedicated external Node process with its own project working directory. See
 `docs/DECISIONS.md`'s `@kirigami/mcp` section in the monorepo for why this
 doesn't go through `@kirigami/mcp`'s stdio server instead.
 
@@ -99,7 +99,7 @@ server.
 
 ## Requirements
 
-The manifest declares Node `>=24.0.0` and VS Code `^1.90.0`. The extension runs in the editor’s embedded Node runtime; an external Node installation does not upgrade it. Verify JSPI and `node:sqlite` availability in the actual extension host. The declared editor range alone does not establish compatibility.
+The manifest declares Node `>=24.0.0` and VS Code `^1.90.0`. Install external Node 24+ with WebAssembly JSPI and SQLite support. Set `kirigami.nodePath` to its executable if `node` is unavailable on PATH, then restart the extension. Core runs in that child process independently of the embedded host. Only trusted workspaces are supported. Older VS Code versions remain untested.
 
 ---
 
@@ -124,7 +124,8 @@ a folder containing a `kirigami.yaml` in that host window (e.g.
 
 ## Known limitations
 
-- Bundled schema/resource paths and early working-directory capture block reliable activation (audit A08).
+- A08 resource paths and working-directory capture are fixed; runtime dependencies are copied under `dist/runtime` during compilation. Recompile after core or worker edits; watch mode only rebuilds the host bundle.
+- Runtime staging uses dependencies installed for the build platform; cross-platform VSIX packaging remains unverified.
 - Run Script can report success despite a returned `success: false` (A14).
 - Core reload now resets PHP runtime/config state and plugin includes (A06 fixed); the extension's configuration watcher still needs real-host verification.
 - Preview does not perform an initial build; use Build first.
@@ -136,6 +137,8 @@ a folder containing a `kirigami.yaml` in that host window (e.g.
   installs/removals (`node_modules` changes).
 
 ---
+
+Automated test commands and remaining host checks are documented in [the extension guide](../../docs/EXTENSION-VSCODE.md).
 
 ## License
 

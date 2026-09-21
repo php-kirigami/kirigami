@@ -14,7 +14,11 @@ This inventory covers all 32 repository-owned Markdown files, including `.github
 - Updated core, MCP, extension, and PHP runtime documentation for A06's coordinated reload/reset behavior and its remaining concurrency/module-cache limits.
 - Updated optional-layout and diagnostic documentation for A07; the audit now distinguishes the original warning reproduction from the corrected behavior.
 
+- Updated A08 runtime isolation, staging, configuration requirements, and verified activation results across the extension documentation and audit tracking.
+
 ## Remaining work
+
+- Finalize VSIX distribution/license documentation after packaging verification; the existing extension manifest declares GPL-3.0-or-later while its LICENSE and README still say MIT.
 
 - TLS helper docs now reflect A03’s secure defaults. Keep the native-PHP verification / WASM end-to-end limitation explicit until the networking follow-up is resolved.
 

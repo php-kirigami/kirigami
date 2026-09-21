@@ -312,3 +312,9 @@ above) without updating dependents — exactly the step
 unrelated to this scaffold but surfaced by it (stale nested
 `node_modules/@kirigami/php-wasm@8.5.10-5` under both packages from the
 version conflict, removed).
+
+## VS Code runtime isolation and resource staging (A08)
+
+The original import-meta shim collapsed every module-relative resource path onto the host bundle, breaking schema and task resolution. Compilation now bundles only the editor adapter and stages the core dependency tree with its original ESM layout and resources. A dedicated external Node 24+ worker starts in the project directory before importing core. This preserves current core working-directory assumptions without mutating the shared Extension Host or depending on its SQLite/JSPI capabilities. IPC serializes requested operations and forwards logs and watch-build events. The old PHP-prepros bundling shim is removed.
+
+Staging copies installed platform dependencies and records versions/licenses in `dist/runtime/inventory.json`; it is not yet a verified cross-platform VSIX release pipeline. Watch mode rebuilds the editor adapter only; restart compilation to refresh staged core/worker files.

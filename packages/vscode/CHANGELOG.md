@@ -7,6 +7,9 @@ toggle, kirigami.yaml reload watcher.
 
 ## Unreleased
 
+- Fixed A08 resource resolution and working-directory capture using staged ESM runtime dependencies and an external Node worker.
+- Added relocated integration coverage and a Windows real-host smoke runner; verified with VS Code 1.138.0.
+
 - Clarified the implemented scaffold and outstanding activation/resource-path defects.
 - Documented initial-build, PHP reload, and script-result limitations.
-- Extension Host validation and VSIX packaging remain pending; no version change accompanies these documentation updates.
+- The initial scaffold had pending host validation; the A08 smoke tests above now pass. Interactive checks and VSIX packaging remain pending. No package version changed.

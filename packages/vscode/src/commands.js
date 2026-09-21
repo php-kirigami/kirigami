@@ -45,7 +45,7 @@ export function registerCommands(context, { output, statusBar }) {
 
 	async function run() {
 		const project = await getProject();
-		const scripts = project.scripts;
+		const scripts = await project.listScripts();
 		if (!scripts.length) {
 			vscode.window.showInformationMessage("Kirigami: no scripts/ found in this project.");
 			return;
