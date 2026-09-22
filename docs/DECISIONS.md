@@ -344,3 +344,52 @@ For this small asset package, rebuilding the whole tree keeps deletion/rename
 handling consistent across JavaScript, maps, declarations, and styles without
 several competing cleanup paths. Rebuild failures are reported and later edits
 can recover; output replacement is not atomic.
+
+## New plugin extension points go through hooks, not new dedicated registries — 2026-09-22
+
+`registerTaskType()` (a dedicated Map-based registry, like the pre-existing
+`registerCommand()`) shipped first for custom build task *types*. The three
+extension points added right after it — a plugin providing a runnable/
+triggerable PHP script, injecting an actual task *instance* without a
+kirigami.yaml `tasks:` entry, and adding a `kiri` subcommand — were each
+built on the existing `@kirigami/sdk` hook system (`on(HOOKS.X, ...)`)
+instead: `scripts:register`, `tasks:register`, `commands:register`. A
+listener returns a descriptor object (or an array of them, or null/undefined
+to contribute nothing); the core collects them at a single defined point in
+`Project.reload()`/`loadPlugins()`, after plugins register.
+
+The hook route was deliberately chosen over adding another bespoke registry
+for each: `reset()` already clears every hook on every reload for free,
+whereas a new registry needs its own `resetX()` wired into `loadPlugins()`'s
+reload branch by hand (as `registerTaskType()` did) — one more thing to
+remember, and to forget. It also keeps a plugin author's mental model to one
+shape (`on(HOOKS.X, () => descriptor)`) across every extension point added
+after task types, rather than a different registration function per kind of
+thing.
+
+`commands:register` is additive, not a replacement: `registerCommand()`
+already existed, is called directly by real plugins, and is read
+synchronously by `@kirigami/cli`'s dispatcher and `@kirigami/vscode` — both
+constraints a hook-only design would have broken (hook results only being
+collectible asynchronously, and removing a shipped public function). Rather
+than duplicate its validation, `loadPlugins()` routes every
+`commands:register` hook result through the *existing* `registerCommand()`
+call, so a duplicate name or a non-function `run` throws the identical error
+regardless of which style a plugin used.
+
+Precedence rules differ by kind, deliberately: a project's own
+`scripts/<name>.php` always wins over a plugin registering the same script
+name (a plugin script is meant to work without any project file existing at
+all — silently preferring the project's is the least surprising default,
+mirroring how a project can locally override a template). Tasks and commands
+have no such override concept — `tasks:register` entries are simply appended
+after the project's own `tasks:` list, and a name collision between two
+task entries is left exactly as unvalidated as two hand-written `tasks:`
+entries sharing a name always were; a `commands:register` collision throws
+outright, since a `kiri <name>` command is looked up by that literal name
+with no fallback path, so a silent conflict there would non-deterministically
+shadow one implementation with another. `registerTaskType()`'s own
+resolution keeps preferring a built-in type over a same-named plugin
+registration (a pre-existing rule, unchanged here), which is why
+`loadPlugins()` separately rejects a plugin task-type name that collides
+with a built-in, rather than silently letting the built-in win unannounced.
