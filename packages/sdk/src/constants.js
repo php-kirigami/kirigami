@@ -62,4 +62,14 @@ export const HOOKS = Object.freeze({
 	 * Fired with `{ config }`.
 	 */
 	TASKS_REGISTER: 'tasks:register',
+	/**
+	 * An alternative to calling `registerCommand()` directly: each listener
+	 * returns (or an array of) `{ name, description?, run }` — same shape
+	 * `registerCommand()` takes — for a new `kiri <name>` subcommand. Routed
+	 * through `registerCommand()` itself right after plugins load, so a
+	 * duplicate name (against another hook entry or a directly-registered
+	 * command) or a non-function `run` throws the same way either style is
+	 * used. Fired with `{ config }`.
+	 */
+	COMMANDS_REGISTER: 'commands:register',
 });

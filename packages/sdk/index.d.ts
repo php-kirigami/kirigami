@@ -55,6 +55,7 @@ export declare const HOOKS: {
 	readonly PREPROS_PHP: 'prepros:php';
 	readonly SCRIPTS_REGISTER: 'scripts:register';
 	readonly TASKS_REGISTER: 'tasks:register';
+	readonly COMMANDS_REGISTER: 'commands:register';
 };
 
 /** A plugin-provided runnable/triggerable PHP script, registered via the `scripts:register` hook. */

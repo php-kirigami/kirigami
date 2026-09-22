@@ -27,7 +27,7 @@ import path from "node:path";
 import Ajv from "ajv";
 import { createRequire } from "node:module";
 import { pathToFileURL, fileURLToPath } from "node:url";
-import { reset as resetHooks, resetCommands, resetTaskTypes, listTaskTypes } from "@kirigami/sdk";
+import { reset as resetHooks, resetCommands, resetTaskTypes, listTaskTypes, run as runHook, HOOKS, registerCommand } from "@kirigami/sdk";
 import { clearResolvedTaskTypes, builtInTaskTypes } from "./tasktypes.js";
 import { getConfig } from "../config.js";
 
@@ -126,6 +126,15 @@ export async function loadPlugins(config, { reload = false } = {}) {
 		if (builtInTaskTypes.has(typeName)) {
 			throw `Task type "${typeName}" collides with a built-in task type and cannot be registered by a plugin.`;
 		}
+	}
+
+	// An alternative to calling registerCommand() directly from register():
+	// a plugin can instead declare its command(s) via the commands:register
+	// hook, same as scripts:register/tasks:register. Routed through
+	// registerCommand() itself so duplicate names and a non-function `run`
+	// are rejected the same way either style is used.
+	for (const cmd of await runHook(HOOKS.COMMANDS_REGISTER, { config })) {
+		if (cmd) registerCommand(cmd.name, cmd);
 	}
 
 	return (_lastLoaded = loaded);

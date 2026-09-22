@@ -1,5 +1,19 @@
 # Status
 
+## Plugin commands via a hook — 2026-09-22
+
+`@kirigami/sdk`'s existing `registerCommand()` registry now has a hook-based
+alternative: a plugin's `on(HOOKS.COMMANDS_REGISTER, ...)` listener returns
+`{ name, description?, run }` — the same shape `registerCommand()` takes —
+instead of calling it directly. `loadPlugins()` collects these once, right
+after plugins register, and routes each one through the existing
+`registerCommand()` call, so a duplicate name or a non-function `run` throws
+the same error either style produces; `getCommand()`/`listCommands()` (read
+by `@kirigami/cli`'s dispatcher and any embedder) are unchanged, staying
+synchronous. `registerCommand()` itself is untouched — this is an additional
+way to reach it, not a replacement, kept for consistency with
+`scripts:register`/`tasks:register`.
+
 ## Plugin-injected build tasks — 2026-09-22
 
 Active plugins can now inject actual build tasks — not just task types —

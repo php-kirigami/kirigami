@@ -145,6 +145,7 @@ prepros hooks use the separate signatures shown in the table.
 | `HOOKS.PREPROS_PHP` | prepros | `({ __root, config })` | absolute path(s) of `.php` file(s) to `include_once` in the prepros runtime once, before any page renders — for a plugin to `PREPROS::registerTag()` / `registerHook()` from PHP |
 | `HOOKS.SCRIPTS_REGISTER` | (none — engine-level) | `({ config })` | object(s) `{ name, file, trigger?, mount? }` — a runnable PHP script, the plugin's counterpart of a project's own `scripts/<name>.php` + kirigami.yaml `scripts:` entry |
 | `HOOKS.TASKS_REGISTER` | (none — engine-level) | `({ config })` | object(s) shaped like a kirigami.yaml `tasks:` entry (`{ name, type, ... }`) — a build task the plugin's counterpart of a project's own `tasks:` entry |
+| `HOOKS.COMMANDS_REGISTER` | (none — engine-level) | `({ config })` | object(s) `{ name, description?, run }` — same shape `registerCommand()` takes, an alternative to calling it directly |
 
 `SCRIPTS_REGISTER` listeners each describe one script: `name` is what `kiri run
 <name>` (or `Project#run(name)`) invokes it by; `file` is an absolute path to
@@ -163,6 +164,14 @@ project doesn't need its own `tasks:` entry to run it. Collected once, right
 after plugins load, and appended to the project's own `tasks:` list — so it
 goes through the exact same validation/build/export/watch path as any other
 task, and reload() re-collects it fresh (no accumulation across reloads).
+
+`COMMANDS_REGISTER` listeners are collected right after plugins load and each
+routed through `registerCommand()` — so a duplicate name (against another
+hook entry or a directly-registered command) or a non-function `run` throws
+the same error either style produces. Prefer this over calling
+`registerCommand()` directly only for consistency with the other `*_REGISTER`
+hooks; functionally they're equivalent, since `register()` already has
+`options`/`config` in scope either way.
 
 For `*_BEFORE`/`*_AFTER`, prefer an absolute path resolved from the plugin
 itself (as in the example above) — a relative path would be resolved from the
@@ -192,7 +201,7 @@ registrations during dispatch: listeners are iterated from a live `Set`. The cor
 
 ### Command registry
 
-`registerCommand(name, { description, run })` registers a plugin command. `run(args, project)` receives raw arguments and the loaded project. A duplicate name or non-function `run` throws. `getCommand(name)` returns the command or `null`; `listCommands()` returns all entries; `resetCommands(name?)` removes one or all. Register commands inside the default plugin function, with `kirigami.type: "command"` in its manifest. Entries have `{ name, description, run }`; descriptions default to an empty string, and listing preserves registration order. Returned entries are the stored mutable objects. The registry does not execute commands or validate their arguments.
+`registerCommand(name, { description, run })` registers a plugin command. `run(args, project)` receives raw arguments and the loaded project. A duplicate name or non-function `run` throws. `getCommand(name)` returns the command or `null`; `listCommands()` returns all entries; `resetCommands(name?)` removes one or all. Register commands inside the default plugin function, with `kirigami.type: "command"` in its manifest — or return them from the `HOOKS.COMMANDS_REGISTER` hook instead (see [Available hooks](#available-hooks)); kirigami-core routes hook entries through this same `registerCommand()`, so both styles share the same validation. Entries have `{ name, description, run }`; descriptions default to an empty string, and listing preserves registration order. Returned entries are the stored mutable objects. The registry does not execute commands or validate their arguments.
 
 ### Task-type registry
 

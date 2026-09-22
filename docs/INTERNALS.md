@@ -32,7 +32,7 @@ The [configuration loader](../packages/kirigami/bin/config.js) reads `kirigami.y
 2. Clear the core configuration cache.
 3. Await PHP-prepros runtime reset, then clear collected plugin PHP includes.
 4. Read the configuration and validate its schema, built-in tasks, and paths.
-5. Re-register active plugins, including their custom task types.
+5. Re-register active plugins, including their custom task types; then collect every `commands:register` hook result, routed through `registerCommand()`.
 6. Collect every `tasks:register` hook result and append it to `config.tasks`.
 7. Strictly validate every configured task (project's own and plugin-injected alike), then mark the project loaded.
 
