@@ -23,7 +23,7 @@ Launch Node from the directory containing `kirigami.yaml` before importing core.
 | `config` | object or `null` | Resolved configuration; null before loading. |
 | `plugins` | array of `{ name, version }` | Activated plugins; version may be null. |
 | `tasks` | array | Configured tasks, with implicit forced `render-all` when prepros is enabled. |
-| `scripts` | array of `{ name, mount, trigger }` | Sorted `scripts/*.php` files with optional configuration metadata; trigger defaults to null. |
+| `scripts` | array of `{ name, mount, trigger }` | Sorted `scripts/*.php` files with optional configuration metadata (trigger defaults to null), plus any plugin-registered script (see below) not shadowed by a project file of the same name. |
 
 Getters do not return immutable snapshots. Treat their values as read-only. `tasks` does not include export's synthetic copy task. Call `reload()` after editing configuration; close/recreate watch handles if their rules must change. Restart for changes to imported JavaScript plugin code.
 
@@ -44,6 +44,13 @@ Active plugins may register additional task types through `@kirigami/sdk`.
 They use the same validation, build, export, `runTask()`, and watch paths as
 built-in tasks. Reload rebuilds the task-type registry before strict task
 validation; a configured type with no active registration is rejected.
+
+Active plugins may also register a PHP script through `@kirigami/sdk`'s
+`scripts:register` hook — an absolute path to their own `.php` file, a `name`
+runnable via `run()`/`kiri run`, and an optional `trigger` that fires it
+automatically at a build/export checkpoint, exactly like a kirigami.yaml
+`scripts:` entry. A project's own `scripts/<name>.php` always takes
+precedence over a plugin registering the same name.
 
 Export resolves its destination relative to the process working directory, not `kirigami.root`. The source and destination must be separate trees, including canonical symlink/junction paths. The destination is cleared by the copy task. The path override also updates the loaded configuration's export path. Work is not rolled back after failure.
 

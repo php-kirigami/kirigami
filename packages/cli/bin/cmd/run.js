@@ -9,7 +9,7 @@ const HELP = {
 		{ flag: "--help, -h", desc: "Show this help section" },
 	],
 	notes: [
-		"Needs scripts/<script>.php at the project root.",
+		"Needs scripts/<script>.php at the project root, or a script an active plugin registered.",
 		"Extra words after <script> become $argv for the PHP script.",
 		"Expose more files via a \"scripts:\" entry with a \"mount:\" list in kirigami.yaml.",
 		"A script with \"trigger: before-build\" (or before-/after-export) runs automatically.",

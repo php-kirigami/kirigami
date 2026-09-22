@@ -55,7 +55,9 @@ optional validator. Build/export skip a task unless its definition sets
 `canbuild` or the task sets `force`; watch eligibility is separately controlled
 by `canwatch` and `getWatcher`.
 
-Each trigger runs matching configured scripts sequentially and stops at the first unsuccessful result. Task loops also stop at the first unsuccessful result. Unexpected exceptions can still reject the operation. Completed work is not rolled back.
+Each trigger runs matching configured scripts sequentially — a project's `kirigami.yaml` `scripts:` entries first, then any plugin-registered script (via the SDK's `scripts:register` hook) with the same trigger and a name not already covered by a `scripts:` entry — and stops at the first unsuccessful result. Task loops also stop at the first unsuccessful result. Unexpected exceptions can still reject the operation. Completed work is not rolled back.
+
+[`runscript()`](../packages/kirigami/bin/libs/runscript.js) resolves a name to a PHP file: a project's own `scripts/<name>.php` first, else a plugin's `scripts:register` registration for that name. Plugin registrations are collected lazily and cached for the lifetime of the loaded project, invalidated by `reload()` the same way `prepros:php` include paths are.
 
 Export is not a build into an entirely isolated directory: the implicit PHP task renders in the source tree, applies HTML hooks there, and generates sitemap output before the dist task copies public files. Later configured tasks receive the export destination. [The dist task](../packages/kirigami/bin/tasks/dist.js) rejects overlapping lexical or canonical source/destination paths, then empties the dedicated destination. It filters private/source files and applies `export.ignore`; it does not provide a transactional publish or restore old output after a later failure.
 

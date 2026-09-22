@@ -143,6 +143,17 @@ prepros hooks use the separate signatures shown in the table.
 | `HOOKS.ESBUILD_PLUGINS` | esbuild | `hookContext` | esbuild plugin object(s), same shape as the API's `plugins` option |
 | `HOOKS.PREPROS_HTML` | prepros | `(html, { file, abs, exportPath, config })` | the modified HTML string — a **waterfall** hook (run with `runWaterfall`), so return the new string or `null`/`undefined` to leave it untouched |
 | `HOOKS.PREPROS_PHP` | prepros | `({ __root, config })` | absolute path(s) of `.php` file(s) to `include_once` in the prepros runtime once, before any page renders — for a plugin to `PREPROS::registerTag()` / `registerHook()` from PHP |
+| `HOOKS.SCRIPTS_REGISTER` | (none — engine-level) | `({ config })` | object(s) `{ name, file, trigger?, mount? }` — a runnable PHP script, the plugin's counterpart of a project's own `scripts/<name>.php` + kirigami.yaml `scripts:` entry |
+
+`SCRIPTS_REGISTER` listeners each describe one script: `name` is what `kiri run
+<name>` (or `Project#run(name)`) invokes it by; `file` is an absolute path to
+the plugin's own `.php` file (resolve it the same way as the `*_BEFORE`/
+`*_AFTER` example below); `trigger` — one of `'before-build'`,
+`'before-export'`, `'after-export'` — fires it automatically at that
+checkpoint, same as a kirigami.yaml-declared script; `mount` is an optional
+array of glob patterns (relative to the project root) to mount into the
+sandbox first. A project's own `scripts/<name>.php` always wins over a
+plugin registering the same name.
 
 For `*_BEFORE`/`*_AFTER`, prefer an absolute path resolved from the plugin
 itself (as in the example above) — a relative path would be resolved from the

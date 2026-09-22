@@ -34,4 +34,21 @@ export const HOOKS = Object.freeze({
 	 * `registerHook()` etc. from PHP. Fired with `{ __root, config }`.
 	 */
 	PREPROS_PHP: 'prepros:php',
+	/**
+	 * A plugin-provided runnable script — the plugin's counterpart of a
+	 * project's own `scripts/<name>.php` file plus its kirigami.yaml
+	 * `scripts:` entry. Each listener returns (or an array of)
+	 * `{ name, file, trigger?, mount? }`:
+	 *   - `name`: identifier, invoked manually via `kiri run <name>`.
+	 *   - `file`: absolute path to the plugin's own .php file, e.g.
+	 *     `fileURLToPath(new URL('./scripts/optimize.php', import.meta.url))`.
+	 *   - `trigger`: optional — 'before-build' | 'before-export' |
+	 *     'after-export' — runs it automatically at that checkpoint, same as
+	 *     a kirigami.yaml-declared script.
+	 *   - `mount`: optional array of glob patterns (relative to the project
+	 *     root) to mount into the WASM sandbox before it runs.
+	 * A project's own scripts/<name>.php takes precedence over a plugin
+	 * registering the same name. Fired with `{ config }`.
+	 */
+	SCRIPTS_REGISTER: 'scripts:register',
 });

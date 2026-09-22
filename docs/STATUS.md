@@ -1,5 +1,21 @@
 # Status
 
+## Plugin-registered trigger scripts — 2026-09-22
+
+Active plugins can now register a runnable PHP script through
+`@kirigami/sdk`'s existing hook system (`on(HOOKS.SCRIPTS_REGISTER, ...)`)
+instead of a new dedicated registry — reusing `reset()`'s existing hook-wide
+reload cleanup for free. A listener returns `{ name, file, trigger?, mount? }`:
+`name` is invocable via `run()`/`kiri run <name>`, `file` is an absolute path
+to the plugin's own `.php` file, and an optional `trigger`
+(`before-build`/`before-export`/`after-export`) fires it automatically,
+exactly like a kirigami.yaml `scripts:` entry. A project's own
+`scripts/<name>.php` always takes precedence over a plugin registering the
+same name. Plugin registrations are collected lazily and cached for the
+loaded project's lifetime, invalidated on `reload()` the same way
+`prepros:php` include paths already were. `Project#scripts` now also lists
+plugin-registered scripts not shadowed by a local file.
+
 ## Plugin-defined task types — 2026-09-21
 
 Active plugins can now register custom build task types through

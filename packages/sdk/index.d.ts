@@ -53,7 +53,16 @@ export declare const HOOKS: {
 	readonly ESBUILD_PLUGINS: 'esbuild:plugins';
 	readonly PREPROS_HTML: 'prepros:html';
 	readonly PREPROS_PHP: 'prepros:php';
+	readonly SCRIPTS_REGISTER: 'scripts:register';
 };
+
+/** A plugin-provided runnable/triggerable PHP script, registered via the `scripts:register` hook. */
+export interface PluginScript {
+	name: string;
+	file: string;
+	trigger?: 'before-build' | 'before-export' | 'after-export';
+	mount?: string[];
+}
 
 /**
  * A persistent key/value cache backed by SQLite (via node:sqlite — no

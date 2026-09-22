@@ -28,7 +28,7 @@ import path from "node:path";
 import { getConfig, clearConfigCache, validateConfiguredTasks } from "./bin/config.js";
 import { loadPlugins } from "./bin/libs/plugins.js";
 import { resolveTaskType } from "./bin/libs/tasktypes.js";
-import { runscript } from "./bin/libs/runscript.js";
+import { runscript, getPluginScripts, clearPluginScriptsCache } from "./bin/libs/runscript.js";
 import { createDevServer } from "./bin/libs/devserver.js";
 import { buildWatchRules, createWatchers } from "./bin/libs/watchengine.js";
 import { assertSafeExportPaths } from "./bin/tasks/dist.js";
@@ -37,18 +37,25 @@ import { resetRuntime } from "@kirigami/php-prepros";
 import { findFiles } from "./bin/utils.js";
 
 // Runs every `scripts:` entry whose `trigger` matches `name` (e.g.
-// "before-build"), in order, stopping at the first failure. Deliberately
-// reimplemented here instead of reusing bin/libs/triggers.js's `trigger()`
-// (which moved to @kirigami/cli on the package split, and prints to the
-// console + calls `process.exit(1)` on failure — both wrong for a library
-// call). `runscript()` itself is already pure, so this just adds the
+// "before-build"), plus every plugin script registered with that same
+// trigger via the `scripts:register` hook (a project's own kirigami.yaml
+// entry wins on a name clash), in order, stopping at the first failure.
+// Deliberately reimplemented here instead of reusing bin/libs/triggers.js's
+// `trigger()` (which moved to @kirigami/cli on the package split, and prints
+// to the console + calls `process.exit(1)` on failure — both wrong for a
+// library call). `runscript()` itself is already pure, so this just adds the
 // scripts-list lookup around it.
 async function runTrigger(config, name) {
-	const scripts = (config.scripts || []).filter((s) => s.trigger === name);
+	const names = new Map();
+	for (const s of config.scripts || []) if (s.trigger === name) names.set(s.name, true);
+	for (const s of await getPluginScripts()) {
+		if (s.trigger === name && !names.has(s.name)) names.set(s.name, true);
+	}
+
 	const results = [];
-	for (const script of scripts) {
-		const result = await runscript(script.name);
-		results.push({ name: script.name, ...result });
+	for (const scriptName of names.keys()) {
+		const result = await runscript(scriptName);
+		results.push({ name: scriptName, ...result });
 		if (!result.success) return { success: false, results };
 	}
 	return { success: true, results };
@@ -59,6 +66,7 @@ export class Project {
 	#loaded = false;
 	#config = null;
 	#plugins = [];
+	#pluginScripts = [];
 
 	get config() {
 		return this.#config;
@@ -81,9 +89,11 @@ export class Project {
 		clearConfigCache();
 		await resetRuntime();
 		clearPhpIncludesCache();
+		clearPluginScriptsCache();
 		this.#config = await getConfig({ deferTaskTypes: true });
 		this.#plugins = await loadPlugins(this.#config, { reload: true });
 		await validateConfiguredTasks(this.#config);
+		this.#pluginScripts = await getPluginScripts();
 		this.#loaded = true;
 		return this;
 	}
@@ -285,16 +295,23 @@ export class Project {
 	// whether or not it has a matching kirigami.yaml `scripts:` entry — that
 	// entry only adds `mount`/`trigger` metadata (see runscript.js). This
 	// lists what's really runnable, merging in that metadata where present,
-	// so an embedder isn't limited to (or misled by) the yaml block alone.
+	// plus every plugin script registered via the `scripts:register` hook
+	// that a local file by the same name doesn't already shadow — so an
+	// embedder isn't limited to (or misled by) the yaml block alone.
 	// Empty until reload()/load() has populated #config.
 	get scripts() {
 		const config = this.#config;
 		if (!config) return [];
 		const declared = new Map((config.scripts || []).map((s) => [s.name, s]));
-		return findFiles("scripts/*.php")
+		const local = findFiles("scripts/*.php")
 			.map((file) => path.basename(file, ".php"))
 			.sort()
 			.map((name) => ({ name, mount: declared.get(name)?.mount || [], trigger: declared.get(name)?.trigger || null }));
+		const localNames = new Set(local.map((s) => s.name));
+		const fromPlugins = this.#pluginScripts
+			.filter((s) => !localNames.has(s.name))
+			.map(({ name, mount = [], trigger = null }) => ({ name, mount, trigger }));
+		return [...local, ...fromPlugins];
 	}
 
 	// The tasks build()/watch() actually iterate over: config.tasks, plus the

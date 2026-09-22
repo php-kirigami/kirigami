@@ -372,6 +372,12 @@ files compiled respectively before and after the entry (paths relative to
 | `mount` | – | Glob patterns (relative to the project root) of extra files mounted into the sandbox before the script runs. |
 | `trigger` | – | Fire automatically: `before-build` (start of `build` and `export`), `before-export` (very start of `export`), `after-export` (once `export` finished). |
 
+An active plugin can also register a runnable script via the `scripts:register`
+hook from `@kirigami/sdk`, without a `scripts:` entry: a `name` runnable the
+same way, an absolute `file` path to the plugin's own `.php` file, and an
+optional `trigger`/`mount`. A project's own `scripts/<name>.php` always wins
+over a plugin registering the same name. See the SDK README's hook table.
+
 ### `tasks:`
 
 Ordered list, run in array order, on top of the implicit `prepros` and `dist`
