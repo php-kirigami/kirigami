@@ -144,6 +144,7 @@ prepros hooks use the separate signatures shown in the table.
 | `HOOKS.PREPROS_HTML` | prepros | `(html, { file, abs, exportPath, config })` | the modified HTML string — a **waterfall** hook (run with `runWaterfall`), so return the new string or `null`/`undefined` to leave it untouched |
 | `HOOKS.PREPROS_PHP` | prepros | `({ __root, config })` | absolute path(s) of `.php` file(s) to `include_once` in the prepros runtime once, before any page renders — for a plugin to `PREPROS::registerTag()` / `registerHook()` from PHP |
 | `HOOKS.SCRIPTS_REGISTER` | (none — engine-level) | `({ config })` | object(s) `{ name, file, trigger?, mount? }` — a runnable PHP script, the plugin's counterpart of a project's own `scripts/<name>.php` + kirigami.yaml `scripts:` entry |
+| `HOOKS.TASKS_REGISTER` | (none — engine-level) | `({ config })` | object(s) shaped like a kirigami.yaml `tasks:` entry (`{ name, type, ... }`) — a build task the plugin's counterpart of a project's own `tasks:` entry |
 
 `SCRIPTS_REGISTER` listeners each describe one script: `name` is what `kiri run
 <name>` (or `Project#run(name)`) invokes it by; `file` is an absolute path to
@@ -154,6 +155,14 @@ checkpoint, same as a kirigami.yaml-declared script; `mount` is an optional
 array of glob patterns (relative to the project root) to mount into the
 sandbox first. A project's own `scripts/<name>.php` always wins over a
 plugin registering the same name.
+
+`TASKS_REGISTER` listeners each describe one build task — `type` can be a
+built-in or any registered task type, most often one the same plugin
+registers with `registerTaskType()` in the same `register()` call, so a
+project doesn't need its own `tasks:` entry to run it. Collected once, right
+after plugins load, and appended to the project's own `tasks:` list — so it
+goes through the exact same validation/build/export/watch path as any other
+task, and reload() re-collects it fresh (no accumulation across reloads).
 
 For `*_BEFORE`/`*_AFTER`, prefer an absolute path resolved from the plugin
 itself (as in the example above) — a relative path would be resolved from the

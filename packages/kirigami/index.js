@@ -25,6 +25,7 @@
 // ---------------------------------------------------------------------------
 
 import path from "node:path";
+import { run as runHook, HOOKS } from "@kirigami/sdk";
 import { getConfig, clearConfigCache, validateConfiguredTasks } from "./bin/config.js";
 import { loadPlugins } from "./bin/libs/plugins.js";
 import { resolveTaskType } from "./bin/libs/tasktypes.js";
@@ -92,6 +93,10 @@ export class Project {
 		clearPluginScriptsCache();
 		this.#config = await getConfig({ deferTaskTypes: true });
 		this.#plugins = await loadPlugins(this.#config, { reload: true });
+		this.#config.tasks = [
+			...(this.#config.tasks || []),
+			...(await runHook(HOOKS.TASKS_REGISTER, { config: this.#config })).filter(Boolean),
+		];
 		await validateConfiguredTasks(this.#config);
 		this.#pluginScripts = await getPluginScripts();
 		this.#loaded = true;
@@ -314,11 +319,13 @@ export class Project {
 		return [...local, ...fromPlugins];
 	}
 
-	// The tasks build()/watch() actually iterate over: config.tasks, plus the
-	// synthetic "render-all" prepros task build() prepends when `prepros:` is
-	// set (same shape build() constructs — kept in one place so runTask() and
-	// any caller wanting "what can I run" see exactly what build() would run).
-	// Empty until reload()/load() has populated #config.
+	// The tasks build()/watch() actually iterate over: config.tasks (which
+	// reload() already appended every `tasks:register` plugin task onto —
+	// see reload()), plus the synthetic "render-all" prepros task build()
+	// prepends when `prepros:` is set (same shape build() constructs — kept
+	// in one place so runTask() and any caller wanting "what can I run" see
+	// exactly what build() would run). Empty until reload()/load() has
+	// populated #config.
 	get tasks() {
 		const config = this.#config;
 		if (!config) return [];

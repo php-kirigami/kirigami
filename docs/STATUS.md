@@ -1,5 +1,20 @@
 # Status
 
+## Plugin-injected build tasks — 2026-09-22
+
+Active plugins can now inject actual build tasks — not just task types —
+through `@kirigami/sdk`'s `tasks:register` hook. A listener returns one (or
+an array of) task object(s) shaped exactly like a kirigami.yaml `tasks:`
+entry (`{ name, type, ... }`), most often of a type the same plugin
+registers via `registerTaskType()` in the same `register()` call, so a
+project doesn't need its own `tasks:` entry for the task to run. `reload()`
+collects these once, right after plugins load, and appends them onto
+`config.tasks` before strict task validation — so build(), export(),
+`runTask()`, watch, and the `tasks`/`config.tasks` getters all see them
+through the exact same path as a project-declared task, with zero changes
+needed to any of those call sites. Re-collected fresh on every `reload()`
+(no accumulation across reloads).
+
 ## Plugin-registered trigger scripts — 2026-09-22
 
 Active plugins can now register a runnable PHP script through

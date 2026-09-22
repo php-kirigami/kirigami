@@ -51,4 +51,15 @@ export const HOOKS = Object.freeze({
 	 * registering the same name. Fired with `{ config }`.
 	 */
 	SCRIPTS_REGISTER: 'scripts:register',
+	/**
+	 * A plugin-injected build task — the plugin's counterpart of a project's
+	 * own kirigami.yaml `tasks:` entry. Each listener returns (or an array of)
+	 * a task object shaped exactly like a `tasks:` entry (`{ name, type, ...
+	 * }`, `type` being a built-in or any registered task type — often one the
+	 * same plugin registers via `registerTaskType()`). Appended to the
+	 * project's own `tasks:` list once, right after plugins load, so it goes
+	 * through the same validation/build/export/watch path as any other task.
+	 * Fired with `{ config }`.
+	 */
+	TASKS_REGISTER: 'tasks:register',
 });

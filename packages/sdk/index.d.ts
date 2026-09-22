@@ -54,6 +54,7 @@ export declare const HOOKS: {
 	readonly PREPROS_HTML: 'prepros:html';
 	readonly PREPROS_PHP: 'prepros:php';
 	readonly SCRIPTS_REGISTER: 'scripts:register';
+	readonly TASKS_REGISTER: 'tasks:register';
 };
 
 /** A plugin-provided runnable/triggerable PHP script, registered via the `scripts:register` hook. */
@@ -62,6 +63,14 @@ export interface PluginScript {
 	file: string;
 	trigger?: 'before-build' | 'before-export' | 'after-export';
 	mount?: string[];
+}
+
+/** A plugin-injected build task, registered via the `tasks:register` hook — same shape as a kirigami.yaml `tasks:` entry. */
+export interface PluginTask {
+	name: string;
+	type: string;
+	force?: boolean;
+	[key: string]: unknown;
 }
 
 /**

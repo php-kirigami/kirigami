@@ -33,7 +33,8 @@ The [configuration loader](../packages/kirigami/bin/config.js) reads `kirigami.y
 3. Await PHP-prepros runtime reset, then clear collected plugin PHP includes.
 4. Read the configuration and validate its schema, built-in tasks, and paths.
 5. Re-register active plugins, including their custom task types.
-6. Strictly validate every configured task, then mark the project loaded.
+6. Collect every `tasks:register` hook result and append it to `config.tasks`.
+7. Strictly validate every configured task (project's own and plugin-injected alike), then mark the project loaded.
 
 The [plugin loader](../packages/kirigami/bin/libs/plugins.js) resolves packages from the project first, then from its own installation. It checks package metadata and option schemas before awaiting `register(options, { config, name })`. Reload resets shared hook, command, and task-type registrations before registering active plugins again; Node's JavaScript module cache remains intact. Restart the process after editing plugin implementation code.
 
@@ -48,12 +49,15 @@ The [plugin loader](../packages/kirigami/bin/libs/plugins.js) resolves packages 
 | `runTask(name)` | Find one task and force it; no build triggers or other tasks |
 
 Built-in task modules are imported from `bin/tasks/<type>.js`. A normal plugin
-may register additional types through the SDK task-type registry. Initial
-configuration parsing validates built-ins and defers unknown types; after
-plugins register, a strict pass rejects any type still unresolved and runs its
-optional validator. Build/export skip a task unless its definition sets
-`canbuild` or the task sets `force`; watch eligibility is separately controlled
-by `canwatch` and `getWatcher`.
+may register additional types through the SDK task-type registry, and inject
+actual task entries — same shape as a `tasks:` YAML entry — through the SDK's
+`tasks:register` hook; reload() appends those onto `config.tasks` right after
+plugins register, before strict validation, so they go through the exact same
+path as a project's own tasks. Initial configuration parsing validates
+built-ins and defers unknown types; after plugins register, a strict pass
+rejects any type still unresolved and runs its optional validator. Build/export
+skip a task unless its definition sets `canbuild` or the task sets `force`;
+watch eligibility is separately controlled by `canwatch` and `getWatcher`.
 
 Each trigger runs matching configured scripts sequentially — a project's `kirigami.yaml` `scripts:` entries first, then any plugin-registered script (via the SDK's `scripts:register` hook) with the same trigger and a name not already covered by a `scripts:` entry — and stops at the first unsuccessful result. Task loops also stop at the first unsuccessful result. Unexpected exceptions can still reject the operation. Completed work is not rolled back.
 

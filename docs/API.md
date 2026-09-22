@@ -45,6 +45,14 @@ They use the same validation, build, export, `runTask()`, and watch paths as
 built-in tasks. Reload rebuilds the task-type registry before strict task
 validation; a configured type with no active registration is rejected.
 
+Active plugins may also inject actual task entries through `@kirigami/sdk`'s
+`tasks:register` hook — shaped exactly like a kirigami.yaml `tasks:` entry
+(`{ name, type, ... }`), most often of a type the same plugin registers.
+Reload appends these once, right after plugins load and before strict task
+validation, onto the project's own `tasks:` list, so a project doesn't need
+its own `tasks:` entry for a plugin's task to run; `tasks`/`config.tasks`,
+`build()`, `export()`, `runTask()`, and watch all see the merged list.
+
 Active plugins may also register a PHP script through `@kirigami/sdk`'s
 `scripts:register` hook — an absolute path to their own `.php` file, a `name`
 runnable via `run()`/`kiri run`, and an optional `trigger` that fires it

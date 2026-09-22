@@ -389,6 +389,10 @@ and `type`; their remaining fields and imperative validation belong to the
 plugin. Plugins load before Kirigami performs the final strict task validation,
 so an unregistered type still fails configuration loading.
 
+A plugin can also inject the task entry itself via the `tasks:register` hook
+— no `tasks:` entry needed in kirigami.yaml at all. See the SDK README's hook
+table.
+
 | `type` | Purpose | Required fields | Optional |
 |---|---|---|---|
 | `esbuild` | Bundle/minify a JS/TS entry. Build + watch. | `name`, `type`, `entry` | `force` |
