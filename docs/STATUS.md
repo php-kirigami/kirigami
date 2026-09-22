@@ -1,5 +1,27 @@
 # Status
 
+## Roadmap consolidation — 2026-09-21
+
+Merged the stale strategic scaffold from `ROADMAP-FUTURE.md` into the canonical
+roadmap and removed the duplicate file. Completed stabilization work remains in
+STATUS, concrete CI and VS Code verification stays in TODO, and the consolidated
+roadmap now groups only unscheduled product directions by project extensibility,
+content, generated-site features, interfaces, and runtime tooling.
+
+## PHP extension discovery isolation — 2026-09-21
+
+PHP-WASM extension discovery no longer scans sibling repositories beside the
+current project or its ancestors. It remains limited to local `node_modules`
+and workspace `packages` directories along the current project's ancestor
+chain, plus explicitly global npm packages. This prevents an unrelated
+`php-wasm-compiler` checkout from silently staging experimental extensions and
+emitting PHP startup warnings in commands such as `kiri phpinfo`.
+
+Validation from the adjacent `project-test` site confirmed that `kiri phpinfo`
+exits successfully with empty stderr and no DBA, FTP, Gettext, GMP, MySQLi,
+PDO MySQL, POSIX, SOAP, or Sodium artifact staged from the sibling compiler.
+Package versions and dependencies were not changed by this fix.
+
 ## Package contract fixes — 2026-09-21
 
 Addressed the five follow-ups from the README audit. SDK declarations now

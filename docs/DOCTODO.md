@@ -4,7 +4,7 @@ Track unfinished documentation work only. Completed work and verification
 history live in [STATUS.md](STATUS.md); the detailed 2026-09-20 review is also
 recorded in [AUDIT-2026-09-20.md](AUDIT-2026-09-20.md) and Git history.
 Dependency documentation, generated bundles, and package archives are outside
-this inventory. `ROADMAP-FUTURE.md` is tracked in Git.
+this inventory.
 
 The scope includes **every `packages/*/README.md`**, the root README, and
 repository guides. A guide in `docs/` does not replace a package's standalone

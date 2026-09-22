@@ -120,15 +120,6 @@ function discoverPHPExtensionPackageDirs() {
     for (const root of roots) {
         addPackageDirs(join(root, 'node_modules'), seen);
         addPackageDirs(join(root, 'packages'), seen);
-
-        const parent = dirname(root);
-        if (parent !== root) {
-            for (const entry of safeReadDir(parent)) {
-                if (!entry.isDirectory()) continue;
-                addPackageDirs(join(parent, entry.name, 'packages'), seen);
-                addPackageDirs(join(parent, entry.name, 'node_modules'), seen);
-            }
-        }
     }
 
     try {
