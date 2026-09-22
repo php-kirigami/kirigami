@@ -155,7 +155,9 @@ the plugin's own `.php` file (resolve it the same way as the `*_BEFORE`/
 checkpoint, same as a kirigami.yaml-declared script; `mount` is an optional
 array of glob patterns (relative to the project root) to mount into the
 sandbox first. A project's own `scripts/<name>.php` always wins over a
-plugin registering the same name.
+plugin registering the same name. `file` must be inside the project or inside
+the package directory of an active plugin, so linked (`npm link`) and
+workspace plugins work too.
 
 `TASKS_REGISTER` listeners each describe one build task — `type` can be a
 built-in or any registered task type, most often one the same plugin

@@ -169,6 +169,23 @@ export function runenv(script: string, paths?: string[], ...args: string[]): Pro
 
 
 /**
+ * Like {@link runenv}, for a script shipped inside a plugin package. A linked
+ * or workspace plugin lives outside the project, so the script is contained
+ * by `pluginRoot` instead, and mounted under `/plugin-scripts/<package dir>/`.
+ * The caller must pass the resolved package directory of an active plugin.
+ *
+ * @param script      Path of the PHP script, absolute or relative to `pluginRoot`.
+ * @param pluginRoot  The plugin's package directory.
+ * @param paths       Extra project files to mount, as for {@link runenv}.
+ * @param args        Extra string arguments appended to the script's `$argv`.
+ *
+ * @throws When the script is missing, is a directory, or escapes
+ *         `pluginRoot` lexically or through a symbolic link.
+ */
+export function runPluginScript(script: string, pluginRoot: string, paths?: string[], ...args: string[]): Promise<PreprosResult>;
+
+
+/**
  * The JavaScript-side counterpart to `PREPROS::mount()`. Mounts a local
  * file or directory — recursively, preserving structure — into the WASM
  * sandbox's virtual filesystem, ahead of (or between) calls to

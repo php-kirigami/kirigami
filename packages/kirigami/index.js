@@ -13,8 +13,7 @@
 // don't operate on a loaded project (create has none yet, install shells out
 // to npm before plugins load) and `cache`/`phpinfo` don't touch kirigami.yaml
 // at all — none of those four are a natural `Project` method, so they keep
-// their own CLI-side logic. `test` is dead debug scaffolding, not a real
-// command.
+// their own CLI-side logic.
 //
 // Still bound to `process.cwd()` for locating kirigami.yaml, scripts/ and
 // node_modules — same as the CLI. Loading a *different* project than the

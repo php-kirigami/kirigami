@@ -75,7 +75,7 @@ PHP work and resets share a promise queue covering mounting, execution, and resu
 
 PHP diagnostics go to stderr rather than generated HTML. Task results can contain warnings, stderr, and debug output in addition to success/error and produced files. The renderer copies reported outputs back to the host; PHP virtual paths and host paths are not interchangeable.
 
-The lower-level PHP-WASM package also provides shared cached runtimes for direct consumers. Its network runtime bridges WASM sockets through a local proxy to Node TCP connections and injects Node's CA roots. Native TLS helper tests do not establish end-to-end WASM HTTPS. See [runtime documentation](../packages/php-wasm/README.md) for disposal, extension discovery, and current limits.
+The lower-level PHP-WASM package also provides shared cached runtimes for direct consumers. Its network runtime bridges WASM sockets through a local proxy to Node TCP connections and injects Node's CA roots. Because libcurl waits on `poll()`, the network runtime replaces that synchronous syscall with one that yields to Node's event loop (woken by WebSocket activity); end-to-end WASM HTTPS is covered by the TLS regression test. See [runtime documentation](../packages/php-wasm/README.md) for disposal, extension discovery, and current limits.
 
 ## Watching and serving
 

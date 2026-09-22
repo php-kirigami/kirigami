@@ -37,7 +37,7 @@ npm run compile --workspace=kirigami-vscode
 node --test --test-concurrency=1 "packages/*/test/*.test.js" "packages/*/test/*.test.cjs"
 ```
 
-The tests require subprocess support and local loopback sockets. TLS helper tests also require native PHP with cURL (`PHP_BINARY` may select it); they verify native helper behavior and WASM trust configuration separately, not end-to-end WASM HTTPS. Keep the default process isolation: several tests change the working directory and load process-global registries. For a focused check, pass a single test file instead of the two globs.
+The tests require subprocess support and local loopback sockets. TLS helper tests also require native PHP with cURL (`PHP_BINARY` may select it); they verify the helper under native PHP and end to end inside the WASM runtime. Keep the default process isolation: several tests change the working directory and load process-global registries. For a focused check, pass a single test file instead of the two globs.
 
 On 2026-09-21, all 48 tests in 14 files passed on Windows with Node 26.8.2 and PHP 8.5.10, including the relocated VS Code integration test. This does not establish Node 24, Linux, or VSIX packaging compatibility. The repository still has no root `npm test` command or CI workflow, and six package test scripts remain placeholders (A16). Automatically discovered local PHP extension packages emitted load warnings during this run; see [runtime discovery](../packages/php-wasm/README.md#automatic-extension-discovery) when reproducing results. Record the commands, environment, and results in your PR.
 

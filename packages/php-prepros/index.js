@@ -1,1 +1,1 @@
-export { render, sitemap, runenv, mountPath, processImages, resetRuntime } from "./src/prepros.js";
+export { render, sitemap, runenv, runPluginScript, mountPath, processImages, resetRuntime } from "./src/prepros.js";

@@ -1,5 +1,28 @@
 # Status
 
+## WASM HTTPS, linked plugin scripts, embed storage — 2026-09-22
+
+- **WASM HTTPS works end to end.** Every libcurl request inside WASM used to
+  time out, plain HTTP included, while `fsockopen()` worked: libcurl
+  busy-looped on the loader's synchronous `poll()`, so Node's event loop never
+  ran and the WebSocket to the network proxy never opened. The network runtime
+  (`packages/php-wasm/runtime/runtime.js`) now instantiates the module through
+  Emscripten's `instantiateWasm` hook with a yielding `poll()`. That poll
+  suspends via JSPI only when nothing is ready, and wakes on WebSocket activity,
+  with a 10 ms timer as the fallback. No binary or loader change. Measured
+  locally: ~9 ms per plain HTTP request and ~61 ms per HTTPS request. The TLS
+  regression test now also runs the real CURL helper inside WASM, covering
+  untrusted certificates, hostname mismatches, redirects, and downloads. It
+  fails without the fix.
+- **N5:** plugin scripts outside the project (`npm link`, workspaces) run when
+  they are inside an active plugin's package directory. New
+  `runPluginScript()` in `@kirigami/php-prepros`, which mounts them under
+  `/plugin-scripts/<package dir>/`. Scripts inside the project are unchanged.
+  Test: `plugin-script-linked.test.js`.
+- **A18:** `plugin-embed` guards the `localStorage` read, not only the write.
+- Removed stray files: `phpinfo.html`, `PR-LICENSE-SEPARATION.md`, and the
+  `kiri test` debug command.
+
 ## Audit 2026-09-22 fixes — 2026-09-22
 
 Fixed findings N1–N4 and A17 from [the follow-up audit](AUDIT-2026-09-22.md):
@@ -22,8 +45,8 @@ Fixed findings N1–N4 and A17 from [the follow-up audit](AUDIT-2026-09-22.md):
 Cleanup: removed the empty `bin/tasks/conf.js` and the unused CLI
 `bin/libs/triggers.js`, and translated the French comments in
 `packages/mcp/index.js`. Regression coverage: `dist.test.js`, and the new
-`export-safety.test.js` and `plugin-task-validate.test.js`. N5 and A18 await a
-decision; see [BUGS.md](BUGS.md). Package versions were not changed.
+`export-safety.test.js` and `plugin-task-validate.test.js`. N5 and A18 were
+fixed later the same day (entry above). Package versions were not changed.
 
 ## Plugin commands via a hook — 2026-09-22
 

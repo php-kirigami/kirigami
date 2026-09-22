@@ -13,10 +13,11 @@
 
 import fs from 'fs';
 import path from "path";
-import { runenv } from '@kirigami/php-prepros';
+import { runenv, runPluginScript } from '@kirigami/php-prepros';
 import { run as runHook, HOOKS } from '@kirigami/sdk';
 import { getConfig } from "../config.js";
 import { findFiles } from "../utils.js";
+import { activePluginDirs } from "./plugins.js";
 
 const __root = process.cwd();
 
@@ -32,6 +33,24 @@ export async function getPluginScripts() {
 	const config = await getConfig();
 	_pluginScripts = (await runHook(HOOKS.SCRIPTS_REGISTER, { config })).filter(Boolean);
 	return _pluginScripts;
+}
+
+
+const inside = (root, target) => {
+	const relative = path.relative(root, target);
+	return relative === '' || (!path.isAbsolute(relative) && relative !== '..' && !relative.startsWith('..' + path.sep));
+};
+
+
+// A plugin script inside the project (a regular npm install) runs like a
+// project file. One outside it (npm link, workspace) must belong to an active
+// plugin's package, and is contained by that package instead.
+async function runRegistered(file, mountpaths, argv) {
+	const real = fs.realpathSync(file);
+	if (inside(fs.realpathSync(__root), real)) return runenv(file, mountpaths, ...argv);
+	const pluginDir = activePluginDirs().find(dir => inside(fs.realpathSync(dir), real));
+	if (!pluginDir) throw `Plugin script "${file}" is outside the project and every active plugin package.`;
+	return runPluginScript(real, pluginDir, mountpaths, ...argv);
 }
 
 
@@ -57,7 +76,9 @@ export async function runscript(command, argv = []) {
 		});
 	}
 
-	const results = await runenv(file, mountpaths, ...argv);
+	const results = registered
+		? await runRegistered(file, mountpaths, argv)
+		: await runenv(file, mountpaths, ...argv);
 	if(!results.files) results.files = [];
 	return results;
 }

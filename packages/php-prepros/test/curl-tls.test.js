@@ -93,4 +93,40 @@ echo json_encode(['info' => CURL::getInfo($url), 'body' => CURL::getContents($ur
 		assert.equal(response.body, false);
 		assert.equal(response.download, false);
 	}
+
+	// The same helper, end to end inside the WASM runtime: requests reach the
+	// proxy (libcurl's poll() must yield to Node) and TLS is verified against
+	// the injected CA bundle.
+	php.mkdirTree('/project');
+	php.writeFile('/tmp/curl.class.php', fs.readFileSync(new URL('../src/libraries/curl.class.php', import.meta.url), 'utf8'));
+	const requestWasm = async (host, route = '/') => {
+		const url = `https://${host}:${server.address().port}${route}`;
+		const result = await exec(`
+class PREPROS { public static $config; public static function exportFile($path) {} }
+class STR { public static function is_url($url) { return filter_var($url, FILTER_VALIDATE_URL) !== false; } }
+PREPROS::$config = (object)['network' => true];
+require '/tmp/curl.class.php';
+$url = ${JSON.stringify(url)};
+echo json_encode(['info' => CURL::getInfo($url), 'body' => CURL::getContents($url), 'download' => CURL::getContents($url, '/tmp/download.txt')]);
+`, true);
+		assert.equal(result.returnCode, 0, result.stderr);
+		return JSON.parse(result.stdout);
+	};
+	php.writeFile(caPath, roots);
+	response = await requestWasm('127.0.0.1');
+	assert.equal(response.info, false);
+	assert.equal(response.body, false);
+	php.writeFile(caPath, roots + '\n' + identity.cert);
+	response = await requestWasm('127.0.0.1');
+	assert.equal(response.info.http_code, 200);
+	assert.equal(response.body, 'verified');
+	assert.equal(response.download, true);
+	assert.equal(php.readFileAsText('/tmp/download.txt'), 'verified');
+	for (const [host, route] of [['localhost', '/'], ['127.0.0.1', '/redirect']]) {
+		response = await requestWasm(host, route);
+		assert.equal(response.info, false);
+		assert.equal(response.body, false);
+		assert.equal(response.download, false);
+	}
+	php.writeFile(caPath, roots);
 });

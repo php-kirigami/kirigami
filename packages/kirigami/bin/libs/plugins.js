@@ -35,6 +35,15 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let _loaded = false;
 let _lastLoaded = [];
+let _pluginDirs = [];
+
+
+// Resolved package directories of the plugins activated by the last
+// loadPlugins() call. Plugin-registered PHP scripts must live in one of them
+// (see runscript.js); a linked or workspace plugin is outside the project.
+export function activePluginDirs() {
+	return _pluginDirs;
+}
 
 
 // `{ reload: true }` re-runs every plugin's register() even if already
@@ -60,6 +69,7 @@ export async function loadPlugins(config, { reload = false } = {}) {
 		clearResolvedTaskTypes();
 	}
 	_loaded = true;
+	_pluginDirs = [];
 
 	config = config || await getConfig();
 	const entries = (Array.isArray(config.plugins) ? config.plugins : [])
@@ -117,6 +127,7 @@ export async function loadPlugins(config, { reload = false } = {}) {
 
 		await register(options, { config, name });
 		loaded.push({ name, version: pkg.version || null });
+		if (pkgDir) _pluginDirs.push(pkgDir);
 	}
 
 	// resolveTaskType() always prefers a built-in over the plugin registry, so

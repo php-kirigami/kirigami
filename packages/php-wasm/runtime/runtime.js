@@ -248,6 +248,13 @@ function prependByte(chunk, byte) {
 // so that send() prefixes COMMAND_CHUNK and exposes setSocketOpt().
 function addSocketOptionsSupportToWebSocketClass(WsConstructor) {
     return class PHPWasmWebSocket extends WsConstructor {
+        constructor(...args) {
+            super(...args);
+            // Wake yielding poll() calls as soon as the socket changes state.
+            for (const event of ['open', 'message', 'close', 'error']) {
+                this.on(event, notifySocketActivity);
+            }
+        }
         send(chunk, callback) {
             return this.#cmd(COMMAND_CHUNK, chunk, callback);
         }
@@ -431,6 +438,75 @@ function startOutboundProxy(port) {
     });
 }
 
+// ─── Yielding poll() ─────────────────────────────────────────────────────────
+// The loader's poll() syscall is synchronous: it checks readiness once and
+// returns. PHP streams wait through the async wasm_poll_socket() instead, but
+// libcurl busy-loops on poll() itself, so Node's event loop never runs, the
+// WebSocket to the proxy never opens, and every curl request times out
+// (plain HTTP as well as HTTPS). This wrapper keeps the synchronous check,
+// and when nothing is ready yet and the caller allows waiting, suspends (JSPI)
+// for a few milliseconds so sockets can make progress, until the deadline.
+// It only suspends in that case, so readiness checks stay synchronous.
+// Waiters wake on any WebSocket activity (see PHPWasmWebSocket), with a short
+// timer as a fallback for other descriptors.
+
+const POLL_INTERVAL_MS = 10;
+const socketWaiters = new Set();
+
+// Deferred with setImmediate(): SOCKFS registers its own listeners after ours
+// and must queue the received data before poll() checks again.
+function notifySocketActivity() {
+    if (!socketWaiters.size) return;
+    setImmediate(() => {
+        for (const wake of socketWaiters) wake();
+    });
+}
+
+function waitForSocketActivity(ms) {
+    return new Promise(resolve => {
+        const wake = () => {
+            clearTimeout(timer);
+            socketWaiters.delete(wake);
+            resolve();
+        };
+        const timer = setTimeout(wake, ms);
+        socketWaiters.add(wake);
+    });
+}
+
+function yieldingPoll(syncPoll) {
+    return new WebAssembly.Suspending((fds, nfds, timeout) => {
+        const ready = syncPoll(fds, nfds, timeout);
+        if (ready !== 0 || timeout === 0) return ready;
+        const deadline = timeout < 0 ? Infinity : Date.now() + timeout;
+        return (async () => {
+            for (;;) {
+                const remaining = deadline - Date.now();
+                if (remaining <= 0) return 0;
+                await waitForSocketActivity(Math.min(POLL_INTERVAL_MS, remaining));
+                const result = syncPoll(fds, nfds, timeout);
+                if (result !== 0) return result;
+            }
+        })();
+    });
+}
+
+// Emscripten hook: instantiate the module ourselves so the (already
+// instrumented) imports can carry the yielding poll().
+function instantiateWithYieldingPoll(loader) {
+    return (imports, receiveInstance) => {
+        imports.env.__syscall_poll = yieldingPoll(imports.env.__syscall_poll);
+        WebAssembly.instantiate(readFileSync(loader.dependencyFilename), imports)
+            .then(({ instance, module }) => receiveInstance(instance, module))
+            .catch(error => {
+                // The loader awaits receiveInstance() forever; surface the failure.
+                console.error('[php-wasm] WebAssembly instantiation failed:', error);
+                throw error;
+            });
+        return {};
+    };
+}
+
 // ─── Free port ─────────────────────────────────────────────────────────────
 
 function getFreePort() {
@@ -491,6 +567,7 @@ const getPHPRuntimeWithNetwork = async () => {
                     subprotocol: 'binary',
                     decorator:   addSocketOptionsSupportToWebSocketClass,
                 },
+                instantiateWasm: instantiateWithYieldingPoll(loader),
             }, phpMajorMinor)
         );
 

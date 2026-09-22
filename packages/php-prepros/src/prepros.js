@@ -264,15 +264,17 @@ const extractPhpError = (text) => {
 }
 
 
+const inside = (root, target) => {
+    const relative = path.relative(root, target);
+    return relative && relative !== '..' && !relative.startsWith('..' + path.sep)
+        && !path.isAbsolute(relative);
+};
+
+
 // Require both the authored path and its real target to stay inside the project.
 // Validate the whole input list before booting PHP or copying any file.
 const projectFile = (input, optional = false) => {
     const file = path.resolve(__project, input);
-    const inside = (root, target) => {
-        const relative = path.relative(root, target);
-        return relative && relative !== '..' && !relative.startsWith('..' + path.sep)
-            && !path.isAbsolute(relative);
-    };
     if (!inside(__project, file)) throw new Error('PHP file outside project');
     if (!fs.existsSync(file)) {
         if (optional) return null;
@@ -289,6 +291,31 @@ const runenv = async (script, paths = [], ...args) => {
     if (!script) throw new Error('Missing PHP file.');
     const entry = projectFile(script);
     const mounts = [entry, ...paths.map(file => projectFile(file, true)).filter(Boolean)];
+    return run([entry.dest, ...args], '/prepros/runenv.php', mounts);
+};
+
+
+// A plugin-registered script lives in its plugin's package, which a linked or
+// workspace install places outside the project. The caller vouches for
+// `pluginRoot` (an active plugin's resolved package directory); the script's
+// authored and real paths must both stay inside it. Extra `paths` are still
+// project files.
+const runPluginScript = async (script, pluginRoot, paths = [], ...args) => {
+    if (!script) throw new Error('Missing PHP file.');
+    if (!pluginRoot) throw new Error('Missing plugin package directory.');
+    const root = path.resolve(pluginRoot);
+    const file = path.resolve(root, script);
+    if (!inside(root, file)) throw new Error('PHP file outside plugin package');
+    if (!fs.existsSync(file)) throw new Error("Can't find PHP file");
+    const realRoot = fs.realpathSync(root);
+    const realFile = fs.realpathSync(file);
+    if (!inside(realRoot, realFile)) throw new Error('PHP file outside plugin package');
+    if (!fs.statSync(realFile).isFile()) throw new TypeError('Expected a plugin file, not a directory');
+    const entry = {
+        file: realFile,
+        dest: '/plugin-scripts/' + path.basename(realRoot) + '/' + path.relative(realRoot, realFile).split(path.sep).join('/'),
+    };
+    const mounts = [entry, ...paths.map(p => projectFile(p, true)).filter(Boolean)];
     return run([entry.dest, ...args], '/prepros/runenv.php', mounts);
 };
 
@@ -346,12 +373,13 @@ const sitemap = async () => {
 
 
 const queuedRunenv = serial(runenv);
+const queuedRunPluginScript = serial(runPluginScript);
 const queuedRender = serial(render);
 const queuedSitemap = serial(sitemap);
 const queuedMountPath = serial(mountPath);
 const queuedProcessImages = serial(processImages);
 const resetRuntime = serial(reset);
 export {
-    queuedRunenv as runenv, queuedRender as render, queuedSitemap as sitemap,
+    queuedRunenv as runenv, queuedRunPluginScript as runPluginScript, queuedRender as render, queuedSitemap as sitemap,
     queuedMountPath as mountPath, queuedProcessImages as processImages, resetRuntime,
 };

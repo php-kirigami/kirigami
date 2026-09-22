@@ -70,6 +70,7 @@ Part of the **Kirigami** project ecosystem.
   - [`render(file?, phpIncludes?)`](#renderfile-phpincludes)
   - [`sitemap()`](#sitemap)
   - [`runenv(script, paths?, ...args)`](#runenvscript-paths-args)
+  - [`runPluginScript(script, pluginRoot, paths?, ...args)`](#runpluginscriptscript-pluginroot-paths-args)
   - [`mountPath(localPath, virtualDir?, php?)`](#mountpathlocalpath-virtualdir-php)
   - [`processImages(jobs)`](#processimagesjobs)
   - [`resetRuntime()`](#resetruntime)
@@ -904,6 +905,16 @@ not make PHP scripts untrusted-code sandboxes or restrict explicit `mountPath()`
 calls.
 
 **Returns** `Promise<PreprosResult>`, following the same shape as `render()`. Inside the script, call `PREPROS::exportFile()` for any file you want listed in `result.files`.
+
+### `runPluginScript(script, pluginRoot, paths?, ...args)`
+
+Same as `runenv()`, for a script shipped inside a plugin package. A plugin
+installed with `npm link` or from a workspace lives outside the project, so
+`runenv()` would reject it. Here the script's authored and real paths must stay
+inside `pluginRoot` instead, and it is mounted under
+`/plugin-scripts/<package dir>/`. Extra `paths` are still project files.
+The caller vouches for `pluginRoot`: `@kirigami/kirigami` only passes the
+resolved package directory of an active plugin.
 
 ### `mountPath(localPath, virtualDir?, php?)`
 
