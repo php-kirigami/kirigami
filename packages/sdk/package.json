@@ -1,7 +1,7 @@
 {
   "name": "@kirigami/sdk",
   "version": "0.2.1",
-  "description": "Shared runtime for kirigami plugins: the hook registry (and related constants) used to extend kirigami's build tasks.",
+  "description": "Shared runtime for Kirigami plugins: hooks, commands, custom task types, and cache.",
   "license": "GPL-3.0-or-later",
   "author": "Maxime Larrivée-Roy",
   "type": "module",

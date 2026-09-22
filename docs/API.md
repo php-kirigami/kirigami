@@ -12,7 +12,7 @@ const project = await load();
 // Manual construction: new Project(), then await project.reload().
 ```
 
-Launch Node from the directory containing `kirigami.yaml` before importing core. `load()` takes no project-directory argument. One project per process is supported. The API uses ESM and Node 24+; core TypeScript declarations are not implemented.
+Launch Node from the directory containing `kirigami.yaml` before importing core. `load()` takes no project-directory argument. One project per process is supported. The API uses ESM and Node 24+ and ships TypeScript declarations for its public entry point.
 
 | Member | Result | Behavior |
 |---|---|---|
@@ -39,6 +39,11 @@ Getters do not return immutable snapshots. Treat their values as read-only. `tas
 Build `trigger` is `{ success, results }` for `before-build`; each trigger result has the script name and its returned fields. Export trigger fields are null when that stage has not run. A task result normally includes `success` and may include `files`, `error`, `warnings`, `stderr`, or `debug`; payloads vary by task, so do not assume every optional field exists.
 
 `runTask()` forces the named task and bypasses build triggers. `run()` executes `scripts/<command>.php`, including scripts without a YAML entry; YAML entries add mount/trigger metadata. A missing script throws. These methods run project code and are not a sandbox API for untrusted projects.
+
+Active plugins may register additional task types through `@kirigami/sdk`.
+They use the same validation, build, export, `runTask()`, and watch paths as
+built-in tasks. Reload rebuilds the task-type registry before strict task
+validation; a configured type with no active registration is rejected.
 
 Export resolves its destination relative to the process working directory, not `kirigami.root`. The source and destination must be separate trees, including canonical symlink/junction paths. The destination is cleared by the copy task. The path override also updates the loaded configuration's export path. Work is not rolled back after failure.
 

@@ -24,13 +24,10 @@
 // here.
 // ---------------------------------------------------------------------------
 
-// TypeScript declarations are still missing.
-
-
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
-import { getConfig, clearConfigCache } from "./bin/config.js";
+import { getConfig, clearConfigCache, validateConfiguredTasks } from "./bin/config.js";
 import { loadPlugins } from "./bin/libs/plugins.js";
+import { resolveTaskType } from "./bin/libs/tasktypes.js";
 import { runscript } from "./bin/libs/runscript.js";
 import { createDevServer } from "./bin/libs/devserver.js";
 import { buildWatchRules, createWatchers } from "./bin/libs/watchengine.js";
@@ -38,10 +35,6 @@ import { assertSafeExportPaths } from "./bin/tasks/dist.js";
 import { clearPhpIncludesCache } from "./bin/tasks/prepros.js";
 import { resetRuntime } from "@kirigami/php-prepros";
 import { findFiles } from "./bin/utils.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const tasksDir = path.join(__dirname, "bin", "tasks");
-
 
 // Runs every `scripts:` entry whose `trigger` matches `name` (e.g.
 // "before-build"), in order, stopping at the first failure. Deliberately
@@ -88,8 +81,9 @@ export class Project {
 		clearConfigCache();
 		await resetRuntime();
 		clearPhpIncludesCache();
-		this.#config = await getConfig();
+		this.#config = await getConfig({ deferTaskTypes: true });
 		this.#plugins = await loadPlugins(this.#config, { reload: true });
+		await validateConfiguredTasks(this.#config);
 		this.#loaded = true;
 		return this;
 	}
@@ -98,9 +92,12 @@ export class Project {
 	// cheaper than reload() when the caller only wants to know whether the
 	// config file itself is still well-formed (e.g. on every keystroke in a
 	// VS Code editor). Throws the same way getConfig() does on an invalid file.
+	// Since plugins aren't (re-)loaded here, a plugin-registered task type is
+	// left unresolved rather than rejected as unknown — resolving it is
+	// reload()'s job.
 	async validate() {
 		clearConfigCache();
-		this.#config = await getConfig();
+		this.#config = await getConfig({ deferTaskTypes: true });
 		return true;
 	}
 
@@ -119,17 +116,14 @@ export class Project {
 			? [{ name: "render-all", type: "prepros", force: true, config: config.prepros }, ...config.tasks]
 			: config.tasks;
 
-		const modules = {};
 		const results = [];
 		for (const task of tasks) {
-			if (!modules[task.type]) {
-				const taskPath = path.join(tasksDir, `${task.type}.js`);
-				modules[task.type] = await import(pathToFileURL(taskPath).href);
-			}
-			if (!task.force && !modules[task.type].canbuild) continue;
+			const taskModule = await resolveTaskType(task.type);
+			if (!taskModule) throw new Error(`Unknown task type: "${task.type}".`);
+			if (!task.force && !taskModule.canbuild) continue;
 
-			const result = await modules[task.type].default(config.root, task);
-			results.push({ task: task.name, type: task.type, taskname: modules[task.type].taskname, ...result });
+			const result = await taskModule.default(config.root, task);
+			results.push({ task: task.name, type: task.type, taskname: taskModule.taskname, ...result });
 			if (!result.success) return { success: false, trigger: beforeBuild, results };
 		}
 
@@ -168,18 +162,15 @@ export class Project {
 			...config.tasks,
 		];
 
-		const modules = {};
 		const results = [];
 		for (const task of tasks) {
-			if (!modules[task.type]) {
-				const taskPath = path.join(tasksDir, `${task.type}.js`);
-				modules[task.type] = await import(pathToFileURL(taskPath).href);
-			}
-			if (!task.force && !modules[task.type].canbuild) continue;
+			const taskModule = await resolveTaskType(task.type);
+			if (!taskModule) throw new Error(`Unknown task type: "${task.type}".`);
+			if (!task.force && !taskModule.canbuild) continue;
 
 			task.banner = config.kirigami.banner;
-			const result = await modules[task.type].default(config.root, task, dist);
-			results.push({ task: task.name, type: task.type, taskname: modules[task.type].taskname, ...result });
+			const result = await taskModule.default(config.root, task, dist);
+			results.push({ task: task.name, type: task.type, taskname: taskModule.taskname, ...result });
 			if (!result.success) return { success: false, dist, beforeExport, beforeBuild, afterExport: null, results };
 		}
 
@@ -332,8 +323,8 @@ export class Project {
 		const task = this.tasks.find((t) => t.name === name);
 		if (!task) return { success: false, error: `Unknown task: "${name}".` };
 
-		const taskPath = path.join(tasksDir, `${task.type}.js`);
-		const mod = await import(pathToFileURL(taskPath).href);
+		const mod = await resolveTaskType(task.type);
+		if (!mod) return { task: task.name, type: task.type, success: false, error: `Unknown task type: "${task.type}".` };
 		const result = await mod.default(config.root, { ...task, force: true });
 
 		return { task: task.name, type: task.type, taskname: mod.taskname, ...result };

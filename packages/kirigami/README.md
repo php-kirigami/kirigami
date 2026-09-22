@@ -201,6 +201,9 @@ console.log(server.url);
 ```
 
 Exports: `Project`, `load()`, and `Kirigami.load()`. There is no static `Project.load()`.
+The package ships `index.d.ts` declarations for these exports, project
+configuration, operation results, task metadata, notifications, and lifecycle
+handles.
 
 | Member | Contract |
 |---|---|
@@ -374,6 +377,12 @@ files compiled respectively before and after the entry (paths relative to
 Ordered list, run in array order, on top of the implicit `prepros` and `dist`
 tasks. Common entries use `esbuild` or `sass`. The schema also accepts explicit `prepros` tasks (`target`, `force`) and `dist` tasks (`path`, `ignore`, `force`); non-buildable types need `force: true` for a one-shot build. See [Build tasks](#build-tasks).
 
+An active plugin can register additional task types with
+`registerTaskType()` from `@kirigami/sdk`. Plugin-task entries require `name`
+and `type`; their remaining fields and imperative validation belong to the
+plugin. Plugins load before Kirigami performs the final strict task validation,
+so an unregistered type still fails configuration loading.
+
 | `type` | Purpose | Required fields | Optional |
 |---|---|---|---|
 | `esbuild` | Bundle/minify a JS/TS entry. Build + watch. | `name`, `type`, `entry` | `force` |
@@ -386,6 +395,10 @@ tasks. Common entries use `esbuild` or `sass`. The schema also accepts explicit 
 `esbuild` and `sass` are the tasks you declare in `tasks:`; `prepros` and
 `dist` are added automatically (the former whenever a `prepros:` block
 exists, the latter during `kiri export`). Explicit tasks of those types are also supported.
+
+Plugin-provided types participate in the same build, export, `runTask()`, and
+watch paths. Their definitions use the SDK task-type registry; built-in names
+take precedence and cannot be overridden.
 
 ### esbuild task
 

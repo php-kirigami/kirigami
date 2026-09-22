@@ -31,10 +31,11 @@ The [configuration loader](../packages/kirigami/bin/config.js) reads `kirigami.y
 1. Mark the project unloaded and discard its current configuration/plugin list.
 2. Clear the core configuration cache.
 3. Await PHP-prepros runtime reset, then clear collected plugin PHP includes.
-4. Read and validate configuration.
-5. Re-register active plugins and mark the project loaded.
+4. Read the configuration and validate its schema, built-in tasks, and paths.
+5. Re-register active plugins, including their custom task types.
+6. Strictly validate every configured task, then mark the project loaded.
 
-The [plugin loader](../packages/kirigami/bin/libs/plugins.js) resolves packages from the project first, then from its own installation. It checks package metadata and option schemas before awaiting `register(options, { config, name })`. Reload resets shared registrations after a previous load; Node's JavaScript module cache remains intact. Restart the process after editing plugin implementation code.
+The [plugin loader](../packages/kirigami/bin/libs/plugins.js) resolves packages from the project first, then from its own installation. It checks package metadata and option schemas before awaiting `register(options, { config, name })`. Reload resets shared hook, command, and task-type registrations before registering active plugins again; Node's JavaScript module cache remains intact. Restart the process after editing plugin implementation code.
 
 `validate()` only refreshes core configuration. It does not refresh PHP state or plugin registrations and is not a substitute for reload before executing changed configuration. Existing watch handles also retain their original rules: close them and create new handles when configuration changes.
 
@@ -46,7 +47,13 @@ The [plugin loader](../packages/kirigami/bin/libs/plugins.js) resolves packages 
 | `export()` | Validate source/destination separation; `before-export`; `before-build`; implicit rendering; forced `copy-files`; configured tasks; `after-export` |
 | `runTask(name)` | Find one task and force it; no build triggers or other tasks |
 
-Task modules are imported from `bin/tasks/<type>.js`. Build/export skip a task unless its module exports `canbuild` or the task sets `force`. Watch eligibility is separately controlled by `canwatch`. Custom task-package loading is not implemented; plugin hooks and command registration are separate extension mechanisms.
+Built-in task modules are imported from `bin/tasks/<type>.js`. A normal plugin
+may register additional types through the SDK task-type registry. Initial
+configuration parsing validates built-ins and defers unknown types; after
+plugins register, a strict pass rejects any type still unresolved and runs its
+optional validator. Build/export skip a task unless its definition sets
+`canbuild` or the task sets `force`; watch eligibility is separately controlled
+by `canwatch` and `getWatcher`.
 
 Each trigger runs matching configured scripts sequentially and stops at the first unsuccessful result. Task loops also stop at the first unsuccessful result. Unexpected exceptions can still reject the operation. Completed work is not rolled back.
 

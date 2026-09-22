@@ -6,7 +6,7 @@
 
 # @kirigami/sdk
 
-Shared runtime for **Kirigami** plugins — the hook registry and the on-disk cache.
+Shared runtime for **Kirigami** plugins — hooks, commands, task types, and the on-disk cache.
 
 [![npm version](https://img.shields.io/npm/v/@kirigami/sdk)](https://www.npmjs.com/package/@kirigami/sdk)
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](./LICENSE)
@@ -47,6 +47,7 @@ Part of the **Kirigami** project ecosystem.
 - [API](#api)
   - [`reset(hookName?)`](#resethookname)
   - [Command registry](#command-registry)
+  - [Task-type registry](#task-type-registry)
   - [`on(hookName, fn)`](#onhookname-fn)
   - [`off(hookName, fn)`](#offhookname-fn)
   - [`run(hookName, ...args)`](#runhookname-args)
@@ -172,6 +173,43 @@ registrations during dispatch: listeners are iterated from a live `Set`. The cor
 ### Command registry
 
 `registerCommand(name, { description, run })` registers a plugin command. `run(args, project)` receives raw arguments and the loaded project. A duplicate name or non-function `run` throws. `getCommand(name)` returns the command or `null`; `listCommands()` returns all entries; `resetCommands(name?)` removes one or all. Register commands inside the default plugin function, with `kirigami.type: "command"` in its manifest. Entries have `{ name, description, run }`; descriptions default to an empty string, and listing preserves registration order. Returned entries are the stored mutable objects. The registry does not execute commands or validate their arguments.
+
+### Task-type registry
+
+`registerTaskType(name, definition)` lets a normal plugin provide a type used
+by entries in `kirigami.yaml`'s `tasks:` list. Register it inside the plugin's
+default registration function; project reload clears and rebuilds the task
+registry together with hooks and commands.
+
+```js
+import { registerTaskType } from '@kirigami/sdk';
+
+export default function register() {
+	registerTaskType('manifest', {
+		taskname: 'Generate manifest',
+		canbuild: true,
+		canwatch: false,
+		validate(root, task) {
+			if (!task.output) throw new Error('manifest tasks require output');
+		},
+		async run(root, task, exportPath) {
+			// Generate task.output and return the standard task result shape.
+			return { success: true, files: [task.output] };
+		},
+	});
+}
+```
+
+The definition requires `run(root, task, exportPath?)`. `taskname` defaults to
+the registered name; `canbuild` and `canwatch` default to `false`.
+`validate(root, task)` is optional and may be asynchronous. A watchable type
+must set `canwatch: true` and provide `getWatcher(root, task)`, returning the
+same rule shape used by Kirigami's watch engine. Built-in task names take
+precedence and cannot be overridden.
+
+`getTaskType(name)` returns one definition or `null`; `listTaskTypes()` keeps
+registration order; `resetTaskTypes(name?)` removes one or all definitions.
+Duplicate names and definitions without a callable `run` are rejected.
 
 ### `on(hookName, fn)`
 

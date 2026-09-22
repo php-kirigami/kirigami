@@ -118,3 +118,31 @@ export declare function listCommands<TProject = unknown, TResult = unknown>(): C
 
 /** Clear one command, or all commands; hooks are unaffected. */
 export declare function resetCommands(name?: string): void;
+
+/** A plugin-provided build task type. */
+export interface TaskType<TTask = Record<string, unknown>, TResult = unknown, TWatcher = unknown> {
+	name: string;
+	taskname: string;
+	canbuild: boolean;
+	canwatch: boolean;
+	validate?: (root: string, task: TTask) => void | Promise<void>;
+	run: (root: string, task: TTask, exportPath?: string) => TResult | Promise<TResult>;
+	getWatcher?: (root: string, task: TTask) => TWatcher | Promise<TWatcher>;
+}
+
+/** Register a task type from a plugin's normal registration function. */
+export declare function registerTaskType<TTask = Record<string, unknown>, TResult = unknown, TWatcher = unknown>(
+	name: string,
+	definition: Pick<TaskType<TTask, TResult, TWatcher>, 'run'> & Partial<Omit<TaskType<TTask, TResult, TWatcher>, 'name' | 'run'>>
+): void;
+
+/** Returns the stored mutable task-type definition, or null. */
+export declare function getTaskType<TTask = Record<string, unknown>, TResult = unknown, TWatcher = unknown>(
+	name: string
+): TaskType<TTask, TResult, TWatcher> | null;
+
+/** Returns registered task types in registration order. */
+export declare function listTaskTypes<TTask = Record<string, unknown>, TResult = unknown, TWatcher = unknown>(): TaskType<TTask, TResult, TWatcher>[];
+
+/** Clear one task type, or all task types; hooks and commands are unaffected. */
+export declare function resetTaskTypes(name?: string): void;

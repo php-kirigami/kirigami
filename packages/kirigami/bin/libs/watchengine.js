@@ -1,19 +1,13 @@
 import path from "path";
 import chokidar from "chokidar";
 import picomatch from "picomatch";
-import { fileURLToPath, pathToFileURL } from "url";
+import { resolveTaskType } from "./tasktypes.js";
 
 /**
  * bin/libs/watchengine.js — the file-watching core shared by `kiri watch`
  * and `kiri serve` (which is `watch` plus a static server + hot-reload).
  * Extracted so neither command re-implements the other's plumbing.
  */
-
-// Resolved from this file's own location, not a caller-supplied dirname —
-// used to require every caller (bin/cmd/*.js, and @kirigami/cli's commands
-// across the package boundary since the core-api split) to pass one in just
-// so this could find its sibling tasks/ folder.
-const tasksDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../tasks");
 
 // Builds one watch "rule" per watchable task (esbuild, sass, prepros, …),
 // prepending the implicit `prepros` task the same way `build`/`export` do.
@@ -29,18 +23,15 @@ export async function buildWatchRules(config) {
 		tasks.unshift(task);
 	}
 
-	const modules = {};
 	const watchers = [];
 	for (const task of tasks) {
-		if (!modules[task.type]) {
-			const taskPath = path.join(tasksDir, `${task.type}.js`);
-			modules[task.type] = await import(pathToFileURL(taskPath).href);
-		}
-		if (modules[task.type].canwatch) {
+		const taskModule = await resolveTaskType(task.type);
+		if (!taskModule) throw new Error(`Unknown task type: "${task.type}".`);
+		if (taskModule.canwatch) {
 			// `type` isn't part of what a task's own getWatcher() returns — attached
 			// here so callers (kiri serve's hot-reload) can tell a sass rule apart
 			// from esbuild/prepros without each task module repeating the field.
-			watchers.push({ ...modules[task.type].getWatcher(config.root, task), type: task.type });
+			watchers.push({ ...await taskModule.getWatcher(config.root, task), type: task.type });
 		}
 	}
 	return watchers;

@@ -757,6 +757,38 @@
                 "default": false
               }
             }
+          },
+          {
+            "type": "object",
+            "title": "Plugin task",
+            "description": "A task type registered by an active plugin through @kirigami/sdk. Its additional properties are defined and validated by that plugin.",
+            "required": [
+              "name",
+              "type"
+            ],
+            "additionalProperties": true,
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Arbitrary label for this task, shown in CLI output."
+              },
+              "type": {
+                "type": "string",
+                "not": {
+                  "enum": [
+                    "esbuild",
+                    "sass",
+                    "prepros",
+                    "dist"
+                  ]
+                },
+                "description": "Task type registered by an active plugin."
+              },
+              "force": {
+                "type": "boolean",
+                "default": false
+              }
+            }
           }
         ]
       },

@@ -3,9 +3,10 @@ import path from "path";
 import util from "util";
 import Ajv from 'ajv';
 import { createRequire } from 'node:module';
-import { fileURLToPath, pathToFileURL } from 'url';
+import { fileURLToPath } from 'url';
 import { walkFile } from "@kirigami/struct-walker";
 import { formatDate } from "./utils.js";
+import { resolveTaskType, builtInTaskTypes } from "./libs/tasktypes.js";
 
 
 const require = createRequire(import.meta.url);
@@ -21,18 +22,18 @@ let schemaValidator = null;
 // Used directly by callers that need to reload after the file changed on
 // disk (the programmatic `Project.reload()` API — see the package root
 // index.js) without needing to clear/touch getConfig()'s own cache.
-export async function loadConfig(configPath = __configpath) {
+export async function loadConfig(configPath = __configpath, { deferTaskTypes = false } = {}) {
 	if (!fs.existsSync(configPath)) throw `Config file not found: ${configPath}`;
 	const _config = await walkFile(configPath);
 	if(!_config) throw `Invalid config file: ${configPath}`;
 	validateAgainstSchema(_config, configPath);
-	await validateConfig(_config, configPath);
+	await validateConfig(_config, configPath, { deferTaskTypes });
 	return _config;
 }
 
 
-export async function getConfig() {
-	if(!config) config = await loadConfig(__configpath);
+export async function getConfig({ deferTaskTypes = false } = {}) {
+	if(!config) config = await loadConfig(__configpath, { deferTaskTypes });
 	return config;
 }
 
@@ -107,8 +108,7 @@ function inlinePluginOptionSchemas(schema) {
 }
 
 
-async function validateConfig(config, configPath) {
-	const modules = [];
+async function validateConfig(config, configPath, { deferTaskTypes = false } = {}) {
 	const projectDir = path.dirname(configPath);
 
 	function validateIncludedFile(key, rel) {
@@ -165,25 +165,40 @@ async function validateConfig(config, configPath) {
 		}
 	}
 
-	// Verify tasks
-	if(config.tasks) {
-		await Promise.all(config.tasks.map(async task => {
-			if(!task.type) throwConfigError(configPath, `Invalid task type: ${util.inspect(task)}.`);
-			if(!task.name) throwConfigError(configPath, `Invalid task name: ${util.inspect(task)}.`);
-			try {
-				if(!modules[task.type]) {
-					const taskPath = path.resolve(__dirname, "tasks", `${task.type}.js`);
-					if (!fs.existsSync(taskPath)) throwConfigError(configPath, `Unknown task type: ${util.inspect(task)}.`);
-					modules[task.type] = await import(pathToFileURL(taskPath).href);
-				}
-				await modules[task.type].validate(__root, task);
-			} catch(err) {
-				throwConfigError(configPath, typeof err == 'string' ? err : err.message);
-			}
-		}));
-	} else config.tasks = [];
+	if (!config.tasks) config.tasks = [];
+	await validateConfiguredTasks(config, configPath, { allowUnknown: deferTaskTypes });
 
 	return true;
+}
+
+
+// Project.reload() runs this twice: once deferred (allowUnknown: true, before
+// plugins are (re)loaded) and once strict (after). Tracking already-validated
+// built-in tasks here keeps the second pass from re-running the same task's
+// validate() a second time. Only built-ins are tracked — a plugin task type's
+// resolution can legitimately change between the two passes (loadPlugins()
+// resets and re-registers the SDK task-type registry in between), so those
+// must always be re-checked by the strict pass rather than trusted from the
+// deferred one.
+const validatedBuiltInTasks = new WeakSet();
+
+export async function validateConfiguredTasks(config, configPath = __configpath, { allowUnknown = false } = {}) {
+	await Promise.all((config.tasks || []).map(async task => {
+		if (!task.type) throwConfigError(configPath, `Invalid task type: ${util.inspect(task)}.`);
+		if (!task.name) throwConfigError(configPath, `Invalid task name: ${util.inspect(task)}.`);
+		if (validatedBuiltInTasks.has(task)) return;
+		try {
+			const taskModule = await resolveTaskType(task.type);
+			if (!taskModule) {
+				if (allowUnknown) return;
+				throw `Unknown task type: ${util.inspect(task)}.`;
+			}
+			await taskModule.validate?.(config.root, task);
+			if (builtInTaskTypes.has(task.type)) validatedBuiltInTasks.add(task);
+		} catch (err) {
+			throwConfigError(configPath, typeof err === 'string' ? err : err.message);
+		}
+	}));
 }
 
 

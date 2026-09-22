@@ -10,8 +10,6 @@ than reproduce its workflows.
 
 ## Project and build extensibility
 
-- **Custom task types (`kirigami.type: "task"`)** — let packages extend the
-  fixed task loader. Command packages already use the SDK command registry.
 - **`prepros:before-render` hook** — add a JavaScript hook before PHP rendering;
   `prepros:html` already covers generated HTML afterward.
 - **Composer support** — mount a project's `vendor/` tree and load

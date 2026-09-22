@@ -8,11 +8,13 @@
   "homepage": "https://php-kirigami.github.io",
   "type": "module",
   "main": "index.js",
+  "types": "index.d.ts",
   "publishConfig": {
     "access": "public"
   },
   "files": [
     "index.js",
+    "index.d.ts",
     "bin/",
     "assets/",
     "LICENSE",
@@ -24,7 +26,10 @@
     "npm": ">=10.2.3"
   },
   "exports": {
-    ".": "./index.js",
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    },
     "./package.json": "./package.json",
     "./schema": "./kirigami.schema.json",
     "./internal/config": "./bin/config.js",

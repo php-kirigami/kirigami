@@ -1,5 +1,25 @@
 # Status
 
+## Plugin-defined task types — 2026-09-21
+
+Active plugins can now register custom build task types through
+`@kirigami/sdk`'s `registerTaskType()` registry. A shared resolver combines
+built-in modules with registered definitions across configuration validation,
+build, export, `runTask()`, and watch setup. Configuration performs built-in
+checks first, loads plugins, then strictly validates all task types and invokes
+each optional custom validator. Reload resets hooks, commands, task types, and
+resolved task caches before plugins register again.
+
+The public schema accepts plugin-task fields without weakening the closed
+schemas for built-in tasks. SDK runtime and declaration contracts cover
+registration, lookup, listing, reset, defaults, duplicate rejection, and
+invalid runners. An integration fixture verifies custom validation, build,
+export-path delivery, direct execution, watcher rules, reload, and rejection
+when the providing plugin is disabled. The core package now also publishes an
+`index.d.ts` contract for `Project`, configuration, results, notifications, and
+serve/watch handles; its manifest and export map advertise that declaration.
+Package versions were not changed.
+
 ## Roadmap consolidation — 2026-09-21
 
 Merged the stale strategic scaffold from `ROADMAP-FUTURE.md` into the canonical

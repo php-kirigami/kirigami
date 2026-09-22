@@ -8,7 +8,7 @@
 // top-level `kirigami` key:
 //
 //   "kirigami": {
-//     "type": "plugin",                        // "plugin" | "command" | (later: "task")
+//     "type": "plugin",                        // "plugin" | "command"
 //     "minVersion": "1.2.0",                    // minimum @kirigami/kirigami version
 //     "optionsSchema": "./options.schema.json"  // JSON Schema for its kirigami.yaml `options`
 //   }
@@ -27,7 +27,8 @@ import path from "node:path";
 import Ajv from "ajv";
 import { createRequire } from "node:module";
 import { pathToFileURL, fileURLToPath } from "node:url";
-import { reset as resetHooks } from "@kirigami/sdk";
+import { reset as resetHooks, resetCommands, resetTaskTypes, listTaskTypes } from "@kirigami/sdk";
+import { clearResolvedTaskTypes, builtInTaskTypes } from "./tasktypes.js";
 import { getConfig } from "../config.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -52,7 +53,12 @@ let _lastLoaded = [];
 // output); @kirigami/cli's commands render this list themselves.
 export async function loadPlugins(config, { reload = false } = {}) {
 	if (_loaded && !reload) return _lastLoaded;
-	if (_loaded && reload) resetHooks();
+	if (_loaded && reload) {
+		resetHooks();
+		resetCommands();
+		resetTaskTypes();
+		clearResolvedTaskTypes();
+	}
 	_loaded = true;
 
 	config = config || await getConfig();
@@ -76,10 +82,9 @@ export async function loadPlugins(config, { reload = false } = {}) {
 		const meta = pkg.kirigami || {};
 
 		// "command" packages (kirigami.type: "command") register a new `kiri`
-		// subcommand instead of/alongside build hooks — see @kirigami/sdk's
-		// registerCommand(). Loaded through the same `plugins:` list and the
-		// same register(options, {config, name}) call as a regular plugin;
-		// only "task" (not implemented yet) is still rejected here.
+		// subcommand instead of/alongside hooks. Custom task types do not need a
+		// separate manifest type: a normal plugin calls registerTaskType() during
+		// this same registration step.
 		if (meta.type && !["plugin", "command"].includes(meta.type)) {
 			throw `Package "${name}" is a kirigami "${meta.type}", not a plugin — it can't go under "plugins:".`;
 		}
@@ -112,6 +117,15 @@ export async function loadPlugins(config, { reload = false } = {}) {
 
 		await register(options, { config, name });
 		loaded.push({ name, version: pkg.version || null });
+	}
+
+	// resolveTaskType() always prefers a built-in over the plugin registry, so
+	// a plugin that registered one of these names would silently never run —
+	// reject the collision here instead of letting it through unnoticed.
+	for (const { name: typeName } of listTaskTypes()) {
+		if (builtInTaskTypes.has(typeName)) {
+			throw `Task type "${typeName}" collides with a built-in task type and cannot be registered by a plugin.`;
+		}
 	}
 
 	return (_lastLoaded = loaded);
