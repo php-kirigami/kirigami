@@ -144,7 +144,7 @@ prepros hooks use the separate signatures shown in the table.
 | `HOOKS.PREPROS_HTML` | prepros | `(html, { file, abs, exportPath, config })` | the modified HTML string — a **waterfall** hook (run with `runWaterfall`), so return the new string or `null`/`undefined` to leave it untouched |
 | `HOOKS.PREPROS_PHP` | prepros | `({ __root, config })` | absolute path(s) of `.php` file(s) to `include_once` in the prepros runtime once, before any page renders — for a plugin to `PREPROS::registerTag()` / `registerHook()` from PHP |
 | `HOOKS.SCRIPTS_REGISTER` | (none — engine-level) | `({ config })` | object(s) `{ name, file, trigger?, mount? }` — a runnable PHP script, the plugin's counterpart of a project's own `scripts/<name>.php` + kirigami.yaml `scripts:` entry |
-| `HOOKS.TASKS_REGISTER` | (none — engine-level) | `({ config })` | object(s) shaped like a kirigami.yaml `tasks:` entry (`{ name, type, ... }`) — a build task the plugin's counterpart of a project's own `tasks:` entry |
+| `HOOKS.TASKS_REGISTER` | (none — engine-level) | `({ config })` | object(s) shaped like a kirigami.yaml `tasks:` entry (`{ name, type, ... }`) — a build task, the plugin's counterpart of a project's own `tasks:` entry; its `name` must not collide with any other task |
 | `HOOKS.COMMANDS_REGISTER` | (none — engine-level) | `({ config })` | object(s) `{ name, description?, run }` — same shape `registerCommand()` takes, an alternative to calling it directly |
 
 `SCRIPTS_REGISTER` listeners each describe one script: `name` is what `kiri run

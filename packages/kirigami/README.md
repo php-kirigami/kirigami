@@ -208,7 +208,7 @@ handles.
 | Member | Contract |
 |---|---|
 | `reload()` | Reload configuration and register plugins again; invalidate PHP configuration, mounts/runtime, and plugin includes. Returns the project. |
-| `validate()` | Re-read and validate configuration without reloading plugins; resolves to `true` or throws. |
+| `validate()` | Re-read and validate configuration without reloading plugins; resolves to `true` or throws. A loaded project keeps its current configuration (including plugin-injected tasks); call `reload()` to apply changes. |
 | `build()` | Run `before-build`, implicit rendering, and buildable or forced tasks. Returns `{ success, trigger, results }`. |
 | `export({ path }?)` | Run export/build triggers, implicit rendering and copy, eligible explicit tasks, then `after-export`. Returns `success`, `dist`, trigger results and task results. A path override remains in the loaded config. |
 | `serve({ port, host, onBuildResult }?)` | Start watching and serving; returns `{ address, port, url, close() }`. Defaults to loopback and port 4321; port 0 selects a free port. |
@@ -441,6 +441,9 @@ run during a plain `kiri build` unless forced — the implicit task added by the
 Dot-prefixed public directories such as `.well-known` are excluded too; there is no exception mechanism in the current export filter.
 
 Empties `path`, then copies `kirigami.root` into it preserving structure.
+For safety, an existing non-empty `path` is only emptied if it contains the
+`.kirigami-export` marker that every export writes; otherwise export fails
+without touching it. `path` must also not contain the project directory.
 **Excluded:** underscore- or dot-prefixed directories, files whose basename starts with `_` or `.`, `.php` files, `.scss` files, `.map`
 files, and non-minified `.js` files, plus every `export.ignore` pattern. The
 project banner is stamped onto copied `.js` / `.css` (`/*! … */`) and `.html`

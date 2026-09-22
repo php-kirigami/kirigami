@@ -1,5 +1,30 @@
 # Status
 
+## Audit 2026-09-22 fixes — 2026-09-22
+
+Fixed findings N1–N4 and A17 from [the follow-up audit](AUDIT-2026-09-22.md):
+
+- **N1:** Export refuses to empty an existing non-empty destination unless it
+  holds the `.kirigami-export` marker that every export now writes. It also
+  rejects destinations that contain the project directory. See
+  [DECISIONS.md](DECISIONS.md#export-only-empties-directories-it-owns).
+  Existing output directories need the marker once.
+- **N2:** `Project.validate()` validates the file on disk without replacing a
+  loaded project's configuration, so plugin-injected tasks survive it.
+- **N3:** Duplicate task names, including a plugin task named like a
+  kirigami.yaml task, are rejected as a configuration error.
+- **N4:** `export({ path })` no longer writes into `config.export`, and the
+  export banner is passed on per-run task copies instead of mutating
+  `config.tasks`.
+- **A17:** `packages/php-wasm/jspi/php.js.bak` is untracked (kept locally),
+  `*.bak` is git-ignored, and the php-wasm `files` allowlist is narrowed.
+
+Cleanup: removed the empty `bin/tasks/conf.js` and the unused CLI
+`bin/libs/triggers.js`, and translated the French comments in
+`packages/mcp/index.js`. Regression coverage: `dist.test.js`, and the new
+`export-safety.test.js` and `plugin-task-validate.test.js`. N5 and A18 await a
+decision; see [BUGS.md](BUGS.md). Package versions were not changed.
+
 ## Plugin commands via a hook — 2026-09-22
 
 `@kirigami/sdk`'s existing `registerCommand()` registry now has a hook-based

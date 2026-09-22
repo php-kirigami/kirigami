@@ -4,16 +4,31 @@ Known open issues, limitations, and unresolved questions that need a
 decision from Maxime before they can be closed. Fixed bugs move to
 [STATUS.md](STATUS.md) / [DECISIONS.md](DECISIONS.md) instead of staying here.
 
+## Repository audit — 2026-09-22
+
+See [the follow-up audit](AUDIT-2026-09-22.md) for evidence and suggested fixes.
+N1–N4 were fixed the same day; see [STATUS.md](STATUS.md#audit-2026-09-22-fixes--2026-09-22).
+
+- **P3 / N5 (needs a decision):** Scripts from linked/workspace plugins fail PHP
+  path containment, because the plugin's real `.php` path is outside the
+  project. Either allow resolved plugin package directories as mount sources,
+  or document that plugin scripts require a regular install.
+
 ## Repository audit — 2026-09-20
 
 See [the full audit](AUDIT-2026-09-20.md) for evidence, reproduction results,
-source locations, corrective actions, and verification limits. The audit did not change production code. Documentation finding A15 was addressed by the subsequent Markdown refresh; A01/A02 were subsequently fixed by export path validation and source-file exclusions; A03 was fixed by enabling CURL peer/hostname verification; A04 was fixed by strict plugin-name validation and shell-free npm invocation; A05 was fixed by resolving starter dependencies and banner assets from their installed packages; A06 was fixed by coordinated PHP runtime/configuration and plugin include invalidation; the remaining code findings are open.
+source locations, corrective actions, and verification limits. The audit did not change production code. Documentation finding A15 was addressed by the subsequent Markdown refresh; A01/A02 were subsequently fixed by export path validation and source-file exclusions; A03 was fixed by enabling CURL peer/hostname verification; A04 was fixed by strict plugin-name validation and shell-free npm invocation; A05 was fixed by resolving starter dependencies and banner assets from their installed packages; A06 was fixed by coordinated PHP runtime/configuration and plugin include invalidation. A07–A14 are fixed as listed below; A16 and A18 remain open.
 
 A07 is also fixed: optional layouts default safely, and PHP diagnostics survive task aggregation without entering generated HTML. A09 is fixed: malformed URL paths return 400, and file-read/stream failures no longer terminate the development server. A10 is fixed: the server denies private/source paths and checks canonical link targets, including the custom 404 fallback.
 
 - **P2 / A16:** Incomplete regression coverage and missing CI gates (focused regression suites now exist).
-- **P3 / A17–A18:** WASM tarballs include local backups; unavailable browser
-  storage prevents oEmbed metadata fetching. (On s'en fout du browser, on target seulement NodeJS)
+- **P3 / A18:** Unavailable browser storage prevents oEmbed metadata fetching.
+  Maxime deprioritized it as "Node.js-only target"; note that
+  `packages/plugin-embed/src/embed.js` runs in visitors' browsers on generated
+  sites, so confirm that rationale before closing.
+- **A17 fixed (2026-09-22):** `jspi/php.js.bak` is no longer tracked, `*.bak`
+  is ignored, and the php-wasm `files` allowlist ships only `jspi/*.js` and
+  `jspi/*/*.wasm`.
 
 A14 is fixed: VS Code Run Script reports structured failures as errors, logs the returned diagnostics, and only announces success for `success: true`.
 

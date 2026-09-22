@@ -1,5 +1,20 @@
 # Decisions
 
+## Export only empties directories it owns
+
+Export deletes its destination's contents before copying. Checking that the
+destination does not overlap `kirigami.root` (A01) was not enough: any other
+directory (`scripts/`, `.git`, a mistyped path, or an MCP agent's `path`) was
+still emptied (audit N1). Export now empties an existing non-empty directory
+only if it holds a `.kirigami-export` marker, which every export writes. It
+also refuses any destination that contains the project directory.
+
+A marker inside the output was preferred over a record kept in `.kirigami/`.
+Output directories are often committed (for example for GitHub Pages), so a
+fresh clone or a CI checkout must still recognize them. The cost is a one-time
+migration: an existing output directory without the marker is refused once,
+with a message explaining how to confirm it.
+
 ## Serve and watch own their initial build
 
 Development startup now awaits the same `build()` pipeline used explicitly, including triggers and normal task eligibility, before opening server/watch resources. This prevents a fresh checkout or stale output from appearing ready. An initial failure rejects startup instead of leaving a running preview with invalid output. Embedders that have already built can pass `initialBuild: false`; startup notifications are distinguished from per-rule rebuilds by `initial: true`. The PHP runtime remains project-owned and reusable after failure, while no new HTTP/watch handles have been allocated.

@@ -262,8 +262,8 @@ function docTopicHints() {
 	};
 }
 
-// --->>> À ajouter: un tool pour reload pour éviter de reloader les configs pour rien
-// --->>> Peut-être ajouter un bouton reload dans l'extension vscode
+// TODO: add an explicit reload tool so read-only tools stop reloading the config needlessly.
+// TODO: consider a matching reload button in the VS Code extension.
 
 
 // Builds an McpServer wired to an already-loaded `Project` (see
@@ -282,7 +282,7 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 		},
 		async () => {
 			try {
-				await project.reload(); // pas besoin de reloader
+				await project.reload(); // TODO: reload not needed here
 				return ok({ config: project.config, plugins: project.plugins });
 			} catch (e) { return fail(e); }
 		}
@@ -484,7 +484,7 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 		},
 		async ({ command, args = [] }) => {
 			try {
-				await project.reload(); // pas besoin de reloader
+				await project.reload(); // TODO: reload not needed here
 				return ok(await project.run(command, args));
 			} catch (e) { return fail(e); }
 		}
@@ -498,7 +498,7 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 		},
 		async () => {
 			try {
-				await project.reload(); // pas besoin de reloader
+				await project.reload(); // TODO: reload not needed here
 				return ok({ scripts: project.scripts });
 			} catch (e) { return fail(e); }
 		}
@@ -512,7 +512,7 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 		},
 		async () => {
 			try {
-				await project.reload(); // pas besoin de reloader
+				await project.reload(); // TODO: reload not needed here
 				return ok({ tasks: project.tasks });
 			} catch (e) { return fail(e); }
 		}
@@ -529,7 +529,7 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 		},
 		async ({ name }) => {
 			try {
-				await project.reload(); // pas besoin de reloader
+				await project.reload(); // TODO: reload not needed here
 				return ok(await project.runTask(name));
 			} catch (e) { return fail(e); }
 		}

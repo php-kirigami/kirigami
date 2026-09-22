@@ -26,13 +26,13 @@
 
 import path from "node:path";
 import { run as runHook, HOOKS } from "@kirigami/sdk";
-import { getConfig, clearConfigCache, validateConfiguredTasks } from "./bin/config.js";
+import { getConfig, loadConfig, clearConfigCache, validateConfiguredTasks } from "./bin/config.js";
 import { loadPlugins } from "./bin/libs/plugins.js";
 import { resolveTaskType } from "./bin/libs/tasktypes.js";
 import { runscript, getPluginScripts, clearPluginScriptsCache } from "./bin/libs/runscript.js";
 import { createDevServer } from "./bin/libs/devserver.js";
 import { buildWatchRules, createWatchers } from "./bin/libs/watchengine.js";
-import { assertSafeExportPaths } from "./bin/tasks/dist.js";
+import { assertSafeExportPaths, assertReplaceableExport } from "./bin/tasks/dist.js";
 import { clearPhpIncludesCache } from "./bin/tasks/prepros.js";
 import { resetRuntime } from "@kirigami/php-prepros";
 import { findFiles } from "./bin/utils.js";
@@ -41,10 +41,9 @@ import { findFiles } from "./bin/utils.js";
 // "before-build"), plus every plugin script registered with that same
 // trigger via the `scripts:register` hook (a project's own kirigami.yaml
 // entry wins on a name clash), in order, stopping at the first failure.
-// Deliberately reimplemented here instead of reusing bin/libs/triggers.js's
-// `trigger()` (which moved to @kirigami/cli on the package split, and prints
-// to the console + calls `process.exit(1)` on failure — both wrong for a
-// library call). `runscript()` itself is already pure, so this just adds the
+// This is the only trigger runner: the CLI's old console-printing,
+// process.exit()-ing triggers.js was removed once every command went through
+// this API. `runscript()` itself is already pure, so this just adds the
 // scripts-list lookup around it.
 async function runTrigger(config, name) {
 	const names = new Map();
@@ -109,10 +108,12 @@ export class Project {
 	// VS Code editor). Throws the same way getConfig() does on an invalid file.
 	// Since plugins aren't (re-)loaded here, a plugin-registered task type is
 	// left unresolved rather than rejected as unknown — resolving it is
-	// reload()'s job.
+	// reload()'s job. A loaded project keeps its current config: replacing it
+	// would drop the tasks reload() injected via `tasks:register`, so call
+	// reload() to apply a validated change.
 	async validate() {
-		clearConfigCache();
-		this.#config = await getConfig({ deferTaskTypes: true });
+		const config = await loadConfig(undefined, { deferTaskTypes: true });
+		if (!this.#loaded) this.#config = config;
 		return true;
 	}
 
@@ -155,12 +156,13 @@ export class Project {
 		if (!this.#loaded) await this.reload();
 		const config = this.#config;
 
-		if (!config.export) config.export = {};
-		config.export.path = exportPath || config.export.path || "dist";
-		const dist = path.resolve(process.cwd(), config.export.path);
+		// A per-call path override must not leak into later export() calls.
+		const exportConfig = config.export || {};
+		const dist = path.resolve(process.cwd(), exportPath || exportConfig.path || "dist");
 		// Reject unsafe output before running hooks or rendering any pages.
 		try {
 			assertSafeExportPaths(config.root, dist);
+			assertReplaceableExport(dist);
 		} catch (error) {
 			return { success: false, dist, error: error.message, beforeExport: null, beforeBuild: null, afterExport: null, results: [] };
 		}
@@ -173,7 +175,7 @@ export class Project {
 
 		const tasks = [
 			...(config.prepros ? [{ name: "render-all", type: "prepros", force: true, config: config.prepros }] : []),
-			{ name: "copy-files", type: "dist", force: true, path: dist, ...config.export },
+			{ name: "copy-files", type: "dist", force: true, ...exportConfig, path: dist },
 			...config.tasks,
 		];
 
@@ -183,8 +185,8 @@ export class Project {
 			if (!taskModule) throw new Error(`Unknown task type: "${task.type}".`);
 			if (!task.force && !taskModule.canbuild) continue;
 
-			task.banner = config.kirigami.banner;
-			const result = await taskModule.default(config.root, task, dist);
+			// Per-run copy: the banner is export-only and must not stick to config.tasks.
+			const result = await taskModule.default(config.root, { ...task, banner: config.kirigami.banner }, dist);
 			results.push({ task: task.name, type: task.type, taskname: taskModule.taskname, ...result });
 			if (!result.success) return { success: false, dist, beforeExport, beforeBuild, afterExport: null, results };
 		}

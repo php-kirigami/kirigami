@@ -83,7 +83,7 @@ Move the document opening through `<body>` into the header, and `</body></html>`
 npx kiri export
 ```
 
-Deploy the contents of `dist` to a static host. Export replaces that directory's contents. Keep it dedicated to output; it must not equal, contain, or be contained by `src`, including through symlinks/junctions. A failed build/export may leave partial output, so deploy only after success.
+Deploy the contents of `dist` to a static host. Export replaces that directory's contents and writes a `.kirigami-export` marker into it. An existing non-empty directory without that marker is refused rather than emptied: empty it yourself, or create the marker to confirm it may be replaced. Keep it dedicated to output; it must not equal, contain, or be contained by `src`, including through symlinks/junctions. A failed build/export may leave partial output, so deploy only after success.
 
 The export copy excludes PHP, Sass sources, source maps, underscore/dot-prefixed private files, and non-minified JavaScript. Configure an esbuild task for JavaScript output; do not assume a raw `app.js` will be copied. Use `export.ignore` for additional private assets. Development serving allows JavaScript/source maps for debugging while still denying private/source paths; its file set differs from production export.
 

@@ -19,7 +19,7 @@ Launch Node from the directory containing `kirigami.yaml` before importing core.
 | `load()` / `Kirigami.load()` | `Promise<Project>` | Construct and reload a project. |
 | `new Project()` | `Project` | Construct unloaded; operational methods load lazily. |
 | `reload()` | `Promise<Project>` | Refresh configuration/plugins and invalidate PHP runtime/includes. |
-| `validate()` | `Promise<true>` | Refresh/validate core configuration; reject invalid input. Does not reload plugins or PHP. |
+| `validate()` | `Promise<true>` | Validate `kirigami.yaml` on disk; reject invalid input. Does not reload plugins or PHP, and does not replace a loaded project's configuration — call `reload()` to apply a change. |
 | `config` | object or `null` | Resolved configuration; null before loading. |
 | `plugins` | array of `{ name, version }` | Activated plugins; version may be null. |
 | `tasks` | array | Configured tasks, with implicit forced `render-all` when prepros is enabled. |
@@ -51,7 +51,9 @@ Active plugins may also inject actual task entries through `@kirigami/sdk`'s
 Reload appends these once, right after plugins load and before strict task
 validation, onto the project's own `tasks:` list, so a project doesn't need
 its own `tasks:` entry for a plugin's task to run; `tasks`/`config.tasks`,
-`build()`, `export()`, `runTask()`, and watch all see the merged list.
+`build()`, `export()`, `runTask()`, and watch all see the merged list. Task
+names must be unique across the merged list: a duplicate, including a plugin
+task named like a kirigami.yaml task, is rejected as a configuration error.
 
 Active plugins may also register a PHP script through `@kirigami/sdk`'s
 `scripts:register` hook — an absolute path to their own `.php` file, a `name`

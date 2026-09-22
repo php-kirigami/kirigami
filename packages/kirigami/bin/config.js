@@ -183,6 +183,17 @@ async function validateConfig(config, configPath, { deferTaskTypes = false } = {
 const validatedBuiltInTasks = new WeakSet();
 
 export async function validateConfiguredTasks(config, configPath = __configpath, { allowUnknown = false } = {}) {
+	// runTask() and watch rules address tasks by name, so a second task with the
+	// same name (often a plugin's tasks:register entry) would be silently shadowed.
+	const names = new Set();
+	for (const task of config.tasks || []) {
+		if (!task?.name) continue;
+		if (names.has(task.name)) {
+			throwConfigError(configPath, `Duplicate task name "${task.name}": task names must be unique, including tasks injected by plugins via tasks:register.`);
+		}
+		names.add(task.name);
+	}
+
 	await Promise.all((config.tasks || []).map(async task => {
 		if (!task.type) throwConfigError(configPath, `Invalid task type: ${util.inspect(task)}.`);
 		if (!task.name) throwConfigError(configPath, `Invalid task name: ${util.inspect(task)}.`);

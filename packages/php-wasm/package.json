@@ -9,7 +9,8 @@
     "webassembly",
     "wasm",
     "node",
-    "jspi",
+    "jspi/*.js",
+    "jspi/*/*.wasm",
     "emscripten",
     "wordpress-playground",
     "sandbox",
@@ -55,7 +56,8 @@
   "files": [
     "index.js",
     "index.d.ts",
-    "jspi",
+    "jspi/*.js",
+    "jspi/*/*.wasm",
     "runtime",
     "LICENSE",
     "README.md"

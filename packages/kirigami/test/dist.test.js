@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import dist from '../bin/tasks/dist.js';
+import dist, { EXPORT_MARKER, assertSafeExportPaths } from '../bin/tasks/dist.js';
 
 function fixture(t) {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kirigami-export-'));
@@ -50,11 +50,13 @@ test('exports public assets, excludes private sources, and replaces previous out
 	// Similar names are siblings, not overlapping paths.
 	const destination = path.join(root, 'src-output');
 	fs.mkdirSync(destination);
+	fs.writeFileSync(path.join(destination, EXPORT_MARKER), '');
 	fs.writeFileSync(path.join(destination, 'stale.txt'), 'old output');
 	const result = await dist(source, { path: destination, ignore: ['notes.txt'], banner: 'Test banner' });
 	assert.equal(result.success, true, result.error);
 	assert.deepEqual(result.files.map(file => path.relative(destination, file).replaceAll('\\', '/')).sort(), ['assets/app.min.js', 'assets/data.json', 'index.html']);
 	assert.equal(fs.existsSync(path.join(destination, 'stale.txt')), false);
+	assert.equal(fs.existsSync(path.join(destination, EXPORT_MARKER)), true);
 	assert.match(fs.readFileSync(path.join(destination, 'index.html'), 'utf8'), /Test banner/);
 	assert.equal(fs.readFileSync(path.join(source, 'helper.php'), 'utf8'), 'content');
 });
@@ -78,4 +80,34 @@ test('Project.export rejects overlap before executing triggers or changing outpu
 	} finally {
 		process.chdir(previousCwd);
 	}
+});
+
+test('refuses to empty a non-empty destination without an export marker', async t => {
+	const { root, source } = fixture(t);
+	const scripts = path.join(root, 'scripts');
+	fs.mkdirSync(scripts);
+	fs.writeFileSync(path.join(scripts, 'deploy.php'), '<?php echo 1;');
+	const result = await dist(source, { path: scripts });
+	assert.equal(result.success, false);
+	assert.match(result.error, /Refusing to empty/);
+	assert.deepEqual(fs.readdirSync(scripts), ['deploy.php']);
+});
+
+test('writes a marker so the next export can replace its own output', async t => {
+	const { root, source } = fixture(t);
+	const destination = path.join(root, 'out');
+	assert.equal((await dist(source, { path: destination })).success, true);
+	assert.equal(fs.existsSync(path.join(destination, EXPORT_MARKER)), true);
+	fs.writeFileSync(path.join(destination, 'stale.txt'), 'old output');
+	assert.equal((await dist(source, { path: destination })).success, true);
+	assert.equal(fs.existsSync(path.join(destination, 'stale.txt')), false);
+});
+
+test('rejects a destination that contains the project directory', t => {
+	const { root, source } = fixture(t);
+	// The destination holds the project but not the source tree.
+	const project = path.join(root, 'sites', 'blog');
+	fs.mkdirSync(project, { recursive: true });
+	assert.throws(() => assertSafeExportPaths(source, path.join(root, 'sites'), project), /contains the project directory/);
+	assert.doesNotThrow(() => assertSafeExportPaths(source, path.join(project, 'dist'), project));
 });
