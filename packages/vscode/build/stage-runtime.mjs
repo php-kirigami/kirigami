@@ -54,7 +54,10 @@ export function stageRuntime() {
 			if (!(dependency in deps)) copy(dependency, manifest, dest, Boolean(pkg.peerDependenciesMeta?.[dependency]?.optional));
 		}
 	}
-	copy('@kirigami/kirigami', path.join(extensionRoot, 'package.json'));
+	// Every runtime dependency of the extension: the engine for the worker, and
+	// @kirigami/mcp for the MCP server VS Code launches (see src/mcp.js).
+	const manifest = path.join(extensionRoot, 'package.json');
+	for (const name of Object.keys(JSON.parse(fs.readFileSync(manifest, 'utf8')).dependencies || {})) copy(name, manifest);
 	fs.copyFileSync(path.join(extensionRoot, 'src/worker.mjs'), path.join(target, 'worker.mjs'));
 	fs.writeFileSync(path.join(target, 'inventory.json'), JSON.stringify({ platform: process.platform, arch: process.arch, packages: inventory }, null, 2));
 	console.log(`Staged ${inventory.length} runtime packages for ${process.platform}-${process.arch}.`);

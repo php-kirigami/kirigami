@@ -6,6 +6,7 @@ import { registerCommands } from "./commands.js";
 import { createStatusBar } from "./statusbar.js";
 import { watchConfig } from "./configWatcher.js";
 import { registerCreateCommand } from "./create.js";
+import { registerMcpProvider } from "./mcp.js";
 
 /** @param {vscode.ExtensionContext} context */
 export async function activate(context) {
@@ -13,6 +14,8 @@ export async function activate(context) {
 	context.subscriptions.push(output);
 	// Available everywhere, including folders that are not Kirigami projects yet.
 	registerCreateCommand(context, { output });
+	// Registered in every window; it only offers a server for a Kirigami folder.
+	registerMcpProvider(context, { output });
 
 	const folder = vscode.workspace.workspaceFolders?.[0];
 	if (!folder) return;

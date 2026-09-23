@@ -13,12 +13,10 @@
 // status/stop tools, not this shape.
 // ---------------------------------------------------------------------------
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
+import { McpServer, StdioServerTransport } from "./lib/server.js";
 import fs from 'fs';
 import path from 'path';
-import { load } from "@kirigami/kirigami"; // --->>> Il faut faire les index.d.ts pour ce package
+import { load } from "@kirigami/kirigami"; // TODO: add an index.d.ts for this package
 
 const ok = (data) => ({ content: [{ type: "text", text: JSON.stringify(data, null, 2) }] });
 const fail = (error) => ({
@@ -348,9 +346,13 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 			title: "Search Kirigami docs",
 			description: "Search the project's Markdown docs and README files for a query, returning matching paths and short excerpts. Useful when an agent needs the right docs for build, package layout, MCP, VS Code, or troubleshooting.",
 			inputSchema: {
-				query: z.string().min(1).describe("Query string to search for in docs and README files."),
-				scope: z.enum(["all", "docs", "readme", "packages"]).optional().default("all").describe("Restrict the search to a subset of files."),
-				limit: z.number().int().positive().max(20).optional().default(10).describe("Maximum number of matches to return."),
+				type: "object",
+				properties: {
+					query: { type: "string", minLength: 1, description: "Query string to search for in docs and README files." },
+					scope: { type: "string", enum: ["all", "docs", "readme", "packages"], default: "all", description: "Restrict the search to a subset of files." },
+					limit: { type: "integer", minimum: 1, maximum: 20, default: 10, description: "Maximum number of matches to return." },
+				},
+				required: ["query"],
 			},
 		},
 		async ({ query, scope = 'all', limit = 10 }) => {
@@ -369,7 +371,10 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 			title: "Suggested docs for a task",
 			description: "Returns the best documentation files to read next for a common Kirigami task such as build, package layout, MCP, extension development, troubleshooting or licensing.",
 			inputSchema: {
-				topic: z.enum(['general', 'site', 'pages', 'build', 'package', 'mcp', 'extension', 'troubleshooting', 'license']).optional().default('general').describe("Task area to map to relevant docs."),
+				type: "object",
+				properties: {
+					topic: { type: "string", enum: ['general', 'site', 'pages', 'build', 'package', 'mcp', 'extension', 'troubleshooting', 'license'], default: 'general', description: "Task area to map to relevant docs." },
+				},
 			},
 		},
 		async ({ topic = 'general' } = {}) => {
@@ -461,7 +466,10 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 			title: "Export the Kirigami project",
 			description: "Production build — same as `kiri export`: forces every task plus a copy into export.path (default \"dist\"), stamping the banner. Reloads the config first.",
 			inputSchema: {
-				path: z.string().optional().describe('Override export.path for this run (default: the project\'s own export.path, or "dist").'),
+				type: "object",
+				properties: {
+					path: { type: "string", description: 'Override export.path for this run (default: the project\'s own export.path, or "dist").' },
+				},
 			},
 		},
 		async ({ path } = {}) => {
@@ -478,8 +486,12 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 			title: "Run a Kirigami PHP script",
 			description: "Runs scripts/<command>.php inside the PHP-WASM runtime — same as `kiri run <command>`. The project's PHP class library (PREPROS, MD, HTML, …) is available with no include needed. Reloads the config first. Can execute any named script the project defines — only offer this to a project you trust. Use kirigami_list_scripts first if you don't already know the project's script names.",
 			inputSchema: {
-				command: z.string().describe("Script name, without the scripts/ prefix or .php extension."),
-				args: z.array(z.string()).optional().describe("Extra words passed as $argv to the PHP script."),
+				type: "object",
+				properties: {
+					command: { type: "string", description: "Script name, without the scripts/ prefix or .php extension." },
+					args: { type: "array", items: { type: "string" }, description: "Extra words passed as $argv to the PHP script." },
+				},
+				required: ["command"],
 			},
 		},
 		async ({ command, args = [] }) => {
@@ -524,7 +536,11 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 			title: "Run a single Kirigami build task",
 			description: "Runs exactly one task by name — bypassing before-build and every other task — instead of the whole kirigami_build pipeline. Forces it regardless of the task's own default policy, since naming it is itself the intent to run it. Use kirigami_list_tasks first to get valid names. Reloads the config first.",
 			inputSchema: {
-				name: z.string().describe("A task name from kirigami_list_tasks (e.g. \"render-all\", or a tasks: entry's own name)."),
+				type: "object",
+				properties: {
+					name: { type: "string", description: "A task name from kirigami_list_tasks (e.g. \"render-all\", or a tasks: entry's own name)." },
+				},
+				required: ["name"],
 			},
 		},
 		async ({ name }) => {

@@ -42,6 +42,9 @@
       { "command": "kirigami.validate", "title": "Kirigami: Validate kirigami.yaml", "category": "Kirigami" },
       { "command": "kirigami.toggleServer", "title": "Kirigami: Toggle Dev Server", "category": "Kirigami" }
     ],
+    "mcpServerDefinitionProviders": [
+      { "id": "kirigami", "label": "Kirigami" }
+    ],
     "menus": {
       "commandPalette": [
         { "command": "kirigami.build", "when": "kirigami.projectLoaded" },
@@ -58,7 +61,8 @@
     "vscode:prepublish": "node esbuild.mjs --minify"
   },
   "dependencies": {
-    "@kirigami/kirigami": "2.1.0"
+    "@kirigami/kirigami": "2.1.0",
+    "@kirigami/mcp": "0.1.0"
   },
   "devDependencies": {
     "@types/vscode": "1.90.0",

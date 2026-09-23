@@ -22,6 +22,7 @@
   },
   "files": [
     "index.js",
+    "lib/",
     "bin/",
     "LICENSE",
     "README.md"
@@ -36,8 +37,7 @@
   },
   "dependencies": {
     "@kirigami/kirigami": "2.1.0",
-    "@modelcontextprotocol/sdk": "^1.30.0",
-    "zod": "^4.6.5"
+    "ajv": "^8.20.0"
   },
   "repository": {
     "type": "git",
