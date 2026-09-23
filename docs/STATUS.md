@@ -1,5 +1,42 @@
 # Status
 
+## VS Code: Create Project command — 2026-09-22
+
+`Kirigami: Create Project…` (`kirigami.create`) picks a folder, opens an
+integrated terminal there and runs `npx --yes "@kirigami/cli" create`: the
+CLI's existing wizard lists the templates and asks the questions, so nothing
+is duplicated and the VSIX does not grow. With terminal shell integration
+(VS Code 1.93+) the extension waits for the command to finish, finds the new
+`kirigami.yaml` (chosen folder or a direct subfolder), and offers Open Folder /
+Open in New Window, or Reload Window when it is the current folder; without it
+the command is only typed. The command is registered in any trusted window
+(`onCommand:kirigami.create` activation); the engine only starts when the
+folder has a `kirigami.yaml`, and the project commands are hidden from the
+palette until then. Tests: `packages/vscode/test/create.test.cjs`.
+Requires `@kirigami/cli` to be published for `npx` to find it.
+
+## VSIX packaging and release preparation — 2026-09-22
+
+- The win32-x64 VSIX builds with vsce (19.2 MB, 1,745 files) and passes the
+  real VS Code host test once unzipped (`run-host.ps1` gained
+  `-ExtensionPath`). It is platform-specific: the staged runtime holds native
+  binaries.
+- Staging no longer copies type declarations and source maps (~16 MB), and the
+  core no longer depends on the unused `@octokit/rest` (still a CLI
+  dependency). The longest installed path dropped from ~221 to 179
+  characters; a VSIX unzipped under a long folder used to exceed Windows' 260
+  limit and the extension host failed to start.
+- Extension icon: the elephant from the logo, cropped, trimmed, centered with
+  transparent padding (`packages/vscode/images/icon.png`, source
+  `assets/chart/kirigami-elephant.svg`). The extension README uses a PNG logo:
+  the Marketplace rejects SVG images.
+- `scripts/publish.js` skips VS Code extensions (`engines.vscode`), which
+  would otherwise have been published to npm.
+- Core README: "Unreleased — breaking" section (`kiri` moved to
+  `@kirigami/cli`, export marker, duplicate task names).
+- [RELEASE-PLAN.md](RELEASE-PLAN.md): the checklist for the coordinated
+  release.
+
 ## Regression suite automation (A16) — 2026-09-22
 
 - `npm test` at the root runs `scripts/test.js`: it compiles the VS Code
@@ -10,7 +47,8 @@
 - CI: `.github/workflows/ci.yml` runs `npm test` on Windows and Linux with
   Node 24 and 26, with a native PHP for the TLS test. Not run yet.
 - Locally: 69/69 on Windows with Node 26.9.0 and with Node 24.21.0 (the
-  declared floor, never tested before).
+  declared floor, never tested before). Linux (WSL Ubuntu, Node 24.21.0,
+  static PHP 8.5.8 for the TLS test): 68 passed, 1 Windows-only test skipped.
 - PHP extension discovery: new `KIRIGAMI_PHPEXT_DISCOVERY` (`all` | `local` |
   `off`). The global root is now computed instead of spawning `npm root -g`,
   which never worked on Windows (`npm.cmd` cannot be spawned without a shell,

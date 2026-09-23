@@ -41,7 +41,7 @@ node scripts/test.js packages/kirigami/test/dist.test.js   # focused files
 
 The tests require subprocess support and local loopback sockets. The TLS test also requires native PHP with cURL (`PHP_BINARY` may select it); it checks the helper under native PHP and end to end inside the WASM runtime.
 
-CI (`.github/workflows/ci.yml`) runs `npm test` on Windows and Linux with Node 24 and 26, for pushes to `main` and for pull requests. Locally on 2026-09-22, all 69 tests passed on Windows with Node 26.9.0 and Node 24.21.0. VSIX packaging is not covered. Record the commands, environment, and results in your PR.
+CI (`.github/workflows/ci.yml`) runs `npm test` on Windows and Linux with Node 24 and 26, for pushes to `main` and for pull requests. Locally on 2026-09-22, all 69 tests passed on Windows with Node 26.9.0 and Node 24.21.0, and on Linux (WSL Ubuntu, Node 24.21.0) with one Windows-only test skipped. VSIX packaging is not covered. Record the commands, environment, and results in your PR.
 
 > The maintainer develops on Windows (PowerShell). If you add a script, mind
 > path separators — normalize `path.sep` to `/` where the existing code does.

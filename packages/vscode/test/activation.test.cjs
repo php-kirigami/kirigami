@@ -37,7 +37,7 @@ test('relocated extension activates and runs all commands without workspace depe
 			showErrorMessage: s => errors.push(s), showInformationMessage: s => info.push(s),
 			showQuickPick: async items => typeof items[0] === 'object' && !cancelScript ? items[0] : undefined,
 		},
-		commands: { registerCommand(name, fn) { commands.set(name, fn); return disposable; } },
+		commands: { registerCommand(name, fn) { commands.set(name, fn); return disposable; }, executeCommand: async () => {} },
 		StatusBarAlignment: { Right: 1 }, ThemeColor: class {}, RelativePattern: class {},
 	};
 	const originalLoad = Module._load;
@@ -50,7 +50,7 @@ test('relocated extension activates and runs all commands without workspace depe
 	const cwd = process.cwd();
 	await extension.activate({ extensionPath, subscriptions: [] });
 	assert.equal(process.cwd(), cwd);
-	assert.equal(commands.size, 5, logs.join('\n'));
+	assert.equal(commands.size, 6, logs.join('\n'));
 	await commands.get('kirigami.validate')();
 	await commands.get('kirigami.build')();
 	assert.equal(fs.readFileSync(path.join(project, 'src/index.html'), 'utf8'), '<p>Before</p>');

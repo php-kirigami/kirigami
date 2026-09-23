@@ -4,7 +4,7 @@ The extension scaffold lives in [packages/vscode](../packages/vscode/README.md).
 
 ## Implemented
 
-- Five commands: Build, Export, Run Script, Validate Configuration, and Toggle Dev Server.
+- Six commands: Create Project, Build, Export, Run Script, Validate Configuration, and Toggle Dev Server. Create is registered in any trusted window and runs `kiri create` in an integrated terminal (`npx --yes "@kirigami/cli" create`); with shell integration it waits for the wizard to finish, then offers to open the created project. The project commands are hidden from the palette until a project is loaded (`kirigami.projectLoaded` context key), and the engine only starts when the folder contains `kirigami.yaml`.
 - A Kirigami Output channel and command notifications.
 - A status bar showing idle, running, building, and error states.
 - A preview choice between Simple Browser and the external browser.
@@ -43,12 +43,14 @@ node --test --test-isolation=none packages/vscode/test/activation.test.cjs
 & packages/vscode/test/run-host.ps1
 ```
 
-The Windows host runner uses an isolated temporary profile and site, and retains logs for inspection. Runtime staging reflects dependencies installed for the build platform; recompile after core/worker changes, including when using watch mode. VSIX contents and cross-platform packaging still require verification.
+The Windows host runner uses an isolated temporary profile and site, and retains logs for inspection. Pass `-ExtensionPath <unzipped VSIX>/extension` to test a packaged VSIX instead of the development folder. Runtime staging reflects dependencies installed for the build platform, including native binaries (esbuild, @parcel/watcher), so each VSIX is platform-specific; recompile after core/worker changes, including when using watch mode.
+
+Packaging (no publish): from `packages/vscode`, run `npx @vscode/vsce package --no-dependencies --target win32-x64`. The win32-x64 VSIX was built and passed the real-host test on 2026-09-22; see [RELEASE-PLAN.md](RELEASE-PLAN.md#4-vsix-facts-checked-2026-09-22-win32-x64) for its size, licenses, and path lengths. Other targets have not been built.
 
 ## Remaining work
 
 1. Complete the real-host validation above.
-2. Add and verify VSIX packaging, including runtime assets and dependency licenses. The npm release script currently scans this non-private workspace too; a separate extension release path is not implemented.
+2. Build and test the VSIX for the other target platforms, and consider a generated third-party notices file.
 3. Consider diagnostics, tasks integration, multi-root support, and optional MCP registration after the existing commands are reliable.
 
 See [DECISIONS.md](DECISIONS.md), [TODO.md](TODO.md), and [the audit](AUDIT-2026-09-20.md) for rationale and reproductions.

@@ -27,6 +27,34 @@ Use [the CLI](../cli/README.md) for terminal commands. This package is the progr
 
 ---
 
+## Unreleased — breaking
+
+- **Breaking: the `kiri` command moved to
+  [`@kirigami/cli`](https://www.npmjs.com/package/@kirigami/cli).** This
+  package is now the programmatic engine only and no longer installs a `kiri`
+  executable. Scripts such as `npx kiri build`, and `package.json` scripts
+  calling `kiri`, fail until the CLI is installed. Migration:
+
+  ```bash
+  npm install -D @kirigami/cli        # in each site; keeps @kirigami/kirigami as its engine
+  npm install -g @kirigami/cli        # only if you ran a globally installed kiri
+  ```
+
+  The commands and their options are unchanged. Keep `@kirigami/kirigami` as a
+  dependency if your code imports the `Project` API.
+- **Export only empties directories it created.** Export writes a
+  `.kirigami-export` marker into its output. An existing non-empty output
+  directory without that marker is refused instead of emptied: after
+  upgrading, the first export into an existing `dist/` fails once. Empty the
+  directory, or create an empty `.kirigami-export` file in it to confirm it may
+  be replaced. Export also refuses any destination that contains the project.
+- **Duplicate task names are rejected**, including a plugin task injected via
+  `tasks:register` with the same name as a `kirigami.yaml` task.
+- `Project.validate()` no longer replaces a loaded project's configuration;
+  call `reload()` to apply a change.
+
+---
+
 ## What's new in 2.0.0
 
 - **Breaking: `kirigami.schema.json` now requires `seo:` instead of the old

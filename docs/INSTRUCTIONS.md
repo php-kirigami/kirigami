@@ -17,7 +17,7 @@ release across this monorepo and its sibling repos.
 9. Prepare the npm packages that need a version bump.
 10. Commit the release preparation, merge the approved branch to `main`, and push.
 11. Publish packages and wait until the registry/CDN propagate.
-12. (Future: pack the VS Code extension + publish through its separate release path.)
+12. Package the VS Code extension per target platform and publish it with vsce (see [RELEASE-PLAN.md](RELEASE-PLAN.md)).
 13. Record and commit any release follow-up changes.
 14. Update `../template-*/`.
 15. Deep-update the org site.
@@ -27,7 +27,7 @@ release across this monorepo and its sibling repos.
 
 A documentation update does not include version bumps, commits, pushes, or publication unless requested. The steps below describe a release, not implicit authorization to perform one. Merge and push the approved release state to `main` before the publish preflight.
 
-The publish script scans non-private workspace packages, including `kirigami-vscode`; it does not implement a separate VSIX release path. It runs `build`, not the extension’s `compile` script. Review the selected packages and packaging contents before a release; do not assume extension publishing is excluded automatically.
+The publish script scans non-private workspace packages and skips VS Code extensions (packages declaring `engines.vscode`): `kirigami-vscode` ships as platform-specific VSIX files through vsce, never to npm. See [RELEASE-PLAN.md](RELEASE-PLAN.md) for the VSIX steps. Review the selected packages and packaging contents before a release.
 
 `npm run release` (→ `node scripts/publish.js`). Bump the version in each
 package's `package.json` first, and — because internal deps are pinned to

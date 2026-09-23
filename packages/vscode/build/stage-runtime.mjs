@@ -42,7 +42,9 @@ export function stageRuntime() {
 			recursive: true, dereference: true,
 			filter: file => {
 				const rel = path.relative(source, file);
-				return !rel.split(path.sep).some(part => ['node_modules', '.git', '.cache.db', '.node.db', 'test', 'tests'].includes(part)) && !/\.(bak|tgz)$/.test(rel);
+				// Type declarations and source maps are about a third of the staged
+				// size and are never loaded at runtime.
+				return !rel.split(path.sep).some(part => ['node_modules', '.git', '.cache.db', '.node.db', 'test', 'tests'].includes(part)) && !/\.(bak|tgz|map|d\.[cm]?ts)$/.test(rel);
 			},
 		});
 		inventory.push({ name, version: pkg.version, license: pkg.license, path: path.relative(target, dest).replaceAll('\\', '/') });

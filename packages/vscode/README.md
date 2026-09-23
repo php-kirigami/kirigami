@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://zmotrin.github.io/assets/kirigami/kirigami-logo-universal.svg" alt="Kirigami" width="400" />
+<img src="images/logo.png" alt="Kirigami" width="400" />
 
 ---
 
@@ -20,7 +20,7 @@ Kirigami static site without leaving the editor.
 
 ## Overview
 
-This development extension has passed relocated integration tests and a real VS Code 1.138.0 smoke test on Windows. VSIX packaging and the remaining interactive checks are still pending.
+Tested with relocated integration tests and a real VS Code 1.138.0 smoke test on Windows, both from the development folder and from a packaged win32-x64 VSIX. Interactive checks in a real editor are still pending.
 
 `kirigami-vscode` wraps `@kirigami/kirigami`'s `Project` API — the same
 one `@kirigami/cli` (terminal) and `@kirigami/mcp` (AI agent) already
@@ -67,6 +67,7 @@ Available from the Command Palette, all under the **Kirigami** category:
 
 | Command | ID | Wraps |
 |---|---|---|
+| Kirigami: Create Project… | `kirigami.create` | `kiri create` in an integrated terminal (`npx --yes "@kirigami/cli" create`) |
 | Kirigami: Build | `kirigami.build` | `Project.build()` |
 | Kirigami: Export | `kirigami.export` | `Project.export()` |
 | Kirigami: Run Script… | `kirigami.run` | `Project.run(name)`, prompts via `Project.scripts` |
@@ -76,6 +77,15 @@ Available from the Command Palette, all under the **Kirigami** category:
 Results and errors are summarized in a notification; full detail (and
 every watch-triggered rebuild's outcome) goes to the **Kirigami** Output
 channel.
+
+**Create Project** works in any window, Kirigami project or not. Pick (or
+create) a folder; an integrated terminal opens there and runs the CLI's
+wizard, which lists the official templates and asks what to scaffold. When
+VS Code can tell the command has finished (terminal shell integration,
+VS Code 1.93+), the extension offers to open the new project, or to reload the
+window if it was created in the current folder. The terminal's own `node`
+and `npx` are used, so they must be Node 24+. The other commands only appear
+once a Kirigami project is loaded.
 
 ---
 
@@ -125,14 +135,13 @@ a folder containing a `kirigami.yaml` in that host window (e.g.
 ## Known limitations
 
 - A08 resource paths and working-directory capture are fixed; runtime dependencies are copied under `dist/runtime` during compilation. Recompile after core or worker edits; watch mode only rebuilds the host bundle.
-- Runtime staging uses dependencies installed for the build platform; cross-platform VSIX packaging remains unverified.
+- The bundled engine includes native binaries (esbuild, @parcel/watcher), so each VSIX targets one platform. Only win32-x64 has been built and tested.
 - Run Script reports structured failures with an error notification and full result in the Output channel (A14 fixed). Interactive notification checks remain pending.
 - Core reload now resets PHP runtime/config state and plugin includes (A06 fixed); the extension's configuration watcher still needs real-host verification.
 - Preview builds before starting the server; a failed initial build reports an error and leaves the server stopped.
 
 - Single workspace folder only — binds to `workspaceFolders[0]`; multi-root
   isn't supported by `Project` itself yet.
-- No `.vsix` packaging/publishing set up yet.
 - The `kirigami.yaml` reload watcher doesn't yet cover plugin
   installs/removals (`node_modules` changes).
 

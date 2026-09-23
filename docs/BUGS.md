@@ -8,7 +8,7 @@ to [DECISIONS.md](DECISIONS.md). Audit evidence stays in the dated
 
 ## Open
 
-- **VS Code extension validation (A08 follow-up):** relocated integration and a
-  real VS Code 1.138.0 smoke test pass on Windows. Older editors, interactive
-  host behavior, and VSIX packaging are unverified; see
-  [the extension guide](EXTENSION-VSCODE.md).
+- **VS Code extension validation (A08 follow-up):** the development folder
+  and the win32-x64 VSIX pass the real VS Code 1.138.0 smoke test. Older
+  editors, interactive host behavior, and VSIX builds for other platforms are
+  unverified; see [the extension guide](EXTENSION-VSCODE.md).

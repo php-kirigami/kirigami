@@ -7,6 +7,9 @@ toggle, kirigami.yaml reload watcher.
 
 ## Unreleased
 
+- Added **Kirigami: Create Project…**: runs the CLI's `kiri create` wizard (template list and questions) in an integrated terminal, then offers to open the new project. Available outside Kirigami projects; the project commands are hidden there.
+- Added the extension icon (the Kirigami elephant).
+
 - Fixed Run Script success notifications for failed results (A14); errors and returned diagnostics appear in the Kirigami Output channel.
 
 - Fixed A08 resource resolution and working-directory capture using staged ESM runtime dependencies and an external Node worker.

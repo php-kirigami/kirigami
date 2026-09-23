@@ -96,6 +96,8 @@ function readPackages() {
 		if (!existsSync(file)) continue;
 		const json = JSON.parse(readFileSync(file, 'utf8'));
 		if (json.private) continue;
+		// VS Code extensions ship as VSIX files through vsce, never to npm.
+		if (json.engines?.vscode) continue;
 		pkgs.set(json.name, { name: json.name, dir: path.join(PKG_DIR, dir), json });
 	}
 	return pkgs;

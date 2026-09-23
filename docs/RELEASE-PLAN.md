@@ -1,0 +1,128 @@
+# Release plan — coordinated release
+
+Checklist for the next release, which ships everything together: the npm
+packages, the PHP extension packages (`@kirigami/phpext-*`), and the first VS
+Code extension. Prepared on 2026-09-22; nothing has been published or pushed.
+Delete this file once the release is done, and log the outcome in
+[STATUS.md](STATUS.md).
+
+For the standing procedure (publish script, 2FA, propagation), see
+[INSTRUCTIONS.md](INSTRUCTIONS.md#releasing).
+
+## 1. Decisions for Maxime
+
+### Version numbers
+
+Every package differs from its published version, so every one needs a new
+version: `scripts/publish.js` skips versions that already exist on npm.
+
+| Package | Local | npm | Files changed vs npm | Notes |
+|---|---|---|---|---|
+| `@kirigami/kirigami` | 2.1.0 | 2.0.0 | 29 | **Breaking**; see below. Suggested **3.0.0** |
+| `@kirigami/cli` | 0.1.0 | — | — | First publish; now owns `kiri` |
+| `@kirigami/mcp` | 0.1.0 | — | — | First publish |
+| `@kirigami/php-prepros` | 2.0.0 | 2.0.0 | 15 | New `runPluginScript()` API |
+| `@kirigami/sdk` | 0.2.1 | 0.2.1 | 8 | New hooks (`scripts:register`, `tasks:register`, `commands:register`) |
+| `@kirigami/php-wasm` | 8.5.10-6 | 8.5.10-5 | 6 | Working-tree README says PHP 8.5.11: binary update pending? |
+| `@kirigami/canva` | 2.6.0 | 2.6.0 | 12 | |
+| `@kirigami/plugin-embed` | 0.1.5 | 0.1.5 | 4 | |
+| `@kirigami/plugin-highlight` | 0.1.7 | 0.1.7 | 5 | |
+| `@kirigami/plugin-extlink` | 0.1.3 | 0.1.3 | 3 | |
+| `@kirigami/audiowaveform-wasm` | 1.1.0 | 1.1.0 | 2 | |
+| `@kirigami/struct-walker` | 1.0.5 | 1.0.5 | 2 | |
+| `@kirigami/bestframe` | 0.1.0 | 0.1.0 | 1 | |
+
+"Files changed" comes from `npm diff --diff-name-only` against the published
+tarball, excluding `package.json`. Internal dependencies are pinned to exact
+versions, so each bump must also be applied to the dependents' manifests.
+
+**Why the core should be 3.0.0, not 2.1.0:** it no longer installs `kiri`
+(moved to `@kirigami/cli`). The templates and the org site declare
+`"@kirigami/kirigami": "^2.0.0"` and run `kiri build`. A 2.1.0 would be picked
+up by `^2.0.0` and break every one of those sites on their next install. The
+README's "Unreleased — breaking" section documents the migration. Export's
+new marker check and duplicate-task rejection are further behavior breaks.
+
+### VS Code extension
+
+- **Target platforms.** The staged runtime contains native binaries
+  (`@esbuild/<platform>`, `@parcel/watcher-<platform>`), so the VSIX is
+  platform-specific: one `vsce package --target <target>` per platform, each
+  staged on a machine (or CI runner) of that platform. Pick the targets, e.g.
+  `win32-x64`, `linux-x64`, `darwin-arm64`, `darwin-x64`.
+- **Marketplace publisher** `php-kirigami` must exist, with a personal access
+  token for `vsce publish`.
+- **Version**: 0.1.0 for the first publish? `CHANGELOG.md` has to be turned
+  into a release entry.
+
+### PHP extension packages
+
+The 14 `@kirigami/phpext-*` packages live in `../php-wasm-compiler/packages/`
+and none is published yet. That repository has about 55 uncommitted changes.
+`packages/php-wasm/README.md` already says they are "currently published":
+true only after this release.
+
+## 2. Before release day
+
+- [x] **Linux test run** (2026-09-22): `npm ci` + `npm test` in WSL Ubuntu with
+      Node 24.21.0 and a static PHP 8.5.8: 68 passed, 0 failed, 1 skipped (the
+      Windows-only npm launcher test). CI itself has never run.
+- [ ] **Interactive VS Code checks** (by Maxime, in a real editor): script
+      selection, build failures, status bar transitions, configuration
+      watching, browser preview, deactivation cleanup. See
+      [EXTENSION-VSCODE.md](EXTENSION-VSCODE.md).
+- [ ] **phpext compatibility**: load every `phpext-*` artifact with the
+      php-wasm binary being released (`getLoadedExtensions()`), since artifact
+      selection does not prove binary compatibility.
+- [ ] **kiribuild**: the action checks for a local `@kirigami/kirigami` and
+      otherwise installs it globally to get `kiri`. From core 3.0.0 on, it must
+      look for and install `@kirigami/cli` instead.
+- [ ] Commit or discard the pending working-tree changes here
+      (`packages/php-wasm/README.md`) and in `../php-wasm-compiler`.
+
+## 3. Release day, in order
+
+1. Bump versions (section 1) and internal dependency pins; `npm install` to
+   refresh the lockfile; `npm test`.
+2. Replace "Unreleased" headings (core README, extension CHANGELOG) with the
+   chosen versions.
+3. Merge `refactor/core-api` into `main`, push, and wait for CI to pass on all
+   four jobs.
+4. `npm run release` — publishes the npm packages in dependency order and
+   purges the schema CDN cache. The script skips `kirigami-vscode`
+   (packages with `engines.vscode` go through vsce).
+5. Publish the `phpext-*` packages from `../php-wasm-compiler`.
+6. For each target platform: `npm ci`, then in `packages/vscode`
+   `npx @vscode/vsce package --no-dependencies --target <target>`, check the
+   VSIX (below), then `vsce publish --packagePath <file>`.
+7. Tag a new `kiribuild` version and move the `v2` tag (only after its
+   `@kirigami/cli` change).
+8. Templates (`../template-*/`): add `@kirigami/cli`, bump
+   `@kirigami/kirigami` to `^3.0.0`, rebuild, push. Existing `dist/` output
+   folders need the `.kirigami-export` marker once.
+9. Org site (`../php-kirigami.github.io/`): same dependency change, rebuild,
+   deploy.
+
+## 4. VSIX facts (checked 2026-09-22, win32-x64)
+
+- Builds with `vsce package --no-dependencies --target win32-x64`:
+  19.2 MB, 1,745 files, 56.3 MB unpacked, 63 staged runtime packages. Type
+  declarations and source maps are no longer staged, and the core no longer
+  pulls in `@octokit/rest` (only `@kirigami/cli` uses it, for `kiri create`).
+- Passes the real-host smoke test in VS Code 1.138.0 when unzipped and loaded
+  through `test/run-host.ps1 -ExtensionPath <unzipped>/extension`.
+- Path length: the longest path inside the extension is 98 characters, 179
+  once installed under `%USERPROFILE%\.vscode\extensions\`. Before the octokit
+  removal it was 140, and the extension host failed to start when the VSIX was
+  unzipped under a 130-character folder (over Windows' 260 limit); the same
+  folder now works.
+- Bundled licenses: 42 MIT, 5 GPL-3.0-or-later (Kirigami), 5 GPL-2.0-or-later
+  (PHP-WASM), 3 Apache-2.0, 3 BSD-3-Clause, and one each of ISC, Python-2.0,
+  CC0-1.0, 0BSD. `@php-wasm/util` declares no license in its manifest but
+  ships a LICENSE file. Five MIT packages ship no license file
+  (`@tokenizer/token`, `@esbuild/win32-x64`, `fontkit`, `brotli`, `dfa`).
+  Consider a generated third-party notices file in the VSIX.
+- Icon: `packages/vscode/images/icon.png`, the elephant from the logo at
+  256 px (vector source: `assets/chart/kirigami-elephant.svg`). The extension
+  README uses `images/logo.png`, because the Marketplace rejects SVG images in
+  READMEs.

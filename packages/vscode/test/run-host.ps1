@@ -1,5 +1,8 @@
 param(
-    [string]$CodePath = "$env:LOCALAPPDATA/Programs/Microsoft VS Code/Code.exe"
+    [string]$CodePath = "$env:LOCALAPPDATA/Programs/Microsoft VS Code/Code.exe",
+    # Defaults to the development folder. Point it at an unzipped VSIX's
+    # extension/ folder to test exactly what would be published.
+    [string]$ExtensionPath = "$PSScriptRoot/.."
 )
 $ErrorActionPreference = 'Stop'
 $fixture = Join-Path ([System.IO.Path]::GetTempPath()) ('kiri-host-' + [guid]::NewGuid())
@@ -10,7 +13,7 @@ Set-Content -LiteralPath "$site/kirigami.yaml" -Encoding utf8 -Value '{"kirigami
 [System.IO.File]::WriteAllText("$site/src/_index.php", '<p><?= $project ?></p>', [System.Text.UTF8Encoding]::new($false))
 $nodePath = (Get-Command node).Source
 @{ 'kirigami.nodePath' = $nodePath; 'security.workspace.trust.enabled' = $false } | ConvertTo-Json | Set-Content -LiteralPath "$profile/User/settings.json" -Encoding utf8
-$extension = (Resolve-Path "$PSScriptRoot/..").Path
+$extension = (Resolve-Path $ExtensionPath).Path
 $arguments = @(
     '--new-window', '--skip-welcome', '--skip-release-notes', '--disable-updates',
     '--disable-extensions', '--disable-workspace-trust',
