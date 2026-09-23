@@ -78,7 +78,10 @@ curl_exec($probe);
 $diag = [curl_errno($probe), curl_error($probe), curl_version()['ssl_version'], ini_get('curl.cainfo'), ini_get('openssl.cafile')];
 echo json_encode(['info' => CURL::getInfo($url), 'body' => CURL::getContents($url), 'download' => CURL::getContents($url, ${JSON.stringify(path.join(directory, 'download.txt').replaceAll('\\', '/'))}), 'diag' => $diag]);
 `);
-		const result = await runPhp(phpBinary, [...phpArgs, '-d', `curl.cainfo=${localCa}`, script], { timeout: 15000 });
+		// ext/curl reads openssl.cafile before curl.cainfo, and setup-php sets
+		// openssl.cafile on CI runners: override both.
+		const caArgs = ['-d', `curl.cainfo=${localCa}`, '-d', `openssl.cafile=${localCa}`];
+		const result = await runPhp(phpBinary, [...phpArgs, ...caArgs, script], { timeout: 15000 });
 		return JSON.parse(result.stdout);
 	};
 	// A self-signed server must fail with the unmodified production trust store.
