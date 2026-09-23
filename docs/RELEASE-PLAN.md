@@ -67,18 +67,31 @@ true only after this release.
 - [x] **Linux test run** (2026-09-22): `npm ci` + `npm test` in WSL Ubuntu with
       Node 24.21.0 and a static PHP 8.5.8: 68 passed, 0 failed, 1 skipped (the
       Windows-only npm launcher test). CI itself has never run.
-- [ ] **Interactive VS Code checks** (by Maxime, in a real editor): script
-      selection, build failures, status bar transitions, configuration
-      watching, browser preview, deactivation cleanup. See
-      [EXTENSION-VSCODE.md](EXTENSION-VSCODE.md).
+- [x] **Interactive VS Code checks** (2026-09-23, by Maxime in a real editor).
 - [ ] **phpext compatibility**: load every `phpext-*` artifact with the
       php-wasm binary being released (`getLoadedExtensions()`), since artifact
-      selection does not prove binary compatibility.
-- [ ] **kiribuild**: the action checks for a local `@kirigami/kirigami` and
-      otherwise installs it globally to get `kiri`. From core 3.0.0 on, it must
-      look for and install `@kirigami/cli` instead.
+      selection does not prove binary compatibility. First pass on 2026-09-23
+      (PHP 8.5.11 binary, 18 packages, 19 modules): all load together once
+      the loader honors multi-module packages (see STATUS); `mysqli_init()`
+      and the PDO `mysql` driver work. `pdo_firebird` loads but prints
+      `Aborted()` at startup: waiting on the core rebuild with its missing
+      exports in `../php-wasm-compiler`. Redo the check with the final
+      binary and packages.
+- [x] **kiribuild** (2026-09-23, local changes in `../kiribuild`, not
+      committed): the global fallback installs `@kirigami/cli@<cli-version>`
+      (new input, default `latest`); `kirigami-version` becomes a legacy
+      input, empty by default, that still installs `@kirigami/kirigami` < 3.
+      The JSPI flag is only passed when `node` accepts it (Node 26 rejects
+      it). Tests: new non-blocking `local-cli-package` scenario, canary on
+      `@kirigami/cli@latest`. Tag `v2.1.0` on release day (step 7), then
+      make `local-cli-package` blocking.
 - [ ] Commit or discard the pending working-tree changes here
-      (`packages/php-wasm/README.md`) and in `../php-wasm-compiler`.
+      (`packages/php-wasm/README.md`) and in `../php-wasm-compiler`. Waiting
+      on the corrected WASM builds.
+- [ ] **CI dry run with `act`** (Docker): `act push -W .github/workflows/ci.yml
+      -j test --matrix os:ubuntu-latest` covers the two Linux jobs; act cannot
+      run the Windows ones. Postponed while Docker is busy with the WASM
+      builds.
 
 ## 3. Release day, in order
 

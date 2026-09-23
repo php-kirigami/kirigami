@@ -1,5 +1,27 @@
 # Status
 
+## Release prep: kiribuild on @kirigami/cli, phpext check — 2026-09-23
+
+- `../kiribuild` (uncommitted): without a local `kiri`, the action installs
+  `@kirigami/cli` globally (new `cli-version` input); `kirigami-version` is
+  now a legacy input for pre-3.0 cores. The `--experimental-wasm-jspi` flag
+  is only passed when `node` accepts it: Node 26 rejects it.
+- php-wasm: the `~/.npmrc` `prefix=` regex had lost its backslashes
+  (`/^s*prefixs*=/`), so a user-level npm prefix was never read and the
+  global phpext root fell back to the Node directory. Fixed.
+- php-wasm phpext loader: packages are now read through their `index.js`
+  `register(phpVersion)`, which lists every bundled module in load order
+  (`phpext-mysqli` and `phpext-pdo_mysql` ship `mysqlnd` first); single
+  `manifest.json` stays the fallback. A module bundled by two packages loads
+  once, and each `.ini` is named `NNN-<name>.ini`, because PHP scans them
+  alphabetically and `mysqli.ini` sorted before `mysqlnd.ini`. Before this,
+  `mysqli` failed on `mysqlnd_global_stats`, and the unresolved symbol then
+  failed every extension loaded after it.
+- phpext compatibility, first pass (PHP 8.5.11, 18 packages): all 19
+  modules load; `pdo_firebird` still prints `Aborted()` (core rebuild
+  pending). See [RELEASE-PLAN.md](RELEASE-PLAN.md).
+- VS Code interactive checks passed.
+
 ## Watch re-renders just the modified page — 2026-09-23
 
 - A modified page (`_*.php`, same rule as `PREPROS::isPage()`) re-renders
