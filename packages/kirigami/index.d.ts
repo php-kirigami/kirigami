@@ -122,3 +122,5 @@ export declare function load(): Promise<Project>;
 export declare const Kirigami: {
 	load: typeof load;
 };
+
+export * from './create.js';

@@ -233,6 +233,13 @@ The package ships `index.d.ts` declarations for these exports, project
 configuration, operation results, task metadata, notifications, and lifecycle
 handles.
 
+Project scaffolding (what `kiri create`, the VS Code *Create Project* command
+and the MCP `kirigami_create_project` tool run) is exported too, as plain
+functions that need no loaded project — `listTemplates()`, `createProject()`,
+`installDependencies()` and helpers. Import them from
+`@kirigami/kirigami/create` to skip loading the engine. See
+[the API reference](../../docs/API.md#project-scaffolding).
+
 | Member | Contract |
 |---|---|
 | `reload()` | Reload configuration and register plugins again; invalidate PHP configuration, mounts/runtime, and plugin includes. Returns the project. |
@@ -583,7 +590,6 @@ Every official template (`kiri create`) ships this workflow already, at
 | [`esbuild`](https://esbuild.github.io/) | JS/TS bundling. |
 | [`fontkit`](https://github.com/foliojs/fontkit) | Font metadata for the `font-*()` Sass functions. |
 | [`chokidar`](https://github.com/paulmillr/chokidar) · [`picomatch`](https://github.com/micromatch/picomatch) · [`ignore`](https://github.com/kaelzhang/node-ignore) | File watching / glob matching / export exclusions. |
-| [`@octokit/rest`](https://github.com/octokit/rest.js) | Legacy declared dependency; template creation now lives in the CLI. |
 
 ---
 

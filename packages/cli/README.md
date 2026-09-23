@@ -141,11 +141,13 @@ kiri run deploy production --force
 
 Scaffolds a project from an official template — a GitHub repository named
 `template-<name>` under the [`php-kirigami`](https://github.com/php-kirigami)
-organization.
+organization. The command only asks the questions and prints the report; the
+scaffolding itself is core's `@kirigami/kirigami/create`, shared with the VS Code
+extension and the MCP server.
 
 | Flag | Description |
 |---|---|
-| `--list`, `-l` | List available templates (cached 1 h in `~/.config/kirigami/kiri.db`). |
+| `--list`, `-l` | List available templates (cached 1 h in `~/.config/kirigami/kiri.db`; set `GITHUB_TOKEN` if the anonymous GitHub API rate limit is hit). |
 | `--name`, `--description`, `--author`, `--email`, `--baseurl`, `--repo` | Metadata to write into `package.json` / `kirigami.yaml`. `--repo` defaults to the repo derived from a `*.github.io` base URL. |
 | `--yes`, `-y` | Non-interactive: take defaults, ask nothing. |
 | `--no-git` | Don't initialise a git repository. |

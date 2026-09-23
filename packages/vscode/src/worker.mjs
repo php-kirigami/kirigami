@@ -1,5 +1,8 @@
 // Loaded by external Node with cwd set before importing any core modules.
 let project;
+// Project scaffolding (the Create Project command): works without a loaded
+// project, so these are handled before the "Project is not loaded" check.
+const SCAFFOLD = new Set(['listTemplates', 'inspectTarget', 'gitUserConfig', 'canInitGit', 'createProject', 'installDependencies']);
 let server;
 let queue = Promise.resolve();
 
@@ -17,6 +20,10 @@ async function handle(method, args) {
 		const { resetRuntime } = await import('@kirigami/php-prepros');
 		await resetRuntime();
 		return true;
+	}
+	if (SCAFFOLD.has(method)) {
+		const create = await import('@kirigami/kirigami/create');
+		return create[method](...args);
 	}
 	if (!project) throw new Error('Project is not loaded.');
 	switch (method) {

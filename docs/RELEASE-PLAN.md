@@ -108,7 +108,7 @@ true only after this release.
 - Builds with `vsce package --no-dependencies --target win32-x64`:
   19.2 MB, 1,745 files, 56.3 MB unpacked, 63 staged runtime packages. Type
   declarations and source maps are no longer staged, and the core no longer
-  pulls in `@octokit/rest` (only `@kirigami/cli` uses it, for `kiri create`).
+  pulls in `@octokit/rest` (since removed everywhere: core has its own GitHub client).
 - Passes the real-host smoke test in VS Code 1.138.0 when unzipped and loaded
   through `test/run-host.ps1 -ExtensionPath <unzipped>/extension`.
 - Path length: the longest path inside the extension is 98 characters, 179

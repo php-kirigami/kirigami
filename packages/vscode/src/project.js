@@ -10,6 +10,13 @@ export function startProject(context, folder, output, nodePath) {
 	return projectPromise;
 }
 
+// A worker with no project loaded, for scaffolding (see create.js): only the
+// cwd-independent operations (listTemplates, createProject, …) are called.
+// The caller disposes it.
+export function startWorker(context, cwd, output, nodePath) {
+	return new ProjectClient(path.join(context.extensionPath, 'dist/runtime/worker.mjs'), cwd, output, nodePath);
+}
+
 export function getProject() {
 	if (!projectPromise) throw new Error('Kirigami project is not initialized.');
 	return projectPromise;
@@ -85,8 +92,14 @@ class ProjectClient {
 	}
 	async dispose() {
 		if (!this.child.connected) return;
+		// Resolves once the process is really gone (on Windows its cwd stays
+		// locked until then).
+		const exited = this.child.exitCode !== null || this.child.signalCode !== null
+			? Promise.resolve()
+			: new Promise(resolve => this.child.once('exit', resolve));
 		const timer = setTimeout(() => this.child.kill(), 3000);
 		try { await this.call('shutdown'); } catch { /* Already exiting. */ }
 		finally { clearTimeout(timer); this.child.kill(); }
+		await exited;
 	}
 }

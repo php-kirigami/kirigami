@@ -67,7 +67,7 @@ Available from the Command Palette, all under the **Kirigami** category:
 
 | Command | ID | Wraps |
 |---|---|---|
-| Kirigami: Create Project… | `kirigami.create` | `kiri create` in an integrated terminal (`npx --yes "@kirigami/cli" create`) |
+| Kirigami: Create Project… | `kirigami.create` | `listTemplates()` / `createProject()` (`@kirigami/kirigami/create`), through native pickers and input boxes |
 | Kirigami: Build | `kirigami.build` | `Project.build()` |
 | Kirigami: Export | `kirigami.export` | `Project.export()` |
 | Kirigami: Run Script… | `kirigami.run` | `Project.run(name)`, prompts via `Project.scripts` |

@@ -9,11 +9,12 @@
 // `kiri` and re-spawning a process for every build.
 //
 // `@kirigami/cli`'s `build`/`serve`/`watch`/`export`/`run` commands are thin
-// wrappers over this API (see that package's bin/cmd/*.js). `create`/`install`
-// don't operate on a loaded project (create has none yet, install shells out
-// to npm before plugins load) and `cache`/`phpinfo` don't touch kirigami.yaml
-// at all — none of those four are a natural `Project` method, so they keep
-// their own CLI-side logic.
+// wrappers over this API (see that package's bin/cmd/*.js). Scaffolding a
+// new project (`kiri create`) has no loaded project yet, so it isn't a
+// `Project` method: it lives in bin/create.js, re-exported below as plain
+// functions (also importable alone as "@kirigami/kirigami/create").
+// `install` shells out to npm before plugins load and `cache`/`phpinfo` don't
+// touch kirigami.yaml at all — those keep their own CLI-side logic.
 //
 // Still bound to `process.cwd()` for locating kirigami.yaml, scripts/ and
 // node_modules — same as the CLI. Loading a *different* project than the
@@ -365,3 +366,8 @@ export async function load() {
 
 
 export const Kirigami = { load };
+
+export {
+	listTemplates, findTemplate, inspectTarget, gitUserConfig, resolveMeta,
+	canInitGit, createProject, installDependencies, TEMPLATE_OWNER,
+} from "./bin/create.js";

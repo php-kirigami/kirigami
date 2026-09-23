@@ -3,7 +3,7 @@ import { serveStdio } from "@kirigami/mcp";
 
 const HELP = {
 	name: "mcp",
-	description: "Serve this project over MCP (stdio) — exposes kirigami_config/validate/build/export/run as tools for an AI agent.",
+	description: "Serve this project over MCP (stdio) — exposes kirigami_config/validate/build/export/run and template scaffolding as tools for an AI agent.",
 	usage: "",
 	options: [
 		{ flag: "--help, -h", desc: "Show this help section" },

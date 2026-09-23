@@ -5,7 +5,9 @@
 //
 // Bound to whatever `process.cwd()` the project was loaded from, same as
 // @kirigami/kirigami itself — launch this from the project root (an MCP
-// client sets `cwd` in its server config).
+// client sets `cwd` in its server config). The folder doesn't need a
+// kirigami.yaml yet: kirigami_create_project scaffolds one from a template,
+// and every project tool loads the config lazily.
 //
 // Deliberately excludes `serve`/`watch`: those are long-running (a local
 // HTTP server, a filesystem watcher) and don't fit a request/response MCP
@@ -16,7 +18,8 @@
 import { McpServer, StdioServerTransport } from "./lib/server.js";
 import fs from 'fs';
 import path from 'path';
-import { load } from "@kirigami/kirigami"; // TODO: add an index.d.ts for this package
+import { Project } from "@kirigami/kirigami";
+import { listTemplates, createProject, installDependencies } from "@kirigami/kirigami/create";
 
 const ok = (data) => ({ content: [{ type: "text", text: JSON.stringify(data, null, 2) }] });
 const fail = (error) => ({
@@ -431,6 +434,60 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 	);
 
 	server.registerTool(
+		"kirigami_list_templates",
+		{
+			title: "List Kirigami project templates",
+			description: "Lists the official starter templates (the php-kirigami GitHub repositories named template-<name>) that kirigami_create_project can scaffold from, with their descriptions. The list is cached for an hour; pass refresh to bypass the cache.",
+			inputSchema: {
+				type: "object",
+				properties: {
+					refresh: { type: "boolean", default: false, description: "Ignore the one-hour cache and query GitHub again." },
+				},
+			},
+		},
+		async ({ refresh = false } = {}) => {
+			try {
+				const templates = await listTemplates({ refresh });
+				return ok({ templates: templates.map(({ template, description, url, default_branch, updated_at }) => ({ template, description, url, default_branch, updated_at })) });
+			} catch (e) { return fail(e); }
+		}
+	);
+
+	server.registerTool(
+		"kirigami_create_project",
+		{
+			title: "Create a Kirigami project from a template",
+			description: "Scaffolds a new Kirigami site from an official template (see kirigami_list_templates) — the same work as `kiri create`. Downloads the template into directory (relative to the server's working directory; default \".\"), writes the given metadata into package.json and kirigami.yaml, adds a starter package.json / banner.txt when the template ships none, optionally initialises git, and runs npm install. Never overwrites: existing files are kept and an existing package.json is merged, its own values winning. Empty metadata fields keep the template's values; name defaults to the directory name.",
+			inputSchema: {
+				type: "object",
+				properties: {
+					template: { type: "string", minLength: 1, description: "Template name from kirigami_list_templates (e.g. \"default\", \"demo\")." },
+					directory: { type: "string", default: ".", description: "Target directory, relative to the server's working directory. Created if missing." },
+					name: { type: "string", description: "Project name (kirigami.yaml project; package.json name is derived from it)." },
+					description: { type: "string", description: "Project description." },
+					author: { type: "string", description: "Author name." },
+					email: { type: "string", description: "Author email." },
+					baseurl: { type: "string", description: "Site base URL, e.g. https://user.github.io/site." },
+					repo: { type: "string", description: "Git repository URL (default: derived from a *.github.io baseurl)." },
+					git: { type: "boolean", default: true, description: "Initialise a git repository with an initial commit (skipped inside an existing repository)." },
+					install: { type: "boolean", default: true, description: "Run npm install afterwards." },
+				},
+				required: ["template"],
+			},
+		},
+		async ({ template, directory = ".", git = true, install = true, ...meta }) => {
+			try {
+				const target = path.resolve(process.cwd(), directory);
+				const result = await createProject({ template, target, meta, git });
+				if (!result.success) return fail(result.error);
+				// npm's own output must stay off stdout, the MCP transport.
+				const npm = install ? await installDependencies(target, { stdio: ["ignore", 2, 2] }) : null;
+				return ok({ ...result, install: npm, next: result.target === process.cwd() ? "Call kirigami_config to load the new project." : `The project is in ${result.target}; this server's project tools act on ${process.cwd()}.` });
+			} catch (e) { return fail(e); }
+		}
+	);
+
+	server.registerTool(
 		"kirigami_validate",
 		{
 			title: "Validate kirigami.yaml",
@@ -555,10 +612,12 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 }
 
 
-// Convenience used by bin/kiri-mcp.js and @kirigami/cli's `kiri mcp`: load
-// the project at process.cwd() and serve it over stdio.
+// Convenience used by bin/kiri-mcp.js and @kirigami/cli's `kiri mcp`: serve
+// the project at process.cwd() over stdio. Not loaded upfront — every tool
+// (re)loads it — so the server also starts in a folder with no kirigami.yaml
+// yet, where kirigami_create_project can scaffold one.
 export async function serveStdio({ name, version } = {}) {
-	const project = await load();
+	const project = new Project();
 	const server = createServer(project, { name, version });
 	await server.connect(new StdioServerTransport());
 	return server;

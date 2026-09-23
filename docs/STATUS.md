@@ -1,5 +1,38 @@
 # Status
 
+## Scaffolding moved to core; shared by CLI, VS Code and MCP — 2026-09-22
+
+- `@kirigami/kirigami/create` (also root exports): `listTemplates`,
+  `findTemplate`, `inspectTarget`, `gitUserConfig`, `resolveMeta`,
+  `canInitGit`, `createProject`, `installDependencies`, typed in
+  `create.d.ts`. No prompts or console output; failures are structured.
+- `@octokit/rest` removed: core's own `bin/libs/github.js` (fetch, Link
+  pagination, optional `GITHUB_TOKEN`/`GH_TOKEN`). The tar reader moved to
+  `bin/libs/tar.js`, the npm launcher to `bin/libs/npm.js` (the CLI's
+  `npm.js` reuses its `resolveNpmCli`). `@kirigami/cli` no longer depends
+  on `@octokit/rest` or `picomatch`; `bin/starter.js` is gone.
+- `kiri create` is a thin wrapper (same flags and output). It now accepts
+  `template-<name>` as well as `<name>`, and asks the git question before
+  downloading.
+- VS Code **Create Project** is now a native wizard (template quick pick,
+  input boxes, git / npm install options) calling core in a short-lived
+  external-Node worker. It supersedes the terminal `npx` flow logged below.
+  `ProjectClient.dispose()` now waits for the worker to exit.
+- MCP: new `kirigami_list_templates` and `kirigami_create_project` tools.
+  `serveStdio()` no longer loads the project upfront, so the server starts
+  in a folder without `kirigami.yaml`. The VS Code MCP provider still only
+  offers the server in Kirigami folders.
+- A generated starter `package.json` pins `@kirigami/cli` to `^<registry
+  version>` when the caller gives no `cliVersion` (`latest` only offline;
+  until the CLI is published, the registry has none and `latest` is used).
+- Tests: `packages/kirigami/test/create.test.js` (GitHub client, scaffolding),
+  `packages/mcp/test/create.test.js`, rewritten
+  `packages/vscode/test/create.test.cjs` (real worker, GitHub stubbed through
+  `NODE_OPTIONS=--import`), and the CLI end-to-end test. `npm test`: 76/76
+  on Windows / Node 26. Checked live against GitHub: `listTemplates()` and `createProject()` of
+  `template-default` (33 files). The real VS Code host and Node 24/Linux were
+  not run.
+
 ## VS Code: Create Project command — 2026-09-22
 
 `Kirigami: Create Project…` (`kirigami.create`) picks a folder, opens an

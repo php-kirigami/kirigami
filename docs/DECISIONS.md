@@ -108,7 +108,9 @@ without going through a terminal.
 - `create`/`install`/`cache`/`phpinfo` **deliberately not migrated** to
   `Project` methods — `create` has no project loaded yet (it creates one),
   `install` shells out to `npm` before plugins even load, and
-  `cache`/`phpinfo` don't touch `kirigami.yaml` at all.
+  `cache`/`phpinfo` don't touch `kirigami.yaml` at all. `create`'s logic
+  later moved to core anyway, as plain functions rather than a `Project`
+  method (see "Scaffolding lives in core" below).
 - Only one project can be loaded per process (`process.cwd()` is baked
   into `config.js`/`plugins.js`/`runscript.js`). Loading a project at an
   arbitrary path, different from the cwd, isn't supported.
@@ -408,3 +410,41 @@ resolution keeps preferring a built-in type over a same-named plugin
 registration (a pre-existing rule, unchanged here), which is why
 `loadPlugins()` separately rejects a plugin task-type name that collides
 with a built-in, rather than silently letting the built-in win unannounced.
+
+## Scaffolding lives in core, with its own GitHub client — 2026-09-22
+
+`kiri create` held the whole scaffolding pipeline (template listing, tarball
+extraction, metadata, starter files, git). The VS Code extension and the MCP
+server also need it: the extension used to type `npx --yes "@kirigami/cli"
+create` into a terminal, which required `@kirigami/cli` to be published and
+gave no native UI, and an agent had no way to start a project at all. The
+logic now lives in `@kirigami/kirigami/create` (also re-exported from the
+root), and the three interfaces only ask questions and present results.
+
+- **Plain functions, not `Project` methods.** Creation happens before any
+  project exists, and `Project` is bound to a `kirigami.yaml` in the cwd.
+- **A separate `./create` subpath** so an embedder can scaffold without
+  importing the engine (`index.js` pulls in PHP-prepros).
+- **No prompts inside core.** Interactive questions (git init? npm install?)
+  are asked by each interface *before* `createProject()`; helpers like
+  `canInitGit()` and `inspectTarget()` let them skip moot questions. npm
+  install is a separate call (`installDependencies()`) because each caller
+  routes its output differently (terminal, VS Code output channel, stderr
+  for MCP).
+- **`@octokit/rest` replaced by `bin/libs/github.js`** (~100 lines over
+  `fetch`): one paginated GET didn't justify ~20 packages, and it also
+  shortened the VSIX's installed paths. It follows `Link` pagination, never
+  leaves `api.github.com`, and uses `GITHUB_TOKEN`/`GH_TOKEN` when set.
+- The template cache database is opened and closed per use, so a long-lived
+  embedder doesn't hold `~/.config/kirigami/kiri.db` open (Windows locks it).
+- The core can't see `@kirigami/cli`'s version, so the CLI passes
+  `cliVersion` for a generated `package.json`. Other callers get the npm
+  registry's current version as a caret range. The `latest` dist-tag is only
+  a fallback when the registry is unreachable, because it would stay in
+  `package.json` and float across majors.
+- **The VS Code MCP provider stays limited to Kirigami folders**, even though
+  the MCP server itself now starts without a `kirigami.yaml`. Offering it in
+  every trusted folder would add a Kirigami server to unrelated workspaces.
+  Creating a project from VS Code goes through the *Create Project* command;
+  `kirigami_create_project` is for MCP clients launched elsewhere (`kiri mcp`,
+  `kiri-mcp`).

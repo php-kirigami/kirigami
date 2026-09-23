@@ -115,6 +115,39 @@ console.log(server.url);
 
 The callback is awaited. Initial-build events have `initial: true`, `rule: "initial-build"`, and `type: "build"`; the done event includes the full build result (nested tasks and triggers). Observer rejection during startup rejects startup. Events include `status: 'start' | 'done'`, `rule`, and `type`. Done events include the callback result fields when supplied, such as success/files/warnings/error. Do not assume `success` is always present. An observer exception can fail a rebuild notification; keep the observer lightweight and handle its own errors.
 
+## Project scaffolding
+
+Creating a project from an official template needs no loaded project and no `kirigami.yaml`. These functions are exported from the root and from `@kirigami/kirigami/create`, which skips loading the engine (no PHP runtime). `kiri create`, the VS Code *Create Project* command, and the MCP `kirigami_create_project` tool all call them. None of them prompts, prints, or exits.
+
+```js
+import { listTemplates, createProject, installDependencies } from '@kirigami/kirigami/create';
+
+const templates = await listTemplates();            // [{ template: 'default', description, … }]
+const result = await createProject({
+  template: 'default',                              // name, "template-default", or a listTemplates() entry
+  target: 'my-site',                                // created if missing
+  meta: { name: 'My Site', baseurl: 'https://me.github.io' },
+  git: true,
+});
+if (!result.success) throw new Error(result.error);
+await installDependencies(result.target);           // { success, code, error? }
+```
+
+| Function | Result | Behavior |
+|---|---|---|
+| `listTemplates({ refresh })` | `Promise<TemplateInfo[]>` | `php-kirigami/template-*` repositories, sorted, with `template` (the short name). Cached for 1 h in `~/.config/kirigami/kiri.db`; rejects when GitHub is unreachable and nothing is cached. |
+| `findTemplate(name)` | entry or `null` | Accepts `blog` or `template-blog`. |
+| `inspectTarget(dir)` | `{ target, exists, hasPackageJson, hasConfig, entries }` | What the target already holds, ignoring local caches and the lockfile. |
+| `gitUserConfig()` | `{ name, email }` | Author defaults from git configuration (empty strings when unset). |
+| `resolveMeta(dir, meta)` | metadata with `slug` | Defaults: name from the directory name, repo derived from a `*.github.io` base URL. |
+| `canInitGit(dir)` | `{ ok }` or `{ ok: false, reason }` | `reason` is `git-missing` or `inside-worktree`; lets an interface skip a moot question. |
+| `createProject(options)` | `{ success: true, … }` or `{ success: false, error }` | Downloads, extracts, writes metadata, starter `package.json`/`banner.txt` when missing, then optional git init + first commit. |
+| `installDependencies(dir, { stdio })` | `{ success, code, error? }` | Runs `npm install` (no shell). `stdio` defaults to `"inherit"`; a stdio-bound caller such as an MCP server must keep npm off stdout, for example `["ignore", 2, 2]`. |
+
+`createProject` options: `template`, `target` (default: working directory), `meta` (`name`, `description`, `author`, `email`, `baseurl`, `repo`; empty fields keep the template's values), `git` (default `true`), `cliVersion` (the `@kirigami/cli` version written as a caret range in a starter `package.json`; by default the npm registry's current version, or the `latest` dist-tag when the registry is unreachable), and `onProgress({ step: 'download', url })`. The success result reports `template`, `target`, `archive`, resolved `meta`, `written`/`skipped` counts, `merged`, `packageJson` (`starter`, `template`, `merged` or `existing`), the `changed` keys, `banner`, and `git` (`{ initialised, committed, skipped?, error? }`). Unknown templates and download failures are structured failures. A failed git commit is reported in `git` and does not fail the result.
+
+Extraction never overwrites. Existing files are kept, and an existing `package.json` is deep-merged with its own values winning. `.cache.db`, `.node.db`, `.cookie.txt` and `package-lock.json` are never copied. GitHub is queried anonymously (60 requests per hour per IP) unless `GITHUB_TOKEN` or `GH_TOKEN` is set. The token is only sent to `api.github.com`.
+
 ## Related package APIs
 
 | Need | Reference |
