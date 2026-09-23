@@ -457,7 +457,7 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 		"kirigami_create_project",
 		{
 			title: "Create a Kirigami project from a template",
-			description: "Scaffolds a new Kirigami site from an official template (see kirigami_list_templates) — the same work as `kiri create`. Downloads the template into directory (relative to the server's working directory; default \".\"), writes the given metadata into package.json and kirigami.yaml, adds a starter package.json / banner.txt when the template ships none, optionally initialises git, and runs npm install. Never overwrites: existing files are kept and an existing package.json is merged, its own values winning. Empty metadata fields keep the template's values; name defaults to the directory name.",
+			description: "Scaffolds a new Kirigami site from an official template (see kirigami_list_templates) — the same work as `kiri create`. Downloads the template into directory (relative to the server's working directory; default \".\"), writes the given metadata into package.json and kirigami.yaml, adds a starter package.json / banner.txt / .mcp.json / GitHub Pages workflow / .vscode/settings.json when the template ships none, optionally initialises git, and runs npm install. Never overwrites: existing files are kept and an existing package.json is merged, its own values winning. Empty metadata fields keep the template's values; name defaults to the directory name.",
 			inputSchema: {
 				type: "object",
 				properties: {

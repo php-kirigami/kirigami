@@ -76,6 +76,8 @@ export interface CreateSuccess {
 	changed: string[];
 	/** Whether a starter banner.txt was written. */
 	banner: boolean;
+	/** Starter tooling files written because the template had none: ".mcp.json", ".github/workflows/page.yml", ".vscode/settings.json". */
+	starterFiles: string[];
 	git: GitResult;
 }
 

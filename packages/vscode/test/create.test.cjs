@@ -89,7 +89,7 @@ globalThis.fetch = async (url) => String(url).startsWith('https://api.github.com
 	t.after(() => { if (previous === undefined) delete process.env.NODE_OPTIONS; else process.env.NODE_OPTIONS = previous; });
 }
 
-test('outside a Kirigami project only Create is registered; the wizard scaffolds through core and offers the new project', { timeout: 60000 }, async (t) => {
+test('outside a Kirigami project only Create is registered; the wizard scaffolds through core and opens the new project', { timeout: 60000 }, async (t) => {
 	const workspace = tempDir(t);
 	const folder = tempDir(t);
 	stubGitHub(t, tempDir(t));
@@ -98,7 +98,6 @@ test('outside a Kirigami project only Create is registered; the wizard scaffolds
 		answers: {
 			quickPick: (items, options) => options.canPickMany ? [] : items.find((item) => item.label === 'fixture'),
 			input: (options) => ({ 'Project directory, relative to the chosen folder': 'my-site', 'Project name': 'My Site', 'Site base URL': 'https://me.github.io' })[options.prompt] ?? options.value,
-			info: () => 'Open in New Window',
 		},
 	});
 	const extension = loadExtension(stub.vscode);
@@ -123,7 +122,8 @@ test('outside a Kirigami project only Create is registered; the wizard scaffolds
 	assert.equal(fs.existsSync(path.join(target, '.git')), false);
 	assert.equal(fs.existsSync(path.join(target, 'node_modules')), false);
 
-	assert.match(stub.shown.info[0].message, /project created/);
+	// A workspace is open: the project opens in a new window, without asking.
+	assert.deepEqual(stub.shown.info, []);
 	const open = stub.executed.find(([name]) => name === 'vscode.openFolder');
 	assert.equal(open[1].fsPath, target);
 	assert.deepEqual(open[2], { forceNewWindow: true });
@@ -158,5 +158,5 @@ test('cancelling the wizard, or declining a non-empty folder, creates nothing', 
 	await declined.commands.get('kirigami.create')();
 	assert.match(declined.shown.warnings[0], /already holds 1 item/);
 	assert.deepEqual(fs.readdirSync(folder), ['notes.txt']);
-	assert.deepEqual(declined.shown.info, []);
+	assert.ok(!declined.executed.some(([name]) => name === 'vscode.openFolder'));
 });

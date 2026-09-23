@@ -9,7 +9,9 @@
 //
 // Templates are the php-kirigami GitHub repositories named "template-<name>".
 // Extraction never overwrites: existing files are kept and an existing
-// package.json is deep-merged (the project's values win).
+// package.json is deep-merged (the project's values win). Starter files
+// (package.json, banner.txt, .mcp.json, GitHub workflow, VS Code settings)
+// fill in only what the template and the target both lack.
 // ---------------------------------------------------------------------------
 
 import os from "node:os";
@@ -346,6 +348,31 @@ export function writeStarterBanner(target) {
 	return true;
 }
 
+// Tooling every Kirigami project gets when the template ships none of its
+// own: the MCP server for Claude Code (.mcp.json), the GitHub Pages
+// build-and-deploy workflow, and the VS Code workspace settings. Stored
+// without their leading dot under assets/starter/ so npm and vsce never drop
+// them. Keyed by destination, relative to the project.
+export const STARTER_FILES = {
+	".mcp.json": "mcp.json",
+	".github/workflows/page.yml": "github/workflows/page.yml",
+	".vscode/settings.json": "vscode/settings.json",
+};
+
+// Copies each STARTER_FILES entry that is missing — an existing file is never
+// touched, not even merged. Returns the destinations written.
+export function writeStarterFiles(target) {
+	const written = [];
+	for (const [dest, source] of Object.entries(STARTER_FILES)) {
+		const file = path.join(target, dest);
+		if (fs.existsSync(file)) continue;
+		fs.mkdirSync(path.dirname(file), { recursive: true });
+		fs.copyFileSync(new URL(`../assets/starter/${source}`, import.meta.url), file);
+		written.push(dest);
+	}
+	return written;
+}
+
 
 // ─── git / npm ─────────────────────────────────────────────────────────────
 
@@ -424,7 +451,7 @@ export function installDependencies(target, { stdio = "inherit" } = {}) {
  *
  * Resolves { success: true, template, target, archive, written, skipped,
  * merged, packageJson: "starter" | "template" | "merged" | "existing",
- * changed, banner, git } or { success: false, error }. Never throws for
+ * changed, banner, starterFiles, git } or { success: false, error }. Never throws for
  * expected failures (unknown template, network, git).
  */
 export async function createProject({ template, target = process.cwd(), meta = {}, git = true, cliVersion, onProgress } = {}) {
@@ -467,6 +494,7 @@ export async function createProject({ template, target = process.cwd(), meta = {
 	}
 	const changed = applyMeta(dir, resolved, { fillOnly: before.hasPackageJson, created: packageJson === "starter" });
 	const banner = writeStarterBanner(dir);
+	const starterFiles = writeStarterFiles(dir);
 
 	const gitResult = git
 		? gitInit(dir, tpl.template)
@@ -484,6 +512,7 @@ export async function createProject({ template, target = process.cwd(), meta = {
 		packageJson,
 		changed,
 		banner,
+		starterFiles,
 		git: gitResult,
 	};
 }

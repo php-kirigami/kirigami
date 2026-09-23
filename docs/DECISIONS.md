@@ -442,6 +442,15 @@ root), and the three interfaces only ask questions and present results.
   registry's current version as a caret range. The `latest` dist-tag is only
   a fallback when the registry is unreachable, because it would stay in
   `package.json` and float across majors.
+- **Starter tooling comes from core, not only from templates.** `.mcp.json`,
+  the GitHub Pages workflow and `.vscode/settings.json` are written when
+  missing, like the starter `package.json`/`banner.txt`, so every project
+  gets them even from a template that isn't up to date. Existing files are
+  never merged: `settings.json` is JSONC (comments, trailing commas) and a
+  project's own choices win. `.mcp.json` runs
+  `node node_modules/@kirigami/cli/bin/kiri.js mcp` rather than `npx kiri`:
+  on Windows `npx` needs a `cmd /c` wrapper, which would make the file
+  platform-specific.
 - **The VS Code MCP provider stays limited to Kirigami folders**, even though
   the MCP server itself now starts without a `kirigami.yaml`. Offering it in
   every trusted folder would add a Kirigami server to unrelated workspaces.

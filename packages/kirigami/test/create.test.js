@@ -148,6 +148,12 @@ test('createProject lists, downloads and scaffolds without prompts or console ou
 	assert.match(yaml, /banner: +banner.txt/);
 	assert.equal(fs.existsSync(path.join(dir, 'minimal', '.node.db')), false);
 	assert.equal(readJson(path.join(dir, 'minimal', 'package.json')).devDependencies['@kirigami/cli'], '^1.2.3');
+	// Tooling the template doesn't ship: MCP for Claude Code, Pages workflow, VS Code settings.
+	assert.deepEqual(minimal.starterFiles, ['.mcp.json', '.github/workflows/page.yml', '.vscode/settings.json']);
+	assert.deepEqual(readJson(path.join(dir, 'minimal', '.mcp.json')).mcpServers.kirigami,
+		{ command: 'node', args: ['node_modules/@kirigami/cli/bin/kiri.js', 'mcp'] });
+	assert.match(fs.readFileSync(path.join(dir, 'minimal', '.github/workflows/page.yml'), 'utf8'), /php-kirigami\/kiribuild/);
+	assert.ok(readJson(path.join(dir, 'minimal', '.vscode/settings.json'))['yaml.schemas']);
 
 	// No cliVersion from the caller: the registry's current version is pinned.
 	const fresh = await createProject({ template: 'fixture', target: path.join(dir, 'fresh'), git: false });
@@ -155,7 +161,9 @@ test('createProject lists, downloads and scaffolds without prompts or console ou
 	assert.equal(readJson(path.join(dir, 'fresh', 'package.json')).devDependencies['@kirigami/cli'], '^9.8.7');
 
 	// Existing project: package.json merged with its own values winning.
-	fs.mkdirSync(path.join(dir, 'existing'));
+	fs.mkdirSync(path.join(dir, 'existing', '.vscode'), { recursive: true });
+	fs.writeFileSync(path.join(dir, 'existing', '.vscode', 'settings.json'), '{ "mine": true }');
+	files['.mcp.json'] = '{ "mcpServers": {} }';
 	fs.writeFileSync(path.join(dir, 'existing', 'package.json'), JSON.stringify({ name: 'existing-name', scripts: { custom: 'echo existing' } }));
 	files['package.json'] = JSON.stringify({ name: 'template', scripts: { custom: 'echo template', build: 'kiri build' } });
 	const existing = await createProject({ template: 'template-fixture', target: path.join(dir, 'existing'), git: false });
@@ -163,6 +171,10 @@ test('createProject lists, downloads and scaffolds without prompts or console ou
 	const pkg = readJson(path.join(dir, 'existing', 'package.json'));
 	assert.equal(pkg.name, 'existing-name');
 	assert.deepEqual(pkg.scripts, { custom: 'echo existing', build: 'kiri build' });
+	// Neither the project's own settings nor the template's .mcp.json are replaced.
+	assert.deepEqual(existing.starterFiles, ['.github/workflows/page.yml']);
+	assert.equal(fs.readFileSync(path.join(dir, 'existing', '.vscode', 'settings.json'), 'utf8'), '{ "mine": true }');
+	assert.equal(fs.readFileSync(path.join(dir, 'existing', '.mcp.json'), 'utf8'), '{ "mcpServers": {} }');
 
 	assert.deepEqual(await createProject({ template: 'nope', target: dir, git: false }), { success: false, error: 'Unknown template "nope".' });
 	assert.deepEqual(logged, []);

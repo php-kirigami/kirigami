@@ -35,7 +35,7 @@ const HELP = {
 		"Templates are the php-kirigami repos named \"template-<name>\" (list cached 1h; set GITHUB_TOKEN if rate-limited).",
 		"No arguments, in a terminal → interactive wizard.",
 		"Never overwrites: existing files are kept, package.json is deep-merged (your deps win).",
-		"Missing package.json / banner.txt get a starter one; git repo + first commit unless --no-git; npm install unless --no-install.",
+		"Missing package.json / banner.txt / .mcp.json / .github/workflows/page.yml / .vscode/settings.json get a starter one; git repo + first commit unless --no-git; npm install unless --no-install.",
 		"The banner keeps its ### ### tokens on disk — kiri fills them (date, author, repo, …) on every build/export.",
 		"Every template ships a CLAUDE.md, ready for Claude Code out of the box.",
 	],
@@ -194,6 +194,7 @@ export default async function create(args) {
 	if (result.packageJson === "starter") log.step("Wrote a starter package.json (the template ships none).");
 	if (result.changed.length) log.step(`Filled ${result.changed.join(", ")} in package.json / kirigami.yaml.`);
 	if (result.banner) log.step("Wrote a starter banner.txt (kiri fills its ### ### tokens on build).");
+	if (result.starterFiles.length) log.step(`Added ${result.starterFiles.join(", ")} (the template ships none).`);
 
 	// ── git ──────────────────────────────────────────────────────────────
 	if (result.git.skipped && GIT_SKIPPED[result.git.skipped]) {

@@ -22,6 +22,18 @@
   `serveStdio()` no longer loads the project upfront, so the server starts
   in a folder without `kirigami.yaml`. The VS Code MCP provider still only
   offers the server in Kirigami folders.
+- Starter tooling: when neither the template nor the target has one,
+  `createProject()` writes `.mcp.json` (`node node_modules/@kirigami/cli/bin/kiri.js mcp`,
+  so Claude Code sees the Kirigami MCP server), `.github/workflows/page.yml`
+  (GitHub Pages via `php-kirigami/kiribuild`) and `.vscode/settings.json`,
+  copied from `packages/kirigami/assets/starter/` (stored without the leading
+  dot so npm/vsce keep them). Reported as `starterFiles`.
+- VS Code Create Project opens the new project directly (same window when
+  empty, new window otherwise, reload when it is the current folder) instead
+  of asking.
+- F5 in `packages/vscode` runs a one-shot `node esbuild.mjs` build task: the
+  `$esbuild-watch` matcher needed an extension, and `type: npm` tasks
+  followed the user's package-manager setting (yarn).
 - A generated starter `package.json` pins `@kirigami/cli` to `^<registry
   version>` when the caller gives no `cliVersion` (`latest` only offline;
   until the CLI is published, the registry has none and `latest` is used).

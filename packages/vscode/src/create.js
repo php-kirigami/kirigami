@@ -28,7 +28,7 @@ export function registerCreateCommand(context, { output }) {
 		const worker = startWorker(context, folder, output, nodePath);
 		try {
 			const target = await runWizard(worker, folder, output);
-			if (target) await offerToOpen(target);
+			if (target) await openProject(target);
 		} catch (err) {
 			output.appendLine(`create: ${err?.message || err}`);
 			vscode.window.showErrorMessage(`Kirigami: project creation failed — ${firstLine(err)}`);
@@ -97,6 +97,7 @@ async function runWizard(worker, folder, output) {
 			const result = await worker.call("createProject", [{ template: template.template, target, meta, git: want.has("git") }]);
 			if (!result.success) throw new Error(result.error);
 			output.appendLine(`create: ${result.written} file(s) written, ${result.skipped} kept, package.json ${result.packageJson}`);
+			if (result.starterFiles.length) output.appendLine(`create: added ${result.starterFiles.join(", ")}`);
 			if (result.git.error) output.appendLine(`create: git — ${result.git.error}`);
 
 			if (want.has("install")) {
@@ -119,16 +120,14 @@ function firstLine(err) {
 	return String(err?.message || err).split("\n")[0];
 }
 
-async function offerToOpen(projectDir) {
-	const uri = vscode.Uri.file(projectDir);
+// Opens the new project right away: reloads the window when it is already the
+// open folder (so the extension loads the new kirigami.yaml), reuses an empty
+// window, and otherwise opens a new window so the current workspace stays.
+async function openProject(projectDir) {
 	const current = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 	if (current && path.resolve(current) === path.resolve(projectDir)) {
-		// Already open: reload so the extension loads the new kirigami.yaml.
-		const choice = await vscode.window.showInformationMessage("Kirigami: project created.", "Reload Window");
-		if (choice) await vscode.commands.executeCommand("workbench.action.reloadWindow");
+		await vscode.commands.executeCommand("workbench.action.reloadWindow");
 		return;
 	}
-	const choice = await vscode.window.showInformationMessage(
-		`Kirigami: project created in ${projectDir}.`, "Open Folder", "Open in New Window");
-	if (choice) await vscode.commands.executeCommand("vscode.openFolder", uri, { forceNewWindow: choice === "Open in New Window" });
+	await vscode.commands.executeCommand("vscode.openFolder", vscode.Uri.file(projectDir), { forceNewWindow: Boolean(current) });
 }

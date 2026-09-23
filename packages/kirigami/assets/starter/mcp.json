@@ -1,0 +1,8 @@
+{
+    "mcpServers": {
+        "kirigami": {
+            "command": "node",
+            "args": ["node_modules/@kirigami/cli/bin/kiri.js", "mcp"]
+        }
+    }
+}

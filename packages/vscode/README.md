@@ -79,13 +79,15 @@ every watch-triggered rebuild's outcome) goes to the **Kirigami** Output
 channel.
 
 **Create Project** works in any window, Kirigami project or not. Pick (or
-create) a folder; an integrated terminal opens there and runs the CLI's
-wizard, which lists the official templates and asks what to scaffold. When
-VS Code can tell the command has finished (terminal shell integration,
-VS Code 1.93+), the extension offers to open the new project, or to reload the
-window if it was created in the current folder. The terminal's own `node`
-and `npx` are used, so they must be Node 24+. The other commands only appear
-once a Kirigami project is loaded.
+create) a folder, then a template from the official list, the project
+directory and metadata (name, description, author, email, base URL, repo),
+and whether to initialise git and run `npm install`. The project is
+scaffolded by the Kirigami engine in the external Node (`kirigami.nodePath`,
+Node 24+); `npm install` output goes to the **Kirigami** Output channel. The
+new project then opens right away: in the same window when no folder is open,
+in a new window otherwise, or by reloading the window when it was created in
+the current folder. The other commands only appear once a Kirigami project is
+loaded.
 
 ---
 

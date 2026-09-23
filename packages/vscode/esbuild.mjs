@@ -6,8 +6,9 @@ stageRuntime();
 const watch = process.argv.includes("--watch");
 const minify = process.argv.includes("--minify");
 
-// Prints the exact lines VS Code's built-in "$esbuild-watch" problem matcher
-// expects, so tasks.json's background watch task can signal ready correctly.
+// Prints the exact lines the inline problem matcher in .vscode/tasks.json
+// expects, so the background watch task can signal ready correctly (and F5
+// works without the esbuild-problem-matchers extension).
 const watchLogPlugin = {
 	name: "watch-log",
 	setup(build) {

@@ -7,7 +7,7 @@ toggle, kirigami.yaml reload watcher.
 
 ## Unreleased
 
-- Added **Kirigami: Create Project…**: a native wizard (template quick pick with descriptions, metadata input boxes, git / npm install options) over core's scaffolding API, run in the external Node worker; then offers to open the new project. Available outside Kirigami projects; the project commands are hidden there. No longer depends on `@kirigami/cli` being published.
+- Added **Kirigami: Create Project…**: a native wizard (template quick pick with descriptions, metadata input boxes, git / npm install options) over core's scaffolding API, run in the external Node worker; then opens the new project (same window when empty, new window otherwise). Available outside Kirigami projects; the project commands are hidden there. No longer depends on `@kirigami/cli` being published.
 - Added the extension icon (the Kirigami elephant).
 
 - Fixed Run Script success notifications for failed results (A14); errors and returned diagnostics appear in the Kirigami Output channel.
