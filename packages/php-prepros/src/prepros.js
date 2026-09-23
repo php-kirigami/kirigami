@@ -179,16 +179,30 @@ const run = async (args = [], script = null, mountfiles = []) => {
         php.writeFile(dest, isBinary(buf) ? buf : buf.toString('utf8'));
     }));
 
-    const output = await php.runStream({
-        scriptPath: script || '/prepros/prepros.php',
-        env: {
-            PREPROS_ARGS: JSON.stringify(args),
-            PREPROS_CONFIG: JSON.stringify(php.preprosConfig)
-        }
-    });
-
-    const stdout = await output.stdoutText;
-    const stderr = await output.stderrText;
+    let stdout, stderr;
+    try {
+        const output = await php.runStream({
+            scriptPath: script || '/prepros/prepros.php',
+            env: {
+                PREPROS_ARGS: JSON.stringify(args),
+                PREPROS_CONFIG: JSON.stringify(php.preprosConfig)
+            }
+        });
+        stdout = await output.stdoutText;
+        stderr = await output.stderrText;
+    } catch (e) {
+        // The WASM runtime aborted (e.g. `RuntimeError: unreachable`): its
+        // heap and request state are gone, and reusing it only yields
+        // follow-up errors ("Cannot redeclare function ..."). Drop it so the
+        // next operation starts a fresh one, and report this run as failed.
+        try { await reset(); } catch { /* already dead */ }
+        return {
+            success: false,
+            files: [],
+            error: `PHP runtime crashed: ${e?.message || e}. It has been restarted; run the build again.`,
+            stderr: String(e?.stack || e),
+        };
+    }
 
     let retobj;
     const resultPath = '/internal/prepros_result.json';

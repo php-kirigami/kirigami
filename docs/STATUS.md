@@ -1,5 +1,27 @@
 # Status
 
+## PHP-WASM crash after a few renders (php-mdhtml) — 2026-09-23
+
+Symptom (VS Code, `kiri serve`/`watch`, repeated builds): `RuntimeError:
+unreachable` from `zend_mm_panic` a few renders into one process, then
+"Cannot redeclare function _print_r()". Cause: `php-mdhtml` v0.1.3 keeps
+Markdown plugins in a process-lifetime table holding request-allocated
+Closures and keys; the next request's re-registration double-frees them.
+Triggered by any `md_register_plugin()` (template-default's
+`_lib/functions.php`) plus JS heap activity between renders (Sass). Same
+crash with the 8.5.10 and 8.5.11 binaries.
+
+- php-prepros `md.class.php` empties the plugin table from a shutdown
+  function (workaround until the WASM ships php-mdhtml v0.1.4).
+- php-prepros `run()`: a WASM abort now resets the runtime and returns a
+  structured failure, so the next build starts on a fresh runtime.
+- Regression test: `packages/kirigami/test/md-plugin-repeat.test.js` (fails
+  without the workaround).
+- `php-mdhtml` v0.1.4 (local commit `2d4f011`): tables request-scoped
+  again; natively 40/40 requests vs a segfault with v0.1.3.
+- VS Code command titles no longer repeat the category ("Kirigami: Kirigami:
+  …").
+
 ## Scaffolding moved to core; shared by CLI, VS Code and MCP — 2026-09-22
 
 - `@kirigami/kirigami/create` (also root exports): `listTemplates`,

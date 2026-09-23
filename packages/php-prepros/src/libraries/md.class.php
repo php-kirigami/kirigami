@@ -55,3 +55,17 @@ class MD
 // without an explicit include. A project can still MD::unregisterPlugin() any
 // of them, or MD::registerPlugin() its own with the same name to override.
 include_once(__DIR__ . '/md.plugins.php');
+
+// Workaround for php-mdhtml 0.1.2: its plugin table outlives the request, but
+// MDHtml\RegisterPlugin() stores request-allocated keys and closures in it.
+// Once the request ends they dangle, and the next request's registration
+// frees them again — a heap corruption that aborts the PHP-WASM runtime a
+// few renders later (serve/watch, repeated builds). Every request registers
+// its plugins again anyway (this file, plus the project's `includes`), so
+// emptying the table while the request's memory is still valid is lossless.
+// Registered here, i.e. after utils.inc.php's `shutdown` hook, so Markdown
+// rendered from that hook still sees the plugins. MDHtml\RegisterEmoji() has
+// the same flaw and no unregister function: only the extension can fix it.
+register_shutdown_function(static function (): void {
+    foreach (\MDHtml\GetRegisteredPlugins() as $name) \MDHtml\UnregisterPlugin($name);
+});

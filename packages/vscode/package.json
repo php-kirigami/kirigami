@@ -35,12 +35,12 @@
       }
     },
     "commands": [
-      { "command": "kirigami.create", "title": "Kirigami: Create Project…", "category": "Kirigami" },
-      { "command": "kirigami.build", "title": "Kirigami: Build", "category": "Kirigami" },
-      { "command": "kirigami.export", "title": "Kirigami: Export", "category": "Kirigami" },
-      { "command": "kirigami.run", "title": "Kirigami: Run Script…", "category": "Kirigami" },
-      { "command": "kirigami.validate", "title": "Kirigami: Validate kirigami.yaml", "category": "Kirigami" },
-      { "command": "kirigami.toggleServer", "title": "Kirigami: Toggle Dev Server", "category": "Kirigami" }
+      { "command": "kirigami.create", "title": "Create Project…", "category": "Kirigami" },
+      { "command": "kirigami.build", "title": "Build", "category": "Kirigami" },
+      { "command": "kirigami.export", "title": "Export", "category": "Kirigami" },
+      { "command": "kirigami.run", "title": "Run Script…", "category": "Kirigami" },
+      { "command": "kirigami.validate", "title": "Validate kirigami.yaml", "category": "Kirigami" },
+      { "command": "kirigami.toggleServer", "title": "Toggle Dev Server", "category": "Kirigami" }
     ],
     "mcpServerDefinitionProviders": [
       { "id": "kirigami", "label": "Kirigami" }
