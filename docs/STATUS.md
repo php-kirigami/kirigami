@@ -26,8 +26,11 @@ Triggered by any `md_register_plugin()` (template-default's
 `_lib/functions.php`) plus JS heap activity between renders (Sass). Same
 crash with the 8.5.10 and 8.5.11 binaries.
 
-- php-prepros `md.class.php` empties the plugin table from a shutdown
-  function (workaround until the WASM ships php-mdhtml v0.1.4).
+- Resolved by the PHP 8.5.11 binary, built with php-mdhtml v0.1.4 (tables
+  request-scoped again, pushed and tagged 2026-09-23). The interim
+  workaround (`md.class.php` emptying the plugin table at shutdown) is
+  removed; the regression test now also covers custom emoji, which the
+  workaround could not fix.
 - php-prepros `run()`: a WASM abort now resets the runtime and returns a
   structured failure, so the next build starts on a fresh runtime.
 - Regression test: `packages/kirigami/test/md-plugin-repeat.test.js` (fails

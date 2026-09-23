@@ -12,7 +12,7 @@ Built for the **[Kirigami](https://github.com/php-kirigami)** static site genera
 [![npm version](https://img.shields.io/npm/v/@kirigami/php-wasm)](https://www.npmjs.com/package/@kirigami/php-wasm)
 [![License: GPL-2.0-or-later](https://img.shields.io/badge/license-GPL--2.0--or--later-yellow)](./LICENSE)
 [![Node.js >=24.0.0](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](https://nodejs.org)
-[![PHP 8.5.10](https://img.shields.io/badge/php-8.5.10-777bb4)](https://www.php.net/releases/8.5/)
+[![PHP 8.5.11](https://img.shields.io/badge/php-8.5.11-777bb4)](https://www.php.net/releases/8.5/)
 [![Website](https://img.shields.io/badge/website-php--kirigami.github.io-1f6b4a)](https://php-kirigami.github.io)
 
 </div>
@@ -21,7 +21,7 @@ Built for the **[Kirigami](https://github.com/php-kirigami)** static site genera
 
 ## Overview
 
-`@kirigami/php-wasm` is a **custom fork** of the PHP-WASM package from the [WordPress Playground](https://github.com/WordPress/wordpress-playground) project. It ships a pre-compiled PHP 8.5.10 WebAssembly binary and its Node.js loader, stripped down to exactly what the Kirigami project needs:
+`@kirigami/php-wasm` is a **custom fork** of the PHP-WASM package from the [WordPress Playground](https://github.com/WordPress/wordpress-playground) project. It ships a pre-compiled PHP 8.5.11 WebAssembly binary and its Node.js loader, stripped down to exactly what the Kirigami project needs:
 
 - ✅ **JSPI** (JavaScript Promise Integration) target only
 - ✅ **Node.js** runtime only
@@ -52,6 +52,9 @@ Part of the **Kirigami** project ecosystem.
 - [TypeScript](#typescript)
 - [Package contents](#package-contents)
 - [PHP version](#php-version)
+- [Static extensions](#static-extensions)
+- [In-house extensions](#in-house-extensions)
+- [Loading additional extensions](#loading-additional-extensions)
 - [Related](#related)
 - [Runtime extension inspection](#runtime-extension-inspection)
   - [Automatic extension discovery](#automatic-extension-discovery)
@@ -88,7 +91,7 @@ This package is derived from the [`@php-wasm/node`](https://github.com/WordPress
 
 > **Upstream:** https://github.com/WordPress/wordpress-playground
 
-The WASM binary (`jspi/8_5_10/php_8_5.wasm`) and the Emscripten-generated loader (`jspi/php_8_5.js`) are built from that upstream source with a custom Dockerfile that enables JSPI and targets the Node.js environment only. No browser polyfills, no `TextEncoder`/`TextDecoder` shims, no DOM stubs.
+The WASM binary (`jspi/8_5_11/php_8_5.wasm`) and the Emscripten-generated loader (`jspi/php_8_5.js`) are built from that upstream source with a custom Dockerfile that enables JSPI and targets the Node.js environment only. No browser polyfills, no `TextEncoder`/`TextDecoder` shims, no DOM stubs.
 
 ---
 
@@ -105,7 +108,7 @@ This package is a **drop-in replacement** for the loader module consumed by [`@p
 | `createPHPRuntime({ network? }?)` | Creates an independent owned runtime, without changing either singleton. Call `php.exit()` when finished; this also closes its network proxy and sockets when networking is enabled |
 | `getLoadedExtensions()` | Returns the names of every loaded PHP extension, sorted case-insensitively (e.g. `["Core", "curl", "gd", "imagick", "openssl", …]`) |
 | `exec(code, network?)` | Executes a PHP code snippet against the standard runtime, or the network-enabled one if `network` is `true`. Returns `{ returnCode, stdout, stderr }` |
-| `phpversion()` | Returns the running PHP interpreter's version string, e.g. `"8.5.10"` |
+| `phpversion()` | Returns the running PHP interpreter's version string, e.g. `"8.5.11"` |
 | `phpinfo()` | Returns the HTML result of `phpinfo()` |
 | `setPhpIniValues(php, values, iniPath?)` | Updates or adds one or more `php.ini` directives on a PHP instance. Also available as `php.setIniValues(values)` on instances from `getPHPRuntime()` / `getPHPRuntimeWithNetwork()` |
 | `getPhpIniValue(php, key, iniPath?)` | Reads the current value of a single, active (uncommented) `php.ini` directive |
@@ -196,7 +199,7 @@ Two small helpers are built on top of `exec()`:
 ```ts
 import { phpversion, phpinfo } from '@kirigami/php-wasm';
 
-console.log(await phpversion()); // "8.5.10"
+console.log(await phpversion()); // "8.5.11"
 console.log(await phpinfo());    // full phpinfo() HTML output
 ```
 
@@ -210,7 +213,7 @@ import { getPHPRuntime } from '@kirigami/php-wasm';
 const php = await getPHPRuntime();
 php.writeFile('/version.php', '<?php echo PHP_VERSION;');
 const streamedResponse = await php.runStream({ scriptPath: '/version.php' });
-console.log(await streamedResponse.stdoutText); // "8.5.10"
+console.log(await streamedResponse.stdoutText); // "8.5.11"
 
 ```
 
@@ -274,8 +277,8 @@ php._networkProxyServer.close();            // typed, no cast needed
 │   └── runtime.js        # Networking proxy and runtime helpers
 ├── jspi/
 │   ├── php_8_5.js        # Emscripten-generated Node.js loader (JSPI build)
-│   └── 8_5_10/
-│       └── php_8_5.wasm  # Compiled PHP 8.5.10 WebAssembly binary (size depends on the embedded build)
+│   └── 8_5_11/
+│       └── php_8_5.wasm  # Compiled PHP 8.5.11 WebAssembly binary (size depends on the embedded build)
 └── LICENSE
 
 ```
@@ -284,9 +287,56 @@ php._networkProxyServer.close();            // typed, no cast needed
 
 ## PHP version
 
-This package ships **PHP 8.5.10**.
+This package ships **PHP 8.5.11**.
 
-The version is encoded in the package version number (`major.minor.patch` → `8.5.10`) so that the installed PHP version is always immediately visible from `package.json`.
+The version is encoded in the package version number (`major.minor.patch` → `8.5.11`) so that the installed PHP version is always immediately visible from `package.json`.
+
+---
+
+## Static extensions
+
+Baked directly into the compiled `php.wasm` binary — always loaded, no separate install. Built by [`php-wasm-compiler`](https://github.com/php-kirigami/php-wasm-compiler), whose `config.yaml` is the single source of truth for this list.
+
+| Extension | Purpose |
+|---|---|
+| `curl` | HTTP/HTTPS client — also what `getPHPRuntimeWithNetwork()`'s outbound proxy rides on |
+| `openssl` | TLS/crypto primitives |
+| `iconv` | Character set conversion |
+| `libxml` / `dom` / `simplexml` / `xmlreader` / `xmlwriter` | XML/DOM support |
+| `mbstring` | Multibyte string handling, built with `oniguruma` regex support |
+| `gd` | Image processing/generation |
+| `imagick` | ImageMagick bindings |
+| `exif` | Image metadata reading |
+| `sockets` | Low-level socket functions |
+| `zip` | ZIP archive read/write (from `libzip`) |
+| `sqlite3` / `pdo` / `pdo_sqlite` | SQLite database + PDO abstraction |
+| `bz2` | BZip2 compression — also gives `Phar` its `.tar.bz2` archive support |
+| `opcache` | Bytecode caching (JIT disabled) |
+| `yaml` | YAML 1.1 parsing (LibYAML) — see the YAML 1.1 scalar-coercion note above |
+| `apcu` / `igbinary` | In-memory user cache + compact binary serialization (`igbinary` is also `apcu`'s default serializer) |
+
+Query `getLoadedExtensions()` at runtime for the exact installed inventory rather than assuming an extension from another PHP build is available.
+
+---
+
+## In-house extensions
+
+Four of the extensions above are [Maxime Larrivée-Roy](https://github.com/php-kirigami)'s own PHP extensions, purpose-built for Kirigami and vendored straight from their own repos rather than pecl.php.net:
+
+- **[`jsonk`](https://github.com/php-kirigami/php-jsonk)** — fast JSON encode/decode plus JSON Schema validation (vendored `simdjson`/`yyjson`); replaces the built-in `json_encode()`/`json_decode()` when `jsonk.replace_json_functions` is enabled, the default in this build
+- **[`navicat`](https://github.com/php-kirigami/php-navicat)** — native client for Navicat Premium's HTTP-tunnel protocol (`ntunnel_mysql.php` and friends), reusing the same `libcurl` already linked in above
+- **[`mdhtml`](https://github.com/php-kirigami/php-mdhtml)** — CommonMark+GFM Markdown rendering via `cmark-gfm`, the backend behind `php-prepros`'s `MD::` wrapper
+- **[`norm`](https://github.com/php-kirigami/php-norm)** — Unicode normalization (a `Normalizer` class plus `normalizer_normalize()`/`normalizer_is_normalized()`), wrapping `utf8proc`
+
+---
+
+## Loading additional extensions
+
+Beyond the static set above, more PHP extensions ship as separate, on-demand WASM side modules — install any `@kirigami/phpext-*` package and `@kirigami/php-wasm` picks it up **automatically** at runtime, no core rebuild needed (see [Automatic extension discovery](#automatic-extension-discovery) below for the mechanism). Currently published by [`php-wasm-compiler`](https://github.com/php-kirigami/php-wasm-compiler): `dba`, `enchant`, `ftp`, `gettext`, `gmp`, `ldap`, `mysqli` (bundles `mysqlnd`), `pdo_mysql` (bundles `mysqlnd`), `pdo_pgsql`, `pgsql`, `posix`, `soap`, `sodium`, `tidy`.
+
+```bash
+npm install @kirigami/phpext-pgsql
+```
 
 ---
 
