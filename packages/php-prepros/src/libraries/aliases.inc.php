@@ -348,7 +348,7 @@ function ld_node(string|array $type, array $props = []): array { return LD::node
 function ld_ref(string $id): array { return LD::ref($id); }
 
 /**
- * Adds the site's main entity (`Organization`, or `jsonld.type`) to the graph.
+ * Adds the site's main entity (`Organization`, or `seo.type`) to the graph.
  *
  * @param  array<string,mixed> $overrides
  * @return array<string,mixed>

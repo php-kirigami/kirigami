@@ -11,9 +11,8 @@ declare(strict_types=1);
  *
  *   1. the page's own PHPDOC block (`@title`, `@description`, `@image`, …),
  *   2. the top-level `seo:` block of `kirigami.yaml` (config + overrides),
- *   3. the loose keys of the `kirigami:` block and the `seo.jsonld` sub-block
- *      (`description`, `keywords`, `author`, `person`, `lang`, `logo`,
- *      `image`, …) — the same values `LD` already reads.
+ *   3. the loose keys of the `kirigami:` block (`description`, `keywords`,
+ *      `author`, `person`, `lang`, `image`, …) — the same values `LD` reads.
  *
  * It only ever emits what it can resolve: a tag with no value is skipped, and a
  * tag the page's layout already hand-writes (`<title>`, `<meta name="description">`,
@@ -24,9 +23,8 @@ declare(strict_types=1);
  * empty map, `seo: {}`, is enough). `seo: false` (or `seo: { auto: false }`)
  * keeps the config values but stops the injection; no block at all means
  * nothing is injected — an explicit `META::tag()` call from a template still
- * emits. `LD`'s schema.org JSON-LD lives right alongside it, under `seo.jsonld`
- * — one block, one on/off switch for the whole SEO surface, `jsonld` toggled
- * independently within it (see `LD`'s own docblock).
+ * emits. `LD`'s schema.org JSON-LD is injected alongside, from the same `seo:`
+ * block, unless `jsonld: false` (see `LD`'s own docblock).
  *
  * Per-page PHPDOC tags, each falling back to the generic page tag:
  *
@@ -67,7 +65,7 @@ final class META
 
     /**
      * Resolved metadata configuration, merging the `seo:` block with the loose
-     * keys of the `kirigami:` block and the `seo.jsonld` sub-block.
+     * keys of the `kirigami:` block.
      */
     public static function config(): object
     {
@@ -76,17 +74,14 @@ final class META
         $data = self::data();
         $raw  = self::metaRaw();
         $m    = is_object($raw) ? $raw : new stdClass;
-        $ld   = self::jsonld();
 
         // Opt-in: needs a top-level `seo:` block (an empty map counts).
         $enabled = is_object($raw) || $raw === true;
         if ($enabled && isset($m->auto) && !self::truthy($m->auto)) $enabled = false;
 
-        $lang = $m->language ?? $m->lang
-            ?? ($ld->lang ?? null)
-            ?? $data->lang ?? $data->language ?? 'en';
+        $lang = $m->lang ?? $data->lang ?? $data->language ?? 'en';
 
-        $person = $ld->person ?? $data->person ?? null;
+        $person = $m->person ?? $data->person ?? null;
         $personName = is_object($person) ? ($person->name ?? null) : (is_string($person) ? $person : null);
 
         $twitter   = $m->twitter ?? $data->twitter ?? null;
@@ -102,15 +97,15 @@ final class META
             'tagline'         => $m->tagline ?? $data->tagline ?? null,
             'titleFormat'     => (string) ($m->titleFormat     ?? '{title} — {project}'),
             'titleFormatHome' => (string) ($m->titleFormatHome ?? '{project} — {tagline}'),
-            'description'     => $m->description ?? $ld->description ?? $data->description ?? null,
-            'keywords'        => self::arr($m->keywords ?? $ld->keywords ?? $data->keywords ?? null),
+            'description'     => $m->description ?? $data->description ?? null,
+            'keywords'        => self::arr($m->keywords ?? $data->keywords ?? null),
             'robots'          => $m->robots ?? 'index, follow',
             'language'        => $lang,
             'generator'       => $generator,
             'author'          => $m->author ?? $data->author ?? $personName ?? null,
             'designer'        => $m->designer ?? $data->designer ?? null,
             'themeColor'      => $m->themeColor ?? $m->themecolor ?? $data->themecolor ?? null,
-            'image'           => self::absUrl($m->image ?? $ld->image ?? $ld->logo ?? $data->image ?? $data->ogimage ?? null),
+            'image'           => self::absUrl($m->image ?? $m->logo ?? $data->image ?? $data->ogimage ?? null),
             'ogType'          => $m->ogType ?? $m->ogtype ?? 'website',
             'twitterCard'     => $m->twitterCard ?? $m->twittercard ?? 'summary_large_image',
             'twitterSite'     => self::handle($twSite),
@@ -372,14 +367,6 @@ final class META
     private static function metaRaw(): mixed
     {
         return (isset(PREPROS::$config) && is_object(PREPROS::$config)) ? (PREPROS::$config->seo ?? null) : null;
-    }
-
-    /** The `seo.jsonld` sub-block as an object (empty when absent / disabled). */
-    private static function jsonld(): object
-    {
-        $seo = self::metaRaw();
-        $raw = is_object($seo) ? ($seo->jsonld ?? null) : null;
-        return is_object($raw) ? $raw : new stdClass;
     }
 
     private static function pageInfo(): object

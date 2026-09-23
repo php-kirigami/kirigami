@@ -117,6 +117,17 @@ PHP data files use the native `yaml` extension backed by LibYAML. Its YAML 1.1 i
 
 `Normalizer` now comes from the native `norm` extension (utf8proc) instead of the bundled pure-PHP polyfill, which stays available as `NORMALIZER_LEGACY`.
 
+**Breaking: the `seo.jsonld` sub-block is merged into `seo:`.** META and LD now read one set of keys, so the site description, keywords, image, language and person are declared once. JSON-LD is injected whenever the `seo:` block exists; `seo.jsonld` is only an on/off switch (default `true`). To migrate, move the keys of `seo.jsonld: {…}` up into `seo:` (`jsonld.auto: false` becomes `jsonld: false`) and rename `seo.language` to `seo.lang`. `kiri` rejects the old shapes with a message saying so. Sites with `seo: {}` and no `jsonld` now get JSON-LD too; add `jsonld: false` to keep them without it.
+
+```yaml
+# before                       # after
+seo:                           seo:
+  language: fr-CA                lang: fr-CA
+  jsonld:                        type: ProfessionalService
+    type: ProfessionalService    logo: images/logo.png
+    logo: images/logo.png
+```
+
 ---
 
 ## What's new in 2.0.0
@@ -468,10 +479,9 @@ kirigami:
     - keyword one
     - keyword two
 
-seo:                            # Presence turns on the META <head> tags generator.
-  jsonld:                       # Nested, independent opt-in for the LD JSON-LD generator.
-    type: Organization          # `jsonld: {}` alone is enough; see the seo block below.
-    logo: assets/logo.png
+seo:                            # Presence turns on the META tags and LD JSON-LD (`seo: {}` is enough).
+  type: Organization            # JSON-LD main entity; `jsonld: false` turns the JSON-LD off.
+  logo: assets/logo.png
 
 prepros:
   before:  _layouts/header.php  # Included before every page body.
@@ -538,27 +548,21 @@ Core project settings. **Read by `php-prepros`.** The entire block is extracted 
 
 ### `seo` block
 
-Top-level, optional. The unified SEO surface — replaces the old separate
-`meta:`/`jsonld:` blocks (**breaking in 2.0.0**, see
-[What's new in 2.0.0](#whats-new-in-200)). Its **presence** switches on the
-[`META`](#meta) generator — the standard SEO / social `<meta>` and `<link>`
-tags are then built for every page and injected into its `<head>`. An empty
-`seo: {}` is enough; everything is derived from the `kirigami` block and each
-page's PHPDOC (`@title`, `@description` / `@abstract`, `@keywords`, `@image`,
-`@robots`, `@og_type`, `@canonical`). A tag the layout already hand-writes is
-left untouched. `seo: false` (or `seo: { auto: false }`) keeps the config
-values but stops the injection; no block at all means nothing is injected
-(explicit `META::tag()` / `meta_tag()` calls still emit). Full key reference
-and per-page `@meta_*` tags: [`META` → `seo` config](#meta-config).
+Top-level, optional. The SEO surface: one set of keys feeds both the
+[`META`](#meta) tags (the standard SEO / social `<meta>` and `<link>` tags) and
+the [`LD`](#ld) schema.org JSON-LD graph, and its **presence** switches both on
+for every page's `<head>`. An empty `seo: {}` is enough; everything is derived
+from the `kirigami` block and each page's PHPDOC (`@title`, `@description` /
+`@abstract`, `@keywords`, `@image`, `@robots`, `@og_type`, `@canonical`). A
+tag or script the layout already hand-writes is left untouched.
 
-Nested inside it, `seo.jsonld` is its own **independent** opt-in — a project
-can have META's tags without JSON-LD, or vice versa. Its presence switches on
-the [`LD`](#ld) schema.org JSON-LD generator — an `application/ld+json` graph
-is then injected into every page's `<head>`. An empty `seo: { jsonld: {} }` is
-enough; its keys refine what `LD` otherwise infers from the rest of `seo:`,
-the `kirigami` block, and each page's PHPDOC. `seo: { jsonld: false }` (or
-`{ auto: false }`) keeps the config values but stops the injection. Full key
-reference and per-page `@ld_*` tags: [`LD` → `jsonld` config](#jsonld-config).
+- `auto: false` stops META's tags, `jsonld: false` stops the JSON-LD; the
+  config values stay available to `META::tags()` / `LD::script()`.
+- `seo: false` keeps nothing on; no block at all means nothing is injected
+  (explicit `META::tag()` / `LD::add()` calls still emit).
+
+Full key reference: [`seo` config](#seo-config). Per-page tags:
+[`@meta_*`](#meta) and [`@ld_*`](#ld).
 
 ### `prepros` block
 
@@ -1237,33 +1241,29 @@ than one node — in the `<head>`.
 
 #### Automatic mode
 
-Opt in by adding a `jsonld` sub-block under `seo:` in `kirigami.yaml` (nested
-inside the same block [`META`](#meta) reads, independent of the rest of it) —
-an empty `seo: { jsonld: {} }` is enough. A `post_render` hook then injects a
-graph built from that sub-block, the loose keys of the `kirigami` block, and
-the current page's PHPDOC:
+On as soon as `kirigami.yaml` has a [`seo:` block](#seo-block) (`seo: {}` is
+enough), alongside [`META`](#meta)'s tags and from the same keys. A
+`post_render` hook injects a graph built from `seo:`, the loose keys of the
+`kirigami` block, and the current page's PHPDOC:
 
 - an `Organization` node (`@id` `#organization`) — `name`/`url`/`description`
   from `project`/`baseurl`/`description`, `sameAs` gathered from every
   recognised social-network URL key (`facebook`, `instagram`, `linkedin`,
   `github`, `youtube`, `mastodon`, …), plus `email`, `telephone`, `areaServed`
   (← `area`), `knowsAbout` (← `knowsabout`), `address`, `logo`, and `founder` →
-  the Person node when there is one. `@type` comes from `jsonld.type`;
+  the Person node when there is one. `@type` comes from `seo.type`;
 - a `Person` node (`#person`) when `person` is set — `name` + `jobTitle`
   (← `jobtitle`) + `email` + `url`, linked to the Organization via `worksFor`;
 - a `WebSite` node (`#website`) — `publisher` → Organization, `inLanguage`,
-  `keywords` (← `keywords`), and a `SearchAction` when `jsonld.search` is set;
+  `keywords` (← `keywords`), and a `SearchAction` when `seo.search` is set;
 - a `WebPage` node for the page — see the per-page tags below;
 - a `BreadcrumbList` for every non-home page, derived from the `_index.php`
   ancestor trail (home → each parent section → this page). No `@breadcrumb`
-  opt-in needed — it is always attempted while the `jsonld` sub-block is on.
-  Disable it for one page with `@ld_breadcrumb false`.
+  opt-in needed. Disable it for one page with `@ld_breadcrumb false`.
 
-Remove the `jsonld` sub-block (or set `seo: { jsonld: false }` /
-`{ jsonld: { auto: false } }`) to stop the automatic pass — the rest of `seo:`
-(META's tags) keeps working either way. A page whose rendered `<head>` already
-contains an `application/ld+json` script is never touched, so hand-rolled
-markup keeps working.
+`seo: { jsonld: false }` stops the automatic pass; META's tags keep working.
+A page whose rendered `<head>` already contains an `application/ld+json`
+script is never touched, so hand-rolled markup keeps working.
 
 **Per-page PHPDOC tags** — these feed the page node (and override the generic
 `@title` / `@description` / `@datePublished` fallbacks):
@@ -1291,7 +1291,7 @@ markup keeps working.
 #### Explicit builders
 
 Call these from a page template or from a `prepros.includes` file. Nodes added
-this way are always emitted — with or without a `jsonld` sub-block — and share
+this way are always emitted — automatic pass on or not — and share
 the graph the automatic pass uses, so the two combine; a node with a stable
 `@id` is merged on repeat calls.
 
@@ -1344,49 +1344,8 @@ Same API from procedural code: `ld_add()`, `ld_node()`, `ld_ref()`,
 `ld_organization()`, `ld_person()`, `ld_website()`, `ld_web_page()`,
 `ld_breadcrumb()`, `ld_faq_page()`, `ld_script()`, `ld_json()`.
 
-#### `jsonld` config
-
-`jsonld` is a sub-block of the **top-level** `seo:` block of `kirigami.yaml`
-(nested alongside [`META`](#meta)'s own keys), and its presence is what
-**switches automatic injection on** — independently of the rest of `seo:`. An
-empty `seo: { jsonld: {} }` is enough — everything is then derived from the
-`kirigami` block's loose keys. Adding keys overrides those inferences; all are
-optional.
-
-```yaml
-kirigami:
-  project:  Humain Humain
-  baseurl:  https://humainhumain.com
-  person:   Méralie Murray-Hall
-  jobtitle: Anthropologue
-  facebook: https://www.facebook.com/humainhumainconsultation.ethnographie/
-
-seo:
-  jsonld:                                  # nested; the sub-block being present
-    type: ProfessionalService              #   is the switch — `{}` also works
-    lang: fr-CA                             # inLanguage on WebSite / WebPage (default: en)
-    logo: assets/logo.png                   # absolute, or relative to baseurl
-    knowsAbout: [Ethnographie, Recherche qualitative]
-    address:
-      addressLocality: Québec
-      addressCountry:  CA
-    search: https://humainhumain.com/?q={search_term_string}
-```
-
-| Key | Type | Description |
-|-----|------|-------------|
-| `auto` | `bool` | Inject the `<script>` automatically. Default `true` **once the `jsonld` sub-block exists**. Set `auto: false` (or `seo: { jsonld: false }`) to keep the sub-block for its config values but stop the automatic injection — `LD::script()` / `ld_script()` can still place it by hand. |
-| `type` | `string` | `@type` for the main entity — `Organization`, `ProfessionalService`, `LocalBusiness`, … |
-| `name` / `url` / `description` | `string` | Main-entity / WebSite fields. Default to `project` / `baseurl` / `description`. |
-| `logo` / `image` | `string` | Absolute URL or path relative to `baseurl`. `image` defaults to `logo`. |
-| `sameAs` | `string[]` | Profile URLs, merged with the social-network URL keys found loose in the block. |
-| `email` / `telephone` | `string` | Default to the loose `email` / `telephone` keys. |
-| `address` | `map` | `PostalAddress` properties. |
-| `areaServed` | `string` | Defaults to the loose `area` key. |
-| `knowsAbout` / `keywords` | `string[]` | Default to the loose `knowsabout` / `keywords` keys. |
-| `person` | `string` \| `map` | The `#person` node. A string is the name; a map takes any `Person` property. Defaults to `person` + `jobtitle` + `email`. |
-| `lang` | `string` | BCP-47 tag for `inLanguage`. Default `en`. |
-| `search` | `string` | URL template for a sitelinks `SearchAction`; must contain `{search_term_string}`. |
+LD's keys (`type`, `logo`, `person`, `address`, `search`, …) live in the
+[`seo` config](#seo-config) with META's.
 
 ---
 
@@ -1398,8 +1357,7 @@ tags a browser and a link-preview crawler read: `<title>`, `<meta name="…">`,
 `<meta property="og:…">`, `<meta name="twitter:…">`, and a handful of `<link>`s.
 
 It draws on the same sources, in this order of precedence: the page's PHPDOC, the
-top-level `seo:` block, then the loose `kirigami:` keys and the `seo.jsonld`
-sub-block. Every tag is emitted **only when it can be resolved** — no value, no
+top-level `seo:` block, then the loose `kirigami:` keys. Every tag is emitted **only when it can be resolved** — no value, no
 tag — and a tag the page's layout already writes by hand is detected and
 skipped, so it drops in beside an existing `header.php` without duplicating
 anything.
@@ -1419,7 +1377,8 @@ kirigami:
 seo:                              # top-level; the block being present is the switch
   twitter: "@humainhumain"
   themeColor: "#0b7285"
-  jsonld: {}                      # independent opt-in — META reads its logo / image / lang / person too
+  lang: fr-CA                     # <meta name="language">, og:locale, JSON-LD inLanguage
+  logo: assets/logo.png           # JSON-LD logo, and og:image when there is no `image`
 ```
 
 Per-page, from the PHPDOC block — each falls back to the generic page tag:
@@ -1455,32 +1414,62 @@ META::link('icon', './favicon.svg', ['type' => 'image/svg+xml']);
 Same API from procedural code: `meta_tag()`, `meta_link()`, `meta_raw()`,
 `meta_tags()`.
 
-#### `meta` config
+<a id="meta-config"></a><a id="jsonld-config"></a>
+
+#### `seo` config
 
 These keys live directly under the **top-level** `seo:` block of
-`kirigami.yaml` (a sibling of `kirigami:`, `prepros:`, …) — `jsonld` is the one
-sub-block among them, documented separately in [`LD` → `jsonld` config](#jsonld-config).
-All keys are optional.
+`kirigami.yaml` (a sibling of `kirigami:`, `prepros:`, …) and feed both META's
+tags and LD's JSON-LD. All are optional.
 
 | Key | Type | Description |
 |-----|------|-------------|
-| `auto` | `bool` | Inject the tags automatically. Default `true` **once the `seo:` block exists**. `auto: false` (or `seo: false`) keeps the block for its values but stops the injection — `META::tags()` / `meta_tags()` can place them by hand. Independent of `jsonld.auto`. |
+| `auto` | `bool` | Inject META's tags automatically. Default `true` **once the `seo:` block exists**. `auto: false` keeps the block for its values but stops the tags — `META::tags()` / `meta_tags()` can place them by hand. |
+| `jsonld` | `bool` | Inject LD's JSON-LD automatically. Default `true` **once the `seo:` block exists**. `jsonld: false` stops it — `LD::script()` / `ld_script()` can place it by hand. |
 | `titleFormat` | `string` | `<title>` template for a normal page. Tokens `{title}`, `{project}`, `{tagline}`. Dangling separators from an empty token are trimmed. Default `{title} — {project}`. |
 | `titleFormatHome` | `string` | Title template when the page has no `@title` (home / section landings). Default `{project} — {tagline}`. |
-| `description` | `string` | Default description for pages with no `@description` / `@abstract`. Defaults to `jsonld.description` / loose `description`. |
-| `keywords` | `string[]` \| `string` | Default `keywords` content (list or comma string). Defaults to `jsonld.keywords` / loose `keywords`. |
+| `description` | `string` | Default description for pages with no `@description` / `@abstract`, and the JSON-LD main entity / WebSite description. Defaults to the loose `description`. |
+| `keywords` | `string[]` \| `string` | Default `keywords` content (list or comma string) and the WebSite `keywords`. Defaults to the loose `keywords`. |
 | `robots` | `string` | Default robots directive. Default `index, follow`. `robots: false` omits the tag. |
-| `language` | `string` | BCP-47 tag → `<meta name="language">` and, dash→underscore, `og:locale`. Defaults to `jsonld.lang` / loose `lang` / `language`, then `en`. |
+| `lang` | `string` | BCP-47 tag → `<meta name="language">`, `og:locale` (dash→underscore) and JSON-LD `inLanguage`. Defaults to the loose `lang` / `language`, then `en`. |
 | `generator` | `string` \| `false` | `<meta name="generator">`. Default `Kirigami`; `false` omits it. |
-| `author` / `designer` | `string` | Default to the loose `author` / `designer` keys (author also falls back to `jsonld.person`'s name). `designer` is not emitted unless set. |
+| `author` / `designer` | `string` | Default to the loose `author` / `designer` keys (author also falls back to `person`'s name). `designer` is not emitted unless set. |
 | `themeColor` | `string` | `<meta name="theme-color">`. Not emitted unless set. |
-| `image` | `string` | Default `og:image` / `twitter:image` — absolute URL or path relative to `baseurl`. Defaults to `jsonld.image` → `jsonld.logo` → loose `image` / `ogimage`. |
+| `image` | `string` | Default `og:image` / `twitter:image` and JSON-LD image — absolute URL or path relative to `baseurl`. Defaults to `logo`, then the loose `image` / `ogimage`. |
+| `logo` | `string` | Organization logo (JSON-LD `ImageObject`), absolute URL or path relative to `baseurl`. |
 | `ogType` | `string` | Default `og:type`. Default `website`. |
 | `twitterCard` | `string` | `twitter:card` type. Default `summary_large_image`. |
 | `twitter` | `string` \| `map` | Handle for `twitter:site` / `twitter:creator`. A bare string (with/without `@`, or a profile URL) fills both; a map takes `site` / `creator` separately. |
 | `canonical` | `bool` | Emit `<link rel="canonical">`. Default `true`. |
 | `favicon` / `appleTouchIcon` / `humans` | `string` \| `bool` | `<link rel="icon">` / `rel="apple-touch-icon"` / `rel="author"`. A path sets it (page-relative when a bare filename); `true` forces the default file (`favicon.ico` / `apple-touch-icon.png` / `humans.txt`); omitted, the default file is auto-detected on disk at the source root; `false` disables it. |
-| `jsonld` | `object` \| `bool` | Sub-block for `LD`'s schema.org JSON-LD — its own independent opt-in. See [`LD` → `jsonld` config](#jsonld-config). |
+| `type` | `string` | JSON-LD `@type` of the main entity — `Organization` (default), `ProfessionalService`, `LocalBusiness`, … |
+| `name` / `url` | `string` | JSON-LD main entity / WebSite name and URL. Default to `project` / `baseurl`. |
+| `sameAs` | `string[]` | Profile URLs, merged with the social-network URL keys found loose in the `kirigami` block. |
+| `email` / `telephone` | `string` | Default to the loose `email` / `telephone` keys. |
+| `address` | `map` | `PostalAddress` properties. |
+| `areaServed` | `string` | Defaults to the loose `area` key. |
+| `knowsAbout` | `string[]` | Defaults to the loose `knowsabout` key. |
+| `person` | `string` \| `map` | The `#person` node (and the default `author`). A string is the name; a map takes any `Person` property. Defaults to `person` + `jobtitle` + `email`. |
+| `search` | `string` | URL template for a sitelinks `SearchAction`; must contain `{search_term_string}`. |
+
+```yaml
+kirigami:
+  project:  Humain Humain
+  baseurl:  https://humainhumain.com
+  person:   Méralie Murray-Hall
+  jobtitle: Anthropologue
+  facebook: https://www.facebook.com/humainhumainconsultation.ethnographie/
+
+seo:
+  type: ProfessionalService
+  lang: fr-CA
+  logo: assets/logo.png
+  knowsAbout: [Ethnographie, Recherche qualitative]
+  address:
+    addressLocality: Québec
+    addressCountry:  CA
+  search: https://humainhumain.com/?q={search_term_string}
+```
 
 ---
 

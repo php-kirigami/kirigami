@@ -130,6 +130,21 @@ that happened to share fallback data. Every independent on/off switch and
 fallback chain is otherwise unchanged — the merge is purely about *where*
 the config lives, not how it resolves.
 
+## `seo.jsonld` sub-block merged into `seo:` (breaking, php-prepros 3 / core 3)
+
+Maxime's call (2026-09-23): the JSON-LD always accompanies the meta tags and
+takes its information from the same keys. The 2.0 nesting still let the two
+declare the same fact twice (`seo.description` and `seo.jsonld.description`,
+`seo.language` and `seo.jsonld.lang`, `seo.image` and `seo.jsonld.image`),
+joined by fallback chains. Now `seo:` holds one flat set of keys read by both
+META and LD, and `seo.jsonld` is only a boolean, default `true` once `seo:`
+exists (so `seo: {}` now also yields JSON-LD). `lang` was kept over
+`language`: it is LD's name and the loose-key convention. LD-only keys
+(`type`, `name`, `url`, `logo`, `person`, `address`, `search`, …) sit at the
+same level; none collides with a META key (META uses `ogType`, not `type`).
+`kiri` rejects the old sub-block and `seo.language` with a migration message
+before schema validation, since Ajv's "boolean schema is false" says nothing.
+
 ## `font-style-detect()`'s `"ital-axis"` sentinel: guarded, not split
 
 `canva/conf.scss`'s `@font-face` loop now calls the existing

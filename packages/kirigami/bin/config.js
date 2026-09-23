@@ -55,6 +55,17 @@ export function clearConfigCache() {
 // the `format` keyword (baseurl is checked imperatively in validateConfig()).
 // ---------------------------------------------------------------------------
 function validateAgainstSchema(_config, configPath) {
+	// Keys that moved in php-prepros 3: say where, instead of a bare schema error.
+	const seo = _config?.seo;
+	if (seo && typeof seo === 'object') {
+		if (seo.jsonld && typeof seo.jsonld === 'object') {
+			throwConfigError(configPath, 'seo.jsonld is now an on/off switch (default true): move its keys up into seo.');
+		}
+		if ('language' in seo) {
+			throwConfigError(configPath, 'seo.language was renamed seo.lang.');
+		}
+	}
+
 	if (!schemaValidator) {
 		const schema = structuredClone(require('../kirigami.schema.json'));
 		inlinePluginOptionSchemas(schema);

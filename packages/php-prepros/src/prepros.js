@@ -63,8 +63,8 @@ const initializePHPInstance = async () => {
         preprosConfig.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         preprosConfig.root = joinWith('/project/', config?.kirigami?.root);
         preprosConfig.data = config.kirigami || {};
-        // The unified SEO block — META reads it directly; LD reads its own
-        // `jsonld` sub-key (see META/LD's docblocks). One block, one toggle.
+        // The SEO block, read by both META and LD; `jsonld: true` switches
+        // LD's JSON-LD on (see META/LD's docblocks).
         preprosConfig.seo = config.seo ?? null;
         // META auto-detects favicon / apple-touch-icon / humans.txt at the
         // source root; those extensions aren't mounted into the sandbox, so the

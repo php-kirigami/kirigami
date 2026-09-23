@@ -50,6 +50,10 @@ Use [the CLI](../cli/README.md) for terminal commands. This package is the progr
   be replaced. Export also refuses any destination that contains the project.
 - **Duplicate task names are rejected**, including a plugin task injected via
   `tasks:register` with the same name as a `kirigami.yaml` task.
+- **`seo.jsonld` is now an on/off switch, not a sub-block** (matching
+  `@kirigami/php-prepros`): its keys move up into `seo:`, and `seo.language`
+  is renamed `seo.lang`. The old shapes fail validation with a message saying
+  so. JSON-LD is now on whenever `seo:` exists; `seo.jsonld: false` turns it off.
 - `Project.validate()` no longer replaces a loaded project's configuration;
   call `reload()` to apply a change.
 

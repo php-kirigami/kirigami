@@ -59,3 +59,25 @@ prepros:
 	assert.equal(config.prepros.types.article.before, '_layouts/types/article.before.php');
 	assert.equal(config.prepros.types.article.after, '_layouts/types/article.after.php');
 });
+
+test('loadConfig rejects the php-prepros 2.x seo.jsonld sub-block and seo.language', async (t) => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kiri-config-'));
+	fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+	t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+	const load = (seo) => {
+		fs.writeFileSync(path.join(dir, 'kirigami.yaml'), `
+kirigami:
+  project: Demo
+  baseurl: https://example.com
+  root: src
+seo:
+${seo}
+`);
+		return loadConfig(path.join(dir, 'kirigami.yaml'));
+	};
+
+	await assert.rejects(() => load('  jsonld:\n    lang: fr-CA'), /move its keys up into seo/);
+	await assert.rejects(() => load('  language: fr-CA'), /renamed seo.lang/);
+	const config = await load('  jsonld: false\n  lang: fr-CA\n  logo: images/logo.png');
+	assert.equal(config.seo.jsonld, false);
+});
