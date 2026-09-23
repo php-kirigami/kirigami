@@ -15,7 +15,9 @@ test('CURL authenticates TLS peers and hostnames; WASM receives the Node CA bund
 	const phpBinary = process.env.PHP_BINARY || 'php';
 	const extension = await runPhp(phpBinary, ['-r', 'echo extension_loaded("curl") ? "1" : "0";']);
 	const phpArgs = extension.stdout === '1' ? [] : ['-d', 'extension=curl'];
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'kirigami-tls-'));
+	// Real path: native curl gets curl.cainfo from it (on Windows, os.tmpdir()
+	// can be an 8.3 short name).
+	const directory = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'kirigami-tls-')));
 	t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
 	// Generate a short-lived test identity in memory; no real credentials or
 	// external network services are needed for this regression test.

@@ -8,7 +8,9 @@ import test from 'node:test';
 import { createDevServer } from '../bin/libs/devserver.js';
 
 async function fixture(t) {
-	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kirigami-server-'));
+	// Real path: the server resolves files through it, and the read mocks
+	// below compare paths (on Windows, os.tmpdir() can be an 8.3 short name).
+	const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'kirigami-server-')));
 	fs.writeFileSync(path.join(root, 'index.html'), '<body>Healthy</body>');
 	fs.writeFileSync(path.join(root, 'asset.txt'), 'asset');
 	fs.writeFileSync(path.join(root, 'hello world.html'), 'Encoded filename');

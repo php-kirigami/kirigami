@@ -1,3 +1,4 @@
+import fs from "fs";
 import path from "path";
 import chokidar from "chokidar";
 import picomatch from "picomatch";
@@ -107,6 +108,10 @@ export function createWatchers(rules, options = {}) {
 		debug: false,
 		...options,
 	};
+	// Watch through the real path: on Windows, fs.watch aborts the process
+	// (libuv's fs-event.c assertion) when a watched path contains an 8.3 short
+	// name (C:\Users\RUNNER~1\…), because events come back in long form.
+	opt.cwd = realpathNative(opt.cwd);
 
 	const handles = [];
 	let startupError;
@@ -144,7 +149,7 @@ export function createWatchers(rules, options = {}) {
 			// baseDirs derived from the patterns
 			const baseDirs = Array.from(
 				new Set(patterns.map(globBaseDir).map((d) => d || "."))
-			).map((d) => path.resolve(opt.cwd, d));
+			).map((d) => realpathNative(path.resolve(opt.cwd, d)));
 
 			if (opt.debug) {
 				console.log(`\n[${name}] starting watcher`);
@@ -245,4 +250,12 @@ export function createWatchers(rules, options = {}) {
 		ready,
 		close,
 	};
+}
+
+
+// fs.realpathSync.native() expands 8.3 short names (the JS realpathSync
+// doesn't); paths that don't exist yet are returned unchanged.
+function realpathNative(p) {
+	try { return fs.realpathSync.native(p); }
+	catch { return p; }
 }

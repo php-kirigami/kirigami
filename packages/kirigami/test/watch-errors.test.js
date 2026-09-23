@@ -88,7 +88,9 @@ test('asynchronous startup errors reject readiness and close all watchers', asyn
 
 test('serve reports terminal failures and releases the HTTP port after startup failure', async t => {
 	const cwd = process.cwd();
-	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kiri-watch-errors-'));
+	// Real path, like the paths a real watcher reports (the engine watches
+	// through realpath; on Windows os.tmpdir() can be an 8.3 short name).
+	const dir = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'kiri-watch-errors-')));
 	fs.mkdirSync(path.join(dir, 'src'));
 	fs.writeFileSync(path.join(dir, 'src/_index.php'), 'Page');
 	fs.writeFileSync(path.join(dir, 'kirigami.yaml'), JSON.stringify({ kirigami: { root: 'src', project: 'Errors', baseurl: 'https://example.com' }, prepros: {} }));

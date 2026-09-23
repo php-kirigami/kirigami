@@ -19,7 +19,9 @@
   "Could not connect", instead of 52, "Empty reply"). Groundwork for
   php-wasm-compiler making `connect()` actually wait. A server closing the
   connection now ends the WebSocket gracefully, so queued data still
-  reaches the client.
+  reaches the client. Known limit: a WebSocket has no TCP half-close, so a
+  server that answers and closes before the client has sent anything can
+  race the client's first write.
 
 ## CI dry run under act; VS Code preview port setting — 2026-09-23
 

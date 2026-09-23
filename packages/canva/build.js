@@ -2,6 +2,7 @@ import { build, formatMessages } from "esbuild";
 import { watch as chokidarWatch } from "chokidar";
 import fg from "fast-glob";
 import { cp, mkdir, rm, copyFile } from "node:fs/promises";
+import { realpathSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -46,6 +47,9 @@ export async function buildAll(root = process.cwd()) {
 // request another pass, including after a failed build.
 export function watchBuild(root = process.cwd()) {
 	root = path.resolve(root);
+	// Watch through the real path: on Windows, fs.watch aborts the process
+	// (libuv fs-event.c assertion) when the path holds an 8.3 short name.
+	try { root = realpathSync.native(root); } catch { /* not created yet */ }
 	let timer;
 	let pending = false;
 	let closed = false;
