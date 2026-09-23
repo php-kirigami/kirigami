@@ -38,8 +38,11 @@ test('watch additions, deletions, and renames rebuild PHP, JavaScript, and Sass'
 		(await import('esbuild')).stop();
 		process.chdir(cwd);
 		process.argv[1] = entry;
-		// The fixture is the only subtree owned by this test.
-		fs.rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+		// The fixture is the only subtree owned by this test. Windows can keep
+		// a just-closed watch handle on it for a moment; a leftover temp
+		// directory isn't a test failure.
+		try { fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 }); }
+		catch (error) { if (error.code !== 'EPERM' && error.code !== 'EBUSY') throw error; }
 	});
 	assert.equal((await prepros.default(root, {})).success, true);
 	const results = [];

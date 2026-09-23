@@ -71,7 +71,12 @@ class STR { public static function is_url($url) { return filter_var($url, FILTER
 PREPROS::$config = (object)['network' => true];
 require ${JSON.stringify(helperPath.replaceAll('\\', '/'))};
 $url = ${JSON.stringify(url)};
-echo json_encode(['info' => CURL::getInfo($url), 'body' => CURL::getContents($url), 'download' => CURL::getContents($url, ${JSON.stringify(path.join(directory, 'download.txt').replaceAll('\\', '/'))})]);
+// Diagnostics for assertion messages: a bare curl request with the same CA settings.
+$probe = curl_init($url);
+curl_setopt($probe, CURLOPT_RETURNTRANSFER, true);
+curl_exec($probe);
+$diag = [curl_errno($probe), curl_error($probe), curl_version()['ssl_version'], ini_get('curl.cainfo'), ini_get('openssl.cafile')];
+echo json_encode(['info' => CURL::getInfo($url), 'body' => CURL::getContents($url), 'download' => CURL::getContents($url, ${JSON.stringify(path.join(directory, 'download.txt').replaceAll('\\', '/'))}), 'diag' => $diag]);
 `);
 		const result = await runPhp(phpBinary, [...phpArgs, '-d', `curl.cainfo=${localCa}`, script], { timeout: 15000 });
 		return JSON.parse(result.stdout);
@@ -83,7 +88,7 @@ echo json_encode(['info' => CURL::getInfo($url), 'body' => CURL::getContents($ur
 	assert.equal(response.download, false);
 	fs.writeFileSync(localCa, roots + '\n' + identity.cert);
 	response = await request('127.0.0.1');
-	assert.equal(response.info.http_code, 200);
+	assert.equal(response.info?.http_code, 200, JSON.stringify(response.diag));
 	assert.equal(response.body, 'verified');
 	assert.equal(response.download, true);
 	assert.equal(fs.readFileSync(path.join(directory, 'download.txt'), 'utf8'), 'verified');
