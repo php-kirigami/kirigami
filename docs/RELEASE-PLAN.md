@@ -88,10 +88,12 @@ true only after this release.
 - [ ] Commit or discard the pending working-tree changes here
       (`packages/php-wasm/README.md`) and in `../php-wasm-compiler`. Waiting
       on the corrected WASM builds.
-- [ ] **CI dry run with `act`** (Docker): `act push -W .github/workflows/ci.yml
-      -j test --matrix os:ubuntu-latest` covers the two Linux jobs; act cannot
-      run the Windows ones. Postponed while Docker is busy with the WASM
-      builds.
+- [x] **CI dry run with `act`** (2026-09-23): `act push -W
+      .github/workflows/ci.yml -j test --matrix os:ubuntu-latest` passes both
+      Linux jobs (act cannot run the Windows ones). It first failed on Node
+      24 because the parallel jobs share act's host network and the VS Code
+      activation test used the fixed port 4321; fixed with the
+      `kirigami.previewPort` setting and a free port in the test.
 
 ## 3. Release day, in order
 

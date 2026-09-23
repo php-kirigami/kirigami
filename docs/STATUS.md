@@ -1,5 +1,15 @@
 # Status
 
+## CI dry run under act; VS Code preview port setting — 2026-09-23
+
+- `.github/workflows/ci.yml`'s Linux jobs (Node 24 and 26) pass under
+  `act`: 79 passed, the Windows-only npm launcher test skipped.
+- The first run failed one test on Node 24: act's matrix jobs share the
+  host network, and the other job's dev server answered the VS Code
+  activation test's "server is down" check on the fixed port 4321. The
+  extension gains a `kirigami.previewPort` setting (default 4321) and the
+  test picks a free port.
+
 ## plugin-highlight copy button on canva's observer — 2026-09-23
 
 - `assets/copy.js` registers `<pre>` on `@kirigami/canva/observer`
