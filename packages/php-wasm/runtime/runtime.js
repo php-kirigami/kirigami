@@ -18,7 +18,7 @@ import { createConnection, isIP } from 'node:net';
 import { lookup }                 from 'node:dns';
 import { createHash }             from 'node:crypto';
 import { rootCertificates }       from 'node:tls';
-import { execFileSync }           from 'node:child_process';
+import { homedir }                from 'node:os';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
@@ -107,6 +107,7 @@ function addPackageDirs(dir, seen) {
 
 function discoverPHPExtensionPackageDirs() {
     const seen = new Set();
+    if (discoveryMode() === 'off') return [];
     const roots = new Set();
     let current = resolve(process.cwd());
 
@@ -122,17 +123,50 @@ function discoverPHPExtensionPackageDirs() {
         addPackageDirs(join(root, 'packages'), seen);
     }
 
-    try {
-        const globalRoot = execFileSync('npm', ['root', '-g'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-        if (globalRoot) {
-            addPackageDirs(globalRoot, seen);
-            addPackageDirs(join(globalRoot, '@kirigami'), seen);
+    if (discoveryMode() === 'all') {
+        try {
+            const globalRoot = npmGlobalRoot();
+            if (globalRoot) {
+                addPackageDirs(globalRoot, seen);
+                addPackageDirs(join(globalRoot, '@kirigami'), seen);
+            }
+        } catch {
+            // Ignore missing global npm or a no-node-install environment.
         }
-    } catch {
-        // Ignore missing global npm or a no-node-install environment.
     }
 
     return [...seen];
+}
+
+// KIRIGAMI_PHPEXT_DISCOVERY: "all" (default) searches local and global
+// packages, "local" skips the global npm root, "off" disables discovery.
+// Tests use "off" so results don't depend on what the machine has installed.
+function discoveryMode() {
+    const mode = String(process.env.KIRIGAMI_PHPEXT_DISCOVERY || 'all').toLowerCase();
+    return ['off', 'local'].includes(mode) ? mode : 'all';
+}
+
+// npm's global root, computed the way npm resolves its global prefix
+// (npm_config_prefix, then `prefix=` in ~/.npmrc, then the default next to
+// the Node executable) instead of spawning `npm root -g`: spawning npm costs
+// ~0.6 s per process and cannot run npm.cmd without a shell on Windows.
+// Values set only in a global or builtin npmrc are not read.
+function npmGlobalRoot() {
+    const prefix = npmGlobalPrefix();
+    return process.platform === 'win32' ? join(prefix, 'node_modules') : join(prefix, 'lib', 'node_modules');
+}
+
+function npmGlobalPrefix() {
+    const fromEnv = process.env.npm_config_prefix || process.env.NPM_CONFIG_PREFIX;
+    if (fromEnv) return resolve(fromEnv);
+    try {
+        const npmrc = readFileSync(join(homedir(), '.npmrc'), 'utf8');
+        const match = npmrc.match(/^s*prefixs*=s*(.+?)s*$/m);
+        if (match) return resolve(match[1].replace(/^["']|["']$/g, '').replace(/^~(?=$|[\/])/, homedir()));
+    } catch {
+        // No user npmrc.
+    }
+    return process.platform === 'win32' ? dirname(process.execPath) : dirname(dirname(process.execPath));
 }
 
 function pickExtensionArtifact(manifest, packageDir, phpMajorMinor) {

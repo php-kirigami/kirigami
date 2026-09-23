@@ -7,6 +7,7 @@
     "packages/*"
   ],
   "scripts": {
+    "test": "node scripts/test.js",
     "release": "node scripts/publish.js",
     "release:dry": "node scripts/publish.js --dry-run"
   }

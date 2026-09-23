@@ -1,5 +1,22 @@
 # Status
 
+## Regression suite automation (A16) — 2026-09-22
+
+- `npm test` at the root runs `scripts/test.js`: it compiles the VS Code
+  extension, then runs every package test file with `node --test`, one file at
+  a time, with `KIRIGAMI_PHPEXT_DISCOVERY=off`. The six placeholder `test`
+  scripts are gone: packages with tests run them, bestframe and struct-walker
+  have none.
+- CI: `.github/workflows/ci.yml` runs `npm test` on Windows and Linux with
+  Node 24 and 26, with a native PHP for the TLS test. Not run yet.
+- Locally: 69/69 on Windows with Node 26.9.0 and with Node 24.21.0 (the
+  declared floor, never tested before).
+- PHP extension discovery: new `KIRIGAMI_PHPEXT_DISCOVERY` (`all` | `local` |
+  `off`). The global root is now computed instead of spawning `npm root -g`,
+  which never worked on Windows (`npm.cmd` cannot be spawned without a shell,
+  and the failure was silently ignored) and would have added ~0.6 s to every
+  runtime start.
+
 ## WASM HTTPS, linked plugin scripts, embed storage — 2026-09-22
 
 - **WASM HTTPS works end to end.** Every libcurl request inside WASM used to

@@ -30,16 +30,18 @@ npm install    # npm workspaces — one install covers every package
 
 Only packages with a compilation step have build scripts. Run `npm run build -w @kirigami/canva` for Canva and `npm run compile -w kirigami-vscode` for the extension. Other runtime packages execute their source directly.
 
-Run the existing regression suite from the repository root:
+Run the regression suite from the repository root:
 
 ```bash
-npm run compile --workspace=kirigami-vscode
-node --test --test-concurrency=1 "packages/*/test/*.test.js" "packages/*/test/*.test.cjs"
+npm test                                             # everything
+node scripts/test.js packages/kirigami/test/dist.test.js   # focused files
 ```
 
-The tests require subprocess support and local loopback sockets. TLS helper tests also require native PHP with cURL (`PHP_BINARY` may select it); they verify the helper under native PHP and end to end inside the WASM runtime. Keep the default process isolation: several tests change the working directory and load process-global registries. For a focused check, pass a single test file instead of the two globs.
+`scripts/test.js` compiles the VS Code extension first (its activation test loads the bundle), then runs every `packages/*/test/*.test.{js,cjs}` file with `node --test`, one file at a time: several tests change the working directory and load process-global registries. It sets `KIRIGAMI_PHPEXT_DISCOVERY=off` so locally or globally installed `@kirigami/phpext-*` packages don't affect results. Packages that have tests also expose them through their own `npm test`.
 
-On 2026-09-21, all 48 tests in 14 files passed on Windows with Node 26.8.2 and PHP 8.5.10, including the relocated VS Code integration test. This does not establish Node 24, Linux, or VSIX packaging compatibility. The repository still has no root `npm test` command or CI workflow, and six package test scripts remain placeholders (A16). Automatically discovered local PHP extension packages emitted load warnings during this run; see [runtime discovery](../packages/php-wasm/README.md#automatic-extension-discovery) when reproducing results. Record the commands, environment, and results in your PR.
+The tests require subprocess support and local loopback sockets. The TLS test also requires native PHP with cURL (`PHP_BINARY` may select it); it checks the helper under native PHP and end to end inside the WASM runtime.
+
+CI (`.github/workflows/ci.yml`) runs `npm test` on Windows and Linux with Node 24 and 26, for pushes to `main` and for pull requests. Locally on 2026-09-22, all 69 tests passed on Windows with Node 26.9.0 and Node 24.21.0. VSIX packaging is not covered. Record the commands, environment, and results in your PR.
 
 > The maintainer develops on Windows (PowerShell). If you add a script, mind
 > path separators — normalize `path.sep` to `/` where the existing code does.

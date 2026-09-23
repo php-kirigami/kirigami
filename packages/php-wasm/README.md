@@ -323,11 +323,11 @@ The standard and network helpers each cache their runtime. Closing the network p
 
 ### Automatic extension discovery
 
-At runtime creation, the loader searches for directories named `phpext-*`, including those under `@kirigami`, in `node_modules` and `packages` under the current working directory and its ancestors. It also attempts `npm root -g` for globally installed extension packages; a failed global lookup is ignored. Sibling projects are not searched, so an unrelated compiler checkout next to a Kirigami site cannot affect its runtime.
+At runtime creation, the loader searches for directories named `phpext-*`, including those under `@kirigami`, in `node_modules` and `packages` under the current working directory and its ancestors. It also searches npm's global root for globally installed extension packages. That root is computed the way npm resolves its global prefix (`npm_config_prefix`, then `prefix=` in `~/.npmrc`, then the default next to the Node executable) rather than by spawning npm; a prefix set only in a global or builtin npmrc is not seen. Sibling projects are not searched, so an unrelated compiler checkout next to a Kirigami site cannot affect its runtime.
 
 For each package, `manifest.json` may provide an extension `name` and an `artifacts` array with `phpVersion` and `sourcePath`. The loader prefers an artifact matching the runtime's PHP major/minor version, then a matching patch version, then a generic artifact. If no usable manifest artifact is found, it recursively selects the first `.so` file. It stages the resolved extensions under `/internal/shared/extensions` and adds `extension` directives to the VM's generated `php.ini`.
 
-Artifact selection does not establish binary compatibility, and the current API has no discovery opt-out or explicit search-root option. Use `getLoadedExtensions()` to check what actually loaded; finding or staging a `.so` does not prove that PHP accepted it. Cached runtimes are not rescanned for every execution.
+Set `KIRIGAMI_PHPEXT_DISCOVERY` to `local` to skip the global root, or to `off` to disable discovery entirely (the regression suite uses `off`). There is no explicit search-root option. Artifact selection does not establish binary compatibility. Use `getLoadedExtensions()` to check what actually loaded; finding or staging a `.so` does not prove that PHP accepted it. Cached runtimes are not rescanned for every execution.
 
 ---
 

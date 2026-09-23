@@ -41,7 +41,7 @@
     "access": "public"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test --test-concurrency=1 \"test/*.test.js\""
   },
   "dependencies": {
     "@kirigami/php-wasm": "8.5.10-6",
