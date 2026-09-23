@@ -132,6 +132,11 @@ Then press <kbd>F5</kbd> to launch an Extension Development Host, and open
 a folder containing a `kirigami.yaml` in that host window (e.g.
 `../template-demo`).
 
+F5 builds the extension once (`node esbuild.mjs`, the `build` task) and
+starts the host with every other extension disabled, so a crash or a slow
+start can't come from another extension. Pick **Run Kirigami Extension (with
+all extensions)** in the Run view to test alongside your usual extensions.
+
 ---
 
 ## Known limitations
