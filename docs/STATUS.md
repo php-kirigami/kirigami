@@ -1,5 +1,19 @@
 # Status
 
+## UDP through the PHP-WASM network proxy — 2026-09-23
+
+- The outbound proxy relays UDP: SOCKFS opens one WebSocket per datagram
+  peer, the runtime's `url()` tags `SOCK_DGRAM` sockets with
+  `&proto=udp`, and the proxy relays each message as one datagram over
+  `node:dgram` (dropping SOCKFS's "port" bookkeeping message). UDP
+  sockets close with the proxy.
+- Works through PHP streams (`udp://`) with read timeouts. With the
+  `sockets` extension, send and receive relay, but waiting doesn't: a
+  blocking `socket_recvfrom()` returns at once, and `socket_select()`
+  reports the socket readable as soon as its WebSocket opens. Both are
+  PHP-WASM build issues (see TODO); net-snmp's `select()` loop needs them.
+- Test: `packages/php-wasm/test/runtime-lifecycle.test.js`.
+
 ## CI dry run under act; VS Code preview port setting — 2026-09-23
 
 - `.github/workflows/ci.yml`'s Linux jobs (Node 24 and 26) pass under

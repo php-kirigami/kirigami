@@ -137,7 +137,9 @@ npm install @kirigami/php-wasm
 
 ### 1. High-level execution with Outbound Networking
 
-The package provides a built-in proxy architecture (`node:http` & `node:net`) that routes Emscripten `SOCKFS` actions into genuine outbound TCP traffic. It also automatically binds your Node environment's root certificates (`node:tls`) to the PHP layer so `cURL` and `OpenSSL` HTTPS requests work immediately.
+The package provides a built-in proxy architecture (`node:http`, `node:net` & `node:dgram`) that routes Emscripten `SOCKFS` actions into genuine outbound TCP traffic, and UDP for datagram sockets (one WebSocket message per datagram). It also automatically binds your Node environment's root certificates (`node:tls`) to the PHP layer so `cURL` and `OpenSSL` HTTPS requests work immediately.
+
+UDP works through PHP streams (`stream_socket_client('udp://host:port')`, `fsockopen('udp://…')`) with their usual read timeouts. With the `sockets` extension, `socket_sendto()`/`socket_recvfrom()` relay too, but a blocking receive doesn't wait for the reply yet, and `socket_select()` reports a UDP socket readable as soon as its connection to the proxy opens: read with `MSG_DONTWAIT` in a loop with `usleep()` until the reply arrives. C libraries that wait with `select()`/`poll()` (net-snmp, for example) hit the same limit until the PHP-WASM build fixes datagram readiness.
 
 ```ts
 import { getPHPRuntimeWithNetwork, jspi } from '@kirigami/php-wasm';
@@ -245,7 +247,7 @@ console.log(await streamedResponse.stdoutText); // Hello, Kirigami!
 
 Two things narrow that isolation and are worth keeping in mind:
 
-- **`getPHPRuntimeWithNetwork()`** gives the sandboxed PHP instance genuine outbound TCP access via the local proxy (not just HTTP/HTTPS). The proxy itself binds to `127.0.0.1` only, but the PHP code running inside can now reach out to the network like any other client.
+- **`getPHPRuntimeWithNetwork()`** gives the sandboxed PHP instance genuine outbound TCP and UDP access via the local proxy (not just HTTP/HTTPS). The proxy itself binds to `127.0.0.1` only, but the PHP code running inside can now reach out to the network like any other client.
 - WASM sandboxing reduces host exposure but isn't a substitute for a security boundary like a container or VM if you're running fully untrusted PHP (e.g. user-submitted code) — apply the isolation appropriate to your threat model on top.
 
 ---

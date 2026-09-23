@@ -1,20 +1,22 @@
 /**
  * runtime.js — PHP WASM runtime with networking
  *
- * Zero external dependency: node:http, node:net, node:crypto, node:tls, node:dns
+ * Zero external dependency: node:http, node:net, node:dgram, node:crypto, node:tls, node:dns
  *
  * Networking architecture:
  *   PHP (WASM/SOCKFS)
  *     └─ ws (hardcoded by Emscripten, external lib)
  *         └─ decorator → PHPWasmWebSocket (framing COMMAND_CHUNK / COMMAND_SET_SOCKETOPT)
- *             └─ WS to ws://127.0.0.1:<proxyPort>/?host=X&port=Y
+ *             └─ WS to ws://127.0.0.1:<proxyPort>/?host=X&port=Y[&proto=udp]
  *                 └─ Native HTTP/WS proxy (node:http upgrade)
- *                     └─ TCP to the real destination
+ *                     └─ TCP to the real destination, or UDP (node:dgram)
+ *                        for a SOCK_DGRAM socket: one message per datagram
  */
 
 import { PHP, loadPHPRuntime, resolvePHPExtension, withResolvedPHPExtensions } from '@php-wasm/universal';
 import { createServer }           from 'node:http';
 import { createConnection, isIP } from 'node:net';
+import { createSocket as createDgramSocket } from 'node:dgram';
 import { lookup }                 from 'node:dns';
 import { createHash }             from 'node:crypto';
 import { rootCertificates }       from 'node:tls';
@@ -412,6 +414,62 @@ function lookupIPv4(hostname) {
     );
 }
 
+// SOCKFS's "port" message: the first message on a bound SOCK_DGRAM socket
+// announces its local port (ff ff ff ff 'p' 'o' 'r' 't' hi lo). It's
+// bookkeeping between two SOCKFS ends, not a datagram to forward.
+function isSockfsPortMessage(data) {
+    return data.length === 10 && data[0] === 0xff && data[1] === 0xff && data[2] === 0xff && data[3] === 0xff
+        && data.toString('latin1', 4, 8) === 'port';
+}
+
+// UDP relay for one SOCKFS peer: each WebSocket message (COMMAND_CHUNK) is
+// one datagram to host:port, and each datagram back becomes one message.
+function relayUdp(socket, wsBuffer, destIp, destPort, trackUdp) {
+    const udp = createDgramSocket('udp4');
+    trackUdp(udp);
+    // Like the proxy server itself, don't keep the event loop alive.
+    udp.unref();
+    const pending = [];
+    let connected = false;
+
+    const send = (payload) => {
+        if (payload[0] !== COMMAND_CHUNK) return; // socket options don't apply to UDP
+        const data = payload.subarray(1);
+        if (isSockfsPortMessage(data)) return;
+        if (connected) udp.send(data);
+        else pending.push(data);
+    };
+    const close = () => {
+        try { udp.close(); } catch { /* already closed */ }
+        socket.destroy();
+    };
+    const onFrames = () => {
+        const { frames, remaining } = parseFrames(wsBuffer);
+        wsBuffer = remaining;
+        for (const { opcode, payload } of frames) {
+            if (opcode === 0x8) { close(); return; }
+            if (opcode === 0x2 || opcode === 0x0) send(payload);
+        }
+    };
+
+    udp.on('message', (msg) => {
+        try { socket.write(wsFrame(msg)); } catch { close(); }
+    });
+    udp.on('error', close);
+    udp.connect(destPort, destIp, () => {
+        connected = true;
+        for (const data of pending.splice(0)) udp.send(data);
+    });
+
+    socket.on('data', (chunk) => {
+        wsBuffer = Buffer.concat([wsBuffer, chunk]);
+        onFrames();
+    });
+    socket.on('close', close);
+    socket.on('error', close);
+    if (wsBuffer.length) onFrames();
+}
+
 function startOutboundProxy(port) {
     return new Promise((resolve) => {
         const server = createServer((req, res) => {
@@ -424,9 +482,15 @@ function startOutboundProxy(port) {
             socket.once('close', () => sockets.delete(socket));
         };
         server.on('connection', track);
-        // Include upgraded WebSockets and outbound TCP sockets in teardown.
+        const udpSockets = new Set();
+        const trackUdp = udp => {
+            udpSockets.add(udp);
+            udp.once('close', () => udpSockets.delete(udp));
+        };
+        // Include upgraded WebSockets and outbound TCP/UDP sockets in teardown.
         server.shutdown = () => {
             for (const socket of sockets) socket.destroy();
+            for (const udp of udpSockets) udp.close();
             server.close();
         };
 
@@ -455,6 +519,12 @@ function startOutboundProxy(port) {
             if (socket.destroyed) return;
 
             let wsBuffer = head.length ? head : Buffer.alloc(0);
+
+            if (url.searchParams.get('proto') === 'udp') {
+                relayUdp(socket, wsBuffer, destIp, destPort, trackUdp);
+                return;
+            }
+
             const recvQueue = [];
             let tcpSocket   = null;
 
@@ -637,8 +707,11 @@ const getPHPRuntimeWithNetwork = async () => {
             loader,
             await withDiscoveredPHPExtensions({
                 websocket: {
-                    url: (_sock, host, port) =>
-                        `ws://127.0.0.1:${proxyPort}/?host=${host}&port=${port}`,
+                    // SOCKFS opens one WebSocket per peer; a SOCK_DGRAM (2)
+                    // socket's peer is relayed as UDP by the proxy.
+                    url: (sock, host, port) =>
+                        `ws://127.0.0.1:${proxyPort}/?host=${host}&port=${port}` +
+                        (sock?.type === 2 ? '&proto=udp' : ''),
                     subprotocol: 'binary',
                     decorator:   addSocketOptionsSupportToWebSocketClass,
                 },

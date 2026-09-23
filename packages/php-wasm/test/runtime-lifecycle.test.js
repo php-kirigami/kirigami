@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { createConnection, createServer } from 'node:net';
+import { createSocket } from 'node:dgram';
 import { test } from 'node:test';
 import { createPHPRuntime, getPHPRuntime } from '../index.js';
 
@@ -46,4 +47,37 @@ test('exiting a network runtime closes its proxy, upgraded sockets and outbound 
 	php.exit();
 	await closed;
 	assert.equal(proxy.listening, false);
+});
+
+test('a network runtime relays UDP datagrams (streams and the sockets extension)', { timeout: 30000 }, async (t) => {
+	const echo = createSocket('udp4');
+	const received = [];
+	echo.on('message', (msg, peer) => {
+		received.push(msg.toString());
+		echo.send(Buffer.from(`echo:${msg}`), peer.port, peer.address);
+	});
+	echo.bind(0, '127.0.0.1');
+	await once(echo, 'listening');
+	t.after(() => echo.close());
+	const port = echo.address().port;
+	const php = await createPHPRuntime({ network: true });
+	t.after(() => php.exit());
+	const { text } = await php.run({ code: `<?php
+		$s = stream_socket_client('udp://127.0.0.1:${port}', $errno, $errstr, 5);
+		stream_set_timeout($s, 5);
+		fwrite($s, 'one'); $a = fread($s, 100);
+		fwrite($s, 'two'); $b = fread($s, 100);
+		fclose($s);
+		// The sockets extension reads without waiting: poll with MSG_DONTWAIT.
+		$sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
+		socket_sendto($sock, 'three', 5, 0, '127.0.0.1', ${port});
+		$c = false;
+		for ($i = 0; $i < 300 && $c === false; $i++) {
+			$n = @socket_recvfrom($sock, $c, 100, MSG_DONTWAIT, $from, $fromPort);
+			if ($n === false) { $c = false; usleep(10000); }
+		}
+		echo json_encode([$a, $b, $c]);
+	` });
+	assert.deepEqual(JSON.parse(text), ['echo:one', 'echo:two', 'echo:three']);
+	assert.deepEqual(received, ['one', 'two', 'three']);
 });
