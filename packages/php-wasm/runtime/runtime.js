@@ -21,6 +21,7 @@ import { rootCertificates }       from 'node:tls';
 import { homedir }                from 'node:os';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { pathToFileURL }          from 'node:url';
 
 // ─── CA bundle ───────────────────────────────────────────────────────────────
 
@@ -161,7 +162,7 @@ function npmGlobalPrefix() {
     if (fromEnv) return resolve(fromEnv);
     try {
         const npmrc = readFileSync(join(homedir(), '.npmrc'), 'utf8');
-        const match = npmrc.match(/^s*prefixs*=s*(.+?)s*$/m);
+        const match = npmrc.match(/^\s*prefix\s*=\s*(.+?)\s*$/m);
         if (match) return resolve(match[1].replace(/^["']|["']$/g, '').replace(/^~(?=$|[\/])/, homedir()));
     } catch {
         // No user npmrc.
@@ -222,31 +223,67 @@ function findExtensionSoFile(packageDir, phpMajorMinor) {
     return match;
 }
 
+// The modules a package ships, in load order. Generated phpext packages export
+// `register(phpVersion)` from index.js, returning `[{ name, soPath }]`; a
+// package can bundle a dependency module first (phpext-mysqli ships mysqlnd,
+// then mysqli). Packages without it fall back to their single manifest.json.
+async function listPackageModules(packageDir, phpMajorMinor) {
+    const indexPath = join(packageDir, 'index.js');
+    if (phpMajorMinor && existsSync(indexPath)) {
+        try {
+            const { default: register } = await import(pathToFileURL(indexPath).href);
+            if (typeof register === 'function') {
+                const modules = register(phpMajorMinor);
+                if (Array.isArray(modules) && modules.every((m) => m && m.name && m.soPath && existsSync(m.soPath))) {
+                    return modules;
+                }
+            }
+        } catch {
+            // Fall back to manifest.json below.
+        }
+    }
+
+    const soPath = findExtensionSoFile(packageDir, phpMajorMinor);
+    if (!soPath) return [];
+    let manifest = null;
+    try {
+        manifest = JSON.parse(readFileSync(join(packageDir, 'manifest.json'), 'utf8'));
+    } catch {
+        manifest = null;
+    }
+    const name = (manifest && manifest.name) || packageDir.split(/[\\/]/).at(-1).replace(/^phpext-/, '');
+    return [{ name, soPath }];
+}
+
 async function resolveInstalledPHPExtensions(phpMajorMinor) {
-    const extensions = [];
+    const modules = [];
+    const names = new Set();
 
     for (const packageDir of discoverPHPExtensionPackageDirs()) {
-        const manifestPath = join(packageDir, 'manifest.json');
-        let manifest = null;
-        if (existsSync(manifestPath)) {
-            try {
-                manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-            } catch {
-                manifest = null;
-            }
+        for (const module of await listPackageModules(packageDir, phpMajorMinor)) {
+            // A shared dependency (mysqlnd, bundled by both phpext-mysqli and
+            // phpext-pdo_mysql) is loaded once, at its first position.
+            if (names.has(module.name)) continue;
+            names.add(module.name);
+            modules.push(module);
         }
+    }
 
-        const soPath = findExtensionSoFile(packageDir, phpMajorMinor);
-        if (!soPath) continue;
-
-        const extensionName = (manifest && manifest.name) || packageDir.split(/[\\/]/).at(-1).replace(/^phpext-/, '');
-        const soBytes = readFileSync(soPath);
+    const extensions = [];
+    for (const [index, { name, soPath }] of modules.entries()) {
         const extension = await resolvePHPExtension({
             phpVersion: phpMajorMinor || undefined,
-            name: extensionName,
-            source: { format: 'so', name: extensionName, bytes: soBytes },
+            name,
+            source: { format: 'so', name, bytes: readFileSync(soPath) },
             loadWithIniDirective: 'extension',
         });
+        // PHP reads the scan directory's .ini files in alphabetical order, and
+        // "mysqli.ini" sorts before "mysqlnd.ini": prefix each file with its
+        // load position so dependencies load first.
+        if (extension.iniPath) {
+            const dir = extension.iniPath.slice(0, extension.iniPath.lastIndexOf('/') + 1);
+            extension.iniPath = `${dir}${String(index).padStart(3, '0')}-${name}.ini`;
+        }
         extensions.push(extension);
     }
 
