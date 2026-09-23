@@ -7,6 +7,8 @@ toggle, kirigami.yaml reload watcher.
 
 ## Unreleased
 
+- Added the `kirigami.previewPort` setting (default `4321`) for the dev server's port.
+
 - The Kirigami output channel now looks like the `kiri` CLI (same headers, `›`/`✔`/`⚠`/`❌` lines and error blocks), colored through a dedicated output language, with no raw ANSI codes.
 - Command titles no longer repeat the category ("Kirigami: Kirigami: …").
 

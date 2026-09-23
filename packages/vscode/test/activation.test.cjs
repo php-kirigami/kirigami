@@ -3,9 +3,21 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const Module = require('node:module');
+const net = require('node:net');
+
+// A free port for the dev server, so parallel runs (act's matrix jobs share
+// the host network) don't answer each other's preview requests.
+const freePort = () => new Promise((resolve, reject) => {
+	const server = net.createServer().once('error', reject).listen(0, '127.0.0.1', () => {
+		const { port } = server.address();
+		server.close(() => resolve(port));
+	});
+});
 const { test } = require('node:test');
 
 test('relocated extension activates and runs all commands without workspace dependencies or host chdir', { timeout: 60000 }, async t => {
+	const port = await freePort();
+	const preview = `http://127.0.0.1:${port}/`;
 	const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'kiri-extension-'));
 	const extensionPath = path.join(temp, 'extension');
 	const project = path.join(temp, 'site');
@@ -28,7 +40,7 @@ test('relocated extension activates and runs all commands without workspace depe
 	const vscode = {
 		workspace: {
 			isTrusted: true, workspaceFolders: [{ uri: { fsPath: project } }],
-			getConfiguration: () => ({ get: () => process.execPath }),
+			getConfiguration: () => ({ get: (key, fallback) => key === 'nodePath' ? process.execPath : key === 'previewPort' ? port : fallback }),
 			createFileSystemWatcher: () => ({ ...disposable, onDidChange(fn) { changed = fn; return disposable; }, onDidCreate: () => disposable }),
 		},
 		window: {
@@ -65,7 +77,7 @@ test('relocated extension activates and runs all commands without workspace depe
 	fs.unlinkSync(path.join(project, 'src/index.html'));
 	await commands.get('kirigami.toggleServer')();
 	assert.match(status.text, /radio-tower/);
-	assert.match(await (await fetch('http://127.0.0.1:4321/')).text(), /<p>After<\/p>/);
+	assert.match(await (await fetch(preview)).text(), /<p>After<\/p>/);
 	await commands.get('kirigami.toggleServer')();
 	assert.match(status.text, /circle-outline/);
 	assert.deepEqual(errors, []);
@@ -95,11 +107,11 @@ test('relocated extension activates and runs all commands without workspace depe
 	assert.equal(errors.length, 2);
 	assert.match(status.text, /error/);
 	assert.ok(logs.some(line => /Initial preview failure/.test(line)));
-	await assert.rejects(fetch('http://127.0.0.1:4321/'));
+	await assert.rejects(fetch(preview));
 	fs.writeFileSync(path.join(project, 'src/_index.php'), '<p>Recovered preview</p>');
 	await commands.get('kirigami.toggleServer')();
-	assert.match(await (await fetch('http://127.0.0.1:4321/')).text(), /Recovered preview/);
+	assert.match(await (await fetch(preview)).text(), /Recovered preview/);
 	await commands.get('kirigami.toggleServer')();
 	await extension.deactivate();
-	await assert.rejects(fetch('http://127.0.0.1:4321/'));
+	await assert.rejects(fetch(preview));
 });

@@ -74,6 +74,9 @@ Available from the Command Palette, all under the **Kirigami** category:
 | Kirigami: Validate kirigami.yaml | `kirigami.validate` | `Project.validate()` |
 | Kirigami: Toggle Dev Server | `kirigami.toggleServer` | `Project.serve()` / the returned handle's `close()` |
 
+The dev server listens on `kirigami.previewPort` (default `4321`); a change
+applies the next time the server starts.
+
 Results and errors are summarized in a notification; full detail (and
 every watch-triggered rebuild's outcome) goes to the **Kirigami** Output
 channel.

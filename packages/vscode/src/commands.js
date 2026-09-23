@@ -102,7 +102,7 @@ export function registerCommands(context, { output, statusBar }) {
 		output.show(true);
 		log.header("Dev-mode with hot-reload");
 		const server = await project.serve({
-			port: 4321,
+			port: vscode.workspace.getConfiguration("kirigami").get("previewPort", 4321),
 			onBuildResult: (event) => {
 				if (event.status === "start") {
 					statusBar.setState("building");
