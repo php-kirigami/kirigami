@@ -13,6 +13,13 @@
   reports the socket readable as soon as its WebSocket opens. Both are
   PHP-WASM build issues (see TODO); net-snmp's `select()` loop needs them.
 - Test: `packages/php-wasm/test/runtime-lifecycle.test.js`.
+- The proxy now answers the WebSocket handshake only once the TCP
+  destination accepts, and `502` when DNS or the connection fails, so a
+  refused connection fails instead of opening then closing (curl: error 7,
+  "Could not connect", instead of 52, "Empty reply"). Groundwork for
+  php-wasm-compiler making `connect()` actually wait. A server closing the
+  connection now ends the WebSocket gracefully, so queued data still
+  reaches the client.
 
 ## CI dry run under act; VS Code preview port setting — 2026-09-23
 

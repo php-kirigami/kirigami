@@ -81,3 +81,32 @@ test('a network runtime relays UDP datagrams (streams and the sockets extension)
 	assert.deepEqual(JSON.parse(text), ['echo:one', 'echo:two', 'echo:three']);
 	assert.deepEqual(received, ['one', 'two', 'three']);
 });
+
+test('the proxy only opens a TCP relay once the destination accepts', { timeout: 30000 }, async (t) => {
+	// A port nobody listens on: bind, read the port, close.
+	const probe = createServer();
+	probe.listen(0, '127.0.0.1');
+	await once(probe, 'listening');
+	const closedPort = probe.address().port;
+	probe.close();
+	await once(probe, 'close');
+	// A server that talks first and closes, before the client sends anything.
+	const talker = createServer(socket => socket.end(['HTTP/1.0 200 OK', 'Content-Length: 2', '', 'ok'].join('\r\n')));
+	talker.listen(0, '127.0.0.1');
+	await once(talker, 'listening');
+	t.after(() => talker.close());
+	const php = await createPHPRuntime({ network: true });
+	t.after(() => php.exit());
+	const { text } = await php.run({ code: `<?php
+		$refused = curl_init('http://127.0.0.1:${closedPort}/');
+		curl_setopt($refused, CURLOPT_RETURNTRANSFER, true);
+		curl_exec($refused);
+		$talker = curl_init('http://127.0.0.1:${talker.address().port}/');
+		curl_setopt($talker, CURLOPT_RETURNTRANSFER, true);
+		echo json_encode([curl_errno($refused), curl_exec($talker)]);
+	` });
+	// 7 = CURLE_COULDNT_CONNECT: the 502 handshake fails the connect instead
+	// of an open-then-closed socket (52, "Empty reply from server").
+	assert.deepEqual(JSON.parse(text), [7, 'ok']);
+});
+

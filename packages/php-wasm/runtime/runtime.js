@@ -496,10 +496,20 @@ function startOutboundProxy(port) {
 
         server.on('upgrade', async (request, socket, head) => {
             // console.error(`[proxy] upgrade: ${request.url}`);
-            // WebSocket handshake
             const key = request.headers['sec-websocket-key'];
             if (!key) { socket.destroy(); return; }
-            socket.write(wsHandshakeResponse(key));
+            // The 101 handshake waits until the destination is reachable, so
+            // the WebSocket only opens (and a waiting connect() only succeeds)
+            // once the TCP connection is up. A failed lookup or connection
+            // answers 502 instead: the WebSocket errors, which SOCKFS reports
+            // as ECONNREFUSED.
+            let accepted = false;
+            const accept = () => { accepted = true; socket.write(wsHandshakeResponse(key)); };
+            const refuse = () => {
+                if (socket.destroyed) return;
+                if (accepted) { socket.destroy(); return; }
+                socket.end('HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\nContent-Length: 0\r\n\r\n');
+            };
 
             // Extract host/port from ?host=X&port=Y
             const url       = new URL(`ws://0.0.0.0${request.url}`);
@@ -507,20 +517,22 @@ function startOutboundProxy(port) {
             const destHost  = url.searchParams.get('host');
             // console.error(`[proxy] → ${destHost}:${destPort}`);
             if (!destHost || !destPort || destPort < 1 || destPort > 65535) {
-                socket.destroy(); return;
+                refuse(); return;
             }
 
             // DNS resolution
             let destIp = destHost;
             if (isIP(destHost) === 0) {
                 try   { destIp = await lookupIPv4(destHost); }
-                catch { socket.destroy(); return; }
+                catch { refuse(); return; }
             }
             if (socket.destroyed) return;
 
             let wsBuffer = head.length ? head : Buffer.alloc(0);
 
             if (url.searchParams.get('proto') === 'udp') {
+                // Nothing to wait for: UDP has no connection to establish.
+                accept();
                 relayUdp(socket, wsBuffer, destIp, destPort, trackUdp);
                 return;
             }
@@ -562,6 +574,7 @@ function startOutboundProxy(port) {
 
             tcpSocket = createConnection(destPort, destIp, () => {
                 // console.error(`[proxy] TCP connected → ${destIp}:${destPort}`);
+                accept();
                 flush();
             });
             track(tcpSocket);
@@ -569,8 +582,9 @@ function startOutboundProxy(port) {
                 // console.error(`[proxy] TCP→WS ${data.length} bytes`);
                 try { socket.write(wsFrame(data)); } catch { tcpSocket.end(); }
             });
-            tcpSocket.on('end',   ()     => socket.destroy());
-            tcpSocket.on('error', ()     => { socket.destroy(); try { tcpSocket.end(); } catch {} });
+            // end(), not destroy(): frames still queued for the client get flushed first.
+            tcpSocket.on('end',   ()     => socket.end());
+            tcpSocket.on('error', ()     => { refuse(); try { tcpSocket.end(); } catch {} });
         });
 
         server.listen(port, '127.0.0.1', () => {
