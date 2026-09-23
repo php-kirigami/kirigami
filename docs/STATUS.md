@@ -45,6 +45,10 @@
   alphabetically and `mysqli.ini` sorted before `mysqlnd.ini`. Before this,
   `mysqli` failed on `mysqlnd_global_stats`, and the unresolved symbol then
   failed every extension loaded after it.
+- php-wasm phpext loader writes each module's `iniEntries` (from
+  `register()` or `manifest.json`) as `key=value` lines after its
+  `extension=` line, for php-wasm-compiler's upcoming FFI package, which
+  loads but stays unusable without its settings.
 - phpext compatibility, first pass (PHP 8.5.11, 18 packages): all 19
   modules load; `pdo_firebird` still prints `Aborted()` (core rebuild
   pending). See [RELEASE-PLAN.md](RELEASE-PLAN.md).

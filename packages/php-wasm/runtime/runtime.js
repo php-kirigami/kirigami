@@ -224,9 +224,11 @@ function findExtensionSoFile(packageDir, phpMajorMinor) {
 }
 
 // The modules a package ships, in load order. Generated phpext packages export
-// `register(phpVersion)` from index.js, returning `[{ name, soPath }]`; a
-// package can bundle a dependency module first (phpext-mysqli ships mysqlnd,
-// then mysqli). Packages without it fall back to their single manifest.json.
+// `register(phpVersion)` from index.js, returning `[{ name, soPath, iniEntries? }]`;
+// a package can bundle a dependency module first (phpext-mysqli ships mysqlnd,
+// then mysqli), and `iniEntries` are php.ini settings the module needs (FFI
+// loads but stays unusable without its own). Packages without it fall back to
+// their single manifest.json.
 async function listPackageModules(packageDir, phpMajorMinor) {
     const indexPath = join(packageDir, 'index.js');
     if (phpMajorMinor && existsSync(indexPath)) {
@@ -252,7 +254,7 @@ async function listPackageModules(packageDir, phpMajorMinor) {
         manifest = null;
     }
     const name = (manifest && manifest.name) || packageDir.split(/[\\/]/).at(-1).replace(/^phpext-/, '');
-    return [{ name, soPath }];
+    return [{ name, soPath, iniEntries: manifest && manifest.iniEntries }];
 }
 
 async function resolveInstalledPHPExtensions(phpMajorMinor) {
@@ -270,12 +272,14 @@ async function resolveInstalledPHPExtensions(phpMajorMinor) {
     }
 
     const extensions = [];
-    for (const [index, { name, soPath }] of modules.entries()) {
+    for (const [index, { name, soPath, iniEntries }] of modules.entries()) {
         const extension = await resolvePHPExtension({
             phpVersion: phpMajorMinor || undefined,
             name,
             source: { format: 'so', name, bytes: readFileSync(soPath) },
             loadWithIniDirective: 'extension',
+            // Written as `key=value` lines after the `extension=` line.
+            iniEntries: iniEntries && typeof iniEntries === 'object' ? iniEntries : undefined,
         });
         // PHP reads the scan directory's .ini files in alphabetical order, and
         // "mysqli.ini" sorts before "mysqlnd.ini": prefix each file with its
