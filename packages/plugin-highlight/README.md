@@ -71,6 +71,15 @@ build. Part of the **Kirigami** project ecosystem.
 
 ---
 
+## Unreleased
+
+- **The copy button now reaches code blocks inserted after page load.** The
+  script uses `@kirigami/canva`'s observer instead of a one-time
+  `querySelectorAll` sweep, so blocks added later (fetched content, an SPA
+  re-render) get their button too.
+
+---
+
 ## What's new in 0.1.6
 
 - **An unknown `languages:` name now fails the build**, not just warns.
@@ -171,7 +180,7 @@ validates `options:` as you type** (once `name:` is set), via the
 | `theme` | `"auto"` \| `"dark"` \| `"light"` \| `"none"` | `"auto"` | Which theme stylesheet to append to the Sass build. `"none"` skips the palette; font and copy-button styles are controlled separately. |
 | `autodetect` | `boolean` | `true` | Guess the language of code blocks that have no `language-…` class (restricted to the registered set). |
 | `embedFont` | `boolean` | `true` | Append the embedded JetBrains Mono `@font-face` (~39 KB woff2, base64) to the Sass build. |
-| `copyButton` | `boolean` | `true` | Hover "Copy" button on every code block. Bundles a ~1 KB script into every `esbuild` task (you need one) and appends the button styles to the Sass build. |
+| `copyButton` | `boolean` | `true` | Hover "Copy" button on every code block. Bundles a ~2.4 KB minified script (with `@kirigami/canva`'s observer, shared with other plugins that use it) into every `esbuild` task (you need one) and appends the button styles to the Sass build. |
 | `tag` | `boolean` | `true` | Register the `<highlight lang="…">…</highlight>` authoring tag (PHP-side). |
 
 Configured aliases include `html`/`htm`/`svg` → `xml`, `js`/`jsx` → `javascript`,
@@ -214,7 +223,7 @@ The plugin registers `@kirigami/sdk` hooks:
 - **`sass:after`** — appends the theme stylesheet (plus, by default, the font
   `@font-face` and the copy-button styles) to every `sass` task's output.
 - **`esbuild:after`** — with `copyButton` on, bundles the copy-button script
-  (`assets/copy.js`, ~1 KB) into every `esbuild` task. It wraps each
+  (`assets/copy.js`, ~2.4 KB minified with the observer) into every `esbuild` task. It wraps each
   `pre > code.hljs` in a `.hljs-copy-wrap` and adds a `.hljs-copy` button that
   writes the block's text to the clipboard. **If your project has no `esbuild`
   task, the script has nowhere to go** — the build warns and skips the copy-button script and styles; add an `esbuild` task or set `copyButton: false`.
@@ -233,9 +242,10 @@ and (with `copyButton`) the small copy script.
 
 ## Copy-button behavior
 
-The script scans existing `pre > code.hljs` blocks when it runs (or on
-`DOMContentLoaded`). It does not watch for blocks inserted later. Repeated
-execution skips enhanced blocks and blocks with an adjacent button.
+The script registers `<pre>` on `@kirigami/canva`'s observer, so it enhances
+every `pre > code.hljs` block already in the page and every one inserted
+later (content loaded after the first paint, an SPA re-render). A block is
+enhanced once; blocks with an adjacent button are skipped.
 It copies the displayed text with one trailing newline removed. Success shows
 `Copied`; rejection shows `Press ⌘C`, then resets after 1.6 seconds. That
 fallback does not select the code or perform another copy operation.

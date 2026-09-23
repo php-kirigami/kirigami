@@ -3,13 +3,18 @@
 //
 // @kirigami/plugin-highlight appends this to every esbuild bundle (the
 // `esbuild:after` hook) when `copyButton` is on. It's a side-effect module —
-// importing it runs it. Pairs with the `.hljs-copy*` styles from the theme.
+// importing it registers `<pre>` on @kirigami/canva's observer, which hands
+// over every block already in the page and every one inserted later (content
+// loaded after the first paint, an SPA re-render). Pairs with the
+// `.hljs-copy*` styles from the theme.
 //
-// Safe to run more than once (multiple bundles, an SPA re-render): every code
-// block is enhanced at most once. It does NOT touch blocks another script has
-// already wrapped — if you see two stacked buttons, a second copy-button
-// implementation is still running (e.g. an older hand-rolled one); remove it.
+// Safe to run more than once (multiple bundles): every code block is enhanced
+// at most once. It does NOT touch blocks another script has already wrapped —
+// if you see two stacked buttons, a second copy-button implementation is
+// still running (e.g. an older hand-rolled one); remove it.
 // ---------------------------------------------------------------------------
+
+import { register } from '@kirigami/canva/observer';
 
 (() => {
 	if (typeof document === 'undefined') return;
@@ -58,13 +63,19 @@
 		});
 	}
 
-	function run() {
-		document.querySelectorAll('pre > code.hljs').forEach((code) => enhance(code.parentElement));
-	}
-
-	if (document.readyState === 'loading') {
-		document.addEventListener('DOMContentLoaded', run, { once: true });
-	} else {
-		run();
-	}
+	// The handler returns nothing, so the observer leaves the <pre> in place:
+	// enhance() moves it into its wrapper itself, and the wrapper's insertion
+	// doesn't re-dispatch a <pre> the observer has already seen. That also
+	// means one chance per block: while the page is still parsing, a <pre>
+	// can be reported before its <code> child is attached, so check it again
+	// once parsing is done.
+	const isHighlighted = (pre) => pre.querySelector(':scope > code.hljs');
+	register('pre', (pre) => {
+		if (isHighlighted(pre)) enhance(pre);
+		else if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', () => {
+				if (isHighlighted(pre)) enhance(pre);
+			}, { once: true });
+		}
+	}, { voidLike: false });
 })();

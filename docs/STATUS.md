@@ -1,5 +1,16 @@
 # Status
 
+## plugin-highlight copy button on canva's observer — 2026-09-23
+
+- `assets/copy.js` registers `<pre>` on `@kirigami/canva/observer`
+  instead of a one-time `querySelectorAll` sweep, so code blocks inserted
+  after load get their button too. A `<pre>` reported mid-parse before its
+  `<code>` exists is re-checked on `DOMContentLoaded`. Checked in headless
+  Chrome with the bundle as a synchronous `<head>` script: static, late and
+  non-`hljs` blocks behave as expected. Minified size ~2.4 KB with the
+  observer. The Node-side highlighting pass stays a string rewrite: it
+  runs before any DOM exists.
+
 ## SCHEMA on jsonk, Normalizer on norm — 2026-09-23
 
 - php-prepros `SCHEMA` now wraps the native `jsonk` extension (draft
