@@ -144,7 +144,10 @@ const mountPath = async (localPath, virtualDir, php) => {
     const config = await loadConfig();
     php = php || await getPHPInstance();
     if(!path.isAbsolute(localPath)) localPath = path.join(__project, localPath);
-    virtualDir = virtualDir || path.posix.join('/project', localPath.replace(__project + path.sep, ''));
+    // POSIX separators: on Windows a nested path ("src\\about\\_index.php")
+    // would otherwise land at "/project/src\\about\\_index.php", a separate
+    // file, leaving the real page's VFS copy stale.
+    virtualDir = virtualDir || path.posix.join('/project', path.relative(__project, localPath).split(path.sep).join('/'));
     const includeExtensions = new Set(['.php', '.json', '.yaml', '.yml', '.md', '.db', '.txt', ...(config?.prepros?.mountext || [])]);
     const stat = fs.statSync(localPath);
     if (stat.isDirectory()) {

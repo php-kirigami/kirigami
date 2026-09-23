@@ -12,7 +12,11 @@
   weren't watched at all. A non-page PHP change re-renders the whole site
   plus the sitemap, once per batch. Data files still re-render their
   directory.
-- Tests: `packages/kirigami/test/prepros-watch-targets.test.js`.
+- php-prepros `mountPath()` derived the VFS path with Windows separators
+  (`/project/srcabout_index.php`), so a page in a subdirectory was
+  re-rendered from its stale copy. It now converts to POSIX separators.
+- Tests: `packages/kirigami/test/prepros-watch-targets.test.js` (edits the
+  page sources between renders).
 
 ## CLI-style Kirigami output channel in VS Code — 2026-09-23
 

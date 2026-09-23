@@ -39,8 +39,13 @@ test('watch re-renders only the modified page unless prepros.deep is set', { tim
 		return result.files.map(f => f.replace(/\\/g, '/')).sort();
 	};
 
-	// A page: that page alone.
+	// A page: that page alone, from its new source (remounted into the VFS).
+	write('src/about/_index.php', '<h1>About v2</h1>');
 	assert.deepEqual(await change({}, 'src/about/_index.php'), ['src/about/index.html']);
+	assert.match(fs.readFileSync(path.join(dir, 'src/about/index.html'), 'utf8'), /About v2/);
+	write('src/about/team/_index.php', '<h1>Team v2</h1>');
+	assert.deepEqual(await change({}, 'src/about/team/_index.php'), ['src/about/team/index.html']);
+	assert.match(fs.readFileSync(path.join(dir, 'src/about/team/index.html'), 'utf8'), /Team v2/);
 	// deep: its directory, subpages included.
 	assert.deepEqual(await change({ deep: true }, 'src/about/_index.php'),
 		['src/about/index.html', 'src/about/team/index.html']);
