@@ -71,8 +71,7 @@ async function printList() {
 	console.log(c.dim(`${"TEMPLATE".padEnd(colWidth)}DESCRIPTION`));
 	console.log(`${"-".repeat(colWidth + 30)}`);
 	for (const t of templates) {
-		const name = c.cyan(t.template).padEnd(colWidth + 9); // +9 for the escape codes
-		console.log(`${name}${t.description || ""}`);
+		console.log(`${c.cyan(t.template.padEnd(colWidth))}${t.description || ""}`);
 	}
 	console.log();
 }

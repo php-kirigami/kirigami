@@ -7,11 +7,14 @@ import { createStatusBar } from "./statusbar.js";
 import { watchConfig } from "./configWatcher.js";
 import { registerCreateCommand } from "./create.js";
 import { registerMcpProvider } from "./mcp.js";
+import { createLog } from "./log.js";
 
 /** @param {vscode.ExtensionContext} context */
 export async function activate(context) {
-	const output = vscode.window.createOutputChannel("Kirigami");
+	// "kirigami-output": colored like the CLI by syntaxes/kirigami-output.tmLanguage.json.
+	const output = vscode.window.createOutputChannel("Kirigami", "kirigami-output");
 	context.subscriptions.push(output);
+	const log = createLog(output);
 	// Available everywhere, including folders that are not Kirigami projects yet.
 	registerCreateCommand(context, { output });
 	// Registered in every window; it only offers a server for a Kirigami folder.
@@ -24,12 +27,14 @@ export async function activate(context) {
 	if (!fs.existsSync(path.join(folder.uri.fsPath, "kirigami.yaml"))) return;
 
 	const nodePath = vscode.workspace.getConfiguration('kirigami').get('nodePath', 'node');
-	output.appendLine(`Kirigami: activated for ${folder.uri.fsPath} (node ${process.version})`);
+	log.header("Kirigami for VS Code");
+	log.step(`Project   : ${folder.uri.fsPath}`);
+	log.step(`Node      : ${nodePath}`);
 
 	try {
 		await startProject(context, folder.uri.fsPath, output, nodePath);
 	} catch (err) {
-		output.appendLine(`Kirigami: failed to load kirigami.yaml — ${err?.message || err}`);
+		log.error(`Failed to load kirigami.yaml — ${err?.message || err}`);
 		vscode.window.showErrorMessage(`Kirigami: failed to load this project — ${err?.message || err}`);
 		await stopProject();
 		return;

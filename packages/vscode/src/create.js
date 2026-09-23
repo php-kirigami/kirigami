@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import path from "node:path";
 import { startWorker } from "./project.js";
+import { createLog } from "./log.js";
 
 // "Kirigami: Create Project…" — a native wizard (quick picks and input boxes)
 // over @kirigami/kirigami/create, the same scaffolding `kiri create` and the
@@ -30,7 +31,7 @@ export function registerCreateCommand(context, { output }) {
 			const target = await runWizard(worker, folder, output);
 			if (target) await openProject(target);
 		} catch (err) {
-			output.appendLine(`create: ${err?.message || err}`);
+			createLog(output).error(`Project creation failed — ${err?.message || err}`);
 			vscode.window.showErrorMessage(`Kirigami: project creation failed — ${firstLine(err)}`);
 		} finally {
 			await worker.dispose();
@@ -93,21 +94,36 @@ async function runWizard(worker, folder, output) {
 	return vscode.window.withProgress(
 		{ location: vscode.ProgressLocation.Notification, title: `Kirigami: creating project from "${template.label}"` },
 		async (progress) => {
-			output.appendLine(`create: template "${template.label}" into ${target}`);
+			// Same report as `kiri create`.
+			const log = createLog(output);
+			log.header("Create Project");
+			log.step(`Template : ${template.label}`);
+			log.step(`Target   : ${target}`);
 			const result = await worker.call("createProject", [{ template: template.template, target, meta, git: want.has("git") }]);
 			if (!result.success) throw new Error(result.error);
-			output.appendLine(`create: ${result.written} file(s) written, ${result.skipped} kept, package.json ${result.packageJson}`);
-			if (result.starterFiles.length) output.appendLine(`create: added ${result.starterFiles.join(", ")}`);
-			if (result.git.error) output.appendLine(`create: git — ${result.git.error}`);
+			if (result.skipped) log.step(`${result.skipped} existing file(s) left untouched.`);
+			if (result.merged) log.step("Merged the template's package.json into the existing one.");
+			if (result.packageJson === "starter") log.step("Wrote a starter package.json (the template ships none).");
+			if (result.changed.length) log.step(`Filled ${result.changed.join(", ")} in package.json / kirigami.yaml.`);
+			if (result.banner) log.step("Wrote a starter banner.txt.");
+			if (result.starterFiles.length) log.step(`Added ${result.starterFiles.join(", ")} (the template ships none).`);
+			if (result.git.committed) log.step("Initialised git repository with an initial commit.");
+			else if (result.git.error) log.warn(`git — ${result.git.error}`);
 
 			if (want.has("install")) {
 				progress.report({ message: "npm install…" });
 				output.show(true);
+				log.line();
+				log.step("Running npm install");
+				log.line();
 				const install = await worker.call("installDependencies", [target]);
 				if (!install.success) {
+					log.error(`npm install failed: ${install.error}`);
 					vscode.window.showWarningMessage(`Kirigami: project created, but npm install failed — ${install.error}. See the Kirigami output.`);
 				}
 			}
+			log.line();
+			log.success(`Project created from "${template.label}" — ${result.written} file(s) written.`);
 			return result.target;
 		});
 }

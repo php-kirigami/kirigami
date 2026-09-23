@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { getProject } from "./project.js";
+import { createLog } from "./log.js";
 
 /**
  * Watches kirigami.yaml at the workspace root and calls Project.reload() on
@@ -19,13 +20,14 @@ export function watchConfig(context, { output }) {
 	);
 	context.subscriptions.push(watcher);
 
+	const log = createLog(output);
 	const onChange = async () => {
 		try {
 			const project = await getProject();
 			await project.reload();
-			output.appendLine("kirigami.yaml reloaded.");
+			log.info("kirigami.yaml reloaded");
 		} catch (err) {
-			output.appendLine(`kirigami.yaml reload failed: ${err?.message || err}`);
+			log.error(`kirigami.yaml reload failed — ${err?.message || err}`);
 		}
 	};
 

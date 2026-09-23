@@ -1,5 +1,6 @@
 import { fork } from 'node:child_process';
 import path from 'node:path';
+import { stripAnsi } from './log.js';
 
 let projectPromise;
 let client;
@@ -34,11 +35,12 @@ class ProjectClient {
 		this.pending = new Map();
 		this.nextId = 0;
 		this.child = fork(worker, [], {
-			cwd, execPath: nodePath, execArgv: [],
+			// NO_COLOR: the output channel can't render ANSI (see log.js).
+			cwd, execPath: nodePath, execArgv: [], env: { ...process.env, NO_COLOR: '1' },
 			stdio: ['ignore', 'pipe', 'pipe', 'ipc'], windowsHide: true,
 		});
-		this.child.stdout.on('data', data => output.append(data.toString()));
-		this.child.stderr.on('data', data => output.append(data.toString()));
+		this.child.stdout.on('data', data => output.append(stripAnsi(data)));
+		this.child.stderr.on('data', data => output.append(stripAnsi(data)));
 		this.child.on('message', message => {
 			if (message.event === 'build') { this.onBuildResult?.(message.value); return; }
 			const entry = this.pending.get(message.id);

@@ -5,7 +5,7 @@ The extension scaffold lives in [packages/vscode](../packages/vscode/README.md).
 ## Implemented
 
 - Six commands: Create Project, Build, Export, Run Script, Validate Configuration, and Toggle Dev Server. Create is registered in any trusted window: a native wizard (template quick pick, metadata input boxes, git / npm install options) that calls core's `@kirigami/kirigami/create` in a short-lived external-Node worker with the chosen folder as its cwd, then opens the created project (same window when none is open, a new window otherwise, or a reload when it is the current folder). The project commands are hidden from the palette until a project is loaded (`kirigami.projectLoaded` context key), and the engine only starts when the folder contains `kirigami.yaml`.
-- A Kirigami Output channel and command notifications.
+- A Kirigami Output channel laid out like the `kiri` CLI (`src/log.js`), colored by the `kirigami-output` grammar (`syntaxes/`), plus command notifications.
 - A status bar showing idle, running, building, and error states.
 - A preview choice between Simple Browser and the external browser.
 - A configuration watcher that calls reload.

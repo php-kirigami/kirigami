@@ -76,7 +76,11 @@ test('relocated extension activates and runs all commands without workspace depe
 	assert.equal(errors.length, 1);
 	assert.match(errors[0], /check.*failed/);
 	assert.equal(info.length, successes, 'A failed result must not produce a success notification');
-	assert.ok(logs.some(line => /run check: failed\./.test(line) && /A14 script failure/.test(line)));
+	// CLI-style report: the script line, then the error block.
+	assert.ok(logs.some(line => /^› SCRIPT: check ❌$/.test(line)), logs.join('\n'));
+	assert.ok(logs.some(line => /A14 script failure/.test(line)));
+	// No raw ANSI codes reach the output channel.
+	assert.ok(!logs.some(line => /\x1b\[/.test(line)));
 	cancelScript = true;
 	await commands.get('kirigami.run')();
 	assert.equal(errors.length, 1, 'Cancel must not execute the failing script');

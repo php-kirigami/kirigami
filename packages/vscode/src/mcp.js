@@ -35,7 +35,7 @@ export function registerMcpProvider(context, { output }) {
 		const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(folder, "kirigami.yaml"), false, true, false);
 		context.subscriptions.push(watcher, watcher.onDidCreate(() => changed.fire()), watcher.onDidDelete(() => changed.fire()));
 	}
-	output.appendLine("Kirigami: MCP server provider registered.");
+	output.appendLine("› MCP server provider registered");
 	return true;
 }
 

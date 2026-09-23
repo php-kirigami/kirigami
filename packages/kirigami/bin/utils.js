@@ -22,15 +22,23 @@ import picomatch from "picomatch";
  */
 
 // ─── ANSI colors (zero-dep) ─────────────────────────────────────────────────
+// Only for a terminal: a pipe (the VS Code extension's output channel, a CI
+// log, a file) gets plain text. NO_COLOR (https://no-color.org) turns colors
+// off, FORCE_COLOR (other than "0") turns them on regardless.
+const useColor = !process.env.NO_COLOR && (process.env.FORCE_COLOR
+	? process.env.FORCE_COLOR !== "0"
+	: Boolean(process.stdout?.isTTY));
+const paint = (code) => (useColor ? (s) => `\x1b[${code}m${s}\x1b[0m` : (s) => `${s}`);
+
 export const c = {
-	bold: (s) => `\x1b[1m${s}\x1b[0m`,
-	dim: (s) => `\x1b[2m${s}\x1b[0m`,
-	cyan: (s) => `\x1b[36m${s}\x1b[0m`,
-	green: (s) => `\x1b[32m${s}\x1b[0m`,
-	yellow: (s) => `\x1b[33m${s}\x1b[0m`,
-	red: (s) => `\x1b[31m${s}\x1b[0m`,
-	gray: (s) => `\x1b[90m${s}\x1b[0m`,
-	magenta: (s) => `\x1b[35m${s}\x1b[0m`,
+	bold: paint(1),
+	dim: paint(2),
+	cyan: paint(36),
+	green: paint(32),
+	yellow: paint(33),
+	red: paint(31),
+	gray: paint(90),
+	magenta: paint(35),
 };
 
 // ─── Logger ──────────────────────────────────────────────────────────────────

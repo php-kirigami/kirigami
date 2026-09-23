@@ -42,6 +42,12 @@
       { "command": "kirigami.validate", "title": "Validate kirigami.yaml", "category": "Kirigami" },
       { "command": "kirigami.toggleServer", "title": "Toggle Dev Server", "category": "Kirigami" }
     ],
+    "languages": [
+      { "id": "kirigami-output", "aliases": ["Kirigami Output"], "mimetypes": ["text/x-code-output"] }
+    ],
+    "grammars": [
+      { "language": "kirigami-output", "scopeName": "source.kirigami-output", "path": "./syntaxes/kirigami-output.tmLanguage.json" }
+    ],
     "mcpServerDefinitionProviders": [
       { "id": "kirigami", "label": "Kirigami" }
     ],

@@ -1,5 +1,20 @@
 # Status
 
+## CLI-style Kirigami output channel in VS Code — 2026-09-23
+
+- The output channel reads like `kiri`: "kiri — Build Project" headers,
+  `› TASK: name ✔` lines with their files, `› Error:`/`› Warnings:` blocks,
+  `✔ Build finished!` (`packages/vscode/src/log.js`, a port of core's
+  `log`/`printTaskError`). Build, export, run, serve, validate, config
+  reload and Create Project all use it.
+- Colors come from a `kirigami-output` language + TextMate grammar
+  (`packages/vscode/syntaxes/`) mapped to the scopes themes use for logs;
+  output channels can't render ANSI.
+- Core's `c` colors only when stdout is a terminal, honoring `NO_COLOR` and
+  `FORCE_COLOR`; the extension also sets `NO_COLOR` for its worker and
+  strips any remaining ANSI codes. `kiri create --list` now pads before
+  coloring, so it stays aligned without colors.
+
 ## PHP-WASM crash after a few renders (php-mdhtml) — 2026-09-23
 
 Symptom (VS Code, `kiri serve`/`watch`, repeated builds): `RuntimeError:
