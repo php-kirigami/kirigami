@@ -259,7 +259,7 @@ The development server denies dot/underscore-prefixed path components and `.php`
 
 The development server returns 400 for malformed URL path encodings or NUL pathnames. File-read and stream failures return 500 before headers are sent; failures after partial output close that response. These failures do not stop subsequent requests. Missing pages use `404.html` when available, otherwise the built-in 404 response.
 
-Watch tasks process additions, changes, file removals, and directory removals. PHP additions/removals reset the runtime and rebuild the whole site and sitemap; HTML belonging to removed/renamed page sources tracked since watcher startup is deleted. Unrelated HTML is preserved; historical orphan outputs without a source at watcher startup are not swept. JavaScript/Sass dependencies are rebuilt on addition/removal; failed builds retain their previous bundles.
+Watch tasks process additions, changes, file removals, and directory removals. A modified page (`_*.php`) re-renders only itself, or its whole directory with `prepros.deep: true`; a modified layout, include or other non-page PHP file re-renders the whole site and sitemap; a modified data file (`.yaml`/`.yml`/`.md`/`.json`) re-renders its directory. PHP additions/removals reset the runtime and rebuild the whole site and sitemap; HTML belonging to removed/renamed page sources tracked since watcher startup is deleted. Unrelated HTML is preserved; historical orphan outputs without a source at watcher startup are not swept. JavaScript/Sass dependencies are rebuilt on addition/removal; failed builds retain their previous bundles.
 
 `serve()` and `watch()` await watcher readiness and release acquired resources if startup fails. Closing discards pending events and waits for active callbacks before finishing; callbacks that never settle can delay shutdown.
 
@@ -353,6 +353,7 @@ build/export/watch.
 |---|---|---|---|
 | `before` | string | – | PHP file (relative to `root`) included before every page body. |
 | `after` | string | – | PHP file included after every page body. |
+| `deep` | boolean | `false` | Watch/serve: a modified page (`_*.php`) re-renders its whole directory instead of just itself. Layout/include changes always re-render the whole site. |
 | `format` | boolean | `false` | Pretty-print the HTML (4-space indent, via `HTML::format()`). |
 | `network` | boolean | `false` | Allow outbound HTTP(S) inside the WASM runtime (remote `@tag` fetches, `CURL`/`SCRAPER`). |
 | `mountext` | string[] | `[]` | Extra file extensions auto-mounted into the virtual FS, on top of `.php .json .yaml .yml .md .db .txt`. |

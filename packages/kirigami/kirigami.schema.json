@@ -339,6 +339,11 @@
             "_layouts/footer.php"
           ]
         },
+        "deep": {
+          "type": "boolean",
+          "description": "Watch/serve: when a page (_*.php) changes, re-render its whole directory (recursively) instead of just that page. Enable when pages read or include other pages. Layout, include and other non-page PHP changes always re-render the whole site.",
+          "default": false
+        },
         "format": {
           "type": "boolean",
           "description": "Pretty-print the compiled HTML output (4-space indentation via HTML::format(), Dom\\HTMLDocument/Lexbor). When false, output is written as-is.",

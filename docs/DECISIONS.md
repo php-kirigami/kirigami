@@ -411,6 +411,22 @@ registration (a pre-existing rule, unchanged here), which is why
 `loadPlugins()` separately rejects a plugin task-type name that collides
 with a built-in, rather than silently letting the built-in win unannounced.
 
+## Watch: a modified page re-renders alone; `prepros.deep` opts back in — 2026-09-23
+
+Re-rendering the modified file's whole directory made every edit of the
+root `_index.php` rebuild the site. A page's output depends on the page
+itself plus shared PHP (layouts, includes, partials) — never on its
+sibling pages, unless a project makes pages read each other. So a page
+change re-renders that page, and `prepros.deep: true` restores the
+directory re-render for projects where pages do depend on each other.
+Shared PHP is the opposite case: any page may use it, so its change
+re-renders everything. Those files didn't match the old `**/_*.php`
+watch pattern (`_layouts/header.php`), so every `.php` under the root
+is now watched. Classification mirrors `PREPROS::isPage()` so the watch
+engine and the renderer agree on what a page is. The old undocumented
+`task.deep` (parent directory) could never be set — `prepros:` rejects
+unknown keys — so its meaning was free to redefine.
+
 ## Scaffolding lives in core, with its own GitHub client — 2026-09-22
 
 `kiri create` held the whole scaffolding pipeline (template listing, tarball

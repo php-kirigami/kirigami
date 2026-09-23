@@ -151,6 +151,7 @@ prepros:                          # PHP → HTML compiler. When configured, adds
     article:
       before: _layouts/article-before.php
       after: _layouts/article-after.php
+  deep:     false                 # watch/serve: a changed page re-renders its whole directory, not just itself. default false
   format:   true                  # pretty-print HTML output (4-space indent). default false
   head:     true                  # default true — auto-inject the theme guard + a <link>/<script> per sass/esbuild task into every page. `false` to opt out
   network:  false                 # allow outbound HTTP(S) in the WASM runtime (remote @tags, CURL, SCRAPER)

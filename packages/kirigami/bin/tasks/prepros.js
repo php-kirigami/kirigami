@@ -109,10 +109,40 @@ function removeObsoletePages(root, previous, current) {
 	return removed;
 }
 
+// Same rule as PREPROS::isPage(): a `_*.php` file with no `_`-prefixed
+// directory on its path (relative to kirigami.root, POSIX separators).
+function isPage(rel) {
+	const parts = rel.split('/');
+	const name = parts.pop();
+	return /^_.*\.php$/i.test(name) && !parts.some(part => part.startsWith('_'));
+}
+
+// What a modified file re-renders: `null` for the whole site, else a target
+// relative to kirigami.root (a page, or a directory rendered recursively).
+//   - a page: just that page — its directory when `prepros: { deep: true }`
+//   - any other PHP (layouts, includes, partials, `_*/` helpers): every page
+//     may use it, so the whole site
+//   - a data file (.yaml/.yml/.md/.json): its directory
+export function changeTarget(rel, { deep = false } = {}) {
+	const dir = path.posix.dirname(rel);
+	if (/\.php$/i.test(rel)) {
+		if (!isPage(rel)) return null;
+		return deep ? dir : rel;
+	}
+	return dir;
+}
+
 export function getWatcher(__root, task) {
 	let pages = pageOutputs(__root);
 	const root = __root.replace(process.cwd(), '').replace(/\\/g, '/').replace(/^\//g, '');
-	const patterns = [joinWith(root, '**/_*.php'), joinWith(root, '**/*.yaml'), joinWith(root, '**/*.yml'), joinWith(root, '**/*.md'), joinWith(root, '**/*.json')]
+	const deep = Boolean(task.config?.deep ?? task.deep);
+	// Every PHP file, not just pages: layouts (`_layouts/header.php`) and
+	// includes (`_lib/functions.php`) don't start with "_" themselves.
+	const patterns = [joinWith(root, '**/*.php'), joinWith(root, '**/*.yaml'), joinWith(root, '**/*.yml'), joinWith(root, '**/*.md'), joinWith(root, '**/*.json')]
+	const relative = (file) => {
+		const posix = file.replace(/\\/g, '/');
+		return root && posix.startsWith(`${root}/`) ? posix.slice(root.length + 1) : posix;
+	};
 	return {
 		name: task.name,
 		patterns: patterns,
@@ -129,12 +159,11 @@ export function getWatcher(__root, task) {
 				else printTaskError(results);
 				return { ...results, files: [...(results.files || []), ...removed] };
 			}
-			const paths = events.map(e => {
-				const dir = path.dirname(e.file.replace(root, '')).replace(/^\//, '');
-				return task.deep ? path.dirname(dir) : dir;
-			});
-			const allResults = await Promise.all(paths.filter((v, i, a) => a.indexOf(v) === i).map(async p => {
-				const results = await build(__root, { target: p, ...task });
+			const targets = [...new Set(events.map(e => changeTarget(relative(e.file), { deep })))];
+			// One global change re-renders everything (plus the sitemap) once.
+			const renders = targets.includes(null) ? [null] : targets;
+			const allResults = await Promise.all(renders.map(async target => {
+				const results = await build(__root, { ...task, target });
 				if(results.success) {
 					results.files.forEach(f => log.step(f));
 					if(results.warnings) log.warn(c.dim(results.warnings));

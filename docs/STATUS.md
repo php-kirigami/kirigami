@@ -1,5 +1,19 @@
 # Status
 
+## Watch re-renders just the modified page — 2026-09-23
+
+- A modified page (`_*.php`, same rule as `PREPROS::isPage()`) re-renders
+  only itself during watch/serve. It used to re-render its whole directory,
+  so editing the root `_index.php` rebuilt the entire site.
+- New `prepros.deep` (schema, core README, template CLAUDE.md): `true`
+  restores the directory re-render for a modified page.
+- Every PHP file under `kirigami.root` is now watched, not only `_*.php`:
+  layouts (`_layouts/header.php`) and includes (`_lib/functions.php`)
+  weren't watched at all. A non-page PHP change re-renders the whole site
+  plus the sitemap, once per batch. Data files still re-render their
+  directory.
+- Tests: `packages/kirigami/test/prepros-watch-targets.test.js`.
+
 ## CLI-style Kirigami output channel in VS Code — 2026-09-23
 
 - The output channel reads like `kiri`: "kiri — Build Project" headers,
