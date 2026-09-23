@@ -1,6 +1,16 @@
 <?php
 
-class Normalizer
+/**
+ * NORMALIZER_LEGACY — pure-PHP Unicode normalizer (a port of
+ * symfony/polyfill-intl-normalizer), with the standard Normalizer API.
+ *
+ * Retired: ext-intl isn't in the WASM build, but the native `norm` extension
+ * (php-kirigami/php-norm, utf8proc, statically built into @kirigami/php-wasm)
+ * now provides the real `Normalizer` class and `normalizer_*()` functions.
+ * Kept here as a reference implementation and an easy rollback path;
+ * autoloadable, but not used anywhere by default.
+ */
+class NORMALIZER_LEGACY
 {
     const NONE = 2;
     const FORM_D = 4;

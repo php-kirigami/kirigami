@@ -26,7 +26,6 @@ spl_autoload_register(function ($class) {
         'LD'              => 'ld.class.php',
         'MD'              => 'md.class.php',
         'META'            => 'meta.class.php',
-        'NORM'            => 'norm.class.php',
         'OBF'             => 'obf.class.php',
 		'PREPROS'         => 'prepros.class.php',
         'SCHEMA'          => 'schema.class.php',
@@ -37,7 +36,8 @@ spl_autoload_register(function ($class) {
 
         // Fallbacks
         'MD_LEGACY'       => 'md-legacy.class.php',
-        'Normalizer'      => 'normalizer.class.php',
+        'NORMALIZER_LEGACY' => 'normalizer-legacy.class.php',
+        'SCHEMA_LEGACY'   => 'schema-legacy.class.php',
         'YAML_LEGACY'     => 'yaml-legacy.class.php'
     ];
     if (isset($catalog[$class])) require_once(__DIR__ . '/libraries/' . $catalog[$class]);

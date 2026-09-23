@@ -92,7 +92,7 @@ Part of the **Kirigami** project ecosystem.
   - [SCRAPER](#scraper)
   - [OBF](#obf)
   - [STD](#std)
-  - [Bundled polyfills](#bundled-polyfills)
+  - [Unicode normalization](#unicode-normalization)
   - [Procedural shortcuts (aliases)](#procedural-shortcuts-aliases)
 - [Plugin system](#plugin-system)
   - [PREPROS tags](#prepros-tags)
@@ -107,11 +107,15 @@ Part of the **Kirigami** project ecosystem.
 
 ## Unreleased
 
-The current working tree switches `YAML::` to the native YAML extension and `MD::` to native mdhtml. It also includes page types and request lifecycle hooks. These notes do not assign a release version.
+The current working tree switches `YAML::` to the native YAML extension, `MD::` to native mdhtml, `SCHEMA` to native jsonk, and `Normalizer` to native norm. It also includes page types and request lifecycle hooks. These notes do not assign a release version.
 
 PHP data files use the native `yaml` extension backed by LibYAML. Its YAML 1.1 implicit booleans include unquoted `y`, `n`, `yes`, `no`, `on`, `off`, `true`, and `false`, including mapping keys. Quote these words when you mean strings (for example, `"NO": Norway`). `YAML::parse()` / `parseFile()` / `loadFile()` preserve the wrapper’s array/object choice; native `yaml_parse()` / `yaml_parse_file()` have their own extension signatures. `yaml_load_file()` remains a wrapper alias. The project’s `kirigami.yaml` is parsed separately in Node through `struct-walker` and `js-yaml`.
 
 `MD::` delegates to the native `mdhtml` extension (cmark-gfm). Footnotes now use `<section class="footnotes" data-footnotes>` instead of the old `<div class="footnotes">`; target `.footnotes` rather than a specific container tag in custom CSS.
+
+`SCHEMA` validates through the native `jsonk` extension (draft 2020-12), keeping its API and the `"path: message"` error format. It now also supports `if`/`then`/`else`, `contains`, `propertyNames`, `dependentRequired`/`dependentSchemas`, `prefixItems`, and `$ref` to absolute or `$id`-relative URLs (fetched over the network). Error messages use jsonk's wording, and an `additionalProperties: false` violation is reported on the parent object instead of the extra property. The previous pure-PHP validator stays available as `SCHEMA_LEGACY`.
+
+`Normalizer` now comes from the native `norm` extension (utf8proc) instead of the bundled pure-PHP polyfill, which stays available as `NORMALIZER_LEGACY`.
 
 ---
 
@@ -1175,9 +1179,9 @@ $team = YAML::loadFile('/project/data/team.yaml');
 
 ### SCHEMA
 
-A pure-PHP, dependency-free JSON Schema validator — Draft-7 style, with an
-Ajv-like API. Used internally to validate structured data, but available to your
-own code and plugins.
+A JSON Schema validator with an Ajv-like API, backed by the native `jsonk`
+extension built into `@kirigami/php-wasm`. Available to your own code and
+plugins.
 
 ```php
 $validator = new SCHEMA(array $schema);
@@ -1187,11 +1191,24 @@ $validator->validate(mixed $data): bool    // alias of isValid()
 $validator->getErrors(): string[]          // "path: message" strings from the last run
 ```
 
-Supported keywords: `type`, `required`, `properties`, `patternProperties`,
-`additionalProperties`, `items`, `minItems`, `maxItems`, `uniqueItems`,
-`minLength`, `maxLength`, `pattern`, `minimum`, `maximum`, `exclusiveMinimum`,
-`exclusiveMaximum`, `minProperties`, `maxProperties`, `enum`, `const`,
-`anyOf`, `allOf`, `oneOf`, `not`, `format`, and local `$ref` pointers.
+jsonk implements draft 2020-12 for a self-contained schema: every validation
+keyword (`type`, `enum`, `const`, `required`, `properties`,
+`patternProperties`, `additionalProperties`, `propertyNames`,
+`dependentRequired`, `dependentSchemas`, `items`, `prefixItems`, `contains`,
+`uniqueItems`, the `min*`/`max*` and `exclusive*` bounds, `multipleOf`,
+`pattern`, `format`, `if`/`then`/`else`, `allOf`/`anyOf`/`oneOf`/`not`) and
+`$ref` to `#/$defs/…` / `#/definitions/…`, absolute URLs, or URLs relative to
+the schema's `$id`. See [php-jsonk](https://github.com/php-kirigami/php-jsonk)
+for the details and limits.
+
+Schemas are PHP arrays, so `SCHEMA` adapts them before handing them to jsonk:
+an empty array in a schema position (`'properties' => []`) is treated as `{}`,
+draft-07 tuple `items` (a list of schemas) becomes `prefixItems` (and
+`additionalItems` becomes `items`), and `format: url` is read as `uri`. Error
+paths look like `(root)`, `name` or `tags[1]`.
+
+The previous pure-PHP (Draft-7 style) validator is still available as
+`SCHEMA_LEGACY`, with the same API.
 
 ```php
 $validator = new SCHEMA([
@@ -1702,15 +1719,18 @@ These are internal to the build runner (`render()`, `sitemap()`, and `runenv()` 
 
 ---
 
-### Bundled polyfills
+### Unicode normalization
 
-The WASM PHP build ships without `ext-intl`, so `@kirigami/php-prepros` bundles a
-`Normalizer` polyfill (autoloaded like every other class). It provides the
-standard `Normalizer::normalize()` / `Normalizer::isNormalized()` API and the
-`Normalizer::NFC` / `NFD` / `NFKC` / `NFKD` (and `FORM_*`) constants — enough for
-`STR::normalize()` and `STR::slug()` to fold accents. Prefer the `STR` helpers in
-your own code; the polyfill is there so third-party snippets that call
-`Normalizer` directly keep working.
+The WASM PHP build ships without `ext-intl`; the native `norm` extension
+([php-norm](https://github.com/php-kirigami/php-norm), utf8proc) provides the
+standard `Normalizer` class instead: `Normalizer::normalize()` /
+`Normalizer::isNormalized()`, the `NFC` / `NFD` / `NFKC` / `NFKD` (and
+`FORM_*`) constants, and the `normalizer_normalize()` /
+`normalizer_is_normalized()` functions. `STR::normalize()` and `STR::slug()`
+use it to fold accents. Prefer the `STR` helpers in your own code.
+
+The pure-PHP polyfill that used to fill this gap is still autoloadable as
+`NORMALIZER_LEGACY`, with the same API.
 
 ---
 
