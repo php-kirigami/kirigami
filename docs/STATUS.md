@@ -1,5 +1,22 @@
 # Status
 
+## SCHEMA on jsonk, Normalizer on norm — 2026-09-23
+
+- php-prepros `SCHEMA` now wraps the native `jsonk` extension (draft
+  2020-12) with the same API and `"path: message"` errors (paths such as
+  `(root)`, `tags[1]`, converted from jsonk's JSON Pointers). The wrapper
+  adapts PHP-array schemas: empty arrays in schema positions become `{}`,
+  draft-07 tuple `items` becomes `prefixItems`, `format: url` becomes
+  `uri`. Differential test against the old validator: same verdicts on
+  every case except object `enum`/`const`, a jsonk bug.
+- jsonk 0.1.5 (pushed, tag `v0.1.5`): `enum`/`const`/`uniqueItems` compare
+  JSON objects by value; before, an object never matched. Needs the next
+  PHP-WASM build.
+- The old validator stays as `SCHEMA_LEGACY`, the pure-PHP `Normalizer`
+  polyfill as `NORMALIZER_LEGACY` (the `norm` extension provides the
+  native class). Dropped a dead `NORM` autoload entry (no such file).
+- Test: `packages/php-prepros/test/schema.test.js`.
+
 ## Release prep: kiribuild on @kirigami/cli, phpext check — 2026-09-23
 
 - `../kiribuild` (uncommitted): without a local `kiri`, the action installs
