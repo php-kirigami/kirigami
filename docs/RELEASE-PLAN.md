@@ -57,8 +57,9 @@ new marker check and duplicate-task rejection are further behavior breaks.
 
 ### PHP extension packages
 
-The 14 `@kirigami/phpext-*` packages live in `../php-wasm-compiler/packages/`
-and none is published yet. That repository has about 55 uncommitted changes.
+The 27 `@kirigami/phpext-*` packages live in `../php-wasm-compiler/packages/`
+and none is published yet (that repository's work is committed on `main`,
+not pushed).
 `packages/php-wasm/README.md` already says they are "currently published":
 true only after this release.
 
@@ -73,10 +74,11 @@ true only after this release.
       selection does not prove binary compatibility. First pass on 2026-09-23
       (PHP 8.5.11 binary, 18 packages, 19 modules): all load together once
       the loader honors multi-module packages (see STATUS); `mysqli_init()`
-      and the PDO `mysql` driver work. `pdo_firebird` loads but prints
-      `Aborted()` at startup: waiting on the core rebuild with its missing
-      exports in `../php-wasm-compiler`. Redo the check with the final
-      binary and packages.
+      and the PDO `mysql` driver work. Second pass (same day, core
+      8ac01de, all 27 packages, 28 modules): all load together with empty
+      stderr, `pdo_firebird` included (its exit-time `Aborted()` is fixed),
+      and smoke calls pass (gmp, sodium, fileinfo, tidy, dba, intl, the six
+      PDO drivers, snmp over UDP). Redo the check with the final binary.
 - [x] **kiribuild** (2026-09-23, local changes in `../kiribuild`, not
       committed): the global fallback installs `@kirigami/cli@<cli-version>`
       (new input, default `latest`); `kirigami-version` becomes a legacy
@@ -112,9 +114,15 @@ true only after this release.
    VSIX (below), then `vsce publish --packagePath <file>`.
 7. Tag a new `kiribuild` version and move the `v2` tag (only after its
    `@kirigami/cli` change).
-8. Templates (`../template-*/`): add `@kirigami/cli`, bump
-   `@kirigami/kirigami` to `^3.0.0`, rebuild, push. Existing `dist/` output
-   folders need the `.kirigami-export` marker once.
+8. Templates (`../template-*/`): already migrated in local, unpushed commits
+   (2026-09-23: `template-default` 141d049, `template-demo` 44df446, with
+   `@kirigami/cli ^0.1.0` + `@kirigami/kirigami ^3.0.0`, page types, no
+   `tasks.json`). Adjust those ranges if the chosen versions differ, restore
+   `node_modules` with `npm install` (it refreshes `package-lock.json`; during
+   development `node_modules/@kirigami` was junctioned to the monorepo, the
+   published copies kept in `node_modules/.kirigami-published`), rebuild,
+   commit, push. Existing `dist/` output folders need the `.kirigami-export`
+   marker once.
 9. Org site (`../php-kirigami.github.io/`): same dependency change, rebuild,
    deploy.
 

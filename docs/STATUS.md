@@ -1,5 +1,68 @@
 # Status
 
+## One `seo:` block for META and JSON-LD; shorter template CLAUDE.md — 2026-09-23
+
+- **Breaking (php-prepros / core schema):** `seo.jsonld` is no longer a
+  sub-block. META and LD read the same flat `seo:` keys; `seo.jsonld` is a
+  boolean, default `true` once `seo:` exists; `seo.language` became
+  `seo.lang`. `kiri` rejects the old shapes with a migration message. New
+  tests: `php-prepros/test/seo.test.js` (render with META + JSON-LD,
+  `jsonld: false`, no block) and cases in `kirigami/test/config-validation.test.js`.
+  READMEs (php-prepros "Unreleased", `seo` block, LD, one `seo` config table;
+  core "Unreleased — breaking") and DECISIONS updated.
+- `docs/template-CLAUDE.md` cut from 764 to ~165 lines: project rules and
+  authoring essentials (page types included), then pointers to the installed
+  package READMEs instead of a copied reference that had gone stale (SCHEMA,
+  YAML, Normalizer). Copied into `../template-default` and `../template-demo`.
+
+## Windows CI: curl TLS test and setup-php's openssl.cafile — 2026-09-23
+
+- On GitHub, both Windows jobs failed `curl-tls.test.js` (curl error 60,
+  "self-signed certificate") while Linux passed. ext/curl takes its CA file
+  from `openssl.cafile` before `curl.cainfo`, and setup-php sets
+  `openssl.cafile` to its own `cacert.pem`, so the test's
+  `-d curl.cainfo=…` was ignored. The test now overrides both. Reproduced
+  and verified locally with the runner's PHP 8.4.26 (curl 8.22.0,
+  OpenSSL 3.0.22) and setup-php's ini settings.
+- First fully green GitHub CI run (98f221b, PR #1): Linux and Windows,
+  Node 24 and 26.
+
+## PHP-WASM core with waiting sockets; intl beside norm — 2026-09-23
+
+Checked against the runtime, **not committed yet**: the core, its runtime test
+and the php-wasm README's socket notes wait for the HTTPS-close fix (TODO).
+
+- New 8.5.11 core from php-wasm-compiler (main, f3d9a2c..89a7958), checked
+  against the runtime proxy: blocking TCP reads with the `sockets`
+  extension wait for data, EOF or `SO_RCVTIMEO`; `socket_set_block()`
+  undoes `socket_set_nonblock()`; `select()` no longer counts the except
+  set; `connect()` waits and fails with
+  `ECONNREFUSED` (`EINPROGRESS` when non-blocking),
+  `STREAM_CLIENT_ASYNC_CONNECT` works, UDP `recvfrom` blocks (bounded by
+  `SO_RCVTIMEO`), `select()` reports a UDP socket readable only with a
+  queued datagram, and a failed UDP relay (502) reports `ECONNREFUSED`
+  once. The runtime test now uses `socket_select()` and blocking reads
+  instead of the `MSG_DONTWAIT` loop.
+- `ext/snmp` (local `phpext-snmp`) talks to a minimal Node SNMP v2c agent
+  through the UDP relay (`snmp2_get`, `SNMP::get`); an unreachable agent
+  fails after its timeout instead of hanging.
+- `phpext-intl` loaded beside the built-in `norm`: `Normalizer` belongs to
+  intl and `Normalizer::normalize(..., FORM_C)` works; without intl,
+  `Normalizer` comes from norm. `phpext-fastchart` installs its DejaVu font
+  and `phpext-anydoc` registers its API. These need local `.so` builds, so
+  they were checked by hand, not in the test suite.
+- All 27 `phpext-*` packages load together with empty stderr
+  (`pdo_firebird` no longer aborts at exit), and their metadata and
+  READMEs pass an audit (layout, table-of-contents anchors, `engines`,
+  license wording).
+- `TCP_NODELAY` and `SO_KEEPALIVE` reach the proxy, set before or after
+  `connect()` (new runtime test spies on the proxy's `setNoDelay` /
+  `setKeepAlive`), as do `CURLOPT_TCP_KEEPALIVE` and the `tcp_nodelay`
+  stream context option; unsupported options fail with `ENOPROTOOPT`.
+- Still open: libcurl never sends `TCP_NODELAY` (see TODO).
+- Extension discovery follows symlinked package directories: `npm link`
+  and workspace installs (junctions on Windows) used to be skipped.
+
 ## UDP through the PHP-WASM network proxy — 2026-09-23
 
 - The outbound proxy relays UDP: SOCKFS opens one WebSocket per datagram

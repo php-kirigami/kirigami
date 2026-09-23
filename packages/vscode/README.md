@@ -20,7 +20,7 @@ Kirigami static site without leaving the editor.
 
 ## Overview
 
-Tested with relocated integration tests and a real VS Code 1.138.0 smoke test on Windows, both from the development folder and from a packaged win32-x64 VSIX. Interactive checks in a real editor are still pending.
+Tested with relocated integration tests and a real VS Code 1.138.0 smoke test on Windows, both from the development folder and from a packaged win32-x64 VSIX, plus interactive checks in a real editor.
 
 `kirigami-vscode` wraps `@kirigami/kirigami`'s `Project` API — the same
 one `@kirigami/cli` (terminal) and `@kirigami/mcp` (AI agent) already

@@ -21,7 +21,7 @@ import { lookup }                 from 'node:dns';
 import { createHash }             from 'node:crypto';
 import { rootCertificates }       from 'node:tls';
 import { homedir }                from 'node:os';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL }          from 'node:url';
 
@@ -90,12 +90,18 @@ function safeReadDir(dir) {
     catch { return []; }
 }
 
+function isDirectory(path) {
+    try { return statSync(path).isDirectory(); }
+    catch { return false; }
+}
+
 function addPackageDirs(dir, seen) {
     if (!dir || !existsSync(dir)) return;
 
     for (const entry of safeReadDir(dir)) {
-        if (!entry.isDirectory()) continue;
         const childPath = join(dir, entry.name);
+        // npm link and workspaces install packages as symlinks (junctions on Windows).
+        if (!entry.isDirectory() && !(entry.isSymbolicLink() && isDirectory(childPath))) continue;
 
         if (entry.name.startsWith('phpext-')) {
             seen.add(childPath);
