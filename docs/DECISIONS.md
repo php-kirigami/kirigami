@@ -1,5 +1,23 @@
 # Decisions
 
+## Registered tags skip Markdown code, found by pattern — 2026-09-24
+
+Tags run on the assembled page before Markdown is converted, so a tag shown
+as an example in a code span was processed like a real one (a literal
+`<markdown>` closed the surrounding block). `STR::replaceTags()` now masks
+fenced blocks (a line-start ```` ``` ```` / `~~~` fence up to the matching
+one) and single-line code spans (matched backtick runs) with placeholders
+and restores them afterwards. Spans are kept to one line so a stray
+backtick (a typo in prose) cannot hide real tags across the page.
+
+Converting Markdown first was not an option: tags such as `<img asset>` are
+meant to work inside `<markdown>` bodies, and the `<markdown>` tag itself
+must be found before its body is converted. Indented code blocks are not
+masked because `<markdown>` bodies are indented in the source; a fence is
+the way to show tags there. HTML `<code>` / `<pre>` elements are not masked
+either: in hand-written HTML a tag is still a tag, and escaped `&lt;…&gt;`
+never matched.
+
 ## Several @kirigami/sdk copies share one registry; older copies fail loudly — 2026-09-23
 
 Every package pins `@kirigami/sdk` exactly, so a plugin pinning another

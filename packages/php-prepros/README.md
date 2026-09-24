@@ -34,6 +34,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
 - [Overview](#overview)
+- [Unreleased](#unreleased)
 - [What's new in 3.0.0](#whats-new-in-300)
 - [What's new in 2.0.0](#whats-new-in-200)
 - [What's new in 1.9.3](#whats-new-in-193)
@@ -102,6 +103,12 @@ Part of the **Kirigami** project ecosystem.
 - [Extending the `<markdown>` tag](#extending-the-markdown-tag)
 - [Requirements](#requirements)
 - [License](#license)
+
+---
+
+## Unreleased
+
+A registered tag written inside Markdown code is no longer processed. `<markdown>`, `<img asset="...">` or a plugin tag shown in an inline code span (`` `<markdown prose>` ``) or a fenced block (` ``` ` / `~~~`) stays example text: before, a `<markdown>` in a code span paired with the real block's closing tag and broke the rest of the page, and an `<img asset>` in one became an empty image. Indented (four-space) code blocks are not recognized, since `<markdown>` bodies are indented; use a fence there.
 
 ---
 
@@ -1602,7 +1609,7 @@ STR::normalize(string $str): string
 STR::slug(string $str, string $sep = ''): string
 ```
 
-`STR::replaceTags()` is the engine behind `PREPROS::registerTag()`. It finds all occurrences of `<tagname ...>...</tagname>` in an HTML string and replaces each with the return value of `$callback($fullMatch, $attrs, $body)`.
+`STR::replaceTags()` is the engine behind `PREPROS::registerTag()`. It finds all occurrences of `<tagname ...>...</tagname>` in an HTML string and replaces each with the return value of `$callback($fullMatch, $attrs, $body)`. Occurrences inside Markdown code (an inline code span or a fenced block) are left as written, so a tag shown as an example is not run.
 
 `STR::trimIndent()` strips the common leading whitespace from a multi-line string — handy when pulling content out of indented `<markdown>` blocks.
 
