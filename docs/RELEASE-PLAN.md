@@ -104,11 +104,11 @@ true only after this release.
       it). Tests: new non-blocking `local-cli-package` scenario, canary on
       `@kirigami/cli@latest`. Tag `v2.1.0` on release day (step 7), then
       make `local-cli-package` blocking.
-- [ ] Commit the pending working-tree changes. Done here (f340a51, final
-      8.5.11 core with mdhtml 0.1.4); still pending in `../php-wasm-compiler`
-      (mysqlnd fix). A rebuild with php-mdhtml v0.1.5 (plugin tags inside
-      code) is in progress: swap it in, redo the phpext/network/DB pass, and
-      add the php-prepros test (see TODO).
+- [ ] Commit the pending working-tree changes. Done here: final 8.5.11
+      core with php-mdhtml v0.1.5 (wasm sha1 `78f439ce2372`), validated with
+      all 28 phpext modules, the network probes, the mysqlnd handshake test,
+      `npm test` 91/91 and real builds of both templates. Still pending in
+      `../php-wasm-compiler` (mysqlnd fix, mdhtml v0.1.5 in `matrix.json`).
 - [x] **CI dry run with `act`** (2026-09-23): `act push -W
       .github/workflows/ci.yml -j test --matrix os:ubuntu-latest` passes both
       Linux jobs (act cannot run the Windows ones). It first failed on Node

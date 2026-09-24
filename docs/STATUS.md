@@ -1,5 +1,17 @@
 # Status
 
+## PHP-WASM core with php-mdhtml 0.1.5 — 2026-09-23
+
+- Rebuilt 8.5.11 core (wasm sha1 `78f439ce2372`) with php-mdhtml v0.1.5: a
+  `{% plugin %}` tag inside inline code or an indented code block renders
+  as written instead of the plugin's output. New
+  `php-prepros/test/md.test.js`. The loader `php_8_5.js` is replaced along
+  with the `.wasm`: it carries the module size and the addresses of
+  exported data symbols, which moved in this build.
+- Validation: 28 phpext modules load together, network probes and the
+  mysqlnd handshake test pass, `npm test` 91/91, and `template-default` /
+  `template-demo` build to the same HTML as committed.
+
 ## Release versions applied — 2026-09-23
 
 - Every npm package carries its release version (core 3.0.0, php-prepros
