@@ -33,7 +33,7 @@
   },
   "kirigami": {
     "type": "plugin",
-    "minVersion": "1.4.3",
+    "minVersion": "3.0.0",
     "optionsSchema": "./options.schema.json"
   },
   "engines": {

@@ -209,7 +209,7 @@ class names to restyle it from scratch.
 
 - Node.js `>= 24.0.0`
 - npm `>= 10.2.3`
-- `@kirigami/kirigami` `>= 1.5.0` (declared `kirigami.minVersion`)
+- `@kirigami/kirigami` `>= 3.0.0` (declared `kirigami.minVersion`)
 - A `sass` task for the bundled card styles
 - `prepros.network: true` in `kirigami.yaml`
 

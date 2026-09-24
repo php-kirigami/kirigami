@@ -73,6 +73,7 @@ build. Part of the **Kirigami** project ecosystem.
 
 ## 0.1.8
 
+- **Requires `@kirigami/kirigami` 3.0.0** (`@kirigami/sdk` 0.3.0).
 - **The copy button now reaches code blocks inserted after page load.** The
   script uses `@kirigami/canva`'s observer instead of a one-time
   `querySelectorAll` sweep, so blocks added later (fetched content, an SPA
@@ -369,7 +370,7 @@ A fenced block does this with its info string:
 
 - Node.js `>= 24.0.0`
 - npm `>= 10.2.3`
-- `@kirigami/kirigami` `>= 1.4.3` (the plugin loader; `prepros:html` /
+- `@kirigami/kirigami` `>= 3.0.0` (the plugin loader; `prepros:html` /
   `prepros:php` / `esbuild:*` hooks; bundles `@kirigami/php-prepros` `>= 1.7.2`,
   whose de-indent script flattens the re-indented highlight markup)
 - `@kirigami/canva` (bundled dependency — supplies the `dedent` helper used to

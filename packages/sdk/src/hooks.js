@@ -7,10 +7,13 @@
 // kirigami-core's plugin system reads kirigami.yaml, loads the active
 // packages, and lets each plugin call on() itself. Here we only route — which
 // is what lets kirigami-core and the plugins (separate npm packages) share the
-// same in-memory registry, all depending on the same instance of this module.
+// same in-memory registry, even through separate copies of this package (see
+// registry.js).
 // ---------------------------------------------------------------------------
 
-const listeners = new Map(); // hookName -> Set<fn>
+import { registry } from './registry.js';
+
+const { listeners } = registry; // hookName -> Set<fn>
 
 
 export function on(hookName, fn) {

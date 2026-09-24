@@ -3,7 +3,9 @@
 // task modules. The registry only owns definitions; execution and lifecycle
 // decisions remain in @kirigami/kirigami.
 
-const taskTypes = new Map();
+import { registry } from './registry.js';
+
+const { taskTypes } = registry;
 
 
 export function registerTaskType(name, definition) {

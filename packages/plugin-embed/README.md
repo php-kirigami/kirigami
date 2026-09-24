@@ -213,7 +213,7 @@ The current localStorage read can throw in restricted browser contexts and preve
 
 - Node.js `>= 24.0.0`
 - npm `>= 10.2.3`
-- `@kirigami/kirigami` `>= 1.5.1` (declared `kirigami.minVersion`)
+- `@kirigami/kirigami` `>= 3.0.0` (declared `kirigami.minVersion`)
 - A `sass` task for the bundled styles
 - An `esbuild` task in `kirigami.yaml`
 

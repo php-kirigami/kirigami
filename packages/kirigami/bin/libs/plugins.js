@@ -103,6 +103,8 @@ export async function loadPlugins(config, { reload = false } = {}) {
 			throw `Plugin "${name}" requires @kirigami/kirigami >= ${meta.minVersion} (current: ${kiriVer}).`;
 		}
 
+		if (pkgDir) checkSdkCopy(name, pkgDir);
+
 		const options = entry.options || {};
 
 		// Validate the kirigami.yaml options against the plugin's own schema.
@@ -161,6 +163,36 @@ export function resolvePlugin(name) {
 		} catch { /* try the next root */ }
 	}
 	return null;
+}
+
+
+// A plugin that pins another @kirigami/sdk version gets its own copy from npm.
+// Copies from 0.3.0 on share one registry (the SDK keeps it on globalThis);
+// an older copy keeps its own, so the plugin's hooks, commands and task types
+// would never reach this engine. Fail loudly instead of building without them.
+const SHARED_REGISTRY_SDK = "0.3.0";
+
+function checkSdkCopy(name, pkgDir) {
+	const pluginSdk = findSdkDir(pkgDir);
+	const engineSdk = findSdkDir(__dirname);
+	if (!pluginSdk || !engineSdk || pluginSdk === engineSdk) return;
+	const version = readJson(path.join(pluginSdk, "package.json"))?.version || "0.0.0";
+	if (compareVersions(version, SHARED_REGISTRY_SDK) >= 0) return;
+	throw `Plugin "${name}" uses its own copy of @kirigami/sdk ${version}, too old to share hooks with this engine, so it would do nothing. Update it: npm install ${name}@latest`;
+}
+
+
+// Where Node would resolve @kirigami/sdk from `dir`: the nearest
+// node_modules/@kirigami/sdk walking up, following links. The package's
+// `exports` has no "require" condition, so createRequire can't resolve it.
+function findSdkDir(dir) {
+	for (let current = dir; ; current = path.dirname(current)) {
+		const candidate = path.join(current, "node_modules", "@kirigami", "sdk");
+		if (fs.existsSync(path.join(candidate, "package.json"))) {
+			try { return fs.realpathSync(candidate); } catch { return candidate; }
+		}
+		if (path.dirname(current) === current) return null;
+	}
 }
 
 

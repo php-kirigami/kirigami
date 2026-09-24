@@ -1,5 +1,17 @@
 # Status
 
+## @kirigami/sdk copies share one registry — 2026-09-23
+
+- SDK 0.3.0 keeps hooks, commands and task types on a `globalThis` registry
+  (`src/registry.js`), so a plugin's own copy of the SDK reaches the engine.
+- The plugin loader rejects a plugin whose own SDK copy is older than 0.3.0
+  (its hooks would never run) with `npm install <plugin>@latest`; the three
+  plugins now declare `kirigami.minVersion: 3.0.0`. See DECISIONS.
+- Tests: `sdk/test/contracts.test.js` (two copies share the registry),
+  `kirigami/test/plugin-sdk-copy.test.js` (nested copy at 0.3.0 works, at
+  0.2.1 fails with the message). `npm test` 93/93; the demo builds as
+  committed.
+
 ## PHP-WASM core with php-mdhtml 0.1.5 — 2026-09-23
 
 - Rebuilt 8.5.11 core (wasm sha1 `78f439ce2372`) with php-mdhtml v0.1.5: a

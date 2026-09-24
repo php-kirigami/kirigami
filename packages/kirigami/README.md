@@ -48,6 +48,11 @@ Use [the CLI](../cli/README.md) for terminal commands. This package is the progr
   upgrading, the first export into an existing `dist/` fails once. Empty the
   directory, or create an empty `.kirigami-export` file in it to confirm it may
   be replaced. Export also refuses any destination that contains the project.
+- **Update your plugins with the core.** A plugin that still bundles
+  `@kirigami/sdk` older than 0.3.0 gets its own copy of the SDK next to this
+  engine's, and its hooks would never run; loading now fails with
+  `npm install <plugin>@latest` instead of building without them. The
+  plugins released with 3.0.0 require it (`kirigami.minVersion: 3.0.0`).
 - **Duplicate task names are rejected**, including a plugin task injected via
   `tasks:register` with the same name as a `kirigami.yaml` task.
 - **`seo.jsonld` is now an on/off switch, not a sub-block** (matching

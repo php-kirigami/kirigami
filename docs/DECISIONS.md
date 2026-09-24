@@ -1,5 +1,26 @@
 # Decisions
 
+## Several @kirigami/sdk copies share one registry; older copies fail loudly — 2026-09-23
+
+Every package pins `@kirigami/sdk` exactly, so a plugin pinning another
+version than the engine gets its own copy from npm. The registries were
+module-level Maps: the plugin's hooks, commands and task types went to its
+copy and never reached the engine, while the plugin still showed as loaded.
+Found while testing the release (a site on core 3.0.0 keeping an older
+plugin would lose highlighting without any message).
+
+From 0.3.0 the SDK keeps its registries on `globalThis` under
+`Symbol.for('@kirigami/sdk/registry/v1')`, so copies share them; the shape is
+versioned in the key and only changes together with it. That cannot fix
+copies already published, so the plugin loader also finds the SDK copy a
+plugin resolves and throws, with `npm install <plugin>@latest`, when it is
+a different copy older than 0.3.0. For the reverse case (an old engine
+without that check, a new plugin), the plugins released with 3.0.0 set
+`kirigami.minVersion: 3.0.0`, which older engines already enforce.
+
+Peer dependencies were not used: npm 7+ installs them automatically but still
+nests a conflicting version, so they would not remove the copies.
+
 ## Export only empties directories it owns
 
 Export deletes its destination's contents before copying. Checking that the

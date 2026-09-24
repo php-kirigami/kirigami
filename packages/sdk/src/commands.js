@@ -18,7 +18,9 @@
 // own job, exactly like a built-in bin/cmd/*.js. This registry only routes.
 // ---------------------------------------------------------------------------
 
-const commands = new Map(); // name -> { description, run }
+import { registry } from './registry.js';
+
+const { commands } = registry; // name -> { description, run }
 
 
 export function registerCommand(name, { description = '', run }) {

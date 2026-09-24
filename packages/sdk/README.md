@@ -73,6 +73,9 @@ Part of the **Kirigami** project ecosystem.
   export checkpoint), build tasks, and commands, the plugin counterparts of
   a project's own `scripts:` and `tasks:` entries. See
   [Available hooks](#available-hooks).
+- Copies of this package share one registry. npm installs a second copy
+  when a plugin pins another SDK version than the engine; from 0.3.0 on,
+  both copies see the same hooks, commands and task types.
 - These need `@kirigami/kirigami` 3.0.0.
 
 ---

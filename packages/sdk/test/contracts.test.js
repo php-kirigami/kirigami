@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { test } from 'node:test';
-import { reset, on, has, registerCommand, getCommand, listCommands, resetCommands, registerTaskType, getTaskType, listTaskTypes, resetTaskTypes } from '../index.js';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { reset, on, run, has, registerCommand, getCommand, listCommands, resetCommands, registerTaskType, getTaskType, listTaskTypes, resetTaskTypes } from '../index.js';
 
 test('hook, command and task-type registries match the declared API', async () => {
     try {
@@ -21,5 +25,26 @@ test('hook, command and task-type registries match the declared API', async () =
         resetTaskTypes('fixture'); assert.equal(getTaskType('fixture'), null);
         assert.throws(() => registerTaskType('invalid', { run: null }));
         assert.throws(() => registerTaskType('invalid-watch', { canwatch: true, run() {} }));
+    } finally { reset(); resetCommands(); resetTaskTypes(); }
+});
+
+test('separate copies of the package share one registry', async (t) => {
+    // npm installs a second copy when a plugin pins another version.
+    const copy = fs.mkdtempSync(path.join(os.tmpdir(), 'kiri-sdk-'));
+    t.after(() => fs.rmSync(copy, { recursive: true, force: true }));
+    const root = fileURLToPath(new URL('..', import.meta.url));
+    for (const entry of ['index.js', 'package.json', 'src']) fs.cpSync(path.join(root, entry), path.join(copy, entry), { recursive: true });
+    const other = await import(pathToFileURL(path.join(copy, 'index.js')).href);
+    assert.notEqual(other.on, on, 'a separate module instance');
+    try {
+        other.on('shared', () => 'from the copy');
+        other.registerCommand('copied', { run: () => 1 });
+        other.registerTaskType('copied', { run: () => 1 });
+        assert.deepEqual(await run('shared'), ['from the copy']);
+        assert.ok(getCommand('copied'));
+        assert.ok(getTaskType('copied'));
+        reset(); resetCommands(); resetTaskTypes();
+        assert.equal(other.has('shared'), false);
+        assert.equal(other.getCommand('copied'), null);
     } finally { reset(); resetCommands(); resetTaskTypes(); }
 });
