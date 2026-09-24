@@ -1,5 +1,20 @@
 # Status
 
+## Coordinated release shipped — 2026-09-24
+
+- npm: `@kirigami/kirigami` 3.0.1 (3.0.0 first), php-prepros 3.0.0, sdk 0.3.0,
+  php-wasm 8.5.11, canva 2.7.0, cli and mcp 0.1.1, plugin-embed /
+  plugin-extlink / plugin-highlight 0.2.0 (their 0.1.x patch releases are
+  deprecated), audiowaveform-wasm 1.1.1, struct-walker 1.0.6, bestframe
+  0.1.1; the 27 `@kirigami/phpext-*` packages.
+- kiribuild `v2.1.0` / `v2`; `template-default`, `template-demo` and the org
+  site install the released packages; `kiri create` scaffolds a core-3 site.
+- VS Code: "Kirigami" (`php-kirigami.kirigami-vscode`) 0.1.0 on the
+  Marketplace for win32, linux and darwin, x64 and arm64.
+- The release plan is deleted; its VSIX facts moved to EXTENSION-VSCODE.md.
+  The php-wasm README now lists the 27 published phpext packages (live on
+  npm with php-wasm's next release).
+
 ## VS Code extension ready to publish — 2026-09-24
 
 - New `VSIX` workflow: one VSIX per platform (six targets) on its own

@@ -332,7 +332,7 @@ Four of the extensions above are [Maxime Larrivée-Roy](https://github.com/php-k
 
 ## Loading additional extensions
 
-Beyond the static set above, more PHP extensions ship as separate, on-demand WASM side modules — install any `@kirigami/phpext-*` package and `@kirigami/php-wasm` picks it up **automatically** at runtime, no core rebuild needed (see [Automatic extension discovery](#automatic-extension-discovery) below for the mechanism). Currently published by [`php-wasm-compiler`](https://github.com/php-kirigami/php-wasm-compiler): `dba`, `enchant`, `ftp`, `gettext`, `gmp`, `ldap`, `mysqli` (bundles `mysqlnd`), `pdo_mysql` (bundles `mysqlnd`), `pdo_pgsql`, `pgsql`, `posix`, `soap`, `sodium`, `tidy`.
+Beyond the static set above, more PHP extensions ship as separate, on-demand WASM side modules — install any `@kirigami/phpext-*` package and `@kirigami/php-wasm` picks it up **automatically** at runtime, no core rebuild needed (see [Automatic extension discovery](#automatic-extension-discovery) below for the mechanism). Published by [`php-wasm-compiler`](https://github.com/php-kirigami/php-wasm-compiler): `anydoc`, `dba`, `enchant`, `fastchart`, `ffi`, `fileinfo`, `ftp`, `gettext`, `gmp`, `intl`, `ldap`, `mysqli` (bundles `mysqlnd`), `odbc`, `pdo_dblib`, `pdo_firebird`, `pdo_mysql` (bundles `mysqlnd`), `pdo_odbc`, `pdo_pgsql`, `pgsql`, `posix`, `rar`, `scanmeqr`, `snmp`, `soap`, `sodium`, `tidy`, `xsl`. `intl` is about 38 MB, since it embeds the ICU data; `anydoc` is written in Rust, and a panic there aborts the PHP runtime.
 
 ```bash
 npm install @kirigami/phpext-pgsql
