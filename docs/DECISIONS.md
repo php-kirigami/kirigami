@@ -18,8 +18,9 @@ a different copy older than 0.3.0. For the reverse case (an old engine
 without that check, a new plugin), the plugins released with 3.0.0 set
 `kirigami.minVersion: 3.0.0`, which older engines already enforce.
 
-Peer dependencies were not used: npm 7+ installs them automatically but still
-nests a conflicting version, so they would not remove the copies.
+Peer dependencies were not used: a version mismatch would become an install
+error (npm 7+ fails with ERESOLVE) instead of a working setup, and the
+plugins already published keep their exact pins anyway.
 
 ## Export only empties directories it owns
 
