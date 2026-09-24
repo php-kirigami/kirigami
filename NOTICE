@@ -1,0 +1,23 @@
+Kirigami project notice
+
+This repository is primarily licensed under GNU GPL v3.0 or later.
+
+Copyright (c) 2026 Maxime Larrivée-Roy.
+Kirigami-owned source, documentation, and tooling are licensed under
+GPL-3.0-or-later. Third-party code and notices retain their own terms.
+
+All workspace packages declare GPL-3.0-or-later except:
+- @kirigami/php-wasm: GPL-2.0-or-later.
+- @kirigami/bestframe: LGPL-2.1-or-later.
+
+These exceptions preserve the existing runtime/binary package licenses;
+this update does not relicense their upstream components.
+
+The project core is distributed under GPL-3.0-or-later. However, some packages are intentionally treated as separate runtime or binary components and keep their own license terms.
+
+The most notable example is `packages/php-wasm`, which contains a compiled PHP/WASM runtime and related binary assets. That package remains independently licensed under its own `LICENSE` file and should be evaluated separately from the project core.
+
+This separation is intentional and is meant to avoid misrepresenting binary/runtime components as part of the same licensing scope as the main Kirigami source tree.
+
+For the project core, see `LICENSE`.
+For the PHP/WASM runtime, see `packages/php-wasm/LICENSE`.

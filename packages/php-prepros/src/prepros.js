@@ -5,7 +5,7 @@ import path, { dirname } from "path";
 import { spawn } from 'child_process';
 import { fileURLToPath, pathToFileURL } from "url";
 import { walkFile } from '@kirigami/struct-walker';
-import { getPHPRuntime, getPHPRuntimeWithNetwork } from "@kirigami/php-wasm";
+import { createPHPRuntime } from "@kirigami/php-wasm";
 
 
 const __modules = new Map;
@@ -15,6 +15,23 @@ const __configpath = path.join(__project, 'kirigami.yaml');
 let   __root   = null;
 let   __php    = null;
 let   __config = null;
+
+// Mounts, PHP requests and resets share mutable state. Queue the entire
+// operation so reload cannot dispose a runtime between mounting and execution.
+let pending = Promise.resolve();
+const serial = operation => (...args) => {
+    const result = pending.then(() => operation(...args));
+    pending = result.catch(() => {});
+    return result;
+};
+
+const reset = async () => {
+    const php = __php;
+    __php = null;
+    __root = null;
+    __config = null;
+    if (php) php.exit();
+};
 
 
 // Load and cache kirigami.yaml on first use. Deferred (not run at import) so
@@ -29,7 +46,7 @@ const loadConfig = async () => {
 }
 
 
-const getPHPInstance = async () => {
+const initializePHPInstance = async () => {
     const config = await loadConfig();
     if(!__php) {
         if(config?.kirigami?.root === undefined) throw `Missing prepros:root property in config file: ${__configpath}`;
@@ -46,8 +63,8 @@ const getPHPInstance = async () => {
         preprosConfig.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         preprosConfig.root = joinWith('/project/', config?.kirigami?.root);
         preprosConfig.data = config.kirigami || {};
-        // The unified SEO block — META reads it directly; LD reads its own
-        // `jsonld` sub-key (see META/LD's docblocks). One block, one toggle.
+        // The SEO block, read by both META and LD; `jsonld: true` switches
+        // LD's JSON-LD on (see META/LD's docblocks).
         preprosConfig.seo = config.seo ?? null;
         // META auto-detects favicon / apple-touch-icon / humans.txt at the
         // source root; those extensions aren't mounted into the sandbox, so the
@@ -61,16 +78,21 @@ const getPHPInstance = async () => {
         // page's <head> with a <link>/<script> per sass/esbuild task output.
         preprosConfig.tasks = config.tasks || [];
 
-        __php = await (preprosConfig.network ? getPHPRuntimeWithNetwork() : getPHPRuntime());
+        __php = await createPHPRuntime({ network: Boolean(preprosConfig.network) });
         __php.setSpawnHandler((command, args, options) => spawn(command, args, options));
         __php.preprosConfig = preprosConfig;
         __php.setIniValues({
-            log_errors:      1,
-            html_errors:     0,
-            display_errors:  1,
-            error_reporting: 32767,
-            error_log:       'php://stderr',
-            memory_limit:    '2G',
+            log_errors:        1,
+            html_errors:       0,
+            // Diagnostics belong on stderr, never inside generated HTML.
+            display_errors:    0,
+            error_reporting:   32767,
+            error_log:         'php://stderr',
+            memory_limit:      '2G',
+            // The framework bootstrap (autoloader, $argv/$config, aliases,
+            // the `boot` hook) — every entrypoint used to `include` this by
+            // hand; auto_prepend_file makes it a single config point instead.
+            auto_prepend_file: '/prepros/utils.inc.php',
         });
 
         await mountPath(__dirname, '/prepros', __php);
@@ -108,12 +130,24 @@ const getPHPInstance = async () => {
     return __php;
 }
 
+const getPHPInstance = async () => {
+    try {
+        return await initializePHPInstance();
+    } catch (error) {
+        await reset();
+        throw error;
+    }
+};
+
 
 const mountPath = async (localPath, virtualDir, php) => {
     const config = await loadConfig();
     php = php || await getPHPInstance();
     if(!path.isAbsolute(localPath)) localPath = path.join(__project, localPath);
-    virtualDir = virtualDir || path.posix.join('/project', localPath.replace(__project + path.sep, ''));
+    // POSIX separators: on Windows a nested path ("src\\about\\_index.php")
+    // would otherwise land at "/project/src\\about\\_index.php", a separate
+    // file, leaving the real page's VFS copy stale.
+    virtualDir = virtualDir || path.posix.join('/project', path.relative(__project, localPath).split(path.sep).join('/'));
     const includeExtensions = new Set(['.php', '.json', '.yaml', '.yml', '.md', '.db', '.txt', ...(config?.prepros?.mountext || [])]);
     const stat = fs.statSync(localPath);
     if (stat.isDirectory()) {
@@ -141,27 +175,37 @@ const mountPath = async (localPath, virtualDir, php) => {
 const run = async (args = [], script = null, mountfiles = []) => {
     const php = await getPHPInstance();
 
-    await Promise.all(mountfiles.map(async item => {
-        const file = path.resolve(item);
-        if(!fs.existsSync(file)) return;
-        if(!path.relative(__project, file)) return;
-        const dest = path.join('/project', file.replace(__project, '')).replaceAll('\\', '/');
+    await Promise.all(mountfiles.map(async ({ file, dest }) => {
         const buf = fs.readFileSync(file);
         const parentDir = dest.substring(0, dest.lastIndexOf('/'));
         if (parentDir) php.mkdirTree(parentDir);
         php.writeFile(dest, isBinary(buf) ? buf : buf.toString('utf8'));
     }));
 
-    const output = await php.runStream({
-        scriptPath: script || '/prepros/prepros.php',
-        env: {
-            PREPROS_ARGS: JSON.stringify(args),
-            PREPROS_CONFIG: JSON.stringify(php.preprosConfig)
-        }
-    });
-
-    const stdout = await output.stdoutText;
-    const stderr = await output.stderrText;
+    let stdout, stderr;
+    try {
+        const output = await php.runStream({
+            scriptPath: script || '/prepros/prepros.php',
+            env: {
+                PREPROS_ARGS: JSON.stringify(args),
+                PREPROS_CONFIG: JSON.stringify(php.preprosConfig)
+            }
+        });
+        stdout = await output.stdoutText;
+        stderr = await output.stderrText;
+    } catch (e) {
+        // The WASM runtime aborted (e.g. `RuntimeError: unreachable`): its
+        // heap and request state are gone, and reusing it only yields
+        // follow-up errors ("Cannot redeclare function ..."). Drop it so the
+        // next operation starts a fresh one, and report this run as failed.
+        try { await reset(); } catch { /* already dead */ }
+        return {
+            success: false,
+            files: [],
+            error: `PHP runtime crashed: ${e?.message || e}. It has been restarted; run the build again.`,
+            stderr: String(e?.stack || e),
+        };
+    }
 
     let retobj;
     const resultPath = '/internal/prepros_result.json';
@@ -237,14 +281,60 @@ const extractPhpError = (text) => {
 }
 
 
+const inside = (root, target) => {
+    const relative = path.relative(root, target);
+    return relative && relative !== '..' && !relative.startsWith('..' + path.sep)
+        && !path.isAbsolute(relative);
+};
+
+
+// Require both the authored path and its real target to stay inside the project.
+// Validate the whole input list before booting PHP or copying any file.
+const projectFile = (input, optional = false) => {
+    const file = path.resolve(__project, input);
+    if (!inside(__project, file)) throw new Error('PHP file outside project');
+    if (!fs.existsSync(file)) {
+        if (optional) return null;
+        throw new Error("Can't find PHP file");
+    }
+    if (!inside(fs.realpathSync(__project), fs.realpathSync(file))) {
+        throw new Error('PHP file outside project');
+    }
+    if (!fs.statSync(file).isFile()) throw new TypeError('Expected a project file, not a directory');
+    return { file, dest: '/project/' + path.relative(__project, file).split(path.sep).join('/') };
+};
+
 const runenv = async (script, paths = [], ...args) => {
-    if(!script) throw "Missing PHP file.";
-    const file = path.resolve(script);
-    if(!path.relative(__project, file)) throw "PHP file outside project";
-    if(!fs.existsSync(file)) throw "Can't find PHP file";
-    const dest = path.join('/project', file.replace(__project, '')).replaceAll('\\', '/');
-    return run([dest, ...args], '/prepros/runenv.php', [file, ...paths]);
-}
+    if (!script) throw new Error('Missing PHP file.');
+    const entry = projectFile(script);
+    const mounts = [entry, ...paths.map(file => projectFile(file, true)).filter(Boolean)];
+    return run([entry.dest, ...args], '/prepros/runenv.php', mounts);
+};
+
+
+// A plugin-registered script lives in its plugin's package, which a linked or
+// workspace install places outside the project. The caller vouches for
+// `pluginRoot` (an active plugin's resolved package directory); the script's
+// authored and real paths must both stay inside it. Extra `paths` are still
+// project files.
+const runPluginScript = async (script, pluginRoot, paths = [], ...args) => {
+    if (!script) throw new Error('Missing PHP file.');
+    if (!pluginRoot) throw new Error('Missing plugin package directory.');
+    const root = path.resolve(pluginRoot);
+    const file = path.resolve(root, script);
+    if (!inside(root, file)) throw new Error('PHP file outside plugin package');
+    if (!fs.existsSync(file)) throw new Error("Can't find PHP file");
+    const realRoot = fs.realpathSync(root);
+    const realFile = fs.realpathSync(file);
+    if (!inside(realRoot, realFile)) throw new Error('PHP file outside plugin package');
+    if (!fs.statSync(realFile).isFile()) throw new TypeError('Expected a plugin file, not a directory');
+    const entry = {
+        file: realFile,
+        dest: '/plugin-scripts/' + path.basename(realRoot) + '/' + path.relative(realRoot, realFile).split(path.sep).join('/'),
+    };
+    const mounts = [entry, ...paths.map(p => projectFile(p, true)).filter(Boolean)];
+    return run([entry.dest, ...args], '/prepros/runenv.php', mounts);
+};
 
 
 // Run a batch of image jobs (resize / palette) through /prepros/imagebatch.php,
@@ -268,22 +358,25 @@ const render = async (file = '.', phpIncludes = []) => {
     await mountPath(target);
     if(config?.prepros?.before) await mountPath(path.resolve(config?.kirigami?.root, config?.prepros?.before));
     if(config?.prepros?.after) await mountPath(path.resolve(config?.kirigami?.root, config?.prepros?.after));
+    for (const type of Object.values(config?.prepros?.types || {})) {
+        if (type?.before) await mountPath(path.resolve(config?.kirigami?.root, type.before));
+        if (type?.after) await mountPath(path.resolve(config?.kirigami?.root, type.after));
+    }
 
     // Extra PHP files contributed by plugins (the kiri 'prepros:php' hook):
     // mounted outside /project and include_once'd once, before any page
     // renders, so they can PREPROS::registerTag()/registerHook() from PHP.
-    if (Array.isArray(phpIncludes) && phpIncludes.length) {
-        const php = await getPHPInstance();
-        const mounted = [];
-        for (let i = 0; i < phpIncludes.length; i++) {
-            const abs = path.resolve(phpIncludes[i]);
-            if (!fs.existsSync(abs)) continue;
-            const virt = `/plugins/${i}_${path.basename(abs)}`;
-            await mountPath(abs, virt, php);
-            mounted.push(virt);
-        }
-        php.preprosConfig.phpIncludes = mounted;
+    const php = await getPHPInstance();
+    const mounted = [];
+    const includes = Array.isArray(phpIncludes) ? phpIncludes : [];
+    for (let i = 0; i < includes.length; i++) {
+        const abs = path.resolve(includes[i]);
+        if (!fs.existsSync(abs)) continue;
+        const virt = `/plugins/${i}_${path.basename(abs)}`;
+        await mountPath(abs, virt, php);
+        mounted.push(virt);
     }
+    php.preprosConfig.phpIncludes = mounted;
 
     return run([fsvm]);
 }
@@ -296,4 +389,14 @@ const sitemap = async () => {
 }
 
 
-export { runenv, render, sitemap, mountPath, processImages };
+const queuedRunenv = serial(runenv);
+const queuedRunPluginScript = serial(runPluginScript);
+const queuedRender = serial(render);
+const queuedSitemap = serial(sitemap);
+const queuedMountPath = serial(mountPath);
+const queuedProcessImages = serial(processImages);
+const resetRuntime = serial(reset);
+export {
+    queuedRunenv as runenv, queuedRunPluginScript as runPluginScript, queuedRender as render, queuedSitemap as sitemap,
+    queuedMountPath as mountPath, queuedProcessImages as processImages, resetRuntime,
+};

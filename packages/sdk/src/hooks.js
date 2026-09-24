@@ -7,10 +7,13 @@
 // kirigami-core's plugin system reads kirigami.yaml, loads the active
 // packages, and lets each plugin call on() itself. Here we only route — which
 // is what lets kirigami-core and the plugins (separate npm packages) share the
-// same in-memory registry, all depending on the same instance of this module.
+// same in-memory registry, even through separate copies of this package (see
+// registry.js).
 // ---------------------------------------------------------------------------
 
-const listeners = new Map(); // hookName -> Set<fn>
+import { registry } from './registry.js';
+
+const { listeners } = registry; // hookName -> Set<fn>
 
 
 export function on(hookName, fn) {
@@ -22,6 +25,18 @@ export function on(hookName, fn) {
 
 export function off(hookName, fn) {
 	listeners.get(hookName)?.delete(fn);
+}
+
+
+// Clears every listener for one hook, or the whole registry when no
+// hookName is given. Meant for a long-lived host (a VS Code extension, an
+// MCP server) that reloads a project's plugins in place — without this,
+// re-running each plugin's register() on reload would pile up a second set
+// of listeners alongside the first, since every call creates new function
+// closures `on()` can't recognize as duplicates.
+export function reset(hookName) {
+	if (hookName) listeners.delete(hookName);
+	else listeners.clear();
 }
 
 

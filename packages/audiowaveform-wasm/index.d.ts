@@ -50,7 +50,8 @@ export interface Id3CoverArt {
  * The format is auto-detected from the buffer's own container magic
  * bytes — MP3, WAV (16/24-bit PCM, 32-bit float), AIFF, FLAC, Ogg Vorbis,
  * Opus, M4A/AAC, and WebM (Vorbis or Opus audio) are all supported.
- * Anything else resolves to `null` rather than throwing.
+ * A native decode failure can return null. Invalid arguments or runtime
+ * failures can reject the promise.
  *
  * @example
  * ```ts
@@ -87,8 +88,9 @@ export declare function extractAudioPeaks(
  * ```
  *
  * @param mp3Bytes - The raw MP3 file bytes.
- * @returns A promise that resolves to the tag data, or `null` if there's
- * no tag at all.
+ * @returns A promise that resolves to tag data or null. Untagged input may
+ * return an object whose seven fields are all null; inspect the fields to
+ * determine whether metadata is present.
  */
 export declare function getId3Tags(mp3Bytes: Uint8Array): Promise<Id3Tags | null>;
 

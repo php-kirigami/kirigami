@@ -28,12 +28,20 @@ cd kirigami
 npm install    # npm workspaces — one install covers every package
 ```
 
-Each package under `packages/*` has its own `build` script; run it from the
-package directory (or via `npm run build -w @kirigami/<name>`) after making a
-change to see it compiled. There is no test suite to run today — verify a
-change by building the affected package(s) and, where relevant, running it
-against `../template-default/` or `../template-demo/` (siblings of this repo)
-with `npm link` or a local `file:` dependency.
+Only packages with a compilation step have build scripts. Run `npm run build -w @kirigami/canva` for Canva and `npm run compile -w kirigami-vscode` for the extension. Other runtime packages execute their source directly.
+
+Run the regression suite from the repository root:
+
+```bash
+npm test                                             # everything
+node scripts/test.js packages/kirigami/test/dist.test.js   # focused files
+```
+
+`scripts/test.js` compiles the VS Code extension first (its activation test loads the bundle), then runs every `packages/*/test/*.test.{js,cjs}` file with `node --test`, one file at a time: several tests change the working directory and load process-global registries. It sets `KIRIGAMI_PHPEXT_DISCOVERY=off` so locally or globally installed `@kirigami/phpext-*` packages don't affect results. Packages that have tests also expose them through their own `npm test`.
+
+The tests require subprocess support and local loopback sockets. The TLS test also requires native PHP with cURL (`PHP_BINARY` may select it); it checks the helper under native PHP and end to end inside the WASM runtime.
+
+CI (`.github/workflows/ci.yml`) runs `npm test` on Windows and Linux with Node 24 and 26, for pushes to `main` and for pull requests. Locally on 2026-09-22, all 69 tests passed on Windows with Node 26.9.0 and Node 24.21.0, and on Linux (WSL Ubuntu, Node 24.21.0) with one Windows-only test skipped. VSIX packaging is not covered. Record the commands, environment, and results in your PR.
 
 > The maintainer develops on Windows (PowerShell). If you add a script, mind
 > path separators — normalize `path.sep` to `/` where the existing code does.
@@ -42,13 +50,8 @@ with `npm link` or a local `file:` dependency.
 
 ## Conventions
 
-- **ESM only.** Every package is `"type": "module"`. Use `import` / `export`,
-  never CommonJS.
-- **English in code and docs.** Comments, README prose, and user-facing CLI
-  strings are English. (Commit messages and `todo.md` are written in French by
-  the maintainer — that's a project quirk, not a rule for contributors; write
-  your own commits and PR description in whichever of English or French you're
-  comfortable with.)
+- **ESM source.** Runtime packages use `import` / `export`; the VS Code extension bundles to CommonJS.
+- **English in all project content.** Code comments, documentation, CLI strings, commit messages, and PR descriptions use English. Conversations with the maintainer use French.
 - **`engines.node: ">=24.0.0"`** on every `packages/*/package.json`, and on
   every README's Node badge / "Requirements" line you touch.
 - **Stay lite — minimize dependencies, no native deps.** Before reaching for a
@@ -70,7 +73,14 @@ with `npm link` or a local `file:` dependency.
 
 ```
 packages/
-├── kirigami/          # the kiri CLI
+├── kirigami/          # the programmatic Project API
+├── cli/               # the kiri terminal interface
+├── mcp/               # MCP tools over the Project API
+├── vscode/            # editor extension scaffold
+├── audiowaveform-wasm/ # waveform and ID3 extraction
+├── bestframe/         # video thumbnail selection
+├── plugin-extlink/    # external-link preview cards
+├── plugin-embed/      # browser video embeds
 ├── php-prepros/       # PHP → HTML compiler + PHP class library
 ├── php-wasm/          # PHP 8.5 WebAssembly build (GPL-2.0-or-later — see below)
 ├── struct-walker/     # YAML/JSON walker (file refs, data URIs)
@@ -98,7 +108,7 @@ PR.
 1. Branch off `main`.
 2. Keep the change scoped to one package where possible; if it spans several
    (e.g. a `canva` API change consumed by `plugin-highlight`), say so in the
-   PR description and bump every affected `package.json` together.
+   PR description and identify affected packages. Version bumps belong to a separately authorized release.
 3. Update the package's `README.md` if you changed configuration, a public
    function, or a CLI flag — and the JSON Schema
    (`packages/kirigami/kirigami.schema.json`) if you touched `kirigami.yaml`
@@ -126,10 +136,7 @@ is a real, complete example to read end to end if you're building your own.
 
 ## License
 
-Everything in this repo is [MIT](../LICENSE), **except**
-[`packages/php-wasm`](../packages/php-wasm), which is
-**GPL-2.0-or-later** (inherited from its WordPress Playground upstream) —
-keep that in mind if your PR touches that package.
+Kirigami packages use GPL-3.0-or-later, except `@kirigami/php-wasm` (GPL-2.0-or-later) and `@kirigami/bestframe` (LGPL-2.1-or-later). See each package's `LICENSE` and README for upstream notices.
 
 ---
 

@@ -11,13 +11,15 @@
 // and write the `.hljs-*` span markup back — the same markup the browser build
 // of highlight.js would produce, which is what the SCSS themes target. Nothing
 // is shipped to the client.
+//
+// (Considered swapping this for @kirigami/canva's `observer` — it isn't a
+// fit: `observer` finds/replaces elements in a live browser DOM via
+// querySelectorAll/MutationObserver, and this runs in Node on a raw HTML
+// string before any DOM exists. See todo.md.)
 // ---------------------------------------------------------------------------
 
-// Pourrais utiliser l'observer à la place
-
-
 import hljs from 'highlight.js/lib/core';
-import { dedent } from '@kirigami/canva/helpers'; // vscode est pas capable le resolver, surement parce qu'il n'a pas encore de d.ts
+import { dedent } from '@kirigami/canva/helpers';
 
 const registered = new Set();  // language names successfully registered on `hljs`
 const warned = new Set();      // language names we've already complained about

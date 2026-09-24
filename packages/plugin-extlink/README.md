@@ -9,7 +9,7 @@
 External link preview cards for the **Kirigami** static site generator.
 
 [![npm version](https://img.shields.io/npm/v/@kirigami/plugin-extlink)](https://www.npmjs.com/package/@kirigami/plugin-extlink)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](./LICENSE)
 [![Node.js >=24.0.0](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](https://nodejs.org)
 [![Website](https://img.shields.io/badge/website-php--kirigami.github.io-1f6b4a)](https://php-kirigami.github.io)
 
@@ -25,11 +25,31 @@ title / description / site name stacked on the right — using
 `@kirigami/php-prepros`'s `SCRAPER` class (Open Graph, JSON-LD, oembed, …) to
 pull the metadata.
 
-Both the scrape result and the thumbnail are cached to disk on first use and
-meant to be committed, so a later build — including CI, from a fresh checkout
-— never re-crawls a URL it has already resolved.
+Scraped metadata and images are written to disk. Committing the metadata
+avoids repeated page scraping while that cache is readable. Image reuse
+depends on the generated destination file; committed source images alone
+do not guarantee an offline build.
 
 Part of the **Kirigami** project ecosystem.
+
+---
+
+## Table of contents
+
+- [@kirigami/plugin-extlink](#kirigamiplugin-extlink)
+- [Overview](#overview)
+- [What's new in 0.1.3](#whats-new-in-013)
+- [What's new in 0.1.2](#whats-new-in-012)
+- [What's new in 0.1.1](#whats-new-in-011)
+- [Installation](#installation)
+- [Configuration](#configuration)
+  - [Options](#options)
+- [The `<extlink>` tag](#the-extlink-tag)
+- [The `{% extlink %}` shortcut](#the--extlink--shortcut)
+- [How it works](#how-it-works)
+- [Styling](#styling)
+- [Requirements](#requirements)
+- [License](#license)
 
 ---
 
@@ -55,26 +75,6 @@ Part of the **Kirigami** project ecosystem.
   jpg, to `assets/extlink/<hash>.jpg` — an archival copy alongside the
   square-cropped card image (costs no extra download, decoded from the same
   in-memory `IMG` instance).
-
----
-
-## Table of contents
-
-- [@kirigami/plugin-extlink](#kirigamiplugin-extlink)
-  - [Overview](#overview)
-  - [What's new in 0.1.3](#whats-new-in-013)
-  - [What's new in 0.1.2](#whats-new-in-012)
-  - [What's new in 0.1.1](#whats-new-in-011)
-  - [Table of contents](#table-of-contents)
-  - [Installation](#installation)
-  - [Configuration](#configuration)
-    - [Options](#options)
-  - [The `<extlink>` tag](#the-extlink-tag)
-  - [The `{% extlink %}` shortcut](#the-extlink-shortcut)
-  - [How it works](#how-it-works)
-  - [Styling](#styling)
-  - [Requirements](#requirements)
-  - [License](#license)
 
 ---
 
@@ -125,6 +125,13 @@ right on the tag — handy when the scrape misses something, or gets it wrong:
 If the scrape (and no override) turns up no title at all, the tag throws a
 clear build error naming the offending `src` — pass `title="…"` to fix it.
 
+A `class="…"` attribute is appended alongside the card's own `extlink`
+class, for one-off styling without overriding `style: false`:
+
+```
+<extlink src="https://example.com/some-article" class="featured">
+```
+
 ---
 
 ## The `{% extlink %}` shortcut
@@ -151,28 +158,40 @@ code path — same disk cache, same behavior either way.
 
 ## How it works
 
-On first use of a given URL, the tag:
+The `prepros:php` hook includes `php/extlink.php`, which registers the HTML
+tag and Markdown shortcut. `sass:after` adds the styles when `style` is enabled.
+No browser JavaScript is needed for the card.
 
-1. Calls `SCRAPER::get($src)` and writes the raw result to
-   `_data/extlink/<hash>.json`, `<hash>` being `STR::shorthash($src)`.
-2. Downloads the scraped preview image and saves it, untouched at its native
-   resolution (re-encoded to jpg), to `assets/extlink/<hash>.jpg` — an
-   archival copy, in case a different size or crop is ever needed without
-   re-downloading.
-3. Square-crops that same image and re-encodes it to the project's own
-   `image:` config (`format`, default `webp`) at
-   `assets/images/extlink/<hash>.<format>` — then publishes it under
-   `image.dest` the same way `<img asset>` does, so it ships with the site
-   like any other image. This is the one actually used by the card.
+For each URL, `STR::shorthash($src)` supplies the cache key:
 
-Every later build for that same `src` finds all three files already on disk
-and skips straight to rendering the card — no network call, no re-encode.
-**Commit `_data/extlink/`, `assets/extlink/` and `assets/images/extlink/` to
-your repo** so CI and every contributor share the same cache instead of
-re-crawling from scratch.
+| File | Behavior |
+|---|---|
+| `_data/extlink/<hash>.json` | Read when present and decodable to a nonempty value; otherwise scrape and export metadata. No expiry or automatic refresh. |
+| `assets/extlink/<hash>.jpg` | Original download re-encoded to JPEG at native resolution; archival output, not read back by the resolver. |
+| `<image.source>/extlink/<hash>.<format>` | 200 × 200 square crop (`webp` fallback format). Written on download, not used for the reuse check. |
+| `<data.root>/<image.dest>/extlink/<hash>.<format>` | Generated card image. Its existence is the reuse check; a missing destination triggers a download even if the source crop or archive exists. |
 
-Requires `prepros.network: true` in `kirigami.yaml` (same prerequisite as
-`SCRAPER`/`CURL` themselves).
+Commit `_data/extlink/` and the source/archive images to retain them. With
+default image paths the crop is in `assets/images/extlink/`. Those committed
+files alone do not eliminate network access in a clean checkout. Changing an
+`image` override does not invalidate an existing destination because the key
+uses the page URL. Remove the destination to regenerate it; remove the JSON
+to refresh scraped metadata.
+
+Nonempty overrides take precedence over scraped fields. Scrape failures are
+caught and replaced with empty metadata; a title override can still allow
+rendering. A missing title throws. Image download/conversion failure leaves
+a card without an image. Invalid HTML-tag URLs throw, whereas invalid
+Markdown-shortcut URLs emit an HTML comment.
+
+The anchor has `target="_blank"` and `rel="noopener noreferrer"`. Its optional
+image has empty alt text and lazy loading. Descriptions over 160 characters
+are shortened to 159 characters plus an ellipsis. A missing label falls back
+to the hostname without `www.`. Text and attributes are HTML-escaped.
+
+Network operations require `prepros.network: true`. CURL enables certificate
+and hostname verification; end-to-end WASM HTTPS remains unverified in the
+current runtime. Cached metadata does not establish working HTTPS.
 
 ---
 
@@ -189,11 +208,13 @@ class names to restyle it from scratch.
 ## Requirements
 
 - Node.js `>= 24.0.0`
-- `@kirigami/kirigami` `^1.5.0`
+- npm `>= 10.2.3`
+- `@kirigami/kirigami` `>= 3.0.0` (declared `kirigami.minVersion`)
+- A `sass` task for the bundled card styles
 - `prepros.network: true` in `kirigami.yaml`
 
 ---
 
 ## License
 
-MIT © Maxime Larrivée-Roy, 2026
+GPL-3.0-or-later © Maxime Larrivée-Roy, 2026

@@ -9,19 +9,19 @@
  *
  * @example
  * ```js
- * import { render, sitemap, runenv, mountPath } from '@kirigami/php-prepros';
+ * import { render, sitemap, runenv, mountPath, processImages } from '@kirigami/php-prepros';
  *
  * // Compile a single page
- * const result = await render('src/index.php');
+ * const page = await render('_index.php');
  *
  * // Compile every page in the source directory
- * const result = await render('src/');
+ * const tree = await render('.');
  *
  * // Generate sitemap.xml
- * const sitemap = await sitemap();
+ * const sitemapResult = await sitemap();
  *
  * // Run an arbitrary PHP script in the same sandboxed environment
- * const result = await runenv('scripts/purge-cache.php');
+ * const purgeResult = await runenv('scripts/purge-cache.php');
  *
  * // Mount a local file/directory into the sandbox before rendering
  * await mountPath('assets/data/team.yaml');
@@ -40,7 +40,7 @@
 // ---------------------------------------------------------------------------
 
 /**
- * Returned by every prepros operation.
+ * Returned by render, sitemap and runenv; image batches extend this shape.
  */
 export interface PreprosResult {
   /** `true` when the operation completed without errors. */
@@ -50,17 +50,23 @@ export interface PreprosResult {
    * Paths of every file written to disk by this operation (relative to the
    * project root).  Includes the compiled HTML page(s) and any side-effect
    * files such as `.cache.db` or resized images produced by `IMG::save()`.
+   * May be absent if result parsing fails.
    */
-  files: string[];
+  files?: string[];
 
   /** Human-readable error message.  Only present when `success` is `false`. */
   error?: string;
 
-  /**
-   * Raw PHP stdout / stderr, useful for debugging.
-   * Only present when response parsing fails.
-   */
-  response?: string;
+  /** Captured PHP stdout. */
+  debug?: string;
+  /** PHP diagnostics attached to failure results. */
+  stderr?: string;
+  /** Nonfatal PHP diagnostics on a successful operation. */
+  warnings?: string;
+  /** Render failure context, when available. */
+  page?: string | null;
+  /** PHP source location, when available. */
+  where?: string;
 }
 
 
@@ -93,21 +99,24 @@ export interface PreprosResult {
  * Any `@tag filename` annotation whose extension is `.yaml`, `.yml`,
  * `.json`, or `.md` is automatically loaded and made available as a PHP
  * variable with the same name as the tag.  Remote URLs are supported when
- * `network: true` is set in `kirigami.yaml`.
+ * `prepros.network: true` is set in `kirigami.yaml`.
  *
  * @param file Path to a `.php` source file or a directory, relative to the
- *             project root.  Defaults to `.` (the entire source tree).
+ *             configured `kirigami.root`. Defaults to `.` (the entire source tree).
  *
+ * @param phpIncludes Local plugin PHP files to mount and include before rendering.
+ *                    Missing files are skipped; defaults to an empty list.
  * @returns A {@link PreprosResult} describing what was written.
  *
  * @throws When the `kirigami.yaml` config is missing or malformed.
  * @throws When `kirigami.root` does not exist on disk.
  */
-export function render(file?: string): Promise<PreprosResult>;
+export function render(file?: string, phpIncludes?: string[]): Promise<PreprosResult>;
 
 
 /**
- * Generate a `sitemap.xml` at the source root.
+ * Generate sitemap.xml and robots.txt at the source root, plus humans.txt
+ * when configured author data provides content.
  *
  * Scans every `_index.php` found in the source tree and produces a
  * standard Sitemaps 0.9 XML document.  Priority is calculated from depth
@@ -118,7 +127,7 @@ export function render(file?: string): Promise<PreprosResult>;
  * @returns A {@link PreprosResult} with `files` containing the path to the
  *          generated `sitemap.xml`.
  */
-export function sitemap(dir?: string): Promise<PreprosResult>;
+export function sitemap(): Promise<PreprosResult>;
 
 
 /**
@@ -133,19 +142,19 @@ export function sitemap(dir?: string): Promise<PreprosResult>;
  *
  * ```js
  * // Run a standalone PHP script
- * const result = await runenv('scripts/purge-cache.php');
+ * const purgeResult = await runenv('scripts/purge-cache.php');
  *
  * // Also mount extra local paths/files into the sandbox before running
- * const result = await runenv('scripts/build-og-images.php', ['assets/photos']);
+ * const imageResult = await runenv('scripts/build-og-images.php', ['assets/photos/hero.jpg']);
  *
  * // Extra arguments are appended and available as $argv[2], $argv[3], … in the script
- * const result = await runenv('scripts/import.php', [], '--force');
+ * const importResult = await runenv('scripts/import.php', [], '--force');
  * ```
  *
  * @param script Path to a PHP file inside the project, executed with
  *               `require_once`.
- * @param paths  Extra local paths (files or directories) to mount into the
- *               sandbox before the script runs.
+ * @param paths  Extra project files to mount before execution. Missing files
+ *               are skipped. Use mountPath() separately for directories.
  * @param args   Extra string arguments appended to the script's `$argv`.
  *
  * @returns A {@link PreprosResult} describing what was written. Call
@@ -153,9 +162,27 @@ export function sitemap(dir?: string): Promise<PreprosResult>;
  *          listed in `result.files`.
  *
  * @throws When no `script` path is given.
- * @throws When `script` resolves outside the project root, or doesn't exist.
+ * @throws When the script is missing, an input is a directory, or any input
+ *         escapes the project lexically or through a symbolic link.
  */
 export function runenv(script: string, paths?: string[], ...args: string[]): Promise<PreprosResult>;
+
+
+/**
+ * Like {@link runenv}, for a script shipped inside a plugin package. A linked
+ * or workspace plugin lives outside the project, so the script is contained
+ * by `pluginRoot` instead, and mounted under `/plugin-scripts/<package dir>/`.
+ * The caller must pass the resolved package directory of an active plugin.
+ *
+ * @param script      Path of the PHP script, absolute or relative to `pluginRoot`.
+ * @param pluginRoot  The plugin's package directory.
+ * @param paths       Extra project files to mount, as for {@link runenv}.
+ * @param args        Extra string arguments appended to the script's `$argv`.
+ *
+ * @throws When the script is missing, is a directory, or escapes
+ *         `pluginRoot` lexically or through a symbolic link.
+ */
+export function runPluginScript(script: string, pluginRoot: string, paths?: string[], ...args: string[]): Promise<PreprosResult>;
 
 
 /**
@@ -182,10 +209,17 @@ export function runenv(script: string, paths?: string[], ...args: string[]): Pro
  * @param virtualDir  Destination path inside the WASM filesystem. Defaults
  *                     to `/project/<localPath relative to the project root>`
  *                     when omitted.
- * @param php  WASM PHP instance to mount into. Defaults to the shared
- *             singleton instance (creating it if needed).
+ * @param php  WASM PHP instance to mount into. Defaults to PHP-prepros's
+ *             owned instance (creating it if needed).
  */
 export function mountPath(localPath: string, virtualDir?: string, php?: unknown): Promise<void>;
+
+/**
+ * Waits for queued PHP operations, disposes the owned runtime and clears its
+ * cached configuration and mounts. The next operation creates a fresh runtime.
+ * Project.reload() also invalidates core's plugin PHP include list.
+ */
+export function resetRuntime(): Promise<void>;
 
 
 /**
@@ -230,6 +264,8 @@ export type ImageJob =
  * every image written back to the host, plus the palettes that were requested.
  */
 export interface ImageBatchResult extends PreprosResult {
+  /** Always normalized to an array, including on failure. */
+  files: string[];
   /** Extracted palettes, keyed `"<src>:<count>"`, each a list of `#rrggbb`. */
   colors: Record<string, string[]>;
 }

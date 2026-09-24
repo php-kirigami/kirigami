@@ -96,6 +96,8 @@ function readPackages() {
 		if (!existsSync(file)) continue;
 		const json = JSON.parse(readFileSync(file, 'utf8'));
 		if (json.private) continue;
+		// VS Code extensions ship as VSIX files through vsce, never to npm.
+		if (json.engines?.vscode) continue;
 		pkgs.set(json.name, { name: json.name, dir: path.join(PKG_DIR, dir), json });
 	}
 	return pkgs;
@@ -140,7 +142,9 @@ function packAndPublish(pkg) {
 
 	mkdirSync(PACKS, { recursive: true });
 	const packed = capture(`npm pack --json --pack-destination ${q(PACKS)}`, dir);
-	const tarball = path.join(PACKS, JSON.parse(packed)[0].filename);
+	// npm <= 11 prints an array; npm 12 an object keyed by package name.
+	const [pack] = Object.values(JSON.parse(packed));
+	const tarball = path.join(PACKS, pack.filename);
 	console.log(`  ${dim('·')} ${name}: packed ${dim(path.relative(ROOT, tarball))}`);
 
 	let cmd = `npm publish ${q(tarball)} --access public`;

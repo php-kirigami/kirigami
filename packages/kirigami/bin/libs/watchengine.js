@@ -1,7 +1,8 @@
+import fs from "fs";
 import path from "path";
 import chokidar from "chokidar";
 import picomatch from "picomatch";
-import { pathToFileURL } from "url";
+import { resolveTaskType } from "./tasktypes.js";
 
 /**
  * bin/libs/watchengine.js — the file-watching core shared by `kiri watch`
@@ -11,29 +12,27 @@ import { pathToFileURL } from "url";
 
 // Builds one watch "rule" per watchable task (esbuild, sass, prepros, …),
 // prepending the implicit `prepros` task the same way `build`/`export` do.
-// Mutates nothing on `config` beyond what `watch`/`serve` already expect.
-export async function buildWatchRules(config, __dirname) {
+// Use a local list so repeated watch/serve setup leaves configured tasks intact.
+export async function buildWatchRules(config) {
+	const tasks = [...config.tasks];
 	if (config.prepros) {
 		const task = {
 			name: "prepros",
 			type: "prepros",
 			config: config.prepros,
 		};
-		config.tasks = [task, ...config.tasks];
+		tasks.unshift(task);
 	}
 
-	const modules = {};
 	const watchers = [];
-	for (const task of config.tasks) {
-		if (!modules[task.type]) {
-			const taskPath = path.resolve(__dirname, "../tasks", `${task.type}.js`);
-			modules[task.type] = await import(pathToFileURL(taskPath).href);
-		}
-		if (modules[task.type].canwatch) {
+	for (const task of tasks) {
+		const taskModule = await resolveTaskType(task.type);
+		if (!taskModule) throw new Error(`Unknown task type: "${task.type}".`);
+		if (taskModule.canwatch) {
 			// `type` isn't part of what a task's own getWatcher() returns — attached
 			// here so callers (kiri serve's hot-reload) can tell a sass rule apart
 			// from esbuild/prepros without each task module repeating the field.
-			watchers.push({ ...modules[task.type].getWatcher(config.root, task), type: task.type });
+			watchers.push({ ...await taskModule.getWatcher(config.root, task), type: task.type });
 		}
 	}
 	return watchers;
@@ -109,98 +108,154 @@ export function createWatchers(rules, options = {}) {
 		debug: false,
 		...options,
 	};
+	// Watch through the real path: on Windows, fs.watch aborts the process
+	// (libuv's fs-event.c assertion) when a watched path contains an 8.3 short
+	// name (C:\Users\RUNNER~1\…), because events come back in long form.
+	opt.cwd = realpathNative(opt.cwd);
 
 	const handles = [];
+	let startupError;
+	let closed = false;
+	let closing;
+	const close = () => closing ??= (async () => {
+		closed = true;
+		for (const h of handles) h.stopTimers();
+		const outcomes = await Promise.allSettled(handles.map(async h => {
+			try { await h.watcher.close(); }
+			finally { await h.idle(); }
+		}));
+		const failure = outcomes.find(result => result.status === 'rejected');
+		if (failure) throw failure.reason;
+	})();
 
-	for (const rule of rules) {
-		if (!rule || typeof rule.callback !== "function") {
-			throw new Error("Each rule must have a callback(events, ctx).");
-		}
-
-		const name = rule.name || "rule";
-		const patterns = normalizePatterns(rule.patterns);
-
-		// include: a single picomatch matcher for all of the rule's patterns
-		const isIncluded = picomatch(patterns, { dot: true });
-
-		// ignore: global + rule
-		const isIgnored = buildIgnorePredicate([
-			...(opt.globalIgnored || []),
-			...(normalizePatterns(rule.ignored || [])),
-		]);
-
-		// baseDirs derived from the patterns
-		const baseDirs = Array.from(
-			new Set(patterns.map(globBaseDir).map((d) => d || "."))
-		).map((d) => path.resolve(opt.cwd, d));
-
-		if (opt.debug) {
-			console.log(`\n[${name}] starting watcher`);
-			console.log("  cwd      :", opt.cwd);
-			console.log("  patterns :", patterns);
-			console.log("  baseDirs :", baseDirs);
-			console.log("  ignored  :", [...(opt.globalIgnored || []), ...(rule.ignored || [])]);
-			console.log("");
-		}
-
-		// --- debounce / batch ---
-		const pending = new Map();
-		let timer = null;
-		let running = false;
-		let rerun = false;
-
-		const flush = async () => {
-			if (running) { rerun = true; return; }
-			running = true;
-			try {
-				do {
-					rerun = false;
-					const batch = Array.from(pending.values());
-					pending.clear();
-					if (batch.length) await rule.callback(batch, { rule });
-				} while (rerun);
-			} finally {
-				running = false;
+	try {
+		for (const rule of rules) {
+			if (!rule || typeof rule.callback !== "function") {
+				throw new Error("Each rule must have a callback(events, ctx).");
 			}
-		};
 
-		const queue = (type, absPath) => {
-			const rel = toPosix(path.relative(opt.cwd, absPath));
+			const name = rule.name || "rule";
+			const patterns = normalizePatterns(rule.patterns);
 
-			if (isIgnored(rel)) return;
-			if (!isIncluded(rel)) return;
+			// include: a single picomatch matcher for all of the rule's patterns
+			const isIncluded = picomatch(patterns, { dot: true });
 
-			if (opt.debug) console.log(`[${name}] queue ${type} ${rel}`);
+			// ignore: global + rule
+			const isIgnored = buildIgnorePredicate([
+				...(opt.globalIgnored || []),
+				...(normalizePatterns(rule.ignored || [])),
+			]);
 
-			pending.set(`${type}:${rel}`, { type, file: rel });
-			clearTimeout(timer);
-			timer = setTimeout(flush, rule.debounceMs ?? 150);
-		};
+			// baseDirs derived from the patterns
+			const baseDirs = Array.from(
+				new Set(patterns.map(globBaseDir).map((d) => d || "."))
+			).map((d) => realpathNative(path.resolve(opt.cwd, d)));
 
-		// ⚠️  We don't pass "ignored" to chokidar — filtering happens in queue()
-		const watcher = chokidar.watch(baseDirs, {
-			ignoreInitial: opt.ignoreInitial,
-			awaitWriteFinish: opt.awaitWriteFinish,
-			persistent: true,
-			usePolling: opt.usePolling,
-			interval: opt.interval,
-			binaryInterval: opt.binaryInterval,
-		});
+			if (opt.debug) {
+				console.log(`\n[${name}] starting watcher`);
+				console.log("  cwd      :", opt.cwd);
+				console.log("  patterns :", patterns);
+				console.log("  baseDirs :", baseDirs);
+				console.log("  ignored  :", [...(opt.globalIgnored || []), ...(rule.ignored || [])]);
+				console.log("");
+			}
 
-		watcher.on("add",    (p) => queue("add",    p));
-		watcher.on("change", (p) => queue("change", p));
-		watcher.on("error",  (err) => console.error(`[${name}] watch error:`, err));
+			// --- debounce / batch ---
+			const pending = new Map();
+			let timer = null;
+			let running = false;
+			let rerun = false;
+			let active = Promise.resolve();
 
-		handles.push({
-			watcher,
-			stopTimers: () => { clearTimeout(timer); pending.clear(); },
-		});
+			const flush = async () => {
+				if (running) { rerun = true; return; }
+				running = true;
+				try {
+					do {
+						rerun = false;
+						const batch = Array.from(pending.values());
+						pending.clear();
+						if (batch.length && !closed) {
+							try { await rule.callback(batch, { rule }); }
+							catch (error) { console.error(`[${name}] build failed:`, error); }
+						}
+					} while (rerun && !closed);
+				} finally {
+					running = false;
+				}
+			};
+
+			const queue = (type, absPath) => {
+				if (closed) return;
+				const rel = toPosix(path.relative(opt.cwd, absPath));
+
+				if (isIgnored(rel)) return;
+				if (type !== 'unlinkDir' && !isIncluded(rel)) return;
+
+				if (opt.debug) console.log(`[${name}] queue ${type} ${rel}`);
+
+				pending.set(`${type}:${rel}`, { type, file: rel });
+				clearTimeout(timer);
+				timer = setTimeout(() => {
+					if (running) { rerun = true; return; }
+					active = flush().catch(error => console.error(`[${name}] watch error:`, error));
+				}, rule.debounceMs ?? 150);
+			};
+
+			// ⚠️  We don't pass "ignored" to chokidar — filtering happens in queue()
+			const watcher = chokidar.watch(baseDirs, {
+				ignoreInitial: opt.ignoreInitial,
+				awaitWriteFinish: opt.awaitWriteFinish,
+				persistent: true,
+				usePolling: opt.usePolling,
+				interval: opt.interval,
+				binaryInterval: opt.binaryInterval,
+			});
+
+			watcher.on("add",    (p) => queue("add",    p));
+			watcher.on("change", (p) => queue("change", p));
+			watcher.on("unlink", (p) => queue("unlink", p));
+			watcher.on("unlinkDir", (p) => queue("unlinkDir", p));
+			let settleReady;
+			const ready = new Promise((resolve, reject) => {
+				settleReady = resolve;
+				watcher.once('ready', resolve);
+				watcher.on('error', error => {
+					reject(error);
+					console.error(`[${name}] watch error:`, error);
+				});
+			});
+
+			handles.push({
+				watcher,
+				ready,
+				idle: () => active,
+				stopTimers: () => { clearTimeout(timer); pending.clear(); settleReady(); },
+			});
+		}
+	} catch (error) {
+		startupError = error;
 	}
 
+	const ready = Promise.all([
+		...handles.map(h => h.ready),
+		startupError ? Promise.reject(startupError) : Promise.resolve(),
+	]).catch(async error => {
+		await close();
+		throw error;
+	});
+	// Direct callers may only use close(); startup errors still remain awaitable.
+	void ready.catch(() => {});
 	return {
-		close: async () => {
-			for (const h of handles) h.stopTimers();
-			await Promise.all(handles.map((h) => h.watcher.close()));
-		},
+		ready,
+		close,
 	};
+}
+
+
+// fs.realpathSync.native() expands 8.3 short names (the JS realpathSync
+// doesn't); paths that don't exist yet are returned unchanged.
+function realpathNative(p) {
+	try { return fs.realpathSync.native(p); }
+	catch { return p; }
 }

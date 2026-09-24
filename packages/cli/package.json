@@ -1,0 +1,43 @@
+{
+  "name": "@kirigami/cli",
+  "version": "0.1.0",
+  "description": "The kiri command-line interface for Kirigami — a thin terminal wrapper around @kirigami/kirigami's programmatic API.",
+  "license": "GPL-3.0-or-later",
+  "author": "Maxime Larrivée-Roy",
+  "homepage": "https://php-kirigami.github.io",
+  "type": "module",
+  "bin": {
+    "kiri": "./bin/kiri.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "bin/",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=10.2.3"
+  },
+  "keywords": [
+    "kirigami",
+    "cli",
+    "static-site-generator",
+    "php"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/php-kirigami/kirigami.git"
+  },
+  "bugs": {
+    "url": "https://github.com/php-kirigami/kirigami/issues"
+  },
+  "dependencies": {
+    "@kirigami/kirigami": "3.0.0",
+    "@kirigami/mcp": "0.1.0",
+    "@kirigami/php-wasm": "8.5.11",
+    "@kirigami/sdk": "0.3.0"
+  }
+}

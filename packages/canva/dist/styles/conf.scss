@@ -46,8 +46,14 @@ $font-break:           1200 !default;
 $font-resp:            calc($font-base * 100 / $font-break);
 $font-body:            -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !default;
 $font-heading:         "Trebuchet MS", "Segoe UI", Verdana, sans-serif !default;
+// Generic system monospace fallback — chrome that merely wants "a monospace
+// font" (breadcrumb, table headers, badges in styles/main, prose.scss's
+// no-highlighter code defaults). Not the same job as plugin-highlight's own
+// $code-font, which prepends an actual brand font (JetBrains Mono) and falls
+// back to this token via `var(--font-mono)` for its tail.
+$font-mono:            ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace !default;
 
-$transition-duration:  200ms;
+$transition-duration:  200ms !default;
 $scroll-top:           0 !default;
 $fonts:                () !default;
 $icons:                () !default;
@@ -58,14 +64,50 @@ $icons-defaults: (
 
 
 @each $family, $path in $fonts {
-	@font-face {
-		font-family: $family;
-		font-style: normal;
-		font-display: block;
-		font-weight: #{font-weight-range($path)};
-		font-stretch: #{font-stretch-range($path)};
-		src: inline-file($path) format("#{font-format($path)}");
-		unicode-range: #{font-unicode-range($path)};
+	// font-style-detect() (kirigami-core's sass.js) reads real font metadata:
+	// "normal" / "italic" / "oblique NNdeg NNdeg", or the "ital-axis"
+	// sentinel for a variable font whose binary `ital` axis can't be
+	// expressed as one font-style value at all — that would need splitting
+	// this loop into two @font-face blocks (one per ital value), which
+	// nothing here does yet. Fall back to "normal" rather than emit that
+	// sentinel as literal (invalid) CSS.
+	$font-style: font-style-detect($path);
+	// If this font exposes a binary `ital` axis, emit two @font-face blocks
+	// so browsers can select the appropriate face. Each face sets the
+	// 'ital' variation value explicitly via font-variation-settings. The
+	// helper comes from Kirigami 3's Sass task; with an older build the call
+	// would be plain CSS text (always true), hence the existence check.
+	@if meta.function-exists('font-has-ital-axis') and font-has-ital-axis($path) {
+		@font-face {
+			font-family: $family;
+			font-style: normal;
+			font-display: block;
+			font-variation-settings: "'ital' 0";
+			font-weight: #{font-weight-range($path)};
+			font-stretch: #{font-stretch-range($path)};
+			src: inline-file($path) format("#{font-format($path)}");
+			unicode-range: #{font-unicode-range($path)};
+		}
+		@font-face {
+			font-family: $family;
+			font-style: italic;
+			font-display: block;
+			font-variation-settings: "'ital' 1";
+			font-weight: #{font-weight-range($path)};
+			font-stretch: #{font-stretch-range($path)};
+			src: inline-file($path) format("#{font-format($path)}");
+			unicode-range: #{font-unicode-range($path)};
+		}
+	} @else {
+		@font-face {
+			font-family: $family;
+			font-style: #{$font-style};
+			font-display: block;
+			font-weight: #{font-weight-range($path)};
+			font-stretch: #{font-stretch-range($path)};
+			src: inline-file($path) format("#{font-format($path)}");
+			unicode-range: #{font-unicode-range($path)};
+		}
 	}
 }
 
@@ -127,6 +169,7 @@ $dark-enabled: $dark == true or meta.type-of($dark) == "map";
 
 	--font-body:           #{$font-body};
 	--font-heading:        #{$font-heading};
+	--font-mono:           #{$font-mono};
 	--font-base:           #{$font-base}px;
 	--font-min:            #{$font-min}px;
 	--font-break:          #{$font-break}px;

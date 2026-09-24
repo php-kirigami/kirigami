@@ -15,6 +15,8 @@ final class PREPROS
     public static function loadConfig(object $config)
     {
         self::$config = $config;
+        self::$config->before ??= null;
+        self::$config->after ??= null;
         self::$root = realpath($config->root) . S;
         if (!empty($config->includes)) foreach ($config->includes as $path) {
             if (!is_file(realpath(self::$root . $path))) continue;
@@ -25,6 +27,25 @@ final class PREPROS
         if (!empty($config->phpIncludes)) foreach ($config->phpIncludes as $path) {
             if (is_file($path)) include_once($path);
         }
+    }
+
+
+    // Only page files beneath the configured source root are publishable.
+    // Check every relative directory, but not the configured root's own name.
+    public static function isPage(string $file): bool
+    {
+        $file = realpath($file);
+        if (!$file || !is_file($file)) return false;
+        $file = str_replace('\\', '/', $file);
+        $root = str_replace('\\', '/', self::$root);
+        if (!str_starts_with($file, $root)) return false;
+        $parts = explode('/', substr($file, strlen($root)));
+        $name = array_pop($parts);
+        if (!preg_match('/^_.*\.php$/i', $name)) return false;
+        foreach ($parts as $part) {
+            if (str_starts_with($part, '_')) return false;
+        }
+        return true;
     }
 
 
@@ -67,6 +88,20 @@ final class PREPROS
             }, explode(PHP_EOL, $body)));
         }
 
+        $typeConfig = !empty($type) ? (self::$config->types->{$type} ?? null) : null;
+
+        ob_start();
+        self::processHook('pre_type_before', $typeConfig->before ?? null);
+        if (!empty($typeConfig->before)) include(realpath(self::$root . $typeConfig->before));
+        $typeHeader = self::processHook('post_type_before', ob_get_clean());
+
+        ob_start();
+        self::processHook('pre_type_after', $typeConfig->after ?? null);
+        if (!empty($typeConfig->after)) include(realpath(self::$root . $typeConfig->after));
+        $typeFooter = self::processHook('post_type_after', ob_get_clean());
+
+        $body = $typeHeader . $body . $typeFooter;
+
         ob_start();
         self::processHook('pre_after', self::$config->after);
         if (self::$config->after) include(realpath(self::$root . self::$config->after));
@@ -96,9 +131,7 @@ final class PREPROS
         $paths = [];
         $root = realpath(self::$root);
         foreach (FS::dig($root . '/_index.php') as $file) {
-            $parent = pathinfo(pathinfo($file, PATHINFO_DIRNAME), PATHINFO_BASENAME);
-            if (strpos($parent, '_') === 0) continue;
-            if (strpos(pathinfo($file, PATHINFO_FILENAME), '_') !== 0) continue;
+            if (!self::isPage($file)) continue;
             $paths[] = str_replace('\\', '/', ltrim(str_replace($root, '', pathinfo(realpath($file), PATHINFO_DIRNAME)), DIRECTORY_SEPARATOR));
         }
         if (empty($paths)) $paths[] = '';
@@ -127,9 +160,37 @@ final class PREPROS
         $destrobots = self::$root . 'robots.txt';
         $urlrobots = rtrim(self::$config->data->baseurl, '/') . '/sitemap.xml';
         file_put_contents($destrobots, "User-agent: *\nAllow: /\nSitemap: {$urlrobots}");
-        
-        self::exportFile([$dest, $destrobots]);
+
+        $desthumans = self::humans();
+
+        self::exportFile(array_filter([$dest, $destrobots, $desthumans]));
         return realpath($dest);
+    }
+
+
+    // Generates humans.txt (humanstxt.org) from the kirigami: block's
+    // author/email — same source fields config.js's fillBanner() already
+    // pulls ###AUTHOR###/###EMAIL### from, same spirit: fill in what the
+    // project already declared instead of asking for it twice. Skipped
+    // entirely when neither is set — nothing meaningful to write.
+    private static function humans(): ?string
+    {
+        $author = trim((string) (self::$config->data->author ?? ''));
+        $email  = trim((string) (self::$config->data->email ?? ''));
+        if ($author === '' && $email === '') return null;
+
+        $lines = ['/* TEAM */', ''];
+        if ($author !== '') $lines[] = "    {$author}";
+        if ($email !== '') $lines[] = "    Contact: {$email}";
+        $lines[] = '';
+        $lines[] = '/* SITE */';
+        $lines[] = '';
+        $lines[] = '    Last update: ' . date('Y-m-d');
+        $lines[] = '    Software: Kirigami -- https://php-kirigami.github.io';
+
+        $dest = self::$root . 'humans.txt';
+        file_put_contents($dest, implode("\n", $lines) . "\n");
+        return $dest;
     }
 
 
@@ -146,6 +207,22 @@ final class PREPROS
      * only expanded on export (see replaceTokens()), so rebuilding a preview
      * never rewrites the committed page.
      */
+    // Whether $contents already has a real <$tag … $attr="…$needle…"> —
+    // not just a mention of the filename somewhere in the page (prose, a
+    // <code> block documenting real build output, an HTML comment). The
+    // naive str_contains() this replaces matched any occurrence anywhere,
+    // so a page that merely *documents* the compiled filename (e.g. a
+    // docs page showing captured `kiri build` output) got its real
+    // <link>/<script> injection skipped — found in production on
+    // php-kirigami.github.io's own docs/cli page.
+    private static function hasAssetTag(string $contents, string $tag, string $attr, string $needle): bool
+    {
+        $pattern = '/<' . $tag . '\b[^>]*\b' . $attr . '\s*=\s*["\'][^"\']*'
+            . preg_quote($needle, '/') . '[^"\']*["\'][^>]*>/i';
+        return (bool) preg_match($pattern, $contents);
+    }
+
+
     private static function injectHead(string $contents, string $relroot): string
     {
         $inject = [];
@@ -180,12 +257,12 @@ final class PREPROS
 
             if (($task['type'] ?? '') === 'sass') {
                 $out = preg_replace('/\.s?css$/', '.min.css', $entry);
-                if ($out !== $entry && !str_contains($contents, $out)) {
+                if ($out !== $entry && !self::hasAssetTag($contents, 'link', 'href', $out)) {
                     $links[] = '<link rel="stylesheet" href="' . $relroot . $out . '?###TIMESTAMP###">';
                 }
             } elseif (($task['type'] ?? '') === 'esbuild') {
                 $out = preg_replace('/\.[jt]s$/', '.min.js', $entry);
-                if ($out !== $entry && !str_contains($contents, $out)) {
+                if ($out !== $entry && !self::hasAssetTag($contents, 'script', 'src', $out)) {
                     $scripts[] = '<script src="' . $relroot . $out . '?###TIMESTAMP###"></script>';
                 }
             }

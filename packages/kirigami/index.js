@@ -1,0 +1,373 @@
+// ---------------------------------------------------------------------------
+// @kirigami/kirigami — programmatic entry point.
+//
+// `Kirigami.load()` mirrors what `kiri build`/`kiri serve` do, but as an
+// importable API instead of a terminal command: methods return structured
+// results instead of printing to the console, and nothing here ever calls
+// `process.exit()`. Meant for a long-lived embedder — a VS Code extension, an
+// MCP server, a script — that wants to drive Kirigami without shelling out to
+// `kiri` and re-spawning a process for every build.
+//
+// `@kirigami/cli`'s `build`/`serve`/`watch`/`export`/`run` commands are thin
+// wrappers over this API (see that package's bin/cmd/*.js). Scaffolding a
+// new project (`kiri create`) has no loaded project yet, so it isn't a
+// `Project` method: it lives in bin/create.js, re-exported below as plain
+// functions (also importable alone as "@kirigami/kirigami/create").
+// `install` shells out to npm before plugins load and `cache`/`phpinfo` don't
+// touch kirigami.yaml at all — those keep their own CLI-side logic.
+//
+// Still bound to `process.cwd()` for locating kirigami.yaml, scripts/ and
+// node_modules — same as the CLI. Loading a *different* project than the
+// current working directory (multiple projects in one long-lived process)
+// isn't supported yet: config.js/plugins.js/runscript.js all resolve paths
+// off `process.cwd()` internally. Untangling that is future work, not done
+// here.
+// ---------------------------------------------------------------------------
+
+import path from "node:path";
+import { run as runHook, HOOKS } from "@kirigami/sdk";
+import { getConfig, loadConfig, clearConfigCache, validateConfiguredTasks } from "./bin/config.js";
+import { loadPlugins } from "./bin/libs/plugins.js";
+import { resolveTaskType } from "./bin/libs/tasktypes.js";
+import { runscript, getPluginScripts, clearPluginScriptsCache } from "./bin/libs/runscript.js";
+import { createDevServer } from "./bin/libs/devserver.js";
+import { buildWatchRules, createWatchers } from "./bin/libs/watchengine.js";
+import { assertSafeExportPaths, assertReplaceableExport } from "./bin/tasks/dist.js";
+import { clearPhpIncludesCache } from "./bin/tasks/prepros.js";
+import { resetRuntime } from "@kirigami/php-prepros";
+import { findFiles } from "./bin/utils.js";
+
+// Runs every `scripts:` entry whose `trigger` matches `name` (e.g.
+// "before-build"), plus every plugin script registered with that same
+// trigger via the `scripts:register` hook (a project's own kirigami.yaml
+// entry wins on a name clash), in order, stopping at the first failure.
+// This is the only trigger runner: the CLI's old console-printing,
+// process.exit()-ing triggers.js was removed once every command went through
+// this API. `runscript()` itself is already pure, so this just adds the
+// scripts-list lookup around it.
+async function runTrigger(config, name) {
+	const names = new Map();
+	for (const s of config.scripts || []) if (s.trigger === name) names.set(s.name, true);
+	for (const s of await getPluginScripts()) {
+		if (s.trigger === name && !names.has(s.name)) names.set(s.name, true);
+	}
+
+	const results = [];
+	for (const scriptName of names.keys()) {
+		const result = await runscript(scriptName);
+		results.push({ name: scriptName, ...result });
+		if (!result.success) return { success: false, results };
+	}
+	return { success: true, results };
+}
+
+
+export class Project {
+	#loaded = false;
+	#config = null;
+	#plugins = [];
+	#pluginScripts = [];
+
+	get config() {
+		return this.#config;
+	}
+
+	// [{ name, version }] for every plugin loadPlugins() actually activated on
+	// the last load()/reload() — empty until then.
+	get plugins() {
+		return this.#plugins;
+	}
+
+
+	// Reload configuration and plugin registrations, invalidating PHP state too.
+	// JavaScript plugin modules remain subject to Node's import cache. Callers
+	// must await whole-project operations; the PHP queue only protects PHP work.
+	async reload() {
+		this.#loaded = false;
+		this.#config = null;
+		this.#plugins = [];
+		clearConfigCache();
+		await resetRuntime();
+		clearPhpIncludesCache();
+		clearPluginScriptsCache();
+		this.#config = await getConfig({ deferTaskTypes: true });
+		this.#plugins = await loadPlugins(this.#config, { reload: true });
+		this.#config.tasks = [
+			...(this.#config.tasks || []),
+			...(await runHook(HOOKS.TASKS_REGISTER, { config: this.#config })).filter(Boolean),
+		];
+		await validateConfiguredTasks(this.#config);
+		this.#pluginScripts = await getPluginScripts();
+		this.#loaded = true;
+		return this;
+	}
+
+	// Re-reads and re-validates kirigami.yaml without touching plugins/hooks —
+	// cheaper than reload() when the caller only wants to know whether the
+	// config file itself is still well-formed (e.g. on every keystroke in a
+	// VS Code editor). Throws the same way getConfig() does on an invalid file.
+	// Since plugins aren't (re-)loaded here, a plugin-registered task type is
+	// left unresolved rather than rejected as unknown — resolving it is
+	// reload()'s job. A loaded project keeps its current config: replacing it
+	// would drop the tasks reload() injected via `tasks:register`, so call
+	// reload() to apply a validated change.
+	async validate() {
+		const config = await loadConfig(undefined, { deferTaskTypes: true });
+		if (!this.#loaded) this.#config = config;
+		return true;
+	}
+
+	// Runs every configured task once (build.js's task loop, minus the console
+	// output and process.exit). Stops at the first failing task/trigger and
+	// returns { success: false, … } rather than throwing, so a caller can
+	// inspect what happened without try/catch for the expected-failure case.
+	async build() {
+		if (!this.#loaded) await this.reload();
+		const config = this.#config;
+
+		const beforeBuild = await runTrigger(config, "before-build");
+		if (!beforeBuild.success) return { success: false, trigger: beforeBuild, results: [] };
+
+		const tasks = config.prepros
+			? [{ name: "render-all", type: "prepros", force: true, config: config.prepros }, ...config.tasks]
+			: config.tasks;
+
+		const results = [];
+		for (const task of tasks) {
+			const taskModule = await resolveTaskType(task.type);
+			if (!taskModule) throw new Error(`Unknown task type: "${task.type}".`);
+			if (!task.force && !taskModule.canbuild) continue;
+
+			const result = await taskModule.default(config.root, task);
+			results.push({ task: task.name, type: task.type, taskname: taskModule.taskname, ...result });
+			if (!result.success) return { success: false, trigger: beforeBuild, results };
+		}
+
+		return { success: true, trigger: beforeBuild, results };
+	}
+
+	// Same task eligibility as build(), with forced implicit render/copy tasks,
+	// writing into "export:path" (default "dist",
+	// resolved against process.cwd() — same anchor kirigami.yaml itself
+	// loads from, not config.root) instead of in place. Runs "before-export"
+	// then "before-build" first, "after-export" last; stops at the first
+	// failing trigger script or task, same early-return shape as build().
+	async export({ path: exportPath } = {}) {
+		if (!this.#loaded) await this.reload();
+		const config = this.#config;
+
+		// A per-call path override must not leak into later export() calls.
+		const exportConfig = config.export || {};
+		const dist = path.resolve(process.cwd(), exportPath || exportConfig.path || "dist");
+		// Reject unsafe output before running hooks or rendering any pages.
+		try {
+			assertSafeExportPaths(config.root, dist);
+			assertReplaceableExport(dist);
+		} catch (error) {
+			return { success: false, dist, error: error.message, beforeExport: null, beforeBuild: null, afterExport: null, results: [] };
+		}
+
+		const beforeExport = await runTrigger(config, "before-export");
+		if (!beforeExport.success) return { success: false, dist, beforeExport, beforeBuild: null, afterExport: null, results: [] };
+
+		const beforeBuild = await runTrigger(config, "before-build");
+		if (!beforeBuild.success) return { success: false, dist, beforeExport, beforeBuild, afterExport: null, results: [] };
+
+		const tasks = [
+			...(config.prepros ? [{ name: "render-all", type: "prepros", force: true, config: config.prepros }] : []),
+			{ name: "copy-files", type: "dist", force: true, ...exportConfig, path: dist },
+			...config.tasks,
+		];
+
+		const results = [];
+		for (const task of tasks) {
+			const taskModule = await resolveTaskType(task.type);
+			if (!taskModule) throw new Error(`Unknown task type: "${task.type}".`);
+			if (!task.force && !taskModule.canbuild) continue;
+
+			// Per-run copy: the banner is export-only and must not stick to config.tasks.
+			const result = await taskModule.default(config.root, { ...task, banner: config.kirigami.banner }, dist);
+			results.push({ task: task.name, type: task.type, taskname: taskModule.taskname, ...result });
+			if (!result.success) return { success: false, dist, beforeExport, beforeBuild, afterExport: null, results };
+		}
+
+		const afterExport = await runTrigger(config, "after-export");
+		return { success: afterExport.success, dist, beforeExport, beforeBuild, afterExport, results };
+	}
+
+
+	// Build before allocating server/watch resources. Preserve nested diagnostics
+	// on the rejection so embedders can inspect the complete failed build.
+	async #initialBuild(onBuildResult) {
+		const event = { rule: 'initial-build', type: 'build', initial: true };
+		let result;
+		try {
+			await onBuildResult?.({ ...event, status: 'start' });
+			result = await this.build();
+		} catch (error) {
+			result = { success: false, error: error?.message || String(error), results: [] };
+		}
+		if (!result.success) {
+			const error = new Error(`Initial build failed: ${JSON.stringify(result)}`);
+			error.result = result;
+			try { await onBuildResult?.({ ...result, ...event, status: 'done', error: error.message }); }
+			catch (observerError) { error.cause = observerError; }
+			throw error;
+		}
+		await onBuildResult?.({ ...result, ...event, status: 'done' });
+	}
+
+	// Starts the same watch+hot-reload dev server `kiri serve` uses. Returns
+	// { address, port, url, close() } — `port: 0` lets the OS pick a free port,
+	// reflected back in the returned `port`/`url` (see devserver.js). Meant for
+	// an embedder (VS Code preview webview, MCP `kirigami_serve` tool) that
+	// needs to know where the server ended up listening.
+	//
+	// `onBuildResult`, if given, is called for the initial build and rebuilds —
+	// once with { status: "start" } right before it runs, once with
+	// { status: "done", success, files, warnings, error } right after — so an
+	// embedder (e.g. a VS Code status bar item) can reflect real build state
+	// instead of re-parsing console output.
+	async serve({ port = 4321, host = "127.0.0.1", onBuildResult, initialBuild = true } = {}) {
+		if (!this.#loaded) await this.reload();
+		if (initialBuild) await this.#initialBuild(onBuildResult);
+		const config = this.#config;
+
+		const devserver = await createDevServer({ root: config.root, port, host });
+		let watchHandle;
+		try {
+			const rules = await buildWatchRules(config);
+			const watchers = rules.map((rule) => ({
+				...rule,
+				callback: async (...cbArgs) => {
+					let result;
+					try {
+						if (onBuildResult) await onBuildResult({ status: "start", rule: rule.name, type: rule.type });
+						result = await rule.callback(...cbArgs);
+						if (result?.success !== false) {
+							if (rule.type === "sass") devserver.broadcastCssReload();
+							else devserver.broadcastReload();
+						}
+					} catch (error) {
+						result = { success: false, error: error?.message || String(error), files: [] };
+						console.error(`[${rule.name}] build failed:`, error);
+					}
+					if (onBuildResult) await onBuildResult({ ...result, status: "done", rule: rule.name, type: rule.type });
+					return result;
+				},
+			}));
+			watchHandle = createWatchers(watchers);
+			await watchHandle.ready;
+
+			return {
+				address: devserver.address,
+				port: devserver.port,
+				url: devserver.url,
+				async close() {
+					try { await watchHandle.close(); }
+					finally { await devserver.close(); }
+				},
+			};
+		} catch (error) {
+			try { await watchHandle?.close(); }
+			finally { await devserver.close(); }
+			throw error;
+		}
+	}
+
+	// Same watch machinery as serve(), minus the HTTP server/hot-reload —
+	// rebuilds files on disk on change, nothing else. Returns { close() }.
+	async watch({ initialBuild = true } = {}) {
+		if (!this.#loaded) await this.reload();
+		if (initialBuild) await this.#initialBuild();
+		const rules = await buildWatchRules(this.#config);
+		const handle = createWatchers(rules);
+		try { await handle.ready; }
+		catch (error) { await handle.close(); throw error; }
+		return { close: handle.close };
+	}
+
+	// Runs scripts/<command>.php inside the PHP-WASM runtime — the same
+	// scripts/ entry point "kiri run" and the before-build/before-export/
+	// after-export triggers use, minus the trigger-name lookup (a plain
+	// command name, not a trigger). Throws if the script doesn't exist (same
+	// as runscript() itself) rather than returning a failure result, since
+	// there's no partial work to report back on a bad command name.
+	async run(command, argv = []) {
+		if (!this.#loaded) await this.reload();
+		return runscript(command, argv);
+	}
+
+	// Every scripts/<name>.php file actually on disk is runnable via run(),
+	// whether or not it has a matching kirigami.yaml `scripts:` entry — that
+	// entry only adds `mount`/`trigger` metadata (see runscript.js). This
+	// lists what's really runnable, merging in that metadata where present,
+	// plus every plugin script registered via the `scripts:register` hook
+	// that a local file by the same name doesn't already shadow — so an
+	// embedder isn't limited to (or misled by) the yaml block alone.
+	// Empty until reload()/load() has populated #config.
+	get scripts() {
+		const config = this.#config;
+		if (!config) return [];
+		const declared = new Map((config.scripts || []).map((s) => [s.name, s]));
+		const local = findFiles("scripts/*.php")
+			.map((file) => path.basename(file, ".php"))
+			.sort()
+			.map((name) => ({ name, mount: declared.get(name)?.mount || [], trigger: declared.get(name)?.trigger || null }));
+		const localNames = new Set(local.map((s) => s.name));
+		const fromPlugins = this.#pluginScripts
+			.filter((s) => !localNames.has(s.name))
+			.map(({ name, mount = [], trigger = null }) => ({ name, mount, trigger }));
+		return [...local, ...fromPlugins];
+	}
+
+	// The tasks build()/watch() actually iterate over: config.tasks (which
+	// reload() already appended every `tasks:register` plugin task onto —
+	// see reload()), plus the synthetic "render-all" prepros task build()
+	// prepends when `prepros:` is set (same shape build() constructs — kept
+	// in one place so runTask() and any caller wanting "what can I run" see
+	// exactly what build() would run). Empty until reload()/load() has
+	// populated #config.
+	get tasks() {
+		const config = this.#config;
+		if (!config) return [];
+		return config.prepros
+			? [{ name: "render-all", type: "prepros", force: true, config: config.prepros }, ...config.tasks]
+			: config.tasks;
+	}
+
+	// Runs exactly one task from `tasks` by name, bypassing before-build and
+	// every other task — for an embedder that wants to re-run (or run for the
+	// first time) a single piece of the pipeline instead of the whole build.
+	// Always forces the task (ignores its own `canbuild` gating), since
+	// naming it directly is itself the intent to run it. Returns a failure
+	// result rather than throwing on an unknown name, same shape as a task's
+	// own result, so a caller doesn't need a separate try/catch for a typo.
+	async runTask(name) {
+		if (!this.#loaded) await this.reload();
+		const config = this.#config;
+		const task = this.tasks.find((t) => t.name === name);
+		if (!task) return { success: false, error: `Unknown task: "${name}".` };
+
+		const mod = await resolveTaskType(task.type);
+		if (!mod) return { task: task.name, type: task.type, success: false, error: `Unknown task type: "${task.type}".` };
+		const result = await mod.default(config.root, { ...task, force: true });
+
+		return { task: task.name, type: task.type, taskname: mod.taskname, ...result };
+	}
+}
+
+
+export async function load() {
+	const project = new Project();
+	await project.reload();
+	return project;
+}
+
+
+export const Kirigami = { load };
+
+export {
+	listTemplates, findTemplate, inspectTarget, gitUserConfig, resolveMeta,
+	canInitGit, createProject, installDependencies, TEMPLATE_OWNER,
+} from "./bin/create.js";

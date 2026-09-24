@@ -8,10 +8,15 @@
 // top-level `kirigami` key:
 //
 //   "kirigami": {
-//     "type": "plugin",                        // "plugin" | (later: "task", "command")
+//     "type": "plugin",                        // "plugin" | "command"
 //     "minVersion": "1.2.0",                    // minimum @kirigami/kirigami version
 //     "optionsSchema": "./options.schema.json"  // JSON Schema for its kirigami.yaml `options`
 //   }
+//
+// A "command" package's register() calls @kirigami/sdk's registerCommand()
+// to add a new `kiri <name>` subcommand instead of (or alongside) hooks —
+// @kirigami/cli's dispatcher falls back to the registry for any name that
+// isn't one of its own built-in commands.
 //
 // The `options` live entirely in kirigami.yaml. If `optionsSchema` is set, those
 // options are validated against it before the plugin is loaded.
@@ -22,25 +27,57 @@ import path from "node:path";
 import Ajv from "ajv";
 import { createRequire } from "node:module";
 import { pathToFileURL, fileURLToPath } from "node:url";
+import { reset as resetHooks, resetCommands, resetTaskTypes, listTaskTypes, run as runHook, HOOKS, registerCommand } from "@kirigami/sdk";
+import { clearResolvedTaskTypes, builtInTaskTypes } from "./tasktypes.js";
 import { getConfig } from "../config.js";
-import { c, log } from "../utils.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let _loaded = false;
+let _lastLoaded = [];
+let _pluginDirs = [];
 
 
-export async function loadPlugins() {
-	if (_loaded) return;
+// Resolved package directories of the plugins activated by the last
+// loadPlugins() call. Plugin-registered PHP scripts must live in one of them
+// (see runscript.js); a linked or workspace plugin is outside the project.
+export function activePluginDirs() {
+	return _pluginDirs;
+}
+
+
+// `{ reload: true }` re-runs every plugin's register() even if already
+// loaded — resetting the shared @kirigami/sdk hook registry first, since
+// re-registering without a reset would pile up a duplicate set of listeners
+// (see reset()'s own doc comment). Used by the programmatic `Project.reload()`
+// API (package root index.js) so a long-lived host can pick up a changed
+// kirigami.yaml `plugins:` list without restarting the process. Note: the
+// hook registry is process-global (a @kirigami/sdk design constraint, see
+// CLAUDE.md), so this resets hooks for *every* loaded project in the
+// process, not just this one — fine today since only one project is ever
+// loaded per process, but a real limit if that changes later.
+//
+// Returns the list of plugins actually loaded, as [{ name, version }] —
+// doesn't print anything itself (an engine module shouldn't own terminal
+// output); @kirigami/cli's commands render this list themselves.
+export async function loadPlugins(config, { reload = false } = {}) {
+	if (_loaded && !reload) return _lastLoaded;
+	if (_loaded && reload) {
+		resetHooks();
+		resetCommands();
+		resetTaskTypes();
+		clearResolvedTaskTypes();
+	}
 	_loaded = true;
+	_pluginDirs = [];
 
-	const config = await getConfig();
+	config = config || await getConfig();
 	const entries = (Array.isArray(config.plugins) ? config.plugins : [])
 		.filter(p => p && p.name && p.active !== false);
-	if (!entries.length) return;
+	if (!entries.length) return (_lastLoaded = []);
 
-	console.log(`\n${c.bold("Plugins:")}`);
 	const kiriVer = kiriVersion();
+	const loaded = [];
 
 	for (const entry of entries) {
 		const { name } = entry;
@@ -54,13 +91,19 @@ export async function loadPlugins() {
 		const pkg = pkgDir ? readJson(path.join(pkgDir, "package.json")) : {};
 		const meta = pkg.kirigami || {};
 
-		if (meta.type && meta.type !== "plugin") {
+		// "command" packages (kirigami.type: "command") register a new `kiri`
+		// subcommand instead of/alongside hooks. Custom task types do not need a
+		// separate manifest type: a normal plugin calls registerTaskType() during
+		// this same registration step.
+		if (meta.type && !["plugin", "command"].includes(meta.type)) {
 			throw `Package "${name}" is a kirigami "${meta.type}", not a plugin — it can't go under "plugins:".`;
 		}
 
 		if (meta.minVersion && compareVersions(kiriVer, meta.minVersion) < 0) {
 			throw `Plugin "${name}" requires @kirigami/kirigami >= ${meta.minVersion} (current: ${kiriVer}).`;
 		}
+
+		if (pkgDir) checkSdkCopy(name, pkgDir);
 
 		const options = entry.options || {};
 
@@ -85,8 +128,29 @@ export async function loadPlugins() {
 		}
 
 		await register(options, { config, name });
-		log.step(`${c.green("✔")} ${name}${pkg.version ? c.dim(` v${pkg.version}`) : ""}`);
+		loaded.push({ name, version: pkg.version || null });
+		if (pkgDir) _pluginDirs.push(pkgDir);
 	}
+
+	// resolveTaskType() always prefers a built-in over the plugin registry, so
+	// a plugin that registered one of these names would silently never run —
+	// reject the collision here instead of letting it through unnoticed.
+	for (const { name: typeName } of listTaskTypes()) {
+		if (builtInTaskTypes.has(typeName)) {
+			throw `Task type "${typeName}" collides with a built-in task type and cannot be registered by a plugin.`;
+		}
+	}
+
+	// An alternative to calling registerCommand() directly from register():
+	// a plugin can instead declare its command(s) via the commands:register
+	// hook, same as scripts:register/tasks:register. Routed through
+	// registerCommand() itself so duplicate names and a non-function `run`
+	// are rejected the same way either style is used.
+	for (const cmd of await runHook(HOOKS.COMMANDS_REGISTER, { config })) {
+		if (cmd) registerCommand(cmd.name, cmd);
+	}
+
+	return (_lastLoaded = loaded);
 }
 
 
@@ -99,6 +163,36 @@ export function resolvePlugin(name) {
 		} catch { /* try the next root */ }
 	}
 	return null;
+}
+
+
+// A plugin that pins another @kirigami/sdk version gets its own copy from npm.
+// Copies from 0.3.0 on share one registry (the SDK keeps it on globalThis);
+// an older copy keeps its own, so the plugin's hooks, commands and task types
+// would never reach this engine. Fail loudly instead of building without them.
+const SHARED_REGISTRY_SDK = "0.3.0";
+
+function checkSdkCopy(name, pkgDir) {
+	const pluginSdk = findSdkDir(pkgDir);
+	const engineSdk = findSdkDir(__dirname);
+	if (!pluginSdk || !engineSdk || pluginSdk === engineSdk) return;
+	const version = readJson(path.join(pluginSdk, "package.json"))?.version || "0.0.0";
+	if (compareVersions(version, SHARED_REGISTRY_SDK) >= 0) return;
+	throw `Plugin "${name}" uses its own copy of @kirigami/sdk ${version}, too old to share hooks with this engine, so it would do nothing. Update it: npm install ${name}@latest`;
+}
+
+
+// Where Node would resolve @kirigami/sdk from `dir`: the nearest
+// node_modules/@kirigami/sdk walking up, following links. The package's
+// `exports` has no "require" condition, so createRequire can't resolve it.
+function findSdkDir(dir) {
+	for (let current = dir; ; current = path.dirname(current)) {
+		const candidate = path.join(current, "node_modules", "@kirigami", "sdk");
+		if (fs.existsSync(path.join(candidate, "package.json"))) {
+			try { return fs.realpathSync(candidate); } catch { return candidate; }
+		}
+		if (path.dirname(current) === current) return null;
+	}
 }
 
 

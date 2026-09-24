@@ -34,4 +34,42 @@ export const HOOKS = Object.freeze({
 	 * `registerHook()` etc. from PHP. Fired with `{ __root, config }`.
 	 */
 	PREPROS_PHP: 'prepros:php',
+	/**
+	 * A plugin-provided runnable script — the plugin's counterpart of a
+	 * project's own `scripts/<name>.php` file plus its kirigami.yaml
+	 * `scripts:` entry. Each listener returns (or an array of)
+	 * `{ name, file, trigger?, mount? }`:
+	 *   - `name`: identifier, invoked manually via `kiri run <name>`.
+	 *   - `file`: absolute path to the plugin's own .php file, e.g.
+	 *     `fileURLToPath(new URL('./scripts/optimize.php', import.meta.url))`.
+	 *   - `trigger`: optional — 'before-build' | 'before-export' |
+	 *     'after-export' — runs it automatically at that checkpoint, same as
+	 *     a kirigami.yaml-declared script.
+	 *   - `mount`: optional array of glob patterns (relative to the project
+	 *     root) to mount into the WASM sandbox before it runs.
+	 * A project's own scripts/<name>.php takes precedence over a plugin
+	 * registering the same name. Fired with `{ config }`.
+	 */
+	SCRIPTS_REGISTER: 'scripts:register',
+	/**
+	 * A plugin-injected build task — the plugin's counterpart of a project's
+	 * own kirigami.yaml `tasks:` entry. Each listener returns (or an array of)
+	 * a task object shaped exactly like a `tasks:` entry (`{ name, type, ...
+	 * }`, `type` being a built-in or any registered task type — often one the
+	 * same plugin registers via `registerTaskType()`). Appended to the
+	 * project's own `tasks:` list once, right after plugins load, so it goes
+	 * through the same validation/build/export/watch path as any other task.
+	 * Fired with `{ config }`.
+	 */
+	TASKS_REGISTER: 'tasks:register',
+	/**
+	 * An alternative to calling `registerCommand()` directly: each listener
+	 * returns (or an array of) `{ name, description?, run }` — same shape
+	 * `registerCommand()` takes — for a new `kiri <name>` subcommand. Routed
+	 * through `registerCommand()` itself right after plugins load, so a
+	 * duplicate name (against another hook entry or a directly-registered
+	 * command) or a non-function `run` throws the same way either style is
+	 * used. Fired with `{ config }`.
+	 */
+	COMMANDS_REGISTER: 'commands:register',
 });

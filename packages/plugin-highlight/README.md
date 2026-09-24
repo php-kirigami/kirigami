@@ -10,7 +10,7 @@
 highlight.js syntax highlighting for the **Kirigami** static site generator.
 
 [![npm version](https://img.shields.io/npm/v/@kirigami/plugin-highlight)](https://www.npmjs.com/package/@kirigami/plugin-highlight)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](./LICENSE)
 [![Node.js >=24.0.0](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](https://nodejs.org)
 [![Website](https://img.shields.io/badge/website-php--kirigami.github.io-1f6b4a)](https://php-kirigami.github.io)
 
@@ -36,11 +36,48 @@ build. Part of the **Kirigami** project ecosystem.
 
 ---
 
+## Table of contents
+
+- [@kirigami/plugin-highlight](#kirigamiplugin-highlight)
+- [Overview](#overview)
+- [What's new in 0.1.7](#whats-new-in-017)
+- [What's new in 0.1.6](#whats-new-in-016)
+- [What's new in 0.1.5](#whats-new-in-015)
+- [What's new in 0.1.4](#whats-new-in-014)
+- [What's new in 0.1.3](#whats-new-in-013)
+- [What's new in 0.1.2](#whats-new-in-012)
+- [What's new in 0.1.1](#whats-new-in-011)
+- [Installation](#installation)
+- [Configuration](#configuration)
+  - [Options](#options)
+- [How it works](#how-it-works)
+- [Copy-button behavior](#copy-button-behavior)
+- [Theming](#theming)
+  - [Automatic (`theme: auto` / `dark` / `light`)](#automatic-theme-auto--dark--light)
+  - [Manual (`theme: none`)](#manual-theme-none)
+  - [The embedded font](#the-embedded-font)
+- [The `<highlight>` tag](#the-highlight-tag)
+- [Per-page and per-block control](#per-page-and-per-block-control)
+- [Requirements](#requirements)
+- [License](#license)
+
+---
+
 ## What's new in 0.1.7
 
 - Dependency bump to
   [`@kirigami/canva`](https://www.npmjs.com/package/@kirigami/canva) **2.6.0**
   (no behaviour change — still only uses `dedent`).
+
+---
+
+## 0.1.8
+
+- **Requires `@kirigami/kirigami` 3.0.0** (`@kirigami/sdk` 0.3.0).
+- **The copy button now reaches code blocks inserted after page load.** The
+  script uses `@kirigami/canva`'s observer instead of a one-time
+  `querySelectorAll` sweep, so blocks added later (fetched content, an SPA
+  re-render) get their button too.
 
 ---
 
@@ -102,34 +139,6 @@ build. Part of the **Kirigami** project ecosystem.
 
 ---
 
-## Table of contents
-
-- [@kirigami/plugin-highlight](#kirigamiplugin-highlight)
-  - [Overview](#overview)
-  - [What's new in 0.1.7](#whats-new-in-017)
-  - [What's new in 0.1.6](#whats-new-in-016)
-  - [What's new in 0.1.5](#whats-new-in-015)
-  - [What's new in 0.1.4](#whats-new-in-014)
-  - [What's new in 0.1.3](#whats-new-in-013)
-  - [What's new in 0.1.2](#whats-new-in-012)
-  - [What's new in 0.1.1](#whats-new-in-011)
-  - [Table of contents](#table-of-contents)
-  - [Installation](#installation)
-  - [Configuration](#configuration)
-    - [Options](#options)
-  - [How it works](#how-it-works)
-  - [Theming](#theming)
-    - [Automatic (`theme: auto` / `dark` / `light`)](#automatic-theme-auto--dark--light)
-    - [Manual (`theme: none`)](#manual-theme-none)
-    - [The embedded font](#the-embedded-font)
-  - [The `<highlight>` tag](#the-highlight-tag)
-  - [Per-page and per-block control](#per-page-and-per-block-control)
-  - [Per-page control](#per-page-control)
-  - [Requirements](#requirements)
-  - [License](#license)
-
----
-
 ## Installation
 
 ```bash
@@ -168,12 +177,21 @@ validates `options:` as you type** (once `name:` is set), via the
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `languages` | `string[]` \| `"all"` | a common set of 12 | Languages to register. `"all"` loads the full highlight.js build (~190 languages, slower). An unknown name is skipped with a warning. |
-| `theme` | `"auto"` \| `"dark"` \| `"light"` \| `"none"` | `"auto"` | Which theme stylesheet to append to the Sass build. `"none"` appends nothing — you `@use` it yourself. |
+| `languages` | `string[]` \| `"all"` | a common set of 12 | Languages to register. `"all"` loads the full highlight.js build (~190 languages, slower). An unknown language name fails registration/build. |
+| `theme` | `"auto"` \| `"dark"` \| `"light"` \| `"none"` | `"auto"` | Which theme stylesheet to append to the Sass build. `"none"` skips the palette; font and copy-button styles are controlled separately. |
 | `autodetect` | `boolean` | `true` | Guess the language of code blocks that have no `language-…` class (restricted to the registered set). |
 | `embedFont` | `boolean` | `true` | Append the embedded JetBrains Mono `@font-face` (~39 KB woff2, base64) to the Sass build. |
-| `copyButton` | `boolean` | `true` | Hover "Copy" button on every code block. Bundles a ~1 KB script into every `esbuild` task (you need one) and appends the button styles to the Sass build. |
+| `copyButton` | `boolean` | `true` | Hover "Copy" button on every code block. Bundles a ~2.4 KB minified script (with `@kirigami/canva`'s observer, shared with other plugins that use it) into every `esbuild` task (you need one) and appends the button styles to the Sass build. |
 | `tag` | `boolean` | `true` | Register the `<highlight lang="…">…</highlight>` authoring tag (PHP-side). |
+
+Configured aliases include `html`/`htm`/`svg` → `xml`, `js`/`jsx` → `javascript`,
+`ts`/`tsx` → `typescript`, `md` → `markdown`, `yml` → `yaml`,
+`sh`/`zsh` → `bash`, and `py` → `python`. Other names must resolve to a
+highlight.js module or an already registered alias. Invalid configuration
+fails registration even on a site without code blocks. An unregistered
+language on an individual block instead produces escaped, uncolored code.
+Registered modules persist for the Node process lifetime; an explicit list
+restricts autodetection but does not unload previously registered languages.
 
 The default `languages` set is: `php`, `javascript`, `typescript`, `bash`,
 `json`, `yaml`, `css`, `scss`, `xml` (HTML), `markdown`, `sql`, `python`.
@@ -206,11 +224,10 @@ The plugin registers `@kirigami/sdk` hooks:
 - **`sass:after`** — appends the theme stylesheet (plus, by default, the font
   `@font-face` and the copy-button styles) to every `sass` task's output.
 - **`esbuild:after`** — with `copyButton` on, bundles the copy-button script
-  (`assets/copy.js`, ~1 KB) into every `esbuild` task. It wraps each
+  (`assets/copy.js`, ~2.4 KB minified with the observer) into every `esbuild` task. It wraps each
   `pre > code.hljs` in a `.hljs-copy-wrap` and adds a `.hljs-copy` button that
   writes the block's text to the clipboard. **If your project has no `esbuild`
-  task, the script has nowhere to go** — the build warns and the styles are
-  emitted but inert; add an `esbuild` task or set `copyButton: false`.
+  task, the script has nowhere to go** — the build warns and skips the copy-button script and styles; add an `esbuild` task or set `copyButton: false`.
 - **`prepros:php`** — always includes `php/page.php` (the `@highlight false`
   page opt-out: a `page_info` / `post_render` hook pair that leaves a marker
   comment for the `prepros:html` pass). With `tag` on it also includes
@@ -221,6 +238,22 @@ The plugin registers `@kirigami/sdk` hooks:
 highlight.js is a **dev dependency of your build** only. Nothing from it reaches
 the deployed site except the class names in the HTML, the CSS that styles them,
 and (with `copyButton`) the small copy script.
+
+---
+
+## Copy-button behavior
+
+The script registers `<pre>` on `@kirigami/canva`'s observer, so it enhances
+every `pre > code.hljs` block already in the page and every one inserted
+later (content loaded after the first paint, an SPA re-render). A block is
+enhanced once; blocks with an adjacent button are skipped.
+It copies the displayed text with one trailing newline removed. Success shows
+`Copied`; rejection shows `Press ⌘C`, then resets after 1.6 seconds. That
+fallback does not select the code or perform another copy operation.
+
+Include the generated JavaScript in the page and provide a working
+`navigator.clipboard.writeText` environment. A Sass task is needed for the
+bundled theme, font, and button styles.
 
 ---
 
@@ -337,7 +370,7 @@ A fenced block does this with its info string:
 
 - Node.js `>= 24.0.0`
 - npm `>= 10.2.3`
-- `@kirigami/kirigami` `>= 1.4.3` (the plugin loader; `prepros:html` /
+- `@kirigami/kirigami` `>= 3.0.0` (the plugin loader; `prepros:html` /
   `prepros:php` / `esbuild:*` hooks; bundles `@kirigami/php-prepros` `>= 1.7.2`,
   whose de-indent script flattens the re-indented highlight markup)
 - `@kirigami/canva` (bundled dependency — supplies the `dedent` helper used to
@@ -348,4 +381,4 @@ A fenced block does this with its info string:
 
 ## License
 
-MIT © Maxime Larrivée-Roy, 2026
+GPL-3.0-or-later © Maxime Larrivée-Roy, 2026

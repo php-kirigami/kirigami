@@ -6,10 +6,10 @@
 
 # @kirigami/kirigami
 
-The `kiri` CLI — the command-line entry point of the **Kirigami** static site generator.
+The programmatic build engine of the **Kirigami** static site generator.
 
 [![npm version](https://img.shields.io/npm/v/@kirigami/kirigami)](https://www.npmjs.com/package/@kirigami/kirigami)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](./LICENSE)
 [![Node.js >=24.0.0](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](https://nodejs.org)
 [![Website](https://img.shields.io/badge/website-php--kirigami.github.io-1f6b4a)](https://php-kirigami.github.io)
 
@@ -19,18 +19,48 @@ The `kiri` CLI — the command-line entry point of the **Kirigami** static site 
 
 ## Overview
 
-`@kirigami/kirigami` installs the **`kiri`** command. It reads a single
-`kirigami.yaml` at the project root and drives the whole build: it renders PHP
-pages to HTML through [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirigami/php-prepros)
-(PHP running in WebAssembly — no PHP install), bundles JavaScript with esbuild,
-compiles Sass with Dart Sass, generates `sitemap.xml`, runs project PHP scripts,
-and exports a fully static site ready to deploy.
+For the cross-package execution model, see [Internal execution](../../docs/INTERNALS.md). The [Project API reference](../../docs/API.md) covers return values, failures, and resource ownership; the [user guide](../../docs/USER-GUIDE.md) provides a minimal site walkthrough.
 
-This package is **CLI-only** — it exposes no JavaScript API. Its only package
-`exports` are `./package.json` and `./schema` (the JSON schema for
-`kirigami.yaml`).
+The core engine loads `kirigami.yaml`, validates configuration, registers plugins, renders PHP pages, runs asset tasks, and exposes build, export, watch, and preview operations through `Project`.
 
-Part of the **Kirigami** project ecosystem.
+Use [the CLI](../cli/README.md) for terminal commands. This package is the programmatic integration point for the Kirigami ecosystem.
+
+---
+
+## 3.0.0 — breaking
+
+- **Breaking: the `kiri` command moved to
+  [`@kirigami/cli`](https://www.npmjs.com/package/@kirigami/cli).** This
+  package is now the programmatic engine only and no longer installs a `kiri`
+  executable. Scripts such as `npx kiri build`, and `package.json` scripts
+  calling `kiri`, fail until the CLI is installed. Migration:
+
+  ```bash
+  npm install -D @kirigami/cli        # in each site; keeps @kirigami/kirigami as its engine
+  npm install -g @kirigami/cli        # only if you ran a globally installed kiri
+  ```
+
+  The commands and their options are unchanged. Keep `@kirigami/kirigami` as a
+  dependency if your code imports the `Project` API.
+- **Export only empties directories it created.** Export writes a
+  `.kirigami-export` marker into its output. An existing non-empty output
+  directory without that marker is refused instead of emptied: after
+  upgrading, the first export into an existing `dist/` fails once. Empty the
+  directory, or create an empty `.kirigami-export` file in it to confirm it may
+  be replaced. Export also refuses any destination that contains the project.
+- **Update your plugins with the core.** A plugin that still bundles
+  `@kirigami/sdk` older than 0.3.0 gets its own copy of the SDK next to this
+  engine's, and its hooks would never run; loading now fails with
+  `npm install <plugin>@latest` instead of building without them. The
+  plugins released with 3.0.0 require it (`kirigami.minVersion: 3.0.0`).
+- **Duplicate task names are rejected**, including a plugin task injected via
+  `tasks:register` with the same name as a `kirigami.yaml` task.
+- **`seo.jsonld` is now an on/off switch, not a sub-block** (matching
+  `@kirigami/php-prepros`): its keys move up into `seo:`, and `seo.language`
+  is renamed `seo.lang`. The old shapes fail validation with a message saying
+  so. JSON-LD is now on whenever `seo:` exists; `seo.jsonld: false` turns it off.
+- `Project.validate()` no longer replaces a loaded project's configuration;
+  call `reload()` to apply a change.
 
 ---
 
@@ -86,12 +116,12 @@ Dependency bumps: [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirig
 - **`kiri serve`** (1.5.0) — everything `kiri watch` does, plus a static file
   server over `kirigami.root` and browser hot-reload over Server-Sent Events
   (zero-dependency — no live-reload framework bundled). See
-  [`kiri serve`](#kiri-serve).
+  [`kiri serve`](../cli/README.md#kiri-serve).
 - **`kiri install <plugin>`** (1.5.0) — installs a plugin (`npm install`,
   devDependency by default) and prints the `plugins:` entry to paste into
   `kirigami.yaml`, built from the plugin's own `kirigami.optionsSchema`. A
   bare name (`highlight`) resolves against the `@kirigami/plugin-*` /
-  `kirigami-plugin-*` conventions. See [`kiri install`](#kiri-install-plugin).
+  `kirigami-plugin-*` conventions. See [`kiri install`](../cli/README.md#kiri-install-plugin).
 - **Plugin loader** (1.2.0) — `plugins:` in `kirigami.yaml` resolves each
   entry from the project's `node_modules` (falling back to kiri's own),
   checks the plugin's `kirigami.minVersion`, merges its options, and calls
@@ -122,45 +152,35 @@ Dependency bumps: [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirig
 ## Table of contents
 
 - [@kirigami/kirigami](#kirigamikirigami)
-  - [Overview](#overview)
-  - [What's new in 2.0.0](#whats-new-in-200)
-  - [What's new in 1.5.7](#whats-new-in-157)
-  - [What's new in 1.5.6](#whats-new-in-156)
-  - [What's new in 1.5.5 / 1.5.4](#whats-new-in-155--154)
-  - [What's new in 1.5.3](#whats-new-in-153)
-  - [Table of contents](#table-of-contents)
-  - [Installation](#installation)
-  - [Quick start](#quick-start)
-  - [Commands](#commands)
-    - [`kiri build`](#kiri-build)
-    - [`kiri export`](#kiri-export)
-    - [`kiri watch`](#kiri-watch)
-    - [`kiri serve`](#kiri-serve)
-    - [`kiri run <script>`](#kiri-run-script)
-    - [`kiri create [template]`](#kiri-create-template)
-    - [`kiri install <plugin...>`](#kiri-install-plugin)
-    - [`kiri cache purge`](#kiri-cache-purge)
-    - [`kiri phpinfo`](#kiri-phpinfo)
-  - [Configuration — `kirigami.yaml`](#configuration--kirigamiyaml)
-    - [`kirigami:`](#kirigami)
-    - [`prepros:`](#prepros)
-    - [`image:`](#image)
-    - [`plugins:`](#plugins)
-    - [`esbuild:` / `sass:`](#esbuild--sass)
-    - [`export:`](#export)
-    - [`scripts:`](#scripts)
-    - [`tasks:`](#tasks)
-  - [Build tasks](#build-tasks)
-    - [esbuild](#esbuild-task)
-    - [sass](#sass-task)
-    - [prepros](#prepros-task)
-    - [dist](#dist-task)
-  - [Sass functions](#sass-functions)
-  - [The banner](#the-banner)
-  - [Continuous deployment](#continuous-deployment)
-  - [Dependencies](#dependencies)
-  - [Requirements](#requirements)
-  - [License](#license)
+- [Overview](#overview)
+- [What's new in 2.0.0](#whats-new-in-200)
+- [What's new in 1.5.7](#whats-new-in-157)
+- [What's new in 1.5.6](#whats-new-in-156)
+- [What's new in 1.5.5 / 1.5.4](#whats-new-in-155--154)
+- [What's new in 1.5.3](#whats-new-in-153)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Programmatic API](#programmatic-api)
+- [Configuration — `kirigami.yaml`](#configuration--kirigamiyaml)
+  - [`kirigami:`](#kirigami)
+  - [`prepros:`](#prepros)
+  - [`image:`](#image)
+  - [`plugins:`](#plugins)
+  - [`esbuild:` / `sass:`](#esbuild--sass)
+  - [`export:`](#export)
+  - [`scripts:`](#scripts)
+  - [`tasks:`](#tasks)
+- [Build tasks](#build-tasks)
+  - [esbuild task](#esbuild-task)
+  - [sass task](#sass-task)
+  - [prepros task](#prepros-task)
+  - [dist task](#dist-task)
+- [Sass functions](#sass-functions)
+- [The banner](#the-banner)
+- [Continuous deployment](#continuous-deployment)
+- [Dependencies](#dependencies)
+- [Requirements](#requirements)
+- [License](#license)
 
 ---
 
@@ -170,15 +190,9 @@ Dependency bumps: [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirig
 npm install -D @kirigami/kirigami
 ```
 
-The `kiri` binary is then available through `npx kiri` or an npm script.
+This installs the engine for JavaScript imports. For terminal commands, install `@kirigami/cli` and use `npx kiri`; see [the CLI reference](../cli/README.md).
 
-```bash
-npx kiri --help        # global help
-npx kiri --version     # kiri + embedded PHP version
-```
-
-| Global flag | Description |
-|---|---|
+---|---|
 | `--help`, `-h` | Show global help (or `kiri <command> --help` for a command). |
 | `--version`, `-v` | Print the `kiri` version and the bundled PHP-WASM version. |
 
@@ -202,184 +216,72 @@ prepros:
 ```
 
 2. Write `_*.php` pages under `src/` (or wherever `root` points).
-3. `npx kiri watch` for development, `npx kiri export` to ship.
+3. Create the referenced layout files, install `@kirigami/cli`, then run `npx kiri build` and `npx kiri serve`. Use `npx kiri export` for production output.
 
 ---
 
-## Commands
+## Programmatic API
 
-| Command | Summary |
-|---|---|
-| `kiri build` | Compile the project for development (run every task once). |
-| `kiri export` | Compile + export a production-ready static site. |
-| `kiri watch` | Watch project files and rebuild on change. |
-| `kiri serve` | `kiri watch`, plus a local server and browser hot-reload. |
-| `kiri run <script>` | Run a PHP script from `scripts/` in the Kirigami runtime. |
-| `kiri create [template]` | Scaffold a new project from an official template (interactive wizard with no args). |
-| `kiri install <plugin...>` | Install a plugin and print the `plugins:` entry to paste into `kirigami.yaml`. |
-| `kiri cache purge [mask]` | Purge the local `.node.db` / `.cache.db` / `.cookie.txt` caches. |
-| `kiri phpinfo` | Print `phpinfo()` from the embedded PHP-WASM runtime. |
+`@kirigami/kirigami` is the engine. The `kiri` binary belongs to [`@kirigami/cli`](../cli/README.md); [MCP](../mcp/README.md) and [VS Code](../vscode/README.md) also use this API.
 
-Every command has its own `--help`.
+```js
+import { load } from '@kirigami/kirigami';
 
-### `kiri build`
+// Launch this process from the directory containing kirigami.yaml.
+const project = await load();
+const result = await project.build();
+if (!result.success) throw new Error(JSON.stringify(result));
 
-Reads `kirigami.yaml` and runs every declared `tasks` entry **once**, in order.
-If a `prepros` block is present, a forced `prepros` task is prepended (renders
-all pages + `sitemap.xml`). Fires the `before-build` script trigger first. Only
-tasks whose type supports building run, unless the task sets `force: true`.
-Output is written next to each entry, under `kirigami.root`.
-
-### `kiri export`
-
-Production build. Runs `before-export` then `before-build` triggers, prepends a
-forced `prepros` task (if configured) and a forced `dist` task, runs **every**
-task with `force`, then fires `after-export`. The `dist` task copies
-`kirigami.root` into `export.path` (default `dist/`), and the banner is stamped
-onto every exported `.js` / `.css` / `.html` file.
-
-### `kiri watch`
-
-Dev mode. Attaches a file watcher to every task whose type supports watching
-(`esbuild`, `sass`, `prepros`). Changes are debounced (150 ms) and batched per
-task. `node_modules/`, `.git/` and `dist/` are always ignored. `Ctrl+C` closes
-every watcher cleanly.
-
-### `kiri serve`
-
-Everything `kiri watch` does, plus a static file server over `kirigami.root`
-and a hot-reload channel (Server-Sent Events — no WebSocket dependency): every
-open tab reloads once a batch finishes rebuilding. Zero-dependency
-(`node:http`, `node:fs`); no live-reload framework bundled in.
-
-```bash
-kiri serve                # http://127.0.0.1:4321/
-kiri serve --port 5000
-kiri serve --host 0.0.0.0 # reachable from other devices on the network
+const server = await project.serve({ port: 0, initialBuild: false });
+console.log(server.url);
+// Call await server.close() when the preview is no longer needed.
 ```
 
-Use `kiri watch` instead when you don't need a browser tab — CI, or an
-editor's own preview server.
+Exports: `Project`, `load()`, and `Kirigami.load()`. There is no static `Project.load()`.
+The package ships `index.d.ts` declarations for these exports, project
+configuration, operation results, task metadata, notifications, and lifecycle
+handles.
 
-### `kiri run <script>`
+Project scaffolding (what `kiri create`, the VS Code *Create Project* command
+and the MCP `kirigami_create_project` tool run) is exported too, as plain
+functions that need no loaded project — `listTemplates()`, `createProject()`,
+`installDependencies()` and helpers. Import them from
+`@kirigami/kirigami/create` to skip loading the engine. See
+[the API reference](../../docs/API.md#project-scaffolding).
 
-Executes `scripts/<script>.php` inside the same sandboxed PHP-WASM environment
-used for rendering, via `runenv()` from `@kirigami/php-prepros` — the full PHP
-class library is available and `kirigami.yaml`'s `kirigami` block is exposed as
-`PREPROS::$config->data`. Extra words after the script name are forwarded as
-`$argv` entries. Declare a matching `scripts:` entry in `kirigami.yaml` to
-`mount` extra files or to fire the script automatically via `trigger`.
-
-```bash
-kiri run convert-images
-kiri run deploy production --force
-```
-
-### `kiri create [template]`
-
-Scaffolds a project from an official template — a GitHub repository named
-`template-<name>` under the [`php-kirigami`](https://github.com/php-kirigami)
-organization.
-
-| Flag | Description |
+| Member | Contract |
 |---|---|
-| `--list`, `-l` | List available templates (cached 1 h in `~/.config/kirigami/kiri.db`). |
-| `--name`, `--description`, `--author`, `--email`, `--baseurl`, `--repo` | Metadata to write into `package.json` / `kirigami.yaml`. `--repo` defaults to the repo derived from a `*.github.io` base URL. |
-| `--yes`, `-y` | Non-interactive: take defaults, ask nothing. |
-| `--no-git` | Don't initialise a git repository. |
-| `--no-install` | Don't run `npm install` afterwards. |
-| `--help`, `-h` | Show help. |
+| `reload()` | Reload configuration and register plugins again; invalidate PHP configuration, mounts/runtime, and plugin includes. Returns the project. |
+| `validate()` | Re-read and validate configuration without reloading plugins; resolves to `true` or throws. A loaded project keeps its current configuration (including plugin-injected tasks); call `reload()` to apply changes. |
+| `build()` | Run `before-build`, implicit rendering, and buildable or forced tasks. Returns `{ success, trigger, results }`. |
+| `export({ path }?)` | Run export/build triggers, implicit rendering and copy, eligible explicit tasks, then `after-export`. Returns `success`, `dist`, trigger results and task results. A path override remains in the loaded config. |
+| `serve({ port, host, onBuildResult }?)` | Start watching and serving; returns `{ address, port, url, close() }`. Defaults to loopback and port 4321; port 0 selects a free port. |
+| `watch()` | Start file watchers; returns `{ close() }`. |
+| `run(name, argv?)` | Execute `scripts/<name>.php` and return the PHP result. Missing scripts can throw. |
+| `runTask(name)` | Run one named task without build triggers or other tasks. |
+| `config` / `plugins` | Current configuration and activated plugin metadata. Returned objects are not immutable snapshots. |
+| `tasks` / `scripts` | Discover configured/implicit tasks and available PHP scripts with metadata. |
 
-```bash
-kiri create                      # interactive wizard
-kiri create --list
-kiri create blog my-blog
-```
+Inspect `success` as well as catching exceptions. A resolved promise is not necessarily a successful build. Task results include `task`, `type` and `taskname` plus task-specific output.
 
-Run with no arguments in a terminal for a wizard: it asks for the template, the
-target directory, and the project **name / description / author / email / base
-URL / repo**, then writes those into `package.json` and `kirigami.yaml`
-(comments preserved). Pass a template name to skip straight to extraction.
+The development server denies dot/underscore-prefixed path components and `.php`, `.phtml`, `.phar`, `.scss`, and `.sass` sources (extensions are case-insensitive). Requested names and canonical symlink/junction targets must both be public and remain within the source root; custom `404.html` content follows the same checks. Denied paths return 404. Dot-prefixed public directories such as `.well-known` are also excluded. JavaScript and source maps remain available for local debugging. These filesystem checks do not isolate the server from concurrent hostile local filesystem changes.
 
-The template `.tar.gz` is downloaded and unpacked with a zero-dependency tar
-parser (Node has no zip API). **Extraction never overwrites**: files already in
-the target are kept as-is, an existing `package.json` is deep-merged (existing
-values win), everything missing is added — so an existing `package.json`, `.git`,
-`README`, `node_modules`, etc. are fine. If the template ships no `package.json`
-or `banner.txt`, a starter one is written — the banner keeps its `### ###` tokens
-(`###DATE###`, `###PROJECT###`, `###AUTHOR###`, `###EMAIL###`, `###REPO###`,
-`###BASEURL###`), which `kiri build` / `kiri export` fill from `kirigami.yaml`
-every time. Then, unless the target is already inside a git worktree (or
-`--no-git`), `git init` + an initial commit; then `npm install` unless
-`--no-install`. `.cache.db`, `.node.db`, `.cookie.txt` and `package-lock.json`
-are never copied from the template.
+The development server returns 400 for malformed URL path encodings or NUL pathnames. File-read and stream failures return 500 before headers are sent; failures after partial output close that response. These failures do not stop subsequent requests. Missing pages use `404.html` when available, otherwise the built-in 404 response.
 
-Every official template ships its own `CLAUDE.md` at the project root, copied
-along with everything else — a fresh `kiri create` is **Claude Ready** out of
-the box, no setup needed to start a Claude Code session in it.
+Watch tasks process additions, changes, file removals, and directory removals. A modified page (`_*.php`) re-renders only itself, or its whole directory with `prepros.deep: true`; a modified layout, include or other non-page PHP file re-renders the whole site and sitemap; a modified data file (`.yaml`/`.yml`/`.md`/`.json`) re-renders its directory. PHP additions/removals reset the runtime and rebuild the whole site and sitemap; HTML belonging to removed/renamed page sources tracked since watcher startup is deleted. Unrelated HTML is preserved; historical orphan outputs without a source at watcher startup are not swept. JavaScript/Sass dependencies are rebuilt on addition/removal; failed builds retain their previous bundles.
 
-### `kiri install <plugin...>`
+`serve()` and `watch()` await watcher readiness and release acquired resources if startup fails. Closing discards pending events and waits for active callbacks before finishing; callbacks that never settle can delay shutdown.
 
-Installs a plugin (`npm install`, devDependency by default — `--save` for a
-regular one) and prints the `plugins:` entry to paste into `kirigami.yaml`,
-built from the plugin's own `kirigami.optionsSchema`. **Never touches
-`kirigami.yaml` itself** — you paste the printed block in.
+`serve()` and `watch()` build once before acquiring server/watch resources. Pass `{ initialBuild: false }` to skip this when output is already current. A failed initial build rejects with diagnostics in `error.result`. Initial serve notifications use `initial: true`, `rule: "initial-build"`, and `type: "build"`; their done event contains the full build result. `onBuildResult` receives `{ status: 'start', rule, type }` followed by `{ status: 'done', rule, type, ...result }` for completed watch callbacks. A thrown build callback or start observer produces a failed done notification. A rejecting done observer is logged without stopping later batches. Failed builds do not trigger browser reloads.
 
-A bare name (`highlight`) is resolved against the `@kirigami/plugin-*` /
-`kirigami-plugin-*` conventions and checked on npm; a full package name is
-used as-is. Already installed → checks npm for a newer version and updates
-if there is one.
+Current limitations: one project per process, working directory established **before importing the engine**, and shared plugin registries. Await project operations in sequence; only PHP-prepros operations/resets are internally serialized. `reload()` refreshes PHP configuration, mounts, network mode, and plugin includes, but JavaScript plugin code remains subject to Node's module cache (restart after code changes). Repeated watcher setup preserves the configured task list; the implicit PHP rule is added only to the local watch-rule list (A12 fixed). See [the audit](../../docs/AUDIT-2026-09-20.md) for reproductions.
 
-```bash
-kiri install highlight
-kiri install @kirigami/plugin-highlight
-kiri install highlight @kirigami/plugin-svg   # multiple at once
-```
+An empty `prepros: {}` supports rendering without layout files. PHP warnings
+remain nonfatal and appear on the prepros task entry in `results`, including
+warnings from rendering and sitemap generation. Diagnostics are kept out of
+generated HTML; a failed sitemap preserves the preceding render diagnostics.
 
-| Flag | Description |
-|---|---|
-| `--save` | Install as a regular dependency (default: devDependency). |
-| `--help`, `-h` | Show help. |
-
-### `kiri cache purge`
-
-Clears the working caches Kirigami leaves at the project root: `.node.db`
-(kirigami-core's cache — `@kirigami/sdk`, `node:sqlite`), `.cache.db` (the PHP
-`CACHE` class) and `.cookie.txt` (the `CURL` / `SCRAPER` cookie jar).
-
-| Invocation | Effect |
-|---|---|
-| `kiri cache purge` | Deletes the `.node.db`, `.cache.db` and `.cookie.txt` files (whichever exist). |
-| `kiri cache purge <mask>` | Keeps the files, but deletes every cache **key** matching `<mask>` in both SQLite stores. |
-
-`<mask>` is a glob against the key namespace (`meta_*`, `colors_*`, `font_*`, …).
-Runs against the current working directory.
-
-```bash
-kiri cache purge
-kiri cache purge meta_*
-kiri cache purge "colors_*"
-```
-
-| Flag | Description |
-|---|---|
-| `--help`, `-h` | Show help. |
-
-### `kiri phpinfo`
-
-Prints `phpinfo()` from the embedded PHP-WASM runtime — handy to check the
-available PHP version and extensions.
-
-| Flag | Description |
-|---|---|
-| `--md`, `-m` | Output Markdown instead of HTML. |
-| `--json`, `-j` | Output JSON instead of HTML. |
-| `--help`, `-h` | Show help. |
-
-```bash
-kiri phpinfo > phpinfo.html
-kiri phpinfo -m > phpinfo.md
-```
+Export rejects equal, ancestor, or descendant source/output paths before clearing the destination, including symlink/junction aliases. PHP files (case-insensitive `.php`) and dot-prefixed directories are excluded from the copy. Add `export.ignore` rules for any other project-specific private files. The development server denies private/source paths and checks canonical link targets, while allowing JavaScript and source maps for debugging. It is intended for loopback use.
 
 ---
 
@@ -460,6 +362,7 @@ build/export/watch.
 |---|---|---|---|
 | `before` | string | – | PHP file (relative to `root`) included before every page body. |
 | `after` | string | – | PHP file included after every page body. |
+| `deep` | boolean | `false` | Watch/serve: a modified page (`_*.php`) re-renders its whole directory instead of just itself. Layout/include changes always re-render the whole site. |
 | `format` | boolean | `false` | Pretty-print the HTML (4-space indent, via `HTML::format()`). |
 | `network` | boolean | `false` | Allow outbound HTTP(S) inside the WASM runtime (remote `@tag` fetches, `CURL`/`SCRAPER`). |
 | `mountext` | string[] | `[]` | Extra file extensions auto-mounted into the virtual FS, on top of `.php .json .yaml .yml .md .db .txt`. |
@@ -514,12 +417,26 @@ files compiled respectively before and after the entry (paths relative to
 | `mount` | – | Glob patterns (relative to the project root) of extra files mounted into the sandbox before the script runs. |
 | `trigger` | – | Fire automatically: `before-build` (start of `build` and `export`), `before-export` (very start of `export`), `after-export` (once `export` finished). |
 
+An active plugin can also register a runnable script via the `scripts:register`
+hook from `@kirigami/sdk`, without a `scripts:` entry: a `name` runnable the
+same way, an absolute `file` path to the plugin's own `.php` file, and an
+optional `trigger`/`mount`. A project's own `scripts/<name>.php` always wins
+over a plugin registering the same name. See the SDK README's hook table.
+
 ### `tasks:`
 
 Ordered list, run in array order, on top of the implicit `prepros` and `dist`
-tasks. The two `type`s below are the ones you actually write into `tasks:`
-yourself — `prepros` and `dist` are internal, added automatically (see
-[Build tasks](#build-tasks) below), never declared by hand.
+tasks. Common entries use `esbuild` or `sass`. The schema also accepts explicit `prepros` tasks (`target`, `force`) and `dist` tasks (`path`, `ignore`, `force`); non-buildable types need `force: true` for a one-shot build. See [Build tasks](#build-tasks).
+
+An active plugin can register additional task types with
+`registerTaskType()` from `@kirigami/sdk`. Plugin-task entries require `name`
+and `type`; their remaining fields and imperative validation belong to the
+plugin. Plugins load before Kirigami performs the final strict task validation,
+so an unregistered type still fails configuration loading.
+
+A plugin can also inject the task entry itself via the `tasks:register` hook
+— no `tasks:` entry needed in kirigami.yaml at all. See the SDK README's hook
+table.
 
 | `type` | Purpose | Required fields | Optional |
 |---|---|---|---|
@@ -532,8 +449,11 @@ yourself — `prepros` and `dist` are internal, added automatically (see
 
 `esbuild` and `sass` are the tasks you declare in `tasks:`; `prepros` and
 `dist` are added automatically (the former whenever a `prepros:` block
-exists, the latter only during `kiri export`) and documented here purely as
-reference for what they actually do.
+exists, the latter during `kiri export`). Explicit tasks of those types are also supported.
+
+Plugin-provided types participate in the same build, export, `runTask()`, and
+watch paths. Their definitions use the SDK task-type registry; built-in names
+take precedence and cannot be overridden.
 
 ### esbuild task
 
@@ -563,8 +483,13 @@ run during a plain `kiri build` unless forced — the implicit task added by the
 
 ### dist task
 
+Dot-prefixed public directories such as `.well-known` are excluded too; there is no exception mechanism in the current export filter.
+
 Empties `path`, then copies `kirigami.root` into it preserving structure.
-**Excluded:** anything whose name starts with `_` or `.`, `.scss` files, `.map`
+For safety, an existing non-empty `path` is only emptied if it contains the
+`.kirigami-export` marker that every export writes; otherwise export fails
+without touching it. `path` must also not contain the project directory.
+**Excluded:** underscore- or dot-prefixed directories, files whose basename starts with `_` or `.`, `.php` files, `.scss` files, `.map`
 files, and non-minified `.js` files, plus every `export.ignore` pattern. The
 project banner is stamped onto copied `.js` / `.css` (`/*! … */`) and `.html`
 (`<!-- … -->`) files. Token replacements in output: `###YEAR###` and
@@ -614,6 +539,8 @@ A line whose value(s) come out empty is dropped (`Author: Foo <>` →
 
 ## Continuous deployment
 
+Include a local `@kirigami/cli` dependency for the current API split. The sibling action’s global fallback still installs the old core package; that fallback requires migration.
+
 Kirigami ships an official reusable GitHub Action,
 [`php-kirigami/kiribuild`](https://github.com/php-kirigami/kiribuild)
 (**v2**): it checks out nothing itself — the caller does — installs Node +
@@ -631,7 +558,7 @@ concurrency: { group: pages, cancel-in-progress: true }
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    environment: { name: github-pages, url: ${{ steps.deployment.outputs.page_url }} }
+    environment: { name: github-pages, url: "${{ steps.deployment.outputs.page_url }}" }
     steps:
       - uses: actions/checkout@v7
 
@@ -673,7 +600,6 @@ Every official template (`kiri create`) ships this workflow already, at
 | [`esbuild`](https://esbuild.github.io/) | JS/TS bundling. |
 | [`fontkit`](https://github.com/foliojs/fontkit) | Font metadata for the `font-*()` Sass functions. |
 | [`chokidar`](https://github.com/paulmillr/chokidar) · [`picomatch`](https://github.com/micromatch/picomatch) · [`ignore`](https://github.com/kaelzhang/node-ignore) | File watching / glob matching / export exclusions. |
-| [`@octokit/rest`](https://github.com/octokit/rest.js) | Template listing for `kiri create`. |
 
 ---
 
@@ -686,4 +612,4 @@ Every official template (`kiri create`) ships this workflow already, at
 
 ## License
 
-MIT © Maxime Larrivée-Roy, 2026
+GPL-3.0-or-later © Maxime Larrivée-Roy, 2026

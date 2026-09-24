@@ -7,22 +7,19 @@ declare(strict_types=1);
  *
  * Collects schema.org nodes during a render and emits them as a single
  * `<script type="application/ld+json">` block in the page `<head>`, built from
- * the `seo.jsonld` sub-block of `kirigami.yaml` — nested under the same `seo:`
- * block `META` reads, one on/off switch for the whole SEO surface — and the
+ * the `seo:` block of `kirigami.yaml` — the same block `META` reads — and the
  * loose keys of the `kirigami:` block (`person`, `jobtitle`, `area`,
  * `knowsabout`, `keywords`, `facebook`, … that Kirigami projects already use).
  *
  * Two ways to use it, and they combine:
  *
- *  1. Automatic — opt-in. As soon as `kirigami.yaml`'s `seo:` block carries a
- *     `jsonld` sub-block (even an empty one, `seo: { jsonld: {} }`), a
- *     `post_render` hook injects an `Organization` (+ `Person`, `WebSite`,
- *     `WebPage`, and a `BreadcrumbList` built from the `_index.php` ancestor
- *     trail) `@graph` derived from the block, the loose keys and the current
- *     page's PHPDOC. Without a `jsonld` sub-block nothing is injected — the
- *     rest of `seo:` (META's own concerns) works independently of it. Turn it
- *     back off with `seo: { jsonld: false }` (or `{ auto: false }`), or per
- *     page with `@ld false` in the template's PHPDOC. A page that already
+ *  1. Automatic — on with the rest of the SEO surface: as soon as
+ *     `kirigami.yaml` has a `seo:` block (`seo: {}` is enough), a `post_render`
+ *     hook injects an `Organization` (+ `Person`, `WebSite`, `WebPage`, and a
+ *     `BreadcrumbList` built from the `_index.php` ancestor trail) `@graph`
+ *     derived from `seo:`, the loose keys and the current page's PHPDOC — the
+ *     same sources `META` uses. `seo: { jsonld: false }` turns just the
+ *     JSON-LD off; `@ld false` skips a single page. A page that already
  *     hand-writes an `application/ld+json` script is left untouched.
  *
  *     Per-page PHPDOC tags feed the page node:
@@ -36,7 +33,7 @@ declare(strict_types=1);
  *       @ld_breadcrumb false   no BreadcrumbList for this page
  *
  *  2. Explicit. Call the builders from a template or from an `includes` file.
- *     Nodes added this way are always emitted, `seo.jsonld` sub-block or not:
+ *     Nodes added this way are always emitted, automatic pass on or not:
  *
  *       LD::add('Recipe', [ 'name' => 'Tarte', 'recipeYield' => '6' ]);
  *       LD::article([ 'headline' => $title, 'author' => LD::ref('#person') ]);
@@ -78,21 +75,21 @@ final class LD
     // -----------------------------------------------------------------------
 
     /**
-     * Resolved JSON-LD configuration, merging the `seo.jsonld` sub-block with
-     * the loose top-level keys of the `kirigami:` block.
+     * Resolved JSON-LD configuration, merging the `seo:` block with the loose
+     * top-level keys of the `kirigami:` block.
      */
     public static function config(): object
     {
         if (self::$config !== null) return self::$config;
 
         $data = self::data();
-        $raw  = self::jsonldRaw();
+        $raw  = self::seoRaw();
         $j    = is_object($raw) ? $raw : new stdClass;
 
-        // Automatic injection is opt-in: it needs a `seo.jsonld` sub-block (an
-        // empty map counts). `jsonld: false` / `jsonld: { auto: false }` turn it off.
-        $enabled = is_object($raw) || $raw === true;
-        if ($enabled && isset($j->auto) && !self::truthy($j->auto)) $enabled = false;
+        // Injected with the rest of the SEO surface (a `seo:` block, an empty
+        // map counts); `seo.jsonld: false` turns just the JSON-LD off.
+        $flag    = $j->jsonld ?? true;
+        $enabled = (is_object($raw) || $raw === true) && is_scalar($flag) && self::truthy($flag);
 
         $sameAs = [];
         if (isset($j->sameAs) && is_array($j->sameAs)) $sameAs = array_map('strval', $j->sameAs);
@@ -249,7 +246,7 @@ final class LD
     // Config-aware builders
     // -----------------------------------------------------------------------
 
-    /** The site's main entity (`Organization` by default; `jsonld.type` overrides). */
+    /** The site's main entity (`Organization` by default; `seo.type` overrides). */
     public static function organization(array $overrides = []): array
     {
         $c = self::config();
@@ -373,8 +370,8 @@ final class LD
 
     /**
      * A `BreadcrumbList`. With no argument it is derived from the page's
-     * ancestor `_index.php` trail (always attempted while the `seo.jsonld`
-     * sub-block is on — no `@breadcrumb` opt-in needed; disable per page with
+     * ancestor `_index.php` trail (always attempted while the automatic pass is
+     * on — no `@breadcrumb` opt-in needed; disable per page with
      * `@ld_breadcrumb false`). Pass `$items` as `[['name' => …, 'url' => …], …]`
      * to build it by hand.
      */
@@ -546,8 +543,8 @@ final class LD
             if (self::pageOptedOut())                                  return $html;
             if (stripos($html, 'application/ld+json') !== false)       return $html;
 
-            // script() autofills the defaults only when the `seo.jsonld` sub-block
-            // opted in; otherwise it emits nothing unless a template added
+            // script() autofills the defaults only when the automatic pass is on;
+            // otherwise it emits nothing unless a template added
             // nodes by hand, in which case those are still injected.
             $script = self::script();
             if ($script === '') return $html;
@@ -585,11 +582,10 @@ final class LD
         return new stdClass;
     }
 
-    /** The raw `seo.jsonld` sub-block: an object, `false`, `true`, or `null` when absent. */
-    private static function jsonldRaw(): mixed
+    /** The raw top-level `seo:` block: object, `false`, `true`, or `null`. */
+    private static function seoRaw(): mixed
     {
-        $seo = (isset(PREPROS::$config) && is_object(PREPROS::$config)) ? (PREPROS::$config->seo ?? null) : null;
-        return is_object($seo) ? ($seo->jsonld ?? null) : null;
+        return (isset(PREPROS::$config) && is_object(PREPROS::$config)) ? (PREPROS::$config->seo ?? null) : null;
     }
 
     private static function pageInfo(): object

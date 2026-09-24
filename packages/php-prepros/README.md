@@ -10,7 +10,7 @@
 PHP preprocessor for the **Kirigami** static site generator.
 
 [![npm version](https://img.shields.io/npm/v/@kirigami/php-prepros)](https://www.npmjs.com/package/@kirigami/php-prepros)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](./LICENSE)
 [![Node.js >=24.0.0](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](https://nodejs.org)
 [![Website](https://img.shields.io/badge/website-php--kirigami.github.io-1f6b4a)](https://php-kirigami.github.io)
 
@@ -33,85 +33,100 @@ Part of the **Kirigami** project ecosystem.
 ## Table of contents
 
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
-  - [Overview](#overview)
-  - [Table of contents](#table-of-contents)
-  - [What's new in 2.0.0](#whats-new-in-200)
-  - [What's new in 1.9.3](#whats-new-in-193)
-  - [What's new in 1.9.2](#whats-new-in-192)
-  - [What's new in 1.9.1](#whats-new-in-191)
-  - [What's new in 1.9.0](#whats-new-in-190)
-  - [What's new in 1.8.0](#whats-new-in-180)
-  - [What's new in 1.7.2](#whats-new-in-172)
-  - [What's new in 1.7.1](#whats-new-in-171)
-  - [What's new in 1.7.0](#whats-new-in-170)
-  - [What's new in 1.6.0](#whats-new-in-160)
-  - [What's new in 1.4.0](#whats-new-in-140)
-  - [What's new in 1.3.0](#whats-new-in-130)
-  - [What's new in 1.2.1](#whats-new-in-121)
-  - [What's new in 1.2.0](#whats-new-in-120)
-  - [How it works](#how-it-works)
-  - [Installation](#installation)
-  - [Configuration — `kirigami.yaml`](#configuration--kirigamiyaml)
-    - [`kirigami` block](#kirigami-block)
-    - [`seo` block](#seo-block)
-    - [`prepros` block](#prepros-block)
-    - [`image` block](#image-block)
-    - [`plugins` block](#plugins-block)
-    - [`esbuild` / `sass` blocks](#esbuild--sass-blocks)
-    - [`export` block](#export-block)
-    - [`scripts` block](#scripts-block)
-    - [`tasks` block](#tasks-block)
-  - [Writing pages](#writing-pages)
-    - [PHPDOC header](#phpdoc-header)
-    - [Auto-loading data files](#auto-loading-data-files)
-    - [`@content` and `@indent`](#content-and-indent)
-    - [Built-in tags](#built-in-tags)
-  - [JavaScript API](#javascript-api)
-    - [`render(file?)`](#renderfile)
-    - [`sitemap()`](#sitemap)
-    - [`runenv(script, paths?, ...args)`](#runenvscript-paths-args)
-    - [`mountPath(localPath, virtualDir?, php?)`](#mountpathlocalpath-virtualdir-php)
-    - [`processImages(jobs)`](#processimagesjobs)
-  - [PHP classes reference](#php-classes-reference)
-    - [PREPROS](#prepros)
-      - [`PREPROS::render(string $file)`](#preprosrenderstring-file)
-      - [`PREPROS::sitemap()`](#preprossitemap)
-      - [`PREPROS::mount(string|array $patterns)`](#preprosmountstringarray-patterns)
-      - [`PREPROS::exportFile(string $file)`](#preprosexportfilestring-file)
-    - [MD](#md)
-      - [Plugin API](#plugin-api)
-    - [HTML](#html)
-    - [YAML](#yaml)
-    - [SCHEMA](#schema)
-    - [LD](#ld)
-      - [Automatic mode](#automatic-mode)
-      - [Explicit builders](#explicit-builders)
-      - [`jsonld` config](#jsonld-config)
-    - [META](#meta)
-      - [`meta` config](#meta-config)
-    - [CACHE](#cache)
-    - [IMG](#img)
-    - [FS](#fs)
-    - [STR](#str)
-    - [ARR](#arr)
-    - [CURL](#curl)
-    - [SCRAPER](#scraper)
-    - [OBF](#obf)
-    - [STD](#std)
-    - [Bundled polyfills](#bundled-polyfills)
-    - [Procedural shortcuts (aliases)](#procedural-shortcuts-aliases)
-  - [Plugin system](#plugin-system)
-    - [PREPROS tags](#prepros-tags)
-    - [PREPROS hooks](#prepros-hooks)
-    - [MD plugins](#md-plugins)
-    - [Built-in plugins](#built-in-plugins)
-      - [`{% callout type ["Title"] content %}`](#-callout-type-title-content-)
-      - [`{% youtube id [width height] %}`](#-youtube-id-width-height-)
-      - [`{% codepen id [user height] %}`](#-codepen-id-user-height-)
-      - [`{% checklist ["Title"] items %}`](#-checklist-title-items-)
-  - [Extending the `<markdown>` tag](#extending-the-markdown-tag)
-  - [Requirements](#requirements)
-  - [License](#license)
+- [Overview](#overview)
+- [What's new in 3.0.0](#whats-new-in-300)
+- [What's new in 2.0.0](#whats-new-in-200)
+- [What's new in 1.9.3](#whats-new-in-193)
+- [What's new in 1.9.2](#whats-new-in-192)
+- [What's new in 1.9.1](#whats-new-in-191)
+- [What's new in 1.9.0](#whats-new-in-190)
+- [What's new in 1.8.0](#whats-new-in-180)
+- [What's new in 1.7.2](#whats-new-in-172)
+- [What's new in 1.7.1](#whats-new-in-171)
+- [What's new in 1.7.0](#whats-new-in-170)
+- [What's new in 1.6.0](#whats-new-in-160)
+- [What's new in 1.4.0](#whats-new-in-140)
+- [What's new in 1.3.0](#whats-new-in-130)
+- [What's new in 1.2.1](#whats-new-in-121)
+- [What's new in 1.2.0](#whats-new-in-120)
+- [How it works](#how-it-works)
+- [Installation](#installation)
+- [Configuration — `kirigami.yaml`](#configuration--kirigamiyaml)
+  - [`kirigami` block](#kirigami-block)
+  - [`seo` block](#seo-block)
+  - [`prepros` block](#prepros-block)
+  - [`image` block](#image-block)
+  - [`plugins` block](#plugins-block)
+  - [`esbuild` / `sass` blocks](#esbuild--sass-blocks)
+  - [`export` block](#export-block)
+  - [`scripts` block](#scripts-block)
+  - [`tasks` block](#tasks-block)
+- [Writing pages](#writing-pages)
+  - [PHPDOC header](#phpdoc-header)
+  - [Auto-loading data files](#auto-loading-data-files)
+  - [`@content`, `@indent`, and `@type`](#content-indent-and-type)
+  - [Built-in tags](#built-in-tags)
+- [JavaScript API](#javascript-api)
+  - [`render(file?, phpIncludes?)`](#renderfile-phpincludes)
+  - [`sitemap()`](#sitemap)
+  - [`runenv(script, paths?, ...args)`](#runenvscript-paths-args)
+  - [`runPluginScript(script, pluginRoot, paths?, ...args)`](#runpluginscriptscript-pluginroot-paths-args)
+  - [`mountPath(localPath, virtualDir?, php?)`](#mountpathlocalpath-virtualdir-php)
+  - [`processImages(jobs)`](#processimagesjobs)
+  - [`resetRuntime()`](#resetruntime)
+  - [TypeScript declarations](#typescript-declarations)
+- [PHP classes reference](#php-classes-reference)
+  - [PREPROS](#prepros)
+  - [MD](#md)
+  - [HTML](#html)
+  - [YAML](#yaml)
+  - [SCHEMA](#schema)
+  - [LD](#ld)
+  - [META](#meta)
+  - [CACHE](#cache)
+  - [IMG](#img)
+  - [FS](#fs)
+  - [STR](#str)
+  - [ARR](#arr)
+  - [CURL](#curl)
+  - [SCRAPER](#scraper)
+  - [OBF](#obf)
+  - [STD](#std)
+  - [Unicode normalization](#unicode-normalization)
+  - [Procedural shortcuts (aliases)](#procedural-shortcuts-aliases)
+- [Plugin system](#plugin-system)
+  - [PREPROS tags](#prepros-tags)
+  - [PREPROS hooks](#prepros-hooks)
+  - [MD plugins](#md-plugins)
+  - [Built-in plugins](#built-in-plugins)
+- [Extending the `<markdown>` tag](#extending-the-markdown-tag)
+- [Requirements](#requirements)
+- [License](#license)
+
+---
+
+## What's new in 3.0.0
+
+This release switches `YAML::` to the native YAML extension, `MD::` to native mdhtml, `SCHEMA` to native jsonk, and `Normalizer` to native norm. It also includes page types and request lifecycle hooks.
+
+PHP data files use the native `yaml` extension backed by LibYAML. Its YAML 1.1 implicit booleans include unquoted `y`, `n`, `yes`, `no`, `on`, `off`, `true`, and `false`, including mapping keys. Quote these words when you mean strings (for example, `"NO": Norway`). `YAML::parse()` / `parseFile()` / `loadFile()` preserve the wrapper’s array/object choice; native `yaml_parse()` / `yaml_parse_file()` have their own extension signatures. `yaml_load_file()` remains a wrapper alias. The project’s `kirigami.yaml` is parsed separately in Node through `struct-walker` and `js-yaml`.
+
+`MD::` delegates to the native `mdhtml` extension (cmark-gfm). Footnotes now use `<section class="footnotes" data-footnotes>` instead of the old `<div class="footnotes">`; target `.footnotes` rather than a specific container tag in custom CSS.
+
+`SCHEMA` validates through the native `jsonk` extension (draft 2020-12), keeping its API and the `"path: message"` error format. It now also supports `if`/`then`/`else`, `contains`, `propertyNames`, `dependentRequired`/`dependentSchemas`, `prefixItems`, and `$ref` to absolute or `$id`-relative URLs (fetched over the network). Error messages use jsonk's wording, and an `additionalProperties: false` violation is reported on the parent object instead of the extra property. The previous pure-PHP validator stays available as `SCHEMA_LEGACY`.
+
+`Normalizer` now comes from the native `norm` extension (utf8proc) instead of the bundled pure-PHP polyfill, which stays available as `NORMALIZER_LEGACY`.
+
+**Breaking: the `seo.jsonld` sub-block is merged into `seo:`.** META and LD now read one set of keys, so the site description, keywords, image, language and person are declared once. JSON-LD is injected whenever the `seo:` block exists; `seo.jsonld` is only an on/off switch (default `true`). To migrate, move the keys of `seo.jsonld: {…}` up into `seo:` (`jsonld.auto: false` becomes `jsonld: false`) and rename `seo.language` to `seo.lang`. `kiri` rejects the old shapes with a message saying so. Sites with `seo: {}` and no `jsonld` now get JSON-LD too; add `jsonld: false` to keep them without it.
+
+```yaml
+# before                       # after
+seo:                           seo:
+  language: fr-CA                lang: fr-CA
+  jsonld:                        type: ProfessionalService
+    type: ProfessionalService    logo: images/logo.png
+    logo: images/logo.png
+```
 
 ---
 
@@ -436,7 +451,7 @@ npm install @kirigami/php-prepros
 
 Every project **must** have a `kirigami.yaml` at its root. The preprocessor reads it at startup and throws if it is absent or invalid.
 
-`@kirigami/php-prepros` itself only acts on four blocks — **`kirigami:`**, **`seo:`**, **`prepros:`**, and **`image:`**. The remaining blocks (**`plugins:`**, **`esbuild:`**, **`sass:`**, **`export:`**, **`scripts:`**, **`tasks:`**) are consumed by the [`kiri`](https://www.npmjs.com/package/@kirigami/kirigami) CLI that drives the build; they are documented here for completeness because everything lives in the one file. The full file is validated against [`kirigami.schema.json`](https://github.com/php-kirigami/kirigami/blob/main/packages/kirigami/kirigami.schema.json), also served for editor autocompletion:
+`@kirigami/php-prepros` consumes project data, SEO, preprocessing, image settings, and task metadata for managed head injection. The core engine owns plugin loading, task orchestration, export, and full schema validation. Direct use of this package is not a substitute for core configuration validation. All settings share `kirigami.yaml`; its schema is [`kirigami.schema.json`](../kirigami/kirigami.schema.json).
 
 ```yaml
 # yaml-language-server: $schema=https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigami.schema.json
@@ -464,10 +479,9 @@ kirigami:
     - keyword one
     - keyword two
 
-seo:                            # Presence turns on the META <head> tags generator.
-  jsonld:                       # Nested, independent opt-in for the LD JSON-LD generator.
-    type: Organization          # `jsonld: {}` alone is enough; see the seo block below.
-    logo: assets/logo.png
+seo:                            # Presence turns on the META tags and LD JSON-LD (`seo: {}` is enough).
+  type: Organization            # JSON-LD main entity; `jsonld: false` turns the JSON-LD off.
+  logo: assets/logo.png
 
 prepros:
   before:  _layouts/header.php  # Included before every page body.
@@ -479,6 +493,10 @@ prepros:
     - .webp
   includes:                     # PHP files auto-included once, before any page renders.
     - _lib/functions.php
+  types:                        # Named page types — opt in per page with @type <name>.
+    article:
+      before: _layouts/types/article.header.php
+      after:  _layouts/types/article.footer.php
 
 image:                          # Image autogenerator — powers IMG::asset() / IMG::palette().
   format: webp                  # webp | avif (default: webp)
@@ -489,8 +507,7 @@ plugins:
   - name: "@kirigami/plugin-highlight"
     active: true
     options:
-      style: canva
-      color: black
+      theme: auto
 
 esbuild:
   # minify: false
@@ -531,29 +548,25 @@ Core project settings. **Read by `php-prepros`.** The entire block is extracted 
 
 ### `seo` block
 
-Top-level, optional. The unified SEO surface — replaces the old separate
-`meta:`/`jsonld:` blocks (**breaking in 2.0.0**, see
-[What's new in 2.0.0](#whats-new-in-200)). Its **presence** switches on the
-[`META`](#meta) generator — the standard SEO / social `<meta>` and `<link>`
-tags are then built for every page and injected into its `<head>`. An empty
-`seo: {}` is enough; everything is derived from the `kirigami` block and each
-page's PHPDOC (`@title`, `@description` / `@abstract`, `@keywords`, `@image`,
-`@robots`, `@og_type`, `@canonical`). A tag the layout already hand-writes is
-left untouched. `seo: false` (or `seo: { auto: false }`) keeps the config
-values but stops the injection; no block at all means nothing is injected
-(explicit `META::tag()` / `meta_tag()` calls still emit). Full key reference
-and per-page `@meta_*` tags: [`META` → `seo` config](#meta-config).
+Top-level, optional. The SEO surface: one set of keys feeds both the
+[`META`](#meta) tags (the standard SEO / social `<meta>` and `<link>` tags) and
+the [`LD`](#ld) schema.org JSON-LD graph, and its **presence** switches both on
+for every page's `<head>`. An empty `seo: {}` is enough; everything is derived
+from the `kirigami` block and each page's PHPDOC (`@title`, `@description` /
+`@abstract`, `@keywords`, `@image`, `@robots`, `@og_type`, `@canonical`). A
+tag or script the layout already hand-writes is left untouched.
 
-Nested inside it, `seo.jsonld` is its own **independent** opt-in — a project
-can have META's tags without JSON-LD, or vice versa. Its presence switches on
-the [`LD`](#ld) schema.org JSON-LD generator — an `application/ld+json` graph
-is then injected into every page's `<head>`. An empty `seo: { jsonld: {} }` is
-enough; its keys refine what `LD` otherwise infers from the rest of `seo:`,
-the `kirigami` block, and each page's PHPDOC. `seo: { jsonld: false }` (or
-`{ auto: false }`) keeps the config values but stops the injection. Full key
-reference and per-page `@ld_*` tags: [`LD` → `jsonld` config](#jsonld-config).
+- `auto: false` stops META's tags, `jsonld: false` stops the JSON-LD; the
+  config values stay available to `META::tags()` / `LD::script()`.
+- `seo: false` keeps nothing on; no block at all means nothing is injected
+  (explicit `META::tag()` / `LD::add()` calls still emit).
+
+Full key reference: [`seo` config](#seo-config). Per-page tags:
+[`@meta_*`](#meta) and [`@ld_*`](#ld).
 
 ### `prepros` block
+
+Global `before` and `after` files are optional and default to `null`; an empty `prepros: {}` renders without a layout. When provided, these paths must refer to existing files. PHP warnings are logged to stderr and returned as diagnostics, without being inserted into generated HTML.
 
 Options for the PHP → HTML compiler. **Read by `php-prepros`.** Declaring this block (even empty) also makes `kiri` prepend a forced `prepros` task on every build/export/watch.
 
@@ -566,6 +579,7 @@ Options for the PHP → HTML compiler. **Read by `php-prepros`.** Declaring this
 | `network` | `bool` | `false` | Enables outbound HTTP(S) inside the WASM PHP runtime. Required for PHPDOC `@tag https://…` annotations that fetch remote `.yaml`/`.json`/`.md` data (see [Auto-loading data files](#auto-loading-data-files)), and for the `CURL` / `SCRAPER` classes. |
 | `mountext` | `string[]` | `[]` | Extra file extensions to mount automatically into the virtual filesystem alongside the built-in `.php`, `.json`, `.yaml`, `.yml`, `.md`, `.db`, `.txt`. Use this for assets your PHP code reads directly (e.g. `.svg`, `.webp`). Files with extensions not in this set are skipped during mounting — mount them on demand with [`PREPROS::mount()`](#preprosmountstringarray-patterns) instead. |
 | `includes` | `string[]` | `[]` | PHP files (relative to `kirigami.root`) `include_once`'d once, right after config is loaded — before any page renders. The natural place to `PREPROS::registerTag()`, `PREPROS::registerHook()`, or `MD::registerPlugin()`. |
+| `types` | `object` | `{}` | Named page types. A page opts in with `@type <name>` in its PHPDOC header; the matching entry's `before`/`after` (each `string`, relative to `kirigami.root`, both optional) wrap the page body **one level inside** the global `before`/`after` — render order is global before → type before → body → type after → global after. A page with no `@type`, or naming a type absent here, renders with just the global wrap. See [`@type`](#content-indent-and-type). |
 
 ### `image` block
 
@@ -714,12 +728,13 @@ When `network: true` is set in `kirigami.yaml`, annotation values that start wit
  */
 ```
 
-### `@content` and `@indent`
+### `@content`, `@indent`, and `@type`
 
-Two special annotation names change how a page's body is assembled:
+Three special annotation names change how a page's body is assembled:
 
 - **`@content`** — if a `content` variable already resolves to a non-empty value (typically because it's a `.md`/`.yaml`/`.json` annotation that auto-loaded into HTML/data, see above), it is used **as-is** as the page body, and the PHP file itself is **not executed** for its output. This is handy for pages that are pure data/markdown wrapped by a shared layout.
 - **`@indent`** — when set to a number, every line of the rendered body is prefixed with that many spaces before being wrapped by `before.php`/`after.php`. Useful for keeping generated HTML readable when a page is nested inside indented layout markup.
+- **`@type`** — names an entry under [`prepros.types`](#prepros-block). If it matches, that entry's `before`/`after` wrap the (already-indented) body **one level inside** `before.php`/`after.php`: global before → type before → body → type after → global after. No match (missing annotation, or a name absent from `prepros.types`) leaves the page with just the global wrap — a page type is an extra layer, never a replacement for the site's real header/footer.
 
 ```php
 <?php
@@ -728,6 +743,7 @@ Two special annotation names change how a page's body is assembled:
  * @title   Changelog
  * @content _changelog.md
  * @indent  4
+ * @type    article
  */
 ```
 
@@ -796,22 +812,37 @@ missing or older than the source — see [`IMG`](#img) for the naming convention
 ## JavaScript API
 
 ```js
-import { render, sitemap, runenv, mountPath, processImages } from '@kirigami/php-prepros';
+import { render, sitemap, runenv, mountPath, processImages, resetRuntime } from '@kirigami/php-prepros';
 ```
 
-### `render(file?)`
+PHP operations are queued in call order, including mounts and result extraction.
+`await resetRuntime()` waits for preceding PHP work, disposes the owned runtime
+and its network proxy, and clears cached configuration and mounts. The next
+operation initializes a fresh runtime from `kirigami.yaml`. Core
+`Project.reload()` calls this and also clears the plugin PHP include list.
+It does not clear persistent cache/cookie files on disk. This remains a
+single-project API whose working directory must be set before import.
+
+### `render(file?, phpIncludes?)`
+
+`phpIncludes` defaults to `[]`. The core collects it through `prepros:php`;
+direct callers supply local PHP file paths (absolute or relative to the
+working directory). Existing paths are mounted under `/plugins/` and included
+before rendering; missing paths are silently skipped. Each render replaces
+the runtime include list, which remains on its configuration until another
+render or reset. Direct calls do not load the core plugin registry for you.
 
 Compile a single PHP page or a whole directory.
 
 ```js
 // Compile one page
-const result = await render('about/_index.php');
+const pageResult = await render('about/_index.php');
 
 // Compile everything under src/
-const result = await render('.');
+const treeResult = await render('.');
 
 // Compile everything (uses kirigami.root from config)
-const result = await render();
+const defaultResult = await render();
 ```
 > Paths used by `render()` are all relative to the `kirigami.root` configuration.
 
@@ -821,18 +852,36 @@ const result = await render();
 ```ts
 interface PreprosResult {
   success: boolean;
-  files:   string[];   // relative paths of every file written
-  error?:  string;     // present only on failure
+  files?:  string[];   // project-relative paths; may be absent on parsing failure
+  error?:  string;
+  debug?:  string;     // captured PHP stdout
+  stderr?: string;     // diagnostics attached to failures
+  warnings?: string;   // nonfatal stderr on success
+  page?:   string | null;     // PHP-render failure context, when available
+  where?:  string;     // PHP source location, when available
 }
 ```
 
+Setup and filesystem failures can reject before a result exists; PHP failures
+usually return `success: false`. Check both channels. Files may already have
+been copied to the host before a later error; operations are not transactional.
+The runtime returns `debug`/`stderr`, not the older declared `response` field.
+
+Directory rendering selects `_*.php` files only when every directory between
+`kirigami.root` and the page has a name without a leading underscore. Sitemap
+selection uses the same rule. Direct requests for private pages fail; rendering
+a private directory produces no pages. The configured source root itself may
+start with `_` (for example `_src`). Previously generated private HTML is not
+deleted by this selection rule; remove stale outputs when migrating a site.
+
 ### `sitemap()`
 
-Generate `sitemap.xml` at the source root.
+Generate `sitemap.xml` and `robots.txt` at the source root, plus `humans.txt`
+when author configuration provides content. It accepts no directory argument.
 
 ```js
 const result = await sitemap();
-// result.files === ['src/sitemap.xml']
+// With kirigami.root: src, files includes src/sitemap.xml and src/robots.txt.
 ```
 
 ### `runenv(script, paths?, ...args)`
@@ -841,20 +890,39 @@ Run an arbitrary PHP script — not a page template — inside the very same san
 
 ```js
 // Run a standalone PHP script
-const result = await runenv('scripts/purge-cache.php');
+const purgeResult = await runenv('scripts/purge-cache.php');
 
-// Also mount extra local paths/files into the sandbox before running
-const result = await runenv('scripts/build-og-images.php', ['assets/photos']);
+// Also mount explicit extra files into the sandbox before running
+const imageResult = await runenv('scripts/build-og-images.php', ['assets/photos/hero.jpg']);
 
 // Extra arguments are appended and available as $argv[2], $argv[3], … in the script
-const result = await runenv('scripts/import.php', [], '--force');
+const importResult = await runenv('scripts/import.php', [], '--force');
 ```
 
 - `script` — path to a PHP file **inside the project**, executed with `require_once`.
-- `paths` — optional array of extra local paths (files or directories) to mount into the sandbox before the script runs.
+- `paths` — optional array of explicit local file paths, not directories. Missing
+  files are skipped; a directory can cause a filesystem rejection. Use
+  `mountPath()` first for recursive directory mounting.
 - `...args` — extra string arguments appended to the script's `$argv`.
 
+Script and extra-file paths resolve against the project captured at import.
+Before initializing PHP or copying files, `runenv()` rejects paths outside
+that project, including symbolic links whose real targets are outside it.
+Directories are rejected; missing optional files are skipped. This check does
+not make PHP scripts untrusted-code sandboxes or restrict explicit `mountPath()`
+calls.
+
 **Returns** `Promise<PreprosResult>`, following the same shape as `render()`. Inside the script, call `PREPROS::exportFile()` for any file you want listed in `result.files`.
+
+### `runPluginScript(script, pluginRoot, paths?, ...args)`
+
+Same as `runenv()`, for a script shipped inside a plugin package. A plugin
+installed with `npm link` or from a workspace lives outside the project, so
+`runenv()` would reject it. Here the script's authored and real paths must stay
+inside `pluginRoot` instead, and it is mounted under
+`/plugin-scripts/<package dir>/`. Extra `paths` are still project files.
+The caller vouches for `pluginRoot`: `@kirigami/kirigami` only passes the
+resolved package directory of an active plugin.
 
 ### `mountPath(localPath, virtualDir?, php?)`
 
@@ -874,7 +942,7 @@ await render();
 
 - `localPath` — path to a local file or directory. Relative paths are resolved against the project root.
 - `virtualDir` — optional destination path inside the WASM filesystem. Defaults to `/project/<localPath relative to the project root>` when omitted.
-- `php` — optional WASM PHP instance to mount into. Defaults to the shared singleton instance (the same one used internally by `render()`/`sitemap()`/`runenv()`), creating it if needed.
+- `php` — optional WASM PHP instance to mount into. Defaults to PHP-prepros's owned instance (the same one used internally by `render()`/`sitemap()`/`runenv()`), creating it if needed. This is separate from PHP-WASM's shared getter instances and is replaced after `resetRuntime()`.
 
 Mounting a **directory** only copies files whose extension is one of the defaults (`.php`, `.json`, `.yaml`, `.yml`, `.md`, `.db`, `.txt`) or listed in `prepros.mountext`, same as automatic root mounting. Mounting a **single file directly** copies it regardless of extension — this is the simplest way to make an arbitrary asset (an image, a font, a CSV, …) available to PHP without adding its extension to `prepros.mountext` project-wide.
 
@@ -902,21 +970,49 @@ const { files, colors } = await processImages([
   { op: 'palette', src: 'hero.jpg', count: 5 },
 ]);
 
-// files  → ['src/images/hero-1200w.webp']   (also copied back to the host)
+// files includes 'src/images/hero-1200w.webp' and may include '.cache.db'.
 // colors → { 'hero.jpg:5': ['#1e3a5f', '#c8a24b', …] }
 ```
 
 - `jobs` — array of `resize` / `palette` jobs (see the shape above). An **empty
   array is a no-op** and does **not** start the WASM runtime.
+- Omitted `jobs` also returns `{ success: true, files: [], colors: {} }`
+  without starting PHP. Non-array input currently does the same; this is not
+  strict input validation.
 - Staleness is the caller's responsibility: every `resize` job listed is executed.
+- `resize`: `width`/`height` default to `0` (preserve size when both are zero),
+  `cover` to `false`, and lossy encoder quality to `82`. `dests` contains
+  absolute `/project/...` output paths. `palette` defaults `count` to `5`.
+- The PHP worker handles `palette` explicitly and treats any other `op` as a
+  resize; pass only the two documented operations. Processing stops at the
+  first exception. Always check `success` before using files or colors.
 
 **Returns** `Promise<PreprosResult & { colors: Record<string, string[]> }>`.
+
+### `resetRuntime()`
+
+Returns `Promise<void>`. Queued after preceding operations, it disposes the
+owned runtime, mounts, and cached configuration. It does not change the project
+path captured at import, clear disk caches, or reset the SDK hook registry.
+
+### TypeScript declarations
+
+The shipped `index.d.ts` includes `render(file?, phpIncludes?)`, argument-free
+`sitemap()`, explicit-file `runenv()` mounts, and the current diagnostic fields.
+`PreprosResult.files` is optional because response parsing can fail before a
+file list exists. `ImageBatchResult.files` is always normalized to an array.
+The obsolete `response` field is replaced by `debug` and `stderr`.
 
 ---
 
 ## PHP classes reference
 
 All classes are autoloaded — no manual `require` needed inside your page files.
+The autoloader itself, `$argv`/`$config`, procedural aliases, and the `boot`
+hook are installed via php.ini's `auto_prepend_file` (pointed at
+`utils.inc.php`), set once per WASM runtime instance — every entrypoint
+(`prepros.php`, `runenv.php`, `imagebatch.php`) gets it automatically,
+with no `include` of its own.
 
 ---
 
@@ -944,11 +1040,13 @@ Internal method called once per source file. Orchestrates the full pipeline:
 
 1. Resolves PHPDOC metadata and auto-loads data files.
 2. Fires the `pre_render` hook with the raw source contents.
-3. Includes `before.php` (wrapped in the `pre_before` / `post_before` hooks), the page body (or `@content`, see [above](#content-and-indent)), and `after.php` (wrapped in `pre_after` / `post_after`) into a single string.
-4. Processes all registered custom HTML tags.
-5. Fires the `post_render` hook on the assembled HTML.
-6. Optionally pretty-prints via `HTML::format()` (when `format: true`).
-7. Writes the output `.html` file.
+3. Includes `before.php` (wrapped in the `pre_before` / `post_before` hooks) and the page body (or `@content`, see [above](#content-indent-and-type)).
+4. If the page declares `@type <name>` and `prepros.types.<name>` exists, wraps the body with that type's `before`/`after` (wrapped in `pre_type_before` / `post_type_before` and `pre_type_after` / `post_type_after`) — nested inside the global wrap.
+5. Includes `after.php` (wrapped in `pre_after` / `post_after`), assembling everything into a single string.
+6. Processes all registered custom HTML tags.
+7. Fires the `post_render` hook on the assembled HTML.
+8. Optionally pretty-prints via `HTML::format()` (when `format: true`).
+9. Writes the output `.html` file.
 
 #### `PREPROS::sitemap()`
 
@@ -976,7 +1074,9 @@ Marks a file as a build output so it gets surfaced in `PreprosResult.files`. Cal
 
 ### MD
 
-Markdown-to-HTML converter with a plugin system for custom shortcodes.
+Markdown-to-HTML converter with a plugin system for custom shortcodes,
+backed by PHP's native `mdhtml` extension (real `cmark-gfm`), statically
+built into `@kirigami/php-wasm` — no userland parsing.
 
 ```php
 $html = MD::toHtml(string $markdown): string;
@@ -1050,7 +1150,9 @@ Uses PHP 8.4's `Dom\HTMLDocument` (Lexbor engine) to parse the input and re-seri
 
 ### YAML
 
-A lightweight, zero-dependency YAML parser. Covers the full subset used in static site projects.
+PHP data files use the native `yaml` extension backed by LibYAML. Its YAML 1.1 implicit booleans include unquoted `y`, `n`, `yes`, `no`, `on`, `off`, `true`, and `false`, including mapping keys. Quote these words when you mean strings (for example, `"NO": Norway`). `YAML::parse()` / `parseFile()` / `loadFile()` preserve the wrapper’s array/object choice; native `yaml_parse()` / `yaml_parse_file()` have their own extension signatures. `yaml_load_file()` remains a wrapper alias. The project’s `kirigami.yaml` is parsed separately in Node through `struct-walker` and `js-yaml`.
+
+A YAML parser backed by PHP's native `yaml` extension (libyaml), statically built into `@kirigami/php-wasm` — full YAML 1.1 support, no userland parsing.
 
 ```php
 $data = YAML::parse(string $yaml, bool $assoc = false): mixed;
@@ -1058,19 +1160,9 @@ $data = YAML::parseFile(string $path, bool $assoc = false): mixed;
 $data = YAML::loadFile(string $path, bool $assoc = false): mixed;
 ```
 
-Supported features:
-
-- Scalars: strings (quoted and unquoted), integers, floats, booleans, null
-- Single and double quoted strings with escape sequences
-- Literal block scalars (`|`, `|-`, `|+`)
-- Folded block scalars (`>`, `>-`, `>+`)
-- Plain scalars spanning multiple lines
-- Nested mappings and sequences
-- Inline collections (`[a, b]` and `{k: v}`)
-- Comments (`#`)
-- Multiple documents separated by `---`
-
 By default, YAML mappings are returned as `stdClass` objects. Pass `true` as the second argument to get associative arrays instead.
+
+Following YAML 1.1 means the usual implicit-boolean gotcha applies to both values *and* mapping keys: `y`/`Y`/`n`/`N`, `yes`/`no`, `true`/`false`, `on`/`off` (any case) all resolve to a boolean when unquoted — so an unquoted `no:` key or a `NO` value becomes `false`. Quote a scalar (`"y": 2`) to keep it a string.
 
 `YAML::loadFile()` behaves like `YAML::parseFile()`, then walks the result recursively: any string value ending in `.yaml`, `.yml`, or `.json` that resolves to an existing file (relative to *its own* file's directory) is replaced by that file's parsed content, and so on, recursively. Values that don't match an existing file are left untouched. Circular references (`A → B → A`) throw a `RuntimeException`.
 
@@ -1091,9 +1183,9 @@ $team = YAML::loadFile('/project/data/team.yaml');
 
 ### SCHEMA
 
-A pure-PHP, dependency-free JSON Schema validator — Draft-7 style, with an
-Ajv-like API. Used internally to validate structured data, but available to your
-own code and plugins.
+A JSON Schema validator with an Ajv-like API, backed by the native `jsonk`
+extension built into `@kirigami/php-wasm`. Available to your own code and
+plugins.
 
 ```php
 $validator = new SCHEMA(array $schema);
@@ -1103,11 +1195,24 @@ $validator->validate(mixed $data): bool    // alias of isValid()
 $validator->getErrors(): string[]          // "path: message" strings from the last run
 ```
 
-Supported keywords: `type`, `required`, `properties`, `patternProperties`,
-`additionalProperties`, `items`, `minItems`, `maxItems`, `uniqueItems`,
-`minLength`, `maxLength`, `pattern`, `minimum`, `maximum`, `exclusiveMinimum`,
-`exclusiveMaximum`, `minProperties`, `maxProperties`, `enum`, `const`,
-`anyOf`, `allOf`, `oneOf`, `not`, `format`, and local `$ref` pointers.
+jsonk implements draft 2020-12 for a self-contained schema: every validation
+keyword (`type`, `enum`, `const`, `required`, `properties`,
+`patternProperties`, `additionalProperties`, `propertyNames`,
+`dependentRequired`, `dependentSchemas`, `items`, `prefixItems`, `contains`,
+`uniqueItems`, the `min*`/`max*` and `exclusive*` bounds, `multipleOf`,
+`pattern`, `format`, `if`/`then`/`else`, `allOf`/`anyOf`/`oneOf`/`not`) and
+`$ref` to `#/$defs/…` / `#/definitions/…`, absolute URLs, or URLs relative to
+the schema's `$id`. See [php-jsonk](https://github.com/php-kirigami/php-jsonk)
+for the details and limits.
+
+Schemas are PHP arrays, so `SCHEMA` adapts them before handing them to jsonk:
+an empty array in a schema position (`'properties' => []`) is treated as `{}`,
+draft-07 tuple `items` (a list of schemas) becomes `prefixItems` (and
+`additionalItems` becomes `items`), and `format: url` is read as `uri`. Error
+paths look like `(root)`, `name` or `tags[1]`.
+
+The previous pure-PHP (Draft-7 style) validator is still available as
+`SCHEMA_LEGACY`, with the same API.
 
 ```php
 $validator = new SCHEMA([
@@ -1136,33 +1241,29 @@ than one node — in the `<head>`.
 
 #### Automatic mode
 
-Opt in by adding a `jsonld` sub-block under `seo:` in `kirigami.yaml` (nested
-inside the same block [`META`](#meta) reads, independent of the rest of it) —
-an empty `seo: { jsonld: {} }` is enough. A `post_render` hook then injects a
-graph built from that sub-block, the loose keys of the `kirigami` block, and
-the current page's PHPDOC:
+On as soon as `kirigami.yaml` has a [`seo:` block](#seo-block) (`seo: {}` is
+enough), alongside [`META`](#meta)'s tags and from the same keys. A
+`post_render` hook injects a graph built from `seo:`, the loose keys of the
+`kirigami` block, and the current page's PHPDOC:
 
 - an `Organization` node (`@id` `#organization`) — `name`/`url`/`description`
   from `project`/`baseurl`/`description`, `sameAs` gathered from every
   recognised social-network URL key (`facebook`, `instagram`, `linkedin`,
   `github`, `youtube`, `mastodon`, …), plus `email`, `telephone`, `areaServed`
   (← `area`), `knowsAbout` (← `knowsabout`), `address`, `logo`, and `founder` →
-  the Person node when there is one. `@type` comes from `jsonld.type`;
+  the Person node when there is one. `@type` comes from `seo.type`;
 - a `Person` node (`#person`) when `person` is set — `name` + `jobTitle`
   (← `jobtitle`) + `email` + `url`, linked to the Organization via `worksFor`;
 - a `WebSite` node (`#website`) — `publisher` → Organization, `inLanguage`,
-  `keywords` (← `keywords`), and a `SearchAction` when `jsonld.search` is set;
+  `keywords` (← `keywords`), and a `SearchAction` when `seo.search` is set;
 - a `WebPage` node for the page — see the per-page tags below;
 - a `BreadcrumbList` for every non-home page, derived from the `_index.php`
   ancestor trail (home → each parent section → this page). No `@breadcrumb`
-  opt-in needed — it is always attempted while the `jsonld` sub-block is on.
-  Disable it for one page with `@ld_breadcrumb false`.
+  opt-in needed. Disable it for one page with `@ld_breadcrumb false`.
 
-Remove the `jsonld` sub-block (or set `seo: { jsonld: false }` /
-`{ jsonld: { auto: false } }`) to stop the automatic pass — the rest of `seo:`
-(META's tags) keeps working either way. A page whose rendered `<head>` already
-contains an `application/ld+json` script is never touched, so hand-rolled
-markup keeps working.
+`seo: { jsonld: false }` stops the automatic pass; META's tags keep working.
+A page whose rendered `<head>` already contains an `application/ld+json`
+script is never touched, so hand-rolled markup keeps working.
 
 **Per-page PHPDOC tags** — these feed the page node (and override the generic
 `@title` / `@description` / `@datePublished` fallbacks):
@@ -1190,7 +1291,7 @@ markup keeps working.
 #### Explicit builders
 
 Call these from a page template or from a `prepros.includes` file. Nodes added
-this way are always emitted — with or without a `jsonld` sub-block — and share
+this way are always emitted — automatic pass on or not — and share
 the graph the automatic pass uses, so the two combine; a node with a stable
 `@id` is merged on repeat calls.
 
@@ -1243,49 +1344,8 @@ Same API from procedural code: `ld_add()`, `ld_node()`, `ld_ref()`,
 `ld_organization()`, `ld_person()`, `ld_website()`, `ld_web_page()`,
 `ld_breadcrumb()`, `ld_faq_page()`, `ld_script()`, `ld_json()`.
 
-#### `jsonld` config
-
-`jsonld` is a sub-block of the **top-level** `seo:` block of `kirigami.yaml`
-(nested alongside [`META`](#meta)'s own keys), and its presence is what
-**switches automatic injection on** — independently of the rest of `seo:`. An
-empty `seo: { jsonld: {} }` is enough — everything is then derived from the
-`kirigami` block's loose keys. Adding keys overrides those inferences; all are
-optional.
-
-```yaml
-kirigami:
-  project:  Humain Humain
-  baseurl:  https://humainhumain.com
-  person:   Méralie Murray-Hall
-  jobtitle: Anthropologue
-  facebook: https://www.facebook.com/humainhumainconsultation.ethnographie/
-
-seo:
-  jsonld:                                  # nested; the sub-block being present
-    type: ProfessionalService              #   is the switch — `{}` also works
-    lang: fr-CA                             # inLanguage on WebSite / WebPage (default: en)
-    logo: assets/logo.png                   # absolute, or relative to baseurl
-    knowsAbout: [Ethnographie, Recherche qualitative]
-    address:
-      addressLocality: Québec
-      addressCountry:  CA
-    search: https://humainhumain.com/?q={search_term_string}
-```
-
-| Key | Type | Description |
-|-----|------|-------------|
-| `auto` | `bool` | Inject the `<script>` automatically. Default `true` **once the `jsonld` sub-block exists**. Set `auto: false` (or `seo: { jsonld: false }`) to keep the sub-block for its config values but stop the automatic injection — `LD::script()` / `ld_script()` can still place it by hand. |
-| `type` | `string` | `@type` for the main entity — `Organization`, `ProfessionalService`, `LocalBusiness`, … |
-| `name` / `url` / `description` | `string` | Main-entity / WebSite fields. Default to `project` / `baseurl` / `description`. |
-| `logo` / `image` | `string` | Absolute URL or path relative to `baseurl`. `image` defaults to `logo`. |
-| `sameAs` | `string[]` | Profile URLs, merged with the social-network URL keys found loose in the block. |
-| `email` / `telephone` | `string` | Default to the loose `email` / `telephone` keys. |
-| `address` | `map` | `PostalAddress` properties. |
-| `areaServed` | `string` | Defaults to the loose `area` key. |
-| `knowsAbout` / `keywords` | `string[]` | Default to the loose `knowsabout` / `keywords` keys. |
-| `person` | `string` \| `map` | The `#person` node. A string is the name; a map takes any `Person` property. Defaults to `person` + `jobtitle` + `email`. |
-| `lang` | `string` | BCP-47 tag for `inLanguage`. Default `en`. |
-| `search` | `string` | URL template for a sitelinks `SearchAction`; must contain `{search_term_string}`. |
+LD's keys (`type`, `logo`, `person`, `address`, `search`, …) live in the
+[`seo` config](#seo-config) with META's.
 
 ---
 
@@ -1297,8 +1357,7 @@ tags a browser and a link-preview crawler read: `<title>`, `<meta name="…">`,
 `<meta property="og:…">`, `<meta name="twitter:…">`, and a handful of `<link>`s.
 
 It draws on the same sources, in this order of precedence: the page's PHPDOC, the
-top-level `seo:` block, then the loose `kirigami:` keys and the `seo.jsonld`
-sub-block. Every tag is emitted **only when it can be resolved** — no value, no
+top-level `seo:` block, then the loose `kirigami:` keys. Every tag is emitted **only when it can be resolved** — no value, no
 tag — and a tag the page's layout already writes by hand is detected and
 skipped, so it drops in beside an existing `header.php` without duplicating
 anything.
@@ -1318,7 +1377,8 @@ kirigami:
 seo:                              # top-level; the block being present is the switch
   twitter: "@humainhumain"
   themeColor: "#0b7285"
-  jsonld: {}                      # independent opt-in — META reads its logo / image / lang / person too
+  lang: fr-CA                     # <meta name="language">, og:locale, JSON-LD inLanguage
+  logo: assets/logo.png           # JSON-LD logo, and og:image when there is no `image`
 ```
 
 Per-page, from the PHPDOC block — each falls back to the generic page tag:
@@ -1354,32 +1414,62 @@ META::link('icon', './favicon.svg', ['type' => 'image/svg+xml']);
 Same API from procedural code: `meta_tag()`, `meta_link()`, `meta_raw()`,
 `meta_tags()`.
 
-#### `meta` config
+<a id="meta-config"></a><a id="jsonld-config"></a>
+
+#### `seo` config
 
 These keys live directly under the **top-level** `seo:` block of
-`kirigami.yaml` (a sibling of `kirigami:`, `prepros:`, …) — `jsonld` is the one
-sub-block among them, documented separately in [`LD` → `jsonld` config](#jsonld-config).
-All keys are optional.
+`kirigami.yaml` (a sibling of `kirigami:`, `prepros:`, …) and feed both META's
+tags and LD's JSON-LD. All are optional.
 
 | Key | Type | Description |
 |-----|------|-------------|
-| `auto` | `bool` | Inject the tags automatically. Default `true` **once the `seo:` block exists**. `auto: false` (or `seo: false`) keeps the block for its values but stops the injection — `META::tags()` / `meta_tags()` can place them by hand. Independent of `jsonld.auto`. |
+| `auto` | `bool` | Inject META's tags automatically. Default `true` **once the `seo:` block exists**. `auto: false` keeps the block for its values but stops the tags — `META::tags()` / `meta_tags()` can place them by hand. |
+| `jsonld` | `bool` | Inject LD's JSON-LD automatically. Default `true` **once the `seo:` block exists**. `jsonld: false` stops it — `LD::script()` / `ld_script()` can place it by hand. |
 | `titleFormat` | `string` | `<title>` template for a normal page. Tokens `{title}`, `{project}`, `{tagline}`. Dangling separators from an empty token are trimmed. Default `{title} — {project}`. |
 | `titleFormatHome` | `string` | Title template when the page has no `@title` (home / section landings). Default `{project} — {tagline}`. |
-| `description` | `string` | Default description for pages with no `@description` / `@abstract`. Defaults to `jsonld.description` / loose `description`. |
-| `keywords` | `string[]` \| `string` | Default `keywords` content (list or comma string). Defaults to `jsonld.keywords` / loose `keywords`. |
+| `description` | `string` | Default description for pages with no `@description` / `@abstract`, and the JSON-LD main entity / WebSite description. Defaults to the loose `description`. |
+| `keywords` | `string[]` \| `string` | Default `keywords` content (list or comma string) and the WebSite `keywords`. Defaults to the loose `keywords`. |
 | `robots` | `string` | Default robots directive. Default `index, follow`. `robots: false` omits the tag. |
-| `language` | `string` | BCP-47 tag → `<meta name="language">` and, dash→underscore, `og:locale`. Defaults to `jsonld.lang` / loose `lang` / `language`, then `en`. |
+| `lang` | `string` | BCP-47 tag → `<meta name="language">`, `og:locale` (dash→underscore) and JSON-LD `inLanguage`. Defaults to the loose `lang` / `language`, then `en`. |
 | `generator` | `string` \| `false` | `<meta name="generator">`. Default `Kirigami`; `false` omits it. |
-| `author` / `designer` | `string` | Default to the loose `author` / `designer` keys (author also falls back to `jsonld.person`'s name). `designer` is not emitted unless set. |
+| `author` / `designer` | `string` | Default to the loose `author` / `designer` keys (author also falls back to `person`'s name). `designer` is not emitted unless set. |
 | `themeColor` | `string` | `<meta name="theme-color">`. Not emitted unless set. |
-| `image` | `string` | Default `og:image` / `twitter:image` — absolute URL or path relative to `baseurl`. Defaults to `jsonld.image` → `jsonld.logo` → loose `image` / `ogimage`. |
+| `image` | `string` | Default `og:image` / `twitter:image` and JSON-LD image — absolute URL or path relative to `baseurl`. Defaults to `logo`, then the loose `image` / `ogimage`. |
+| `logo` | `string` | Organization logo (JSON-LD `ImageObject`), absolute URL or path relative to `baseurl`. |
 | `ogType` | `string` | Default `og:type`. Default `website`. |
 | `twitterCard` | `string` | `twitter:card` type. Default `summary_large_image`. |
 | `twitter` | `string` \| `map` | Handle for `twitter:site` / `twitter:creator`. A bare string (with/without `@`, or a profile URL) fills both; a map takes `site` / `creator` separately. |
 | `canonical` | `bool` | Emit `<link rel="canonical">`. Default `true`. |
 | `favicon` / `appleTouchIcon` / `humans` | `string` \| `bool` | `<link rel="icon">` / `rel="apple-touch-icon"` / `rel="author"`. A path sets it (page-relative when a bare filename); `true` forces the default file (`favicon.ico` / `apple-touch-icon.png` / `humans.txt`); omitted, the default file is auto-detected on disk at the source root; `false` disables it. |
-| `jsonld` | `object` \| `bool` | Sub-block for `LD`'s schema.org JSON-LD — its own independent opt-in. See [`LD` → `jsonld` config](#jsonld-config). |
+| `type` | `string` | JSON-LD `@type` of the main entity — `Organization` (default), `ProfessionalService`, `LocalBusiness`, … |
+| `name` / `url` | `string` | JSON-LD main entity / WebSite name and URL. Default to `project` / `baseurl`. |
+| `sameAs` | `string[]` | Profile URLs, merged with the social-network URL keys found loose in the `kirigami` block. |
+| `email` / `telephone` | `string` | Default to the loose `email` / `telephone` keys. |
+| `address` | `map` | `PostalAddress` properties. |
+| `areaServed` | `string` | Defaults to the loose `area` key. |
+| `knowsAbout` | `string[]` | Defaults to the loose `knowsabout` key. |
+| `person` | `string` \| `map` | The `#person` node (and the default `author`). A string is the name; a map takes any `Person` property. Defaults to `person` + `jobtitle` + `email`. |
+| `search` | `string` | URL template for a sitelinks `SearchAction`; must contain `{search_term_string}`. |
+
+```yaml
+kirigami:
+  project:  Humain Humain
+  baseurl:  https://humainhumain.com
+  person:   Méralie Murray-Hall
+  jobtitle: Anthropologue
+  facebook: https://www.facebook.com/humainhumainconsultation.ethnographie/
+
+seo:
+  type: ProfessionalService
+  lang: fr-CA
+  logo: assets/logo.png
+  knowsAbout: [Ethnographie, Recherche qualitative]
+  address:
+    addressLocality: Québec
+    addressCountry:  CA
+  search: https://humainhumain.com/?q={search_term_string}
+```
 
 ---
 
@@ -1394,7 +1484,7 @@ CACHE::delete(string $key): bool
 CACHE::purge(): bool   // removes expired entries
 ```
 
-The `$ttl` is in seconds. `0` means the entry never expires. Typical use case: caching the result of network fetches in custom hooks or plugins — it is what powers [`SCRAPER`](#scraper) and `CURL`'s cookie persistence internally.
+The `$ttl` is in seconds. `0` means the entry never expires. Typical use case: caching the result of network fetches in custom hooks or plugins — it is what powers [`SCRAPER`](#scraper) internally. `CURL` persists its cookie jar separately in `.cookie.txt`.
 
 ```php
 $data = CACHE::get('my-remote-data');
@@ -1547,6 +1637,8 @@ $email  = ARR::find_key($config, 'email'); // finds `email` however deep it's ne
 
 ### CURL
 
+CURL verifies HTTPS certificate chains and hostnames, including redirects. The network-enabled WASM runtime supplies Node’s root certificates through `curl.cainfo` and `openssl.cafile`. Untrusted certificates and hostname mismatches are rejected; there is no insecure fallback. `getInfo()` returns `false` when cURL fails, and `getContents()` preserves its existing failure return values.
+
 Low-level HTTP client built on PHP's cURL extension, used internally by `SCRAPER`. Ships with a realistic browser `User-Agent`/header set and a cookie jar persisted at `.cookie.txt` (auto-registered via `PREPROS::exportFile()`).
 
 ```php
@@ -1592,7 +1684,7 @@ Returns `false` if the page can't be reached, can't be parsed, or has no discove
 
 ### OBF
 
-Simple reversible obfuscation for values you want to embed in HTML without making them trivially readable (e.g., contact data, API tokens in templates).
+Simple reversible obfuscation for non-secret values embedded in HTML, such as display labels or contact data. It does not protect API tokens or other credentials.
 
 ```php
 $encoded = OBF::encode(mixed $obj): string;
@@ -1605,26 +1697,29 @@ Applies JSON encoding → base64 → ROT-13 → gzip. Not cryptographically secu
 
 ### STD
 
-Output helpers used by the PHP runtime to communicate back to Node.js over stdout/stderr.
+Result helpers that write JSON to `/internal/prepros_result.json` in the virtual filesystem. Node reads that result file; ordinary PHP stdout/stderr are separate diagnostic channels.
 
 ```php
-STD::succeed(array|string $props = []): void  // exits 0, writes JSON to stdout
-STD::error(array|string $props = []): void    // exits 1, writes JSON to stderr
+STD::succeed(array|string $props = []): void  // exits 0, writes JSON to /internal/prepros_result.json
+STD::error(array|string $props = []): void    // exits 1, writes JSON to /internal/prepros_result.json
 ```
 
 These are internal to the build runner (`render()`, `sitemap()`, and `runenv()` all rely on them). You generally do not need to call them in page templates, but they are available if a script run via `runenv()` needs to terminate early with a custom result.
 
 ---
 
-### Bundled polyfills
+### Unicode normalization
 
-The WASM PHP build ships without `ext-intl`, so `@kirigami/php-prepros` bundles a
-`Normalizer` polyfill (autoloaded like every other class). It provides the
-standard `Normalizer::normalize()` / `Normalizer::isNormalized()` API and the
-`Normalizer::NFC` / `NFD` / `NFKC` / `NFKD` (and `FORM_*`) constants — enough for
-`STR::normalize()` and `STR::slug()` to fold accents. Prefer the `STR` helpers in
-your own code; the polyfill is there so third-party snippets that call
-`Normalizer` directly keep working.
+The WASM PHP build ships without `ext-intl`; the native `norm` extension
+([php-norm](https://github.com/php-kirigami/php-norm), utf8proc) provides the
+standard `Normalizer` class instead: `Normalizer::normalize()` /
+`Normalizer::isNormalized()`, the `NFC` / `NFD` / `NFKC` / `NFKD` (and
+`FORM_*`) constants, and the `normalizer_normalize()` /
+`normalizer_is_normalized()` functions. `STR::normalize()` and `STR::slug()`
+use it to fold accents. Prefer the `STR` helpers in your own code.
+
+The pure-PHP polyfill that used to fill this gap is still autoloadable as
+`NORMALIZER_LEGACY`, with the same API.
 
 ---
 
@@ -1731,10 +1826,15 @@ PREPROS::registerHook(string $hookName, callable $callback): void
 | Hook | When it fires | `$data` type | Expected return |
 |------|---------------|--------------|-----------------|
 | `boot` | Once per process, right after bootstrap (config loaded, `includes` pulled in), before any page renders. Fires for every entrypoint. | `stdClass $config` | ignored |
+| `shutdown` | Via `register_shutdown_function()`, at the very end of the request — fires even after `STD::succeed()`/`STD::error()`'s `exit()`, unlike `auto_append_file` (which PHP skips whenever the script exits). The place for cleanup that must always run. | `null` | ignored |
 | `page_info` | After PHPDOC parsing, before rendering (auto-loads `.yaml`/`.json`/`.md` annotations) | `[$filePath, $pageObject]` — see note | `$pageObject` (modified) |
-| `pre_render` | Before PHP execution | Raw file contents as `string` | `string` |
+| `pre_render` | Before PHP execution | Raw file contents as `string` | Ignored by the current render call |
 | `pre_before` | Just before the `before` include (inside its output buffer — `echo` to prepend to the header) | `before` config path as `string\|null` | ignored |
 | `post_before` | Right after the `before` include, on the captured header | Header `string` | `string` |
+| `pre_type_before` | Just before the page's `@type` `before` include, if any (inside its output buffer) | Type's `before` config path as `string\|null` | ignored |
+| `post_type_before` | Right after the `@type` `before` include, on the captured type header | Type header `string` | `string` |
+| `pre_type_after` | Just before the page's `@type` `after` include, if any (inside its output buffer) | Type's `after` config path as `string\|null` | ignored |
+| `post_type_after` | Right after the `@type` `after` include, on the captured type footer | Type footer `string` | `string` |
 | `pre_after` | Just before the `after` include (inside its output buffer — `echo` to prepend to the footer) | `after` config path as `string\|null` | ignored |
 | `post_after` | Right after the `after` include, on the captured footer | Footer `string` | `string` |
 | `post_render` | After tag processing, before `HTML::format()` | Assembled HTML `string` | `string` |
@@ -1807,14 +1907,15 @@ Line two after a blank line.
 %}
 ```
 
-#### `{% youtube id [width height] %}`
+#### `{% img-asset path [width height [cover]] %}`
 
-Embeds a responsive YouTube player via `<iframe>`. `width`/`height` default to `560`/`315`.
+Generate an image with `IMG::asset()` and emit an `<img>` tag. Width and height default to zero; the optional final `cover` selects cropping.
 
+```markdown
+{% img-asset photo.jpg 800 600 cover %}
 ```
-{% youtube dQw4w9WgXcQ %}
-{% youtube dQw4w9WgXcQ 800 450 %}
-```
+
+YouTube and Vimeo shortcuts require `@kirigami/plugin-embed`; YouTube is no longer a built-in plugin.
 
 #### `{% codepen id [user height] %}`
 
@@ -1854,7 +1955,7 @@ write cleanly inside your PHP templates:
 
             We are a **student organization** from Québec.
 
-            {% youtube dQw4w9WgXcQ %}
+            {% codepen abc123 author 400 %}
         </markdown>
     </div>
 </section>
@@ -1884,4 +1985,4 @@ PREPROS::registerTag('markdown', function (string $tag, array $attrs, string $bo
 
 ## License
 
-MIT © Maxime Larrivée-Roy, 2026
+GPL-3.0-or-later © Maxime Larrivée-Roy, 2026

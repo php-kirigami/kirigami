@@ -25,10 +25,15 @@
 @use "copy";
 
 
-// Font stack for code. Override before @include if you don't want JetBrains
-// Mono to win: `@use "…/highlight" with ($code-font: (Consolas, monospace));`
+// Font stack for code. JetBrains Mono first (this plugin embeds it when
+// `embedFont` is on), falling back to @kirigami/canva's `--font-mono` token
+// (the project's own generic monospace stack) instead of hardcoding a second
+// one — `var()` inside a font-family list substitutes the whole comma chain
+// at that position, so this is valid CSS. Override before @include if you
+// don't want JetBrains Mono to win:
+// `@use "…/highlight" with ($code-font: (Consolas, monospace));`
 $code-font: (
-	"JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace // À CALISSER DANS CONF genre $font-mono
+	"JetBrains Mono", var(--font-mono)
 ) !default;
 
 

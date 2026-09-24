@@ -9,7 +9,7 @@
 YouTube / Vimeo embed cards for the **Kirigami** static site generator.
 
 [![npm version](https://img.shields.io/npm/v/@kirigami/plugin-embed)](https://www.npmjs.com/package/@kirigami/plugin-embed)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](./LICENSE)
 [![Node.js >=24.0.0](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](https://nodejs.org)
 [![Website](https://img.shields.io/badge/website-php--kirigami.github.io-1f6b4a)](https://php-kirigami.github.io)
 
@@ -25,11 +25,30 @@ button — with **no build-time network call**: the oEmbed lookup happens in
 the visitor's browser, on first paint, via
 [`@kirigami/canva`'s `observer`](https://github.com/php-kirigami/kirigami/tree/main/packages/canva).
 
-The result is cached in `localStorage`, so a repeat visit (or a second embed
-of the same video) costs nothing. The play button is a single inline SVG
+The result is cached in `localStorage`, so later lookups can reuse stored metadata. Concurrent first-time requests are not deduplicated, and thumbnails still load. The play button is a single inline SVG
 themed off the project's own `--accent` — nothing to draw yourself.
 
 Part of the **Kirigami** project ecosystem.
+
+---
+
+## Table of contents
+
+- [@kirigami/plugin-embed](#kirigamiplugin-embed)
+- [Overview](#overview)
+- [What's new in 0.1.5](#whats-new-in-015)
+- [What's new in 0.1.4](#whats-new-in-014)
+- [What's new in 0.1.3](#whats-new-in-013)
+- [What's new in 0.1.1](#whats-new-in-011)
+- [Installation](#installation)
+- [Configuration](#configuration)
+  - [Options](#options)
+- [Usage](#usage)
+- [How it works](#how-it-works)
+- [Generated assets and failure behavior](#generated-assets-and-failure-behavior)
+- [Styling](#styling)
+- [Requirements](#requirements)
+- [License](#license)
 
 ---
 
@@ -67,26 +86,6 @@ Part of the **Kirigami** project ecosystem.
   dominated the page next to normal widescreen ones. The real player, once
   clicked, still showed at its own true ratio, pillarboxed rather than
   stretched. (Superseded by 0.1.3's `maxWidth` cap, above.)
-
----
-
-## Table of contents
-
-- [@kirigami/plugin-embed](#kirigamiplugin-embed)
-  - [Overview](#overview)
-  - [What's new in 0.1.5](#whats-new-in-015)
-  - [What's new in 0.1.4](#whats-new-in-014)
-  - [What's new in 0.1.3](#whats-new-in-013)
-  - [What's new in 0.1.1](#whats-new-in-011)
-  - [Table of contents](#table-of-contents)
-  - [Installation](#installation)
-  - [Configuration](#configuration)
-    - [Options](#options)
-  - [Usage](#usage)
-  - [How it works](#how-it-works)
-  - [Styling](#styling)
-  - [Requirements](#requirements)
-  - [License](#license)
 
 ---
 
@@ -144,16 +143,7 @@ or, inside Markdown, the shorthand:
 Both forms produce the exact same tag — the shorthand just saves typing raw
 HTML in prose.
 
-**Dailymotion and Facebook are not supported.** Dailymotion's oEmbed endpoint
-sends no `Access-Control-Allow-Origin` header, so an anonymous browser
-`fetch()` is blocked by CORS regardless of video id — confirmed against real
-videos, not just one bad id. Facebook's oEmbed (Graph API) has required an
-app `access_token` since 2018, so no anonymous fetch is possible there
-either. A project with its own working endpoint for either (a proxy, an
-access token, …) can still add it on top with its own
-`register('dailymotion' | 'facebook', …)` call (see
-[How it works](#how-it-works)) — nothing here stops you, it's just not
-bundled.
+Only YouTube and Vimeo providers are implemented. Other providers require a custom observer registration and an endpoint the browser can access; provider access policies are not part of this package’s API.
 
 ---
 
@@ -163,8 +153,7 @@ bundled.
    `observer`, which sweeps the page for those tags (on load, and for
    anything added later) and hands each one to the plugin.
 2. The tag is swapped **immediately** for a `.embed` placeholder — sized by
-   the default 16∶9 aspect-ratio — so there's no layout shift waiting on the
-   network.
+   the default 16∶9 aspect-ratio — reserving space while metadata loads. A later aspect-ratio change can still move surrounding content.
 3. The video's oEmbed data is read from `localStorage`
    (`kirigami-embed:<provider>:<id>`) if a previous visit already resolved
    this id, or fetched from the provider's oEmbed endpoint otherwise and
@@ -177,7 +166,35 @@ bundled.
    real player, once clicked, shows at that same real ratio too, nothing
    is ever stretched.
 5. Clicking the play button swaps the placeholder's content for the real
-   player `<iframe>` — nothing loads (or autoplays) before that click.
+   player `<iframe>` — the player loads only after that click; metadata and thumbnail requests happen earlier.
+
+---
+
+## Generated assets and failure behavior
+
+The `prepros:php` hook includes `php/embed.php` for the Markdown shortcuts.
+Without an `esbuild` task, registration warns and skips the browser script;
+the shortcuts still emit tags, but they do not become cards. Include the
+generated JavaScript in the page.
+
+With `style: true`, each `sass:after` call writes `.generated-vars.scss` in
+the installed plugin directory and appends it with `assets/_embed.scss`.
+The generated file sets `--embed-max-width` and, when requested, an
+`!important` aspect-ratio rule. The install directory must be writable.
+Builds sharing that installation share the file; their options are not
+isolated there. `style: false` skips both files and ignores the sizing options.
+
+The browser accepts YouTube IDs matching 10–12 word/hyphen characters and
+Vimeo IDs containing only digits. Missing or malformed IDs leave the HTML
+tag unchanged; a Markdown shortcut without an ID emits a comment.
+
+Metadata cache entries have no expiry. Invalid JSON triggers a refetch;
+failed cache writes are ignored, but a failed `localStorage` read prevents
+fetching (audit A18). Requests are subject to browser network and CORS rules;
+this plugin supplies no proxy, timeout, or retry. A failed request logs to
+the console and leaves the play button usable without metadata. Playback
+uses `youtube-nocookie.com` or `player.vimeo.com` with autoplay requested.
+Metadata and thumbnail requests occur before the click.
 
 ---
 
@@ -192,12 +209,16 @@ target those same class names to restyle it from scratch.
 
 ## Requirements
 
+The current localStorage read can throw in restricted browser contexts and prevent metadata retrieval (audit A18). This is a known limitation, not an automatic in-memory fallback.
+
 - Node.js `>= 24.0.0`
-- `@kirigami/kirigami` `^1.5.3`
+- npm `>= 10.2.3`
+- `@kirigami/kirigami` `>= 3.0.0` (declared `kirigami.minVersion`)
+- A `sass` task for the bundled styles
 - An `esbuild` task in `kirigami.yaml`
 
 ---
 
 ## License
 
-MIT © Maxime Larrivée-Roy, 2026
+GPL-3.0-or-later © Maxime Larrivée-Roy, 2026

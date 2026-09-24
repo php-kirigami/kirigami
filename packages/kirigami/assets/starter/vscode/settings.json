@@ -1,0 +1,43 @@
+{
+    "terminal.integrated.enablePersistentSessions": false,
+    "terminal.integrated.env.windows": {
+        "PATH": "${workspaceFolder};${workspaceFolder}\\node_modules\\.bin;${env:PATH}"
+    },
+    "terminal.integrated.env.osx": {
+        "PATH": "${workspaceFolder}:${workspaceFolder}/node_modules/.bin:${env:PATH}"
+    },
+    "terminal.integrated.env.linux": {
+        "PATH": "${workspaceFolder}:${workspaceFolder}/node_modules/.bin:${env:PATH}"
+    },
+    "editor.rulers": [100],
+    "intelephense.environment.includePaths": [
+        "node_modules/@kirigami/php-prepros/src/libraries"
+    ],
+    "intelephense.files.exclude": [
+        "**/.git/**",
+        "**/node_modules/**",
+        "!**/node_modules/@kirigami/php-prepros/**"
+    ],
+    "yaml.schemas": {
+        "https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigami.schema.json": "kirigami.yaml"
+    },
+    "liveServer.settings.port": 5520,
+    "liveServer.settings.CustomBrowser": "chrome",
+    "liveServer.settings.root": "./src/",
+    "liveServer.settings.ignoreFiles": [
+        ".vscode/**",
+        ".github/**",
+        "**/_*.php",
+        "**/.git/**",
+        "**/node_modules/**",
+        "**/*.scss",
+        "**/*.sass",
+        "**/*.php",
+        "**/*.ts",
+        "**/!(*.min).js"
+    ],
+    "folder-path-color.folders": [
+        { "path": "src", "color": "cyan" },
+        { "path": "assets", "color": "magenta" }
+    ]
+}

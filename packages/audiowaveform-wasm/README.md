@@ -37,15 +37,16 @@ Part of the **Kirigami** project ecosystem.
 ## Table of contents
 
 - [@kirigami/audiowaveform-wasm](#kirigamiaudiowaveform-wasm)
-  - [Overview](#overview)
-  - [Table of contents](#table-of-contents)
-  - [Requirements](#requirements)
-  - [Installation](#installation)
-  - [Usage](#usage)
-  - [Format support](#format-support)
-  - [ID3 tag support](#id3-tag-support)
-  - [License](#license)
-  - [Author](#author)
+- [Overview](#overview)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+- [API and runtime files](#api-and-runtime-files)
+- [Format support](#format-support)
+  - [MP3 encoding modes tested](#mp3-encoding-modes-tested)
+- [ID3 tag support](#id3-tag-support)
+- [License](#license)
+- [Author](#author)
 
 ---
 
@@ -80,17 +81,56 @@ const peaks = await extractAudioPeaks(mp3Bytes, 512);
 
 const tags = await getId3Tags(mp3Bytes);
 // { title, artist, album, albumArtist, year, track, genre } — each a
-// string or null; null if there's no tag at all
+// string or null; absent metadata can produce an object of all-null fields
 
 const cover = await getId3CoverArt(mp3Bytes);
 // { mimeType, pictureType, data } — data is a plain array of byte values
 // (0-255); null if there's no embedded cover art
 if (cover) {
-	fs.writeFileSync('cover.jpg', Buffer.from(cover.data));
+	const extension = cover.mimeType === 'image/png' ? 'png'
+		: cover.mimeType === 'image/jpeg' ? 'jpg' : 'bin';
+	fs.writeFileSync(`cover.${extension}`, Buffer.from(cover.data));
 }
 ```
 
 `extractAudioPeaks()` auto-detects the format from the buffer's own container magic bytes — no need to know it up front.
+
+---
+
+## API and runtime files
+
+Only these three named functions and `./package.json` are exported; TypeScript
+interfaces are supplied by `index.d.ts`.
+
+| Function | Input | Result |
+|---|---|---|
+| `extractAudioPeaks(bytes, samplesPerPixel = 512)` | `Uint8Array` or Node `Buffer`; use a positive integer resolution | `Promise<WaveformPeaks \| null>` |
+| `getId3Tags(mp3Bytes)` | `Uint8Array` or `Buffer` | `Promise<Id3Tags \| null>`; untagged input can return an object with seven null fields |
+| `getId3CoverArt(mp3Bytes)` | `Uint8Array` or `Buffer` | `Promise<{ mimeType, pictureType, data } \| null>`; `data` is a plain byte array |
+
+These APIs accept file contents, not paths or streams. The JavaScript wrapper
+forwards values without validating types or numeric ranges. Check both
+rejections and nullable results. Do not infer metadata presence merely from
+a truthy `getId3Tags()` result. The declarations allow both a null result and
+an object whose seven fields are null, matching the current binary.
+
+Waveform output contains `version`, `channels`, `sample_rate`,
+`samples_per_pixel`, `bits`, `length`, and `data`. Current output uses version
+2, one merged channel, and 16-bit peaks. `length` counts min/max pairs, so
+`data.length` is twice `length`, not the number of source audio samples.
+Cover bytes are not converted to JPEG; choose the saved extension from the
+reported MIME type.
+
+The package includes `dist/audiowaveform.js` and
+`dist/audiowaveform.wasm`; the loader locates the WASM file beside itself.
+Keep that layout when deploying or bundling. No compiler, native executable,
+or extra JavaScript dependency is required at runtime. The module is loaded
+on demand and reused; there is no public reset/dispose API. The Promise API
+does not move decoding off the calling thread: extraction is CPU-bound.
+
+The local 2026-09-21 audit exercised stereo PCM WAV extraction, invalid audio,
+and absent ID3 metadata/cover art. The format matrix below records earlier
+verification and was not rerun in full during this audit.
 
 ---
 
@@ -109,9 +149,11 @@ if (cover) {
 | M4A/AAC | ✅ Works |
 | WebM (Vorbis or Opus audio) | ✅ Works |
 
-Unsupported formats resolve to `null` — never throw.
+Unsupported input resolves to `null` when native decoding reports no result. Invalid argument types and WASM/runtime failures can still reject the promise.
 
 ### MP3 encoding modes tested
+
+This is the recorded format-verification matrix, not a regression suite executed by this repository’s npm test scripts.
 
 | Case | Status |
 | --- | --- |

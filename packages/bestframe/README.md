@@ -1,0 +1,197 @@
+<div align="center">
+
+<img src="https://zmotrin.github.io/assets/kirigami/kirigami-logo-universal.svg" alt="Kirigami" width="400" />
+
+---
+
+# @kirigami/bestframe
+
+Automatic thumbnail/still-frame selection for video, picked by a tiny embedded aesthetic AI model, compiled to WebAssembly for Node.js.  
+Built for the **[Kirigami](https://github.com/php-kirigami)** static site generator's video player.
+
+[![npm version](https://img.shields.io/npm/v/@kirigami/bestframe)](https://www.npmjs.com/package/@kirigami/bestframe)
+[![License: LGPL-2.1-or-later](https://img.shields.io/badge/license-LGPL--2.1--or--later-yellow)](./LICENSE)
+[![Node.js >=24.0.0](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)](https://nodejs.org)
+[![Website](https://img.shields.io/badge/website-php--kirigami.github.io-1f6b4a)](https://php-kirigami.github.io)
+
+</div>
+
+---
+
+## Overview
+
+`@kirigami/bestframe` samples frames across a video, filters out the obviously bad ones, scores the rest with a small embedded aesthetic model, and returns the best one as a ready-to-use thumbnail image:
+
+- ✅ **Node.js** only, no browser target
+- ✅ **Buffer or file-path input** — file paths are read from disk; the WASM module is loaded lazily and reused, without temporary output files
+- ✅ **Multithreaded** decode, using the available CPU count up to the binary’s build-time limit
+- ✅ **Four mainstream web video codecs**: H.264, VP9, HEVC, AV1 — in MP4, Matroska (`.mkv`), and WebM containers
+- ✅ **A real AI model picks the frame**, not just "highest contrast" or "N seconds in" — a MobileNet-based NIMA aesthetic model, embedded directly in the WASM binary (no separate model file to fetch)
+- ✅ **Fallback frame for decodable input** — even if every sampled frame fails the technical filters, you get the least-bad one back instead of nothing
+- ✅ **JPEG or PNG** output, your choice
+- ✅ Comes back with more than just the image: the source video's own duration, dimensions, and container metadata tags
+
+Built by [`libbestframe`](https://github.com/php-kirigami/libbestframe), which also documents the full build pipeline, the model, and every architecture decision behind it.
+
+Part of the **Kirigami** project ecosystem.
+
+---
+
+## Table of contents
+
+- [@kirigami/bestframe](#kirigamibestframe)
+- [Overview](#overview)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Options](#options)
+- [Runtime and failure behavior](#runtime-and-failure-behavior)
+- [Result](#result)
+- [Codec & container support](#codec--container-support)
+- [How the frame gets picked](#how-the-frame-gets-picked)
+- [License](#license)
+- [Author](#author)
+
+---
+
+## Requirements
+
+- Node.js `>= 24.0.0`
+
+---
+
+## Installation
+
+```bash
+npm install @kirigami/bestframe
+```
+
+---
+
+## Usage
+
+```js
+import { bestFrame } from '@kirigami/bestframe';
+import fs from 'node:fs';
+
+const result = await bestFrame('movie.mp4');
+if (result) {
+	console.log(result.timestamp, result.score, result.width, result.height);
+	fs.writeFileSync('thumbnail.jpg', result.data);
+}
+```
+
+A `Buffer`/`Uint8Array` already in memory works just as well as a file path — nothing is written to disk internally either way:
+
+```js
+const buffer = fs.readFileSync('clip.webm');
+const result = await bestFrame(buffer, {
+	samples: 48,
+	width: 1280,
+	format: 'png',
+});
+```
+
+If the source video can't be decoded at all (unsupported codec/container, corrupt data), `bestFrame()` resolves to `null` when the native decoder returns no result. File reads, invalid input, and runtime failures can still reject the promise.
+
+---
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `samples` | `number` | `24` | How many timestamps to sample across the video. |
+| `width` | `number` | `640` | Target output width in pixels — height is computed to preserve the source's aspect ratio. |
+| `format` | `'jpeg' \| 'png'` | `'jpeg'` | Output image format. PNG is lossless. |
+| `quality` | `number` | `85` | JPEG quality, 0-100 (libjpeg-style, higher = better). Ignored for `format: 'png'`. |
+
+---
+
+## Runtime and failure behavior
+
+`bestFrame(input, options = {})` is the only function export. `input` is a
+local path string or `Uint8Array` (including Buffer); URLs, ArrayBuffer, and
+streams are not accepted. Relative paths use the working directory at call
+time. A file is read fully into memory and then copied into WASM memory.
+
+The wrapper does not validate numeric options. Use positive integer `samples`
+and `width`, JPEG quality from 0 to 100, and the documented format names.
+Only the exact string `png` selects PNG; any other runtime value selects
+JPEG. Defaults apply to omitted/undefined fields, not to `null`.
+
+A native no-result pointer becomes `null`. Invalid input types, file read
+errors, module initialization failures, and native/WASM exceptions reject.
+The result image is copied into a Node Buffer before native result memory is
+freed. Metadata is a string-valued object, preserving the container's key
+case, or `null`; score is not a normalized percentage or fixed quality grade.
+
+The package ships `dist/libbestframe.js` and `dist/libbestframe.wasm`.
+The loader also starts worker threads from `libbestframe.js` itself, so keep
+both files together when deploying. Run examples from a `.mjs` file or an ESM
+project. Node's `--input-type=module` option is inherited by those file-based
+workers and causes `ERR_INPUT_TYPE_NOT_ALLOWED` in the current setup.
+
+The module is lazy and reused; no public reset/dispose API is provided.
+Although the function returns a Promise and decoding uses workers, the
+native processing call blocks the calling JavaScript thread until it returns.
+
+The local 2026-09-21 check decoded a synthetic H.264/MP4 clip to both JPEG and
+PNG, checked Buffer/dimension/metadata results, and exercised invalid input.
+It did not rerun every codec combination listed below.
+
+---
+
+## Result
+
+```js
+{
+	timestamp: 23.732,      // the winning frame's real timestamp, in seconds
+	score: 0.421,           // its composite aesthetic score — higher is better
+	width: 640,             // encoded output width
+	height: 266,            // encoded output height
+	data: Buffer,           // the encoded image bytes (JPEG or PNG)
+	duration: 45.545,       // source video's total duration, in seconds
+	sourceWidth: 1920,      // source video's own (pre-scaling) width
+	sourceHeight: 800,      // source video's own (pre-scaling) height
+	metadata: {             // container tags, exactly as the file carries them, or null
+		encoder: 'Lavf62.3.100',
+	},
+}
+```
+
+---
+
+## Codec & container support
+
+| | Supported |
+| --- | --- |
+| **Video codecs** | H.264, VP9, HEVC (H.265), AV1 |
+| **Containers** | MP4, Matroska (`.mkv`), WebM |
+| **Audio** | Not read at all — thumbnails don't need it |
+
+Older/niche codecs (MPEG-4 part 2 / Xvid, etc.) aren't supported — `bestFrame()` resolves to `null` for those, same as any other undecodable input.
+
+---
+
+## How the frame gets picked
+
+1. **Sample** — timestamps spread across the video (avoiding the very start/end, to dodge fade-ins, intro logos, and credits).
+2. **Filter** — each sampled frame is checked for being black, low-contrast/uniform, blurry, or a near-duplicate of an already-kept frame. Obviously bad frames never reach the model.
+3. **Score** — survivors are resized and run through a small embedded NIMA-based aesthetic model (a general photo-aesthetics model, not one trained specifically on "thumbnail-worthiness" — it's a genuinely good proxy for it in practice), combined with a couple of cheap technical signals (sharpness, exposure) into one composite score.
+4. **Pick & encode** — the highest-scoring frame is decoded fresh at the requested output size and encoded as JPEG or PNG.
+
+If literally every sampled frame fails step 2's filters (a clip that stays dark or blurry throughout, for instance), the least-bad one is scored and returned anyway when decoding produced a usable frame. Completely undecodable input can return `null`.
+
+See [`libbestframe`'s own `CLAUDE.md`](https://github.com/php-kirigami/libbestframe/blob/main/CLAUDE.md) for the full decision-by-decision history behind every piece of this — the model, the filters, the composite score formula, and every real bug found along the way.
+
+---
+
+## License
+
+`LGPL-2.1-or-later` — see [LICENSE](./LICENSE) for the full text.
+
+---
+
+## Author
+
+Maxime Larrivée-Roy, 2026

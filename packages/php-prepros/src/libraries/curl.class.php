@@ -59,15 +59,15 @@ class CURL {
 			CURLOPT_NOBODY         => true,
 			CURLOPT_FOLLOWLOCATION => true,
 			CURLOPT_TIMEOUT        => 15,
-			CURLOPT_SSL_VERIFYPEER => false,
-			CURLOPT_SSL_VERIFYHOST => false,
+			CURLOPT_SSL_VERIFYPEER => true,
+			CURLOPT_SSL_VERIFYHOST => 2,
 			CURLOPT_ENCODING       => 'gzip, deflate',
 			CURLOPT_COOKIEFILE     => $cookiePath,
 			CURLOPT_COOKIEJAR      => $cookiePath,
 			CURLOPT_HTTPHEADER     => self::HEADERS,
 		]);
-		curl_exec($ch);
-		$info = curl_getinfo($ch);
+		$result = curl_exec($ch);
+		$info = $result === false ? false : curl_getinfo($ch);
 		PREPROS::exportFile($cookiePath);
 		return $info;
 	}
@@ -81,8 +81,8 @@ class CURL {
 		curl_setopt_array($chnd, [
 			CURLOPT_AUTOREFERER    => true,
 			CURLOPT_FOLLOWLOCATION => true,
-			CURLOPT_SSL_VERIFYHOST => false,
-			CURLOPT_SSL_VERIFYPEER => false,
+			CURLOPT_SSL_VERIFYHOST => 2,
+			CURLOPT_SSL_VERIFYPEER => true,
 			CURLOPT_TIMEOUT        => 60,
 			CURLOPT_CONNECTTIMEOUT => 10,
 			CURLOPT_ENCODING       => 'gzip,deflate',

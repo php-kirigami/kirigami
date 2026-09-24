@@ -194,6 +194,25 @@ export default async function build(__root, task, exportPath = null) {
 					return new sass.SassString(getFont(abs).style);
 				},
 
+				// Returns true if the font has a binary `ital` variation axis (variable ital)
+				'font-has-ital-axis($path)': (args) => {
+					const abs = resolveFontPath(args[0].assertString('path').text);
+					const info = getFont(abs);
+					try {
+						return new sass.SassBoolean(!!info.hasItalAxis);
+					} catch (e) {
+						// Fallback: return a truthy string if boolean class unavailable
+						return new sass.SassString(info.hasItalAxis ? 'true' : '');
+					}
+				},
+
+				// Returns the ital axis min/max as a string "min max" for diagnostics
+				'font-ital-axis-range($path)': (args) => {
+					const abs = resolveFontPath(args[0].assertString('path').text);
+					const info = getFont(abs);
+					return new sass.SassString(info.italAxisRange || '0 0');
+				},
+
 				'img-asset($path, $width: null, $height: null, $cover: false)': (args) => {
 					const srcRelPath = args[0].assertString('path').text.replace(/\\/g, '/');
 					const widthArg = args[1];
@@ -312,7 +331,7 @@ export function getWatcher(__root, task) {
 		name: task.name,
 		patterns: patterns,
 		callback: async (events) => {
-			if(!events.filter(e => e.type != 'add').length) return;
+			if (!events.length) return;
 			console.log(`[${task.name}] batch`, events.length, events.map(e => e.file));
 			const results = await build(__root, task);
 			if(results.success) {
@@ -322,6 +341,7 @@ export function getWatcher(__root, task) {
 				console.log(results.error);
 			}
 			console.log("");
+			return results;
 		}
 	};
 }
@@ -474,15 +494,19 @@ function getFont(absPath) {
 // derived properties the Sass functions need, as plain data, and it's that
 // intermediate result (a plain object) that gets cached and reused.
 // ---------------------------------------------------------------------------
-function computeFontData(font) {
+export function computeFontData(font) {
 	const [weightMin, weightMax] = axisRange(font, 'wght', [400, 400]);
 	const [stretchMin, stretchMax] = axisRange(font, 'wdth', [100, 100]);
+	const [italMin, italMax] = axisRange(font, 'ital', [0, 0]);
+	const hasItal = !!(font.variationAxes && font.variationAxes['ital']);
 
 	return {
 		weightRange: `${weightMin} ${weightMax}`,
 		stretchRange: `${stretchMin}% ${stretchMax}%`,
 		unicodeRange: buildUnicodeRange(font.characterSet),
 		style: detectFontStyle(font),
+		hasItalAxis: hasItal,
+		italAxisRange: `${italMin} ${italMax}`,
 	};
 }
 
@@ -537,7 +561,7 @@ function getFormatKeyword(absPath) {
 
 
 
-function detectFontStyle(font) {
+export function detectFontStyle(font) {
 	const axes = font.variationAxes || {};
 
 	// Case 2: slnt axis (continuous slant)

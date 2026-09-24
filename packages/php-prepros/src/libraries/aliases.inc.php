@@ -275,11 +275,11 @@ function yaml_load_file(string $path, bool $assoc = false): mixed { return YAML:
 
 
 // ===========================================================================
-// SCHEMA — pure-PHP JSON Schema validator (instance class)
+// SCHEMA — JSON Schema validator, native jsonk (instance class)
 // ===========================================================================
 
 /**
- * Builds a JSON Schema validator (Draft-7-ish, Ajv-like API).
+ * Builds a JSON Schema validator (draft 2020-12 via jsonk, Ajv-like API).
  *
  *   $v = schema($schema);
  *   if (!$v->isValid($data)) print_r($v->getErrors());
@@ -348,7 +348,7 @@ function ld_node(string|array $type, array $props = []): array { return LD::node
 function ld_ref(string $id): array { return LD::ref($id); }
 
 /**
- * Adds the site's main entity (`Organization`, or `jsonld.type`) to the graph.
+ * Adds the site's main entity (`Organization`, or `seo.type`) to the graph.
  *
  * @param  array<string,mixed> $overrides
  * @return array<string,mixed>

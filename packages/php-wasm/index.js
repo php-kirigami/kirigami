@@ -5,6 +5,12 @@ import { getPHPRuntime as _getPHPRuntime, getPHPRuntimeWithNetwork as _getPHPRun
 let runtime = null;
 let runtimeNetwork = null;
 
+// An owned instance for consumers that need independent configuration/lifetime.
+const createPHPRuntime = async ({ network = false } = {}) => {
+	const php = await (network ? _getPHPRuntimeWithNetwork() : _getPHPRuntime());
+	php.setIniValues = function(values) { setPhpIniValues(this, values); };
+	return php;
+};
 
 async function getPHPLoaderModule() {
 	return await import("./jspi/php_8_5.js");
@@ -75,6 +81,7 @@ export {
 	setPhpIniValues,
 	getPHPLoaderModule,
 	getPHPRuntime,
+	createPHPRuntime,
 	getPHPRuntimeWithNetwork,
 	getLoadedExtensions,
 	phpversion,

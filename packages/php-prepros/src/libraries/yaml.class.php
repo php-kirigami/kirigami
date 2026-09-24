@@ -1,22 +1,24 @@
 <?php
 
 /**
- * YAML — lightweight, fully static YAML parser.
+ * YAML — YAML parser backed by PHP's native `yaml` extension (PECL yaml /
+ * libyaml), statically built into @kirigami/php-wasm.
  *
  * Usage:
  *   $data = YAML::parse($yamlString);          // mappings → stdClass (default)
  *   $data = YAML::parse($yamlString, true);    // mappings → associative array
  *   $data = YAML::parseFile('/path/to/config.yaml');
  *
- * Supports:
- *  - Typed scalars (string, int, float, bool, null)
- *  - Single and double quotes (with escape sequences)
- *  - Multi-line blocks (| literal and > folded, with chomping -, +)
- *  - Multi-line plain scalars (continuation with no indicator)
- *  - Nested mappings and sequences
- *  - Inline collections [a, b] and {k: v}
- *  - Comments (#)
- *  - Multiple documents separated by ---
+ * Follows YAML 1.1 (libyaml's resolver), including its implicit-boolean
+ * scalars: not just yes/no/true/false/on/off but also the bare single-letter
+ * y/Y/n/N — as a value *or* as a mapping key (the classic "Norway problem":
+ * an unquoted `no:` key or a `NO` value resolves to `false`). Quote such
+ * scalars (`"y": 2`) in project YAML to keep them as strings. See
+ * docs/BUGS.md for the differences found against the previous hand-written
+ * parser (now YAML_LEGACY::).
+ *
+ * `yaml.decode_php` must stay off (it is by default) so a `!php/object` tag
+ * in untrusted YAML can't trigger unserialize().
  */
 class YAML
 {
@@ -28,22 +30,25 @@ class YAML
 
     public static function parse(string $yaml, bool $assoc = false): mixed
     {
-        $yaml  = str_replace(["\r\n", "\r"], "\n", $yaml);
-        $lines = explode("\n", $yaml);
-        $pos   = 0;
+        $ndocs = 0;
+        $error = null;
 
-        $documents = [];
+        set_error_handler(function (int $errno, string $errstr) use (&$error) {
+            $error = $errstr;
+            return true;
+        });
+        $result = yaml_parse($yaml, -1, $ndocs);
+        restore_error_handler();
 
-        while ($pos < count($lines)) {
-            $line = $lines[$pos];
-            if (preg_match('/^---/', $line)) { $pos++; continue; }
-            if (preg_match('/^\.\.\./', $line)) { $pos++; break; }
-
-            $doc = self::parseBlock($lines, $pos, 0, $assoc);
-            $documents[] = $doc;
+        if ($result === false) {
+            throw new \RuntimeException($error ?? 'Failed to parse YAML.');
         }
 
-        return count($documents) === 1 ? $documents[0] : $documents;
+        if ($ndocs <= 1) {
+            return self::convert($result[0] ?? null, $assoc);
+        }
+
+        return array_map(fn($doc) => self::convert($doc, $assoc), $result);
     }
 
     public static function parseFile(string $path, bool $assoc = false): mixed
@@ -186,399 +191,29 @@ class YAML
     }
 
     // -------------------------------------------------------------------------
-    // Recursive parsing
-    // -------------------------------------------------------------------------
-
-    private static function parseBlock(array $lines, int &$pos, int $indent, bool $assoc = false): mixed
-    {
-        self::skipEmptyAndComments($lines, $pos);
-
-        if ($pos >= count($lines)) return null;
-
-        $line       = $lines[$pos];
-        $lineIndent = self::getIndent($line);
-        $trimmed    = ltrim($line);
-
-        if (str_starts_with($trimmed, '- ') || $trimmed === '-') {
-            return self::parseSequence($lines, $pos, $lineIndent, $assoc);
-        }
-
-        if (self::isMapping($trimmed)) {
-            return self::parseMapping($lines, $pos, $lineIndent, $assoc);
-        }
-
-        return null;
-    }
-
-    private static function parseMapping(array $lines, int &$pos, int $indent, bool $assoc = false): array|object
-    {
-        $result = [];
-
-        while ($pos < count($lines)) {
-            self::skipEmptyAndComments($lines, $pos);
-            if ($pos >= count($lines)) break;
-
-            $line       = $lines[$pos];
-            $lineIndent = self::getIndent($line);
-            $trimmed    = ltrim($line);
-
-            if ($lineIndent < $indent) break;
-            if ($lineIndent > $indent) break;
-            if (preg_match('/^(---|\.\.\.)\s*$/', $trimmed)) break;
-            if (!self::isMapping($trimmed)) break;
-
-            [$key, $rest] = self::splitKeyValue($trimmed);
-            $pos++;
-
-            if ($rest === null) {
-                // Value on the following lines: sub-block or multi-line plain scalar
-                self::skipEmptyAndComments($lines, $pos);
-                if ($pos < count($lines)) {
-                    $nextIndent = self::getIndent($lines[$pos]);
-                    if ($nextIndent > $indent) {
-                        $nextTrimmed = ltrim($lines[$pos]);
-                        // Plain scalar if it's neither a mapping nor a sequence
-                        if (!self::isMapping($nextTrimmed) && !str_starts_with($nextTrimmed, '- ')) {
-                            $result[$key] = self::parseScalar(
-                                self::collectPlainScalar($lines, $pos, $indent, '')
-                            );
-                        } else {
-                            $result[$key] = self::parseBlock($lines, $pos, $nextIndent, $assoc);
-                        }
-                    } else {
-                        $result[$key] = null;
-                    }
-                } else {
-                    $result[$key] = null;
-                }
-            } elseif ($rest === '|' || $rest === '|-' || $rest === '|+') {
-                $result[$key] = self::parseLiteralBlock($lines, $pos, $indent, $rest);
-            } elseif ($rest === '>' || $rest === '>-' || $rest === '>+') {
-                $result[$key] = self::parseFoldedBlock($lines, $pos, $indent, $rest);
-            } elseif ($rest !== '' && ($rest[0] === '[' || $rest[0] === '{')) {
-                $result[$key] = self::parseInlineCollection($rest, $assoc);
-            } else {
-                // Inline scalar, may be followed by continuation lines
-                $result[$key] = self::parseScalar(
-                    self::collectPlainScalar($lines, $pos, $indent, $rest)
-                );
-            }
-        }
-
-        return $assoc ? $result : (object) $result;
-    }
-
-    private static function parseSequence(array $lines, int &$pos, int $indent, bool $assoc = false): array
-    {
-        $result = [];
-
-        while ($pos < count($lines)) {
-            self::skipEmptyAndComments($lines, $pos);
-            if ($pos >= count($lines)) break;
-
-            $line       = $lines[$pos];
-            $lineIndent = self::getIndent($line);
-            $trimmed    = ltrim($line);
-
-            if ($lineIndent < $indent) break;
-            if ($lineIndent > $indent) break;
-            if (preg_match('/^(---|\.\.\.)\s*$/', $trimmed)) break;
-            if (!str_starts_with($trimmed, '- ') && $trimmed !== '-') break;
-
-            $itemContent = $trimmed === '-' ? '' : substr($trimmed, 2);
-            $pos++;
-
-            if ($itemContent === '') {
-                self::skipEmptyAndComments($lines, $pos);
-                if ($pos < count($lines)) {
-                    $nextIndent = self::getIndent($lines[$pos]);
-                    $result[] = $nextIndent > $indent
-                        ? self::parseBlock($lines, $pos, $nextIndent, $assoc)
-                        : null;
-                } else {
-                    $result[] = null;
-                }
-            } elseif (self::isMapping($itemContent)) {
-                // Inline mapping inside the sequence:
-                // Rebuild a virtual array of lines by prefixing the first key
-                // with fakeIndent, then delegate entirely to parseMapping to get
-                // all of its logic (|, >, plain scalars, sub-blocks…).
-                $fakeIndent   = $lineIndent + 2;
-                $fakePrefix   = str_repeat(' ', $fakeIndent);
-                $virtualLines = array_merge(
-                    [$fakePrefix . $itemContent],
-                    array_slice($lines, $pos)
-                );
-                $vPos    = 0;
-                $itemMap = self::parseMapping($virtualLines, $vPos, $fakeIndent, $assoc);
-                $pos    += max(0, $vPos - 1);
-                $result[] = $itemMap;
-            } elseif ($itemContent[0] === '[' || $itemContent[0] === '{') {
-                $result[] = self::parseInlineCollection($itemContent, $assoc);
-            } else {
-                $result[] = self::parseScalar($itemContent);
-            }
-        }
-
-        return $result;
-    }
-
-    // -------------------------------------------------------------------------
-    // Multi-line plain scalar
+    // yaml_parse() → stdClass/array shape
     // -------------------------------------------------------------------------
 
     /**
-     * Collects a scalar that may continue on lines more indented than $parentIndent.
-     * Continuation lines are joined with a space (implicit folding).
+     * yaml_parse() always returns plain PHP arrays (associative for mappings,
+     * indexed for sequences). $assoc=false wants mappings as stdClass instead
+     * — this walks the tree and converts them, leaving sequences as arrays
+     * (recursing into their items).
      */
-    private static function collectPlainScalar(array $lines, int &$pos, int $parentIndent, string $first): string
+    private static function convert(mixed $node, bool $assoc): mixed
     {
-        $parts = $first !== '' ? [trim($first)] : [];
-
-        while ($pos < count($lines)) {
-            $raw     = $lines[$pos];
-            $trimmed = trim($raw);
-
-            // Blank line: end of the scalar
-            if ($trimmed === '') break;
-
-            $lineIndent = self::getIndent($raw);
-
-            // Back to the parent indentation or less: end
-            if ($lineIndent <= $parentIndent) break;
-
-            // Comment alone on the line: end
-            if (str_starts_with($trimmed, '#')) break;
-
-            // It's a mapping or a sequence: end
-            if (self::isMapping($trimmed) || str_starts_with($trimmed, '- ')) break;
-
-            $parts[] = $trimmed;
-            $pos++;
+        if ($assoc || !is_array($node)) {
+            return $node;
         }
 
-        return implode(' ', $parts);
-    }
-
-    // -------------------------------------------------------------------------
-    // Multi-line blocks
-    // -------------------------------------------------------------------------
-
-    private static function parseLiteralBlock(array $lines, int &$pos, int $parentIndent, string $indicator): string
-    {
-        $blockLines  = [];
-        $blockIndent = null;
-        $chomping    = self::getChomping($indicator);
-
-        while ($pos < count($lines)) {
-            $raw = $lines[$pos];
-
-            if (trim($raw) === '') {
-                $blockLines[] = '';
-                $pos++;
-                continue;
-            }
-
-            $lineIndent = self::getIndent($raw);
-            if ($blockIndent === null) {
-                if ($lineIndent <= $parentIndent) break;
-                $blockIndent = $lineIndent;
-            }
-            if ($lineIndent < $blockIndent) break;
-
-            $blockLines[] = substr($raw, $blockIndent);
-            $pos++;
+        if (array_is_list($node)) {
+            return array_map(fn($v) => self::convert($v, $assoc), $node);
         }
 
-        return self::applyChomping(implode("\n", $blockLines), $chomping);
-    }
-
-    private static function parseFoldedBlock(array $lines, int &$pos, int $parentIndent, string $indicator): string
-    {
-        $blockLines  = [];
-        $blockIndent = null;
-        $chomping    = self::getChomping($indicator);
-
-        while ($pos < count($lines)) {
-            $raw = $lines[$pos];
-
-            if (trim($raw) === '') {
-                $blockLines[] = '';
-                $pos++;
-                continue;
-            }
-
-            $lineIndent = self::getIndent($raw);
-            if ($blockIndent === null) {
-                if ($lineIndent <= $parentIndent) break;
-                $blockIndent = $lineIndent;
-            }
-            if ($lineIndent < $blockIndent) break;
-
-            $blockLines[] = rtrim(substr($raw, $blockIndent));
-            $pos++;
+        $obj = new \stdClass();
+        foreach ($node as $key => $value) {
+            $obj->$key = self::convert($value, $assoc);
         }
-
-        $folded = '';
-        $count  = count($blockLines);
-        for ($i = 0; $i < $count; $i++) {
-            if ($blockLines[$i] === '') {
-                $folded .= "\n";
-            } elseif ($i < $count - 1 && $blockLines[$i + 1] !== '') {
-                $folded .= $blockLines[$i] . ' ';
-            } else {
-                $folded .= $blockLines[$i];
-            }
-        }
-
-        return self::applyChomping(rtrim($folded, ' '), $chomping);
-    }
-
-    // -------------------------------------------------------------------------
-    // Inline collections  [a, b]  {k: v}
-    // -------------------------------------------------------------------------
-
-    private static function parseInlineCollection(string $raw, bool $assoc = false): mixed
-    {
-        $raw = trim($raw);
-        if ($raw[0] === '[') return self::parseInlineSequence($raw, $assoc);
-        if ($raw[0] === '{') return self::parseInlineMapping($raw, $assoc);
-        return self::parseScalar($raw);
-    }
-
-    private static function parseInlineSequence(string $raw, bool $assoc = false): array
-    {
-        $inner = trim(substr($raw, 1, strrpos($raw, ']') - 1));
-        if ($inner === '') return [];
-
-        return array_map(
-            fn($item) => self::parseInlineCollection(trim($item), $assoc),
-            self::splitInline($inner)
-        );
-    }
-
-    private static function parseInlineMapping(string $raw, bool $assoc = false): array|object
-    {
-        $inner = trim(substr($raw, 1, strrpos($raw, '}') - 1));
-        if ($inner === '') return $assoc ? [] : new \stdClass();
-
-        $result = [];
-        foreach (self::splitInline($inner) as $pair) {
-            $colonPos = strpos($pair, ':');
-            if ($colonPos === false) continue;
-            $k          = trim(substr($pair, 0, $colonPos));
-            $v          = trim(substr($pair, $colonPos + 1));
-            $result[$k] = self::parseInlineCollection($v, $assoc);
-        }
-        return $assoc ? $result : (object) $result;
-    }
-
-    private static function splitInline(string $str): array
-    {
-        $parts    = [];
-        $depth    = 0;
-        $current  = '';
-        $inSingle = false;
-        $inDouble = false;
-
-        for ($i = 0, $len = strlen($str); $i < $len; $i++) {
-            $c = $str[$i];
-
-            if ($c === "'" && !$inDouble) { $inSingle = !$inSingle; $current .= $c; continue; }
-            if ($c === '"'  && !$inSingle) { $inDouble = !$inDouble; $current .= $c; continue; }
-            if ($inSingle || $inDouble)    { $current .= $c; continue; }
-
-            if ($c === '[' || $c === '{') { $depth++; $current .= $c; continue; }
-            if ($c === ']' || $c === '}') { $depth--; $current .= $c; continue; }
-
-            if ($c === ',' && $depth === 0) { $parts[] = $current; $current = ''; continue; }
-            $current .= $c;
-        }
-
-        if ($current !== '') $parts[] = $current;
-        return $parts;
-    }
-
-    // -------------------------------------------------------------------------
-    // Scalars
-    // -------------------------------------------------------------------------
-
-    private static function parseScalar(string $value): mixed
-    {
-        $value = trim($value);
-
-        if (!preg_match('/^[\'"]/', $value)) {
-            $value = rtrim(preg_replace('/(^|\s)#.*$/', '', $value));
-        }
-
-        if ($value === '') return null;
-
-        if (str_starts_with($value, '"') && str_ends_with($value, '"') && strlen($value) >= 2) {
-            return stripcslashes(substr($value, 1, -1));
-        }
-
-        if (str_starts_with($value, "'") && str_ends_with($value, "'") && strlen($value) >= 2) {
-            return str_replace("''", "'", substr($value, 1, -1));
-        }
-
-        if (in_array(strtolower($value), ['~', 'null'], true))           return null;
-        if (in_array(strtolower($value), ['true', 'yes', 'on'], true))   return true;
-        if (in_array(strtolower($value), ['false', 'no', 'off'], true))  return false;
-        if (preg_match('/^-?\d+$/', $value))                             return (int) $value;
-        if (preg_match('/^-?\d+\.\d*([eE][+-]?\d+)?$/', $value))        return (float) $value;
-        if (in_array(strtolower($value), ['.inf', '+.inf'], true))       return INF;
-        if (strtolower($value) === '-.inf')                              return -INF;
-        if (strtolower($value) === '.nan')                               return NAN;
-
-        return $value;
-    }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
-
-    private static function getIndent(string $line): int
-    {
-        return strlen($line) - strlen(ltrim($line));
-    }
-
-    private static function isMapping(string $trimmed): bool
-    {
-        return (bool) preg_match('/^(?:"[^"]*"|\'[^\']*\'|[^:\'"\[\{]+):\s?/', $trimmed);
-    }
-
-    private static function splitKeyValue(string $line): array
-    {
-        if (preg_match('/^("(?:[^"\\\\]|\\\\.)*"|\'(?:[^\']|\'\')*\'|[^:]+?):\s*(.*)$/', $line, $m)) {
-            $key = self::parseScalar($m[1]);
-            $val = trim($m[2]) !== '' ? trim($m[2]) : null;
-            return [$key, $val];
-        }
-        return [$line, null];
-    }
-
-    private static function skipEmptyAndComments(array $lines, int &$pos): void
-    {
-        while ($pos < count($lines)) {
-            $t = trim($lines[$pos]);
-            if ($t === '' || str_starts_with($t, '#')) $pos++;
-            else break;
-        }
-    }
-
-    private static function getChomping(string $indicator): string
-    {
-        if (str_ends_with($indicator, '-')) return 'strip';
-        if (str_ends_with($indicator, '+')) return 'keep';
-        return 'clip';
-    }
-
-    private static function applyChomping(string $text, string $chomping): string
-    {
-        return match ($chomping) {
-            'strip' => rtrim($text, "\n"),
-            'keep'  => $text,
-            default => rtrim($text, "\n") . "\n",
-        };
+        return $obj;
     }
 }

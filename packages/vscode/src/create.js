@@ -1,0 +1,149 @@
+import * as vscode from "vscode";
+import path from "node:path";
+import { startWorker } from "./project.js";
+import { createLog } from "./log.js";
+
+// "Kirigami: Create Project…" — a native wizard (quick picks and input boxes)
+// over @kirigami/kirigami/create, the same scaffolding `kiri create` and the
+// MCP server use. Core runs in a short-lived external-Node worker (like the
+// project engine, see project.js), with the chosen folder as its cwd.
+
+const TITLE = "Kirigami: Create Project";
+
+/**
+ * @param {vscode.ExtensionContext} context
+ * @param {{ output: vscode.OutputChannel }} deps
+ */
+export function registerCreateCommand(context, { output }) {
+	context.subscriptions.push(vscode.commands.registerCommand("kirigami.create", async () => {
+		const picked = await vscode.window.showOpenDialog({
+			canSelectFolders: true, canSelectFiles: false, canSelectMany: false,
+			openLabel: "Create Kirigami project here",
+			title: "Kirigami: choose (or create) the project folder",
+			defaultUri: vscode.workspace.workspaceFolders?.[0]?.uri,
+		});
+		const folder = picked?.[0]?.fsPath;
+		if (!folder) return;
+
+		const nodePath = vscode.workspace.getConfiguration("kirigami").get("nodePath", "node");
+		const worker = startWorker(context, folder, output, nodePath);
+		try {
+			const target = await runWizard(worker, folder, output);
+			if (target) await openProject(target);
+		} catch (err) {
+			createLog(output).error(`Project creation failed — ${err?.message || err}`);
+			vscode.window.showErrorMessage(`Kirigami: project creation failed — ${firstLine(err)}`);
+		} finally {
+			await worker.dispose();
+		}
+	}));
+}
+
+// Asks every question, then scaffolds. Resolves the project directory, or
+// null when the user cancels at any step.
+async function runWizard(worker, folder, output) {
+	const templates = await vscode.window.withProgress(
+		{ location: vscode.ProgressLocation.Notification, title: "Kirigami: loading templates…" },
+		() => worker.call("listTemplates"));
+	if (!templates.length) throw new Error("No templates found — the GitHub API may be unreachable.");
+
+	const template = await vscode.window.showQuickPick(
+		templates.map((t) => ({ label: t.template, detail: t.description || undefined, template: t })),
+		{ title: TITLE, placeHolder: "Which template?", matchOnDetail: true, ignoreFocusOut: true });
+	if (!template) return null;
+
+	const dir = await input({ prompt: "Project directory, relative to the chosen folder", value: ".",
+		validateInput: (v) => v.trim() ? undefined : "Use \".\" for the chosen folder itself." });
+	if (dir === undefined) return null;
+	const target = path.resolve(folder, dir.trim());
+
+	// Extraction never overwrites, so a non-empty target is fine: say so.
+	const existing = await worker.call("inspectTarget", [target]);
+	if (existing.entries.length) {
+		const go = await vscode.window.showWarningMessage(
+			`${target} already holds ${existing.entries.length} item(s). They are kept as-is; only missing files are added${existing.hasPackageJson ? " and package.json is merged" : ""}.`,
+			{ modal: true }, "Continue");
+		if (go !== "Continue") return null;
+	}
+
+	const git = await worker.call("gitUserConfig");
+	const meta = {};
+	for (const [key, prompt, value, placeHolder] of [
+		["name", "Project name", path.basename(target)],
+		["description", "Description", ""],
+		["author", "Author", git.name],
+		["email", "Author email", git.email],
+		["baseurl", "Site base URL", "", "https://user.github.io/site"],
+		["repo", "Git repository URL", "", "Empty: derived from a *.github.io base URL"],
+	]) {
+		const answer = await input({ prompt, value, placeHolder });
+		if (answer === undefined) return null;
+		meta[key] = answer.trim();
+	}
+
+	const gitCheck = await worker.call("canInitGit", [target]);
+	const options = [
+		...(gitCheck.ok ? [{ label: "Initialise a git repository", id: "git", picked: true }] : []),
+		{ label: "Run npm install", id: "install", picked: true },
+	];
+	const chosen = await vscode.window.showQuickPick(options,
+		{ title: TITLE, placeHolder: "Options (Enter to confirm)", canPickMany: true, ignoreFocusOut: true });
+	if (!chosen) return null;
+	const want = new Set(chosen.map((o) => o.id));
+
+	return vscode.window.withProgress(
+		{ location: vscode.ProgressLocation.Notification, title: `Kirigami: creating project from "${template.label}"` },
+		async (progress) => {
+			// Same report as `kiri create`.
+			const log = createLog(output);
+			log.header("Create Project");
+			log.step(`Template : ${template.label}`);
+			log.step(`Target   : ${target}`);
+			const result = await worker.call("createProject", [{ template: template.template, target, meta, git: want.has("git") }]);
+			if (!result.success) throw new Error(result.error);
+			if (result.skipped) log.step(`${result.skipped} existing file(s) left untouched.`);
+			if (result.merged) log.step("Merged the template's package.json into the existing one.");
+			if (result.packageJson === "starter") log.step("Wrote a starter package.json (the template ships none).");
+			if (result.changed.length) log.step(`Filled ${result.changed.join(", ")} in package.json / kirigami.yaml.`);
+			if (result.banner) log.step("Wrote a starter banner.txt.");
+			if (result.starterFiles.length) log.step(`Added ${result.starterFiles.join(", ")} (the template ships none).`);
+			if (result.git.committed) log.step("Initialised git repository with an initial commit.");
+			else if (result.git.error) log.warn(`git — ${result.git.error}`);
+
+			if (want.has("install")) {
+				progress.report({ message: "npm install…" });
+				output.show(true);
+				log.line();
+				log.step("Running npm install");
+				log.line();
+				const install = await worker.call("installDependencies", [target]);
+				if (!install.success) {
+					log.error(`npm install failed: ${install.error}`);
+					vscode.window.showWarningMessage(`Kirigami: project created, but npm install failed — ${install.error}. See the Kirigami output.`);
+				}
+			}
+			log.line();
+			log.success(`Project created from "${template.label}" — ${result.written} file(s) written.`);
+			return result.target;
+		});
+}
+
+function input({ prompt, value, placeHolder, validateInput }) {
+	return vscode.window.showInputBox({ title: TITLE, prompt, value, placeHolder, validateInput, ignoreFocusOut: true });
+}
+
+function firstLine(err) {
+	return String(err?.message || err).split("\n")[0];
+}
+
+// Opens the new project right away: reloads the window when it is already the
+// open folder (so the extension loads the new kirigami.yaml), reuses an empty
+// window, and otherwise opens a new window so the current workspace stays.
+async function openProject(projectDir) {
+	const current = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+	if (current && path.resolve(current) === path.resolve(projectDir)) {
+		await vscode.commands.executeCommand("workbench.action.reloadWindow");
+		return;
+	}
+	await vscode.commands.executeCommand("vscode.openFolder", vscode.Uri.file(projectDir), { forceNewWindow: Boolean(current) });
+}

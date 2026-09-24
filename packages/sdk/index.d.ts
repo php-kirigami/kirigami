@@ -53,7 +53,26 @@ export declare const HOOKS: {
 	readonly ESBUILD_PLUGINS: 'esbuild:plugins';
 	readonly PREPROS_HTML: 'prepros:html';
 	readonly PREPROS_PHP: 'prepros:php';
+	readonly SCRIPTS_REGISTER: 'scripts:register';
+	readonly TASKS_REGISTER: 'tasks:register';
+	readonly COMMANDS_REGISTER: 'commands:register';
 };
+
+/** A plugin-provided runnable/triggerable PHP script, registered via the `scripts:register` hook. */
+export interface PluginScript {
+	name: string;
+	file: string;
+	trigger?: 'before-build' | 'before-export' | 'after-export';
+	mount?: string[];
+}
+
+/** A plugin-injected build task, registered via the `tasks:register` hook — same shape as a kirigami.yaml `tasks:` entry. */
+export interface PluginTask {
+	name: string;
+	type: string;
+	force?: boolean;
+	[key: string]: unknown;
+}
 
 /**
  * A persistent key/value cache backed by SQLite (via node:sqlite — no
@@ -91,3 +110,58 @@ export declare class Cache {
 	/** Closes the underlying database connection. */
 	close(): void;
 }
+
+/** Clear one hook, or all hooks; commands and persistent caches are unaffected. */
+export declare function reset(hookName?: string): void;
+
+/** A command receives raw arguments and the host's loaded project. */
+export interface Command<TProject = unknown, TResult = unknown> {
+    name: string;
+    description: string;
+    run: (args: string[], project: TProject) => TResult | Promise<TResult>;
+}
+
+/** Register once by name; duplicate names and non-function runners throw. */
+export declare function registerCommand<TProject = unknown, TResult = unknown>(
+    name: string,
+    command: Pick<Command<TProject, TResult>, 'run'> & { description?: string }
+): void;
+
+/** Returns the stored mutable entry, or null. The caller supplies the host type. */
+export declare function getCommand<TProject = unknown, TResult = unknown>(
+    name: string
+): Command<TProject, TResult> | null;
+
+/** Returns stored entries in registration order. */
+export declare function listCommands<TProject = unknown, TResult = unknown>(): Command<TProject, TResult>[];
+
+/** Clear one command, or all commands; hooks are unaffected. */
+export declare function resetCommands(name?: string): void;
+
+/** A plugin-provided build task type. */
+export interface TaskType<TTask = Record<string, unknown>, TResult = unknown, TWatcher = unknown> {
+	name: string;
+	taskname: string;
+	canbuild: boolean;
+	canwatch: boolean;
+	validate?: (root: string, task: TTask) => void | Promise<void>;
+	run: (root: string, task: TTask, exportPath?: string) => TResult | Promise<TResult>;
+	getWatcher?: (root: string, task: TTask) => TWatcher | Promise<TWatcher>;
+}
+
+/** Register a task type from a plugin's normal registration function. */
+export declare function registerTaskType<TTask = Record<string, unknown>, TResult = unknown, TWatcher = unknown>(
+	name: string,
+	definition: Pick<TaskType<TTask, TResult, TWatcher>, 'run'> & Partial<Omit<TaskType<TTask, TResult, TWatcher>, 'name' | 'run'>>
+): void;
+
+/** Returns the stored mutable task-type definition, or null. */
+export declare function getTaskType<TTask = Record<string, unknown>, TResult = unknown, TWatcher = unknown>(
+	name: string
+): TaskType<TTask, TResult, TWatcher> | null;
+
+/** Returns registered task types in registration order. */
+export declare function listTaskTypes<TTask = Record<string, unknown>, TResult = unknown, TWatcher = unknown>(): TaskType<TTask, TResult, TWatcher>[];
+
+/** Clear one task type, or all task types; hooks and commands are unaffected. */
+export declare function resetTaskTypes(name?: string): void;

@@ -1,0 +1,9 @@
+php-wasm package notice
+
+This package is a separately licensed runtime component of the Kirigami project.
+
+It contains a compiled PHP/WebAssembly runtime and associated binary assets. Because of that, it is not automatically covered by the licensing terms of the project core.
+
+The project core is licensed under GPL-3.0-or-later. This package remains under its own license terms, as described in `LICENSE`.
+
+This notice exists to make the separation explicit for downstream redistributors and integrators.

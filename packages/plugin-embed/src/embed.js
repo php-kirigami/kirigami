@@ -54,7 +54,10 @@ const PLAY_ICON = '<svg viewBox="0 0 512 512" aria-hidden="true" fill="currentCo
 
 async function getOembed(provider, id) {
 	const key = `kirigami-embed:${provider}:${id}`;
-	const cached = localStorage.getItem(key);
+	// Reading can throw too (storage disabled, sandboxed iframe, privacy mode):
+	// treat it as a cache miss and fetch, like the write below.
+	let cached = null;
+	try { cached = localStorage.getItem(key); } catch { /* storage unavailable */ }
 	if (cached) {
 		try { return JSON.parse(cached); } catch { /* corrupt entry — refetch below */ }
 	}

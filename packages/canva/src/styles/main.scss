@@ -14,15 +14,12 @@
 //      @use "@kirigami/canva/main";
 // ═══════════════════════════════════════════════════════════════════════
 
-$mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; // à mettre dans CONF.scss
-
-
 // ── Breadcrumb ──────────────────────────────────────────────────────
 .breadcrumb {
 	display: flex;
 	flex-wrap: wrap;
 	gap: .35rem;
-	font-family: $mono;
+	font-family: var(--font-mono);
 	font-size: .78rem;
 	color: var(--ink-muted);
 
@@ -48,7 +45,7 @@ $mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; // �
 		border: 1px solid var(--border);
 		border-radius: 3px;
 		background: var(--surface-2);
-		font-family: $mono;
+		font-family: var(--font-mono);
 		font-size: .78rem;
 		text-decoration: none;
 		color: var(--ink-muted);
@@ -74,7 +71,7 @@ $mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; // �
 	}
 
 	thead th {
-		font-family: $mono;
+		font-family: var(--font-mono);
 		font-size: .72rem;
 		letter-spacing: .08em;
 		text-transform: uppercase;
@@ -83,7 +80,7 @@ $mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; // �
 	}
 
 	// A numeric/version column — tabular figures, never wraps.
-	&__num { font-family: $mono; font-variant-numeric: tabular-nums; white-space: nowrap; }
+	&__num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 }
 
 
@@ -92,7 +89,7 @@ $mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; // �
 	display: inline-block;
 	padding: .15em .6em;
 	border-radius: 3px;
-	font-family: $mono;
+	font-family: var(--font-mono);
 	font-size: .72rem;
 	letter-spacing: .03em;
 	background: var(--accent-soft);

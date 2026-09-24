@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
-import { c, log } from "../utils.js";
 
 /**
  * bin/libs/devserver.js — the static file server + hot-reload channel behind
@@ -75,13 +74,25 @@ function injectReloadScript(html) {
 		: html + RELOAD_SCRIPT;
 }
 
-// Resolves a URL pathname to a file under `root`, trying `index.html` for a
-// directory (or extension-less path). Never resolves outside `root`.
-function resolveFile(root, pathname) {
-	const decoded = decodeURIComponent(pathname.split("?")[0]);
+// Apply the same checks to requested names and canonical symlink targets.
+// JavaScript and source maps remain available for local browser debugging.
+function isPublicPath(relative) {
+	return relative.split(/[\\/]/).every(part => !part.startsWith('.')
+		&& !part.startsWith('_') && !part.includes(':') && !/[. ]$/.test(part)
+		&& !/\.(php|phtml|phar|scss|sass)$/i.test(part));
+}
+
+function isInside(root, file) {
+	const relative = path.relative(root, file);
+	return !path.isAbsolute(relative) && relative !== '..' && !relative.startsWith(`..${path.sep}`);
+}
+
+// Resolve only public files, including directory index and symlink targets.
+function resolveFile(root, decoded) {
 	const rel = decoded.replace(/^\/+/, "");
+	if (!isPublicPath(rel)) return null;
 	const abs = path.normalize(path.join(root, rel));
-	if (!(abs === root || abs.startsWith(root + path.sep))) return null; // path traversal guard
+	if (!isInside(root, abs)) return null;
 
 	const candidates = abs.endsWith(path.sep) || decoded.endsWith("/")
 		? [path.join(abs, "index.html")]
@@ -89,7 +100,9 @@ function resolveFile(root, pathname) {
 
 	for (const file of candidates) {
 		try {
-			if (fs.statSync(file).isFile()) return file;
+			const real = fs.realpathSync.native(file);
+			if (!isInside(root, real) || !isPublicPath(path.relative(root, real))) continue;
+			if (fs.statSync(real).isFile()) return real;
 		} catch { /* try the next candidate */ }
 	}
 	return null;
@@ -102,13 +115,17 @@ function resolveFile(root, pathname) {
  * fallback (served as-is if present, otherwise a minimal built-in page) and a
  * hot-reload channel every HTML response is wired to automatically.
  *
- * Returns `{ url, broadcastReload(), broadcastCssReload(), close() }`.
+ * `port: 0` lets the OS pick a free port — the actual port is reflected back
+ * in the returned `port`/`url` either way.
+ *
+ * Returns `{ address, port, url, broadcastReload(), broadcastCssReload(), close() }`.
  * `broadcastReload()` triggers a full page reload; `broadcastCssReload()`
  * swaps every `<link rel=stylesheet>` in place instead (no reload, scroll
  * position and form state kept) — use it when only CSS changed. Both are
  * safe to call with zero connected clients (a no-op).
  */
 export async function createDevServer({ root, port = 4321, host = "127.0.0.1" }) {
+	root = fs.realpathSync.native(root);
 	const clients = new Set();
 
 	const server = http.createServer((req, res) => {
@@ -124,27 +141,52 @@ export async function createDevServer({ root, port = 4321, host = "127.0.0.1" })
 			return;
 		}
 
-		const file = resolveFile(root, req.url || "/");
-		if (!file) {
-			const notFound = path.join(root, "404.html");
-			res.writeHead(404, { "Content-Type": "text/html; charset=utf-8" });
-			if (fs.existsSync(notFound)) {
-				res.end(injectReloadScript(fs.readFileSync(notFound, "utf8")));
-			} else {
-				res.end("<h1>404</h1><p>Not found.</p>");
-			}
+		let pathname;
+		try {
+			pathname = decodeURIComponent((req.url || "/").split("?")[0]);
+			if (pathname.includes("\0")) throw new URIError("Invalid pathname");
+		} catch {
+			res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+			res.end("Bad request.");
 			return;
 		}
 
-		const ext = path.extname(file).toLowerCase();
-		const type = MIME[ext] || "application/octet-stream";
-		if (ext === ".html" || ext === ".htm") {
-			res.writeHead(200, { "Content-Type": type });
-			res.end(injectReloadScript(fs.readFileSync(file, "utf8")));
-		} else {
-			res.writeHead(200, { "Content-Type": type });
-			fs.createReadStream(file).pipe(res);
-		}
+		const fail = () => {
+			if (res.destroyed) return;
+			if (res.headersSent) { res.destroy(); return; }
+			res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+			res.end("Unable to read requested file.");
+		};
+		try {
+			const file = resolveFile(root, pathname);
+			if (!file) {
+				const notFound = resolveFile(root, "/404.html");
+				let html;
+				try { html = notFound ? injectReloadScript(fs.readFileSync(notFound, "utf8")) : "<h1>404</h1><p>Not found.</p>"; }
+				catch (error) {
+					if (error.code !== "ENOENT") throw error;
+					html = "<h1>404</h1><p>Not found.</p>";
+				}
+				res.writeHead(404, { "Content-Type": "text/html; charset=utf-8" });
+				res.end(html);
+				return;
+			}
+
+			const ext = path.extname(file).toLowerCase();
+			const type = MIME[ext] || "application/octet-stream";
+			if (ext === ".html" || ext === ".htm") {
+				const html = injectReloadScript(fs.readFileSync(file, "utf8"));
+				res.writeHead(200, { "Content-Type": type });
+				res.end(html);
+			} else {
+				const stream = fs.createReadStream(file);
+				stream.on("error", fail);
+				res.on("close", () => stream.destroy());
+				// Keep headers replaceable until the stream actually sends data.
+				res.setHeader("Content-Type", type);
+				stream.pipe(res);
+			}
+		} catch { fail(); }
 	});
 
 	await new Promise((resolve, reject) => {
@@ -158,8 +200,12 @@ export async function createDevServer({ root, port = 4321, host = "127.0.0.1" })
 		server.listen(port, host, resolve);
 	});
 
+	const actualPort = server.address().port;
+
 	return {
-		url: `http://${host}:${port}/`,
+		address: host,
+		port: actualPort,
+		url: `http://${host}:${actualPort}/`,
 		broadcastReload() {
 			for (const res of clients) res.write("data: reload\n\n");
 		},
@@ -172,8 +218,4 @@ export async function createDevServer({ root, port = 4321, host = "127.0.0.1" })
 			return new Promise((resolve) => server.close(resolve));
 		},
 	};
-}
-
-export function logServerReady(url) {
-	log.info(`Serving  : ${c.dim(url)} ${c.gray("(hot-reload on)")}`);
 }

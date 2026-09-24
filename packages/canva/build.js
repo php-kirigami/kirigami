@@ -2,166 +2,102 @@ import { build, formatMessages } from "esbuild";
 import { watch as chokidarWatch } from "chokidar";
 import fg from "fast-glob";
 import { cp, mkdir, rm, copyFile } from "node:fs/promises";
+import { realpathSync } from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
-const isWatch = process.argv.includes("--watch");
-
-const SRC_SCRIPTS = "src/scripts";
-const SRC_STYLES = "src/styles";
-const DIST_SCRIPTS = "dist/scripts";
-const DIST_STYLES = "dist/styles";
-
-
-// faudrait faire des d.ts et linker ça pour que vscode reconnaissent les scripts
-
-
-async function printWarnings(warnings) {
-	if (!warnings?.length) return;
-	const formatted = await formatMessages(warnings, {
-		kind: "warning",
-		color: true,
-		terminalWidth: process.stdout.columns || 80,
-	});
-	console.warn(formatted.join("\n"));
-}
-
-// Simple lock: if a build is already running, ignore concurrent triggers and
-// re-run a single build right after, not several in parallel.
-let scriptsBuildRunning = false;
-let scriptsBuildQueued = false;
-
-async function buildScripts() {
-	if (scriptsBuildRunning) {
-		scriptsBuildQueued = true;
-		return;
-	}
-	scriptsBuildRunning = true;
-
-	try {
-		const entries = await fg(`${SRC_SCRIPTS}/**/*.js`);
-		if (entries.length > 0) {
-			await build({
-				entryPoints: entries,
-				outdir: DIST_SCRIPTS,
-				outbase: SRC_SCRIPTS,
-				format: "esm",
-				bundle: false, // one source file = one dist file
-				sourcemap: true,
-				// legalComments: 'inline',
-				target: ["es2022"],
-				platform: "browser",
-				logLevel: "info",
-				loader: { '.json': 'json' },
-				// banner: { js: bannerText },
-			});
-
-			await printWarnings(result.warnings);
-			console.log(`✔ scripts built (${entries.length} file(s))`);
+// Rebuild the complete output tree so deleted scripts, maps, declarations,
+// and styles cannot survive a watch rebuild. Callers serialize rebuilds.
+export async function buildAll(root = process.cwd()) {
+	root = path.resolve(root);
+	const dist = path.join(root, "dist");
+	if (path.dirname(dist) !== root) throw new Error("Invalid build output directory");
+	await rm(dist, { recursive: true, force: true });
+	const entries = await fg("src/scripts/**/*.js", { cwd: root });
+	if (entries.length) {
+		const result = await build({
+			absWorkingDir: root,
+			entryPoints: entries,
+			outdir: "dist/scripts",
+			outbase: "src/scripts",
+			format: "esm",
+			bundle: false,
+			sourcemap: true,
+			target: ["es2022"],
+			platform: "browser",
+			logLevel: "silent",
+			loader: { '.json': 'json' },
+		});
+		if (result.warnings.length) {
+			const messages = await formatMessages(result.warnings, { kind: "warning", color: true });
+			console.warn(messages.join("\n"));
 		}
-	} catch (err) {
-		let msg = err;
-		if (err?.errors?.length) {
-			const formatted = await formatMessages(err.errors, {
-				kind: "error",
-				color: true,
-				terminalWidth: process.stdout.columns || 80,
-			});
-			msg = formatted.join("\n");
-		}
-		return {
-			success: false,
-			error: msg,
-		};
-	} finally {
-		scriptsBuildRunning = false;
-		if (scriptsBuildQueued) {
-			scriptsBuildQueued = false;
-			await buildScripts(); // re-run once with the most recent state
-		}
+		console.log(`Scripts built (${entries.length} files)`);
 	}
-}
-
-async function copyDeclarations() {
-	try {
-		const entries = await fg(`${SRC_SCRIPTS}/**/*.d.ts`);
-		for (const file of entries) {
-			const rel = path.relative(SRC_SCRIPTS, file);
-			const dest = path.join(DIST_SCRIPTS, rel);
-			await mkdir(path.dirname(dest), { recursive: true });
-			await copyFile(file, dest);
-		}
-		if (entries.length) console.log(`✔ .d.ts copied (${entries.length} file(s))`);
-	} catch (err) {
-		console.error("✘ failed to copy .d.ts:", err.message);
+	for (const file of await fg("src/scripts/**/*.d.ts", { cwd: root })) {
+		const dest = path.join(dist, "scripts", path.relative("src/scripts", file));
+		await mkdir(path.dirname(dest), { recursive: true });
+		await copyFile(path.join(root, file), dest);
 	}
+	await cp(path.join(root, "src/styles"), path.join(dist, "styles"), { recursive: true });
+	console.log("Declarations and styles copied");
 }
 
-async function copyStyles() {
-	try {
-		await mkdir(DIST_STYLES, { recursive: true });
-		await cp(SRC_STYLES, DIST_STYLES, { recursive: true });
-		console.log("✔ styles copied");
-	} catch (err) {
-		console.error("✘ failed to copy styles:", err.message);
-	}
-}
-
-async function buildAll() {
-	await rm("dist", { recursive: true, force: true });
-	await buildScripts();
-	await copyDeclarations();
-	await copyStyles();
-}
-
-// Generic debounce: avoids handling each fs event individually when several
-// arrive in a burst for the same save.
-function debounce(fn, delay = 100) {
+// Debounce changes and await each rebuild. Changes arriving during a build
+// request another pass, including after a failed build.
+export function watchBuild(root = process.cwd()) {
+	root = path.resolve(root);
+	// Watch through the real path: on Windows, fs.watch aborts the process
+	// (libuv fs-event.c assertion) when the path holds an 8.3 short name.
+	try { root = realpathSync.native(root); } catch { /* not created yet */ }
 	let timer;
-	return (...args) => {
+	let pending = false;
+	let closed = false;
+	let running = null;
+	const report = error => console.error("Canva build failed:", error);
+	const flush = () => {
+		if (running || closed) return;
+		running = (async () => {
+			while (pending && !closed) {
+				pending = false;
+				try { await buildAll(root); } catch (error) { report(error); }
+			}
+		})().finally(() => { running = null; });
+	};
+	const watcher = chokidarWatch([path.join(root, "src/scripts"), path.join(root, "src/styles")], {
+		ignoreInitial: true,
+		awaitWriteFinish: { stabilityThreshold: 50, pollInterval: 20 },
+	});
+	watcher.on("all", () => {
 		clearTimeout(timer);
-		timer = setTimeout(() => fn(...args), delay);
+		timer = setTimeout(() => { pending = true; flush(); }, 100);
+	});
+	watcher.on("error", report);
+	return {
+		ready: new Promise((resolve, reject) => {
+			watcher.once("ready", resolve);
+			watcher.once("error", reject);
+		}),
+		async close() {
+			closed = true;
+			clearTimeout(timer);
+			await watcher.close();
+			await running;
+		},
 	};
 }
 
 async function main() {
 	await buildAll();
-
-	if (isWatch) {
-		console.log("👀 watch enabled...");
-
-		const debouncedScripts = debounce((file) => {
-			console.log(`[scripts] change: ${file}`);
-			buildScripts();
-		});
-
-		const debouncedTypes = debounce((file) => {
-			console.log(`[types] change: ${file}`);
-			copyDeclarations();
-		});
-
-		const debouncedStyles = debounce((file) => {
-			console.log(`[styles] change: ${file}`);
-			copyStyles();
-		});
-
-		chokidarWatch(SRC_SCRIPTS, {
-			ignoreInitial: true,
-			awaitWriteFinish: { stabilityThreshold: 50, pollInterval: 20 },
-		}).on("all", (event, file) => {
-			if (file.endsWith(".d.ts")) debouncedTypes(file);
-			else if (file.endsWith(".js")) debouncedScripts(file);
-		});
-
-		chokidarWatch(SRC_STYLES, {
-			ignoreInitial: true,
-			awaitWriteFinish: { stabilityThreshold: 50, pollInterval: 20 },
-		}).on("all", (event, file) => {
-			debouncedStyles(file);
-		});
+	if (process.argv.includes("--watch")) {
+		await watchBuild().ready;
+		console.log("Watch enabled");
 	}
 }
 
-main().catch((err) => {
-	console.error(err);
-	process.exit(1);
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+	main().catch(error => {
+		console.error("Canva build failed:", error);
+		process.exitCode = 1;
+	});
+}

@@ -26,7 +26,6 @@ spl_autoload_register(function ($class) {
         'LD'              => 'ld.class.php',
         'MD'              => 'md.class.php',
         'META'            => 'meta.class.php',
-        'NORM'            => 'norm.class.php',
         'OBF'             => 'obf.class.php',
 		'PREPROS'         => 'prepros.class.php',
         'SCHEMA'          => 'schema.class.php',
@@ -36,7 +35,10 @@ spl_autoload_register(function ($class) {
         'YAML'            => 'yaml.class.php',
 
         // Fallbacks
-        'Normalizer'      => 'normalizer.class.php'
+        'MD_LEGACY'         => 'md-legacy.class.php',
+        'NORMALIZER_LEGACY' => 'normalizer-legacy.class.php',
+        'SCHEMA_LEGACY'     => 'schema-legacy.class.php',
+        'YAML_LEGACY'       => 'yaml-legacy.class.php'
     ];
     if (isset($catalog[$class])) require_once(__DIR__ . '/libraries/' . $catalog[$class]);
 }, true, true);
@@ -58,3 +60,11 @@ PREPROS::loadConfig($config);
 // `includes` file (or prepros.plugins.php) can hook here to pull in extra
 // PHP files or wire itself up.
 PREPROS::runHook('boot', $config);
+
+// Symmetric `shutdown` hook, fired via register_shutdown_function rather
+// than auto_append_file: every entrypoint ends in STD::succeed()/STD::error(),
+// both of which exit() — and PHP skips auto_append_file whenever the script
+// terminates through exit()/die(). A shutdown function has no such gap.
+register_shutdown_function(function () {
+    PREPROS::runHook('shutdown');
+});

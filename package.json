@@ -2,10 +2,12 @@
   "type": "module",
   "name": "kirigami",
   "private": false,
+  "license": "GPL-3.0-or-later",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
+    "test": "node scripts/test.js",
     "release": "node scripts/publish.js",
     "release:dry": "node scripts/publish.js --dry-run"
   }

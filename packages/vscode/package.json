@@ -1,0 +1,81 @@
+{
+  "name": "kirigami-vscode",
+  "displayName": "Kirigami",
+  "description": "Build, export, run, and preview a Kirigami static site from VS Code.",
+  "keywords": ["vscode-extension","kirigami","static-site","editor"],
+  "version": "0.1.0",
+  "publisher": "php-kirigami",
+  "icon": "images/icon.png",
+  "license": "GPL-3.0-or-later",
+  "author": "Maxime Larrivée-Roy",
+  "homepage": "https://php-kirigami.github.io",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/php-kirigami/kirigami.git"
+  },
+  "bugs": {
+    "url": "https://github.com/php-kirigami/kirigami/issues"
+  },
+  "engines": {
+    "vscode": "^1.90.0",
+    "node": ">=24.0.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": ["workspaceContains:kirigami.yaml", "onCommand:kirigami.create"],
+  "main": "./dist/extension.js",
+  "capabilities": { "untrustedWorkspaces": { "supported": false } },
+  "contributes": {
+    "configuration": {
+      "title": "Kirigami",
+      "properties": {
+        "kirigami.nodePath": {
+          "type": "string", "default": "node", "scope": "machine",
+          "description": "Node.js 24+ executable used to run the Kirigami engine. Restart the extension after changing this setting."
+        },
+        "kirigami.previewPort": {
+          "type": "integer", "default": 4321, "minimum": 1, "maximum": 65535,
+          "description": "Port of the dev server started by Kirigami: Toggle Dev Server. Applies the next time the server starts."
+        }
+      }
+    },
+    "commands": [
+      { "command": "kirigami.create", "title": "Create Project…", "category": "Kirigami" },
+      { "command": "kirigami.build", "title": "Build", "category": "Kirigami" },
+      { "command": "kirigami.export", "title": "Export", "category": "Kirigami" },
+      { "command": "kirigami.run", "title": "Run Script…", "category": "Kirigami" },
+      { "command": "kirigami.validate", "title": "Validate kirigami.yaml", "category": "Kirigami" },
+      { "command": "kirigami.toggleServer", "title": "Toggle Dev Server", "category": "Kirigami" }
+    ],
+    "languages": [
+      { "id": "kirigami-output", "aliases": ["Kirigami Output"], "mimetypes": ["text/x-code-output"] }
+    ],
+    "grammars": [
+      { "language": "kirigami-output", "scopeName": "source.kirigami-output", "path": "./syntaxes/kirigami-output.tmLanguage.json" }
+    ],
+    "mcpServerDefinitionProviders": [
+      { "id": "kirigami", "label": "Kirigami" }
+    ],
+    "menus": {
+      "commandPalette": [
+        { "command": "kirigami.build", "when": "kirigami.projectLoaded" },
+        { "command": "kirigami.export", "when": "kirigami.projectLoaded" },
+        { "command": "kirigami.run", "when": "kirigami.projectLoaded" },
+        { "command": "kirigami.validate", "when": "kirigami.projectLoaded" },
+        { "command": "kirigami.toggleServer", "when": "kirigami.projectLoaded" }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "vscode:prepublish": "node esbuild.mjs --minify"
+  },
+  "dependencies": {
+    "@kirigami/kirigami": "3.0.0",
+    "@kirigami/mcp": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "1.90.0",
+    "esbuild": "^0.28.2"
+  }
+}

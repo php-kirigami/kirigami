@@ -1,0 +1,24 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Kirigami Output",
+  "scopeName": "source.kirigami-output",
+  "comment": "Colors the Kirigami output channel like the kiri CLI. Uses the scopes themes style for logs (token.*-token) plus common ones, so every theme colors it.",
+  "patterns": [
+    { "name": "markup.heading.kirigami", "match": "^kiri — .*$" },
+    { "name": "markup.heading.kirigami", "match": "^(Plugins|Tasks):$" },
+    { "name": "token.error-token.kirigami", "match": "^(❌.*|› Error:.*)$" },
+    { "name": "token.warn-token.kirigami", "match": "^(⚠.*|› Warnings:.*)$" },
+    { "name": "token.info-token.kirigami", "match": "^ℹ.*$" },
+    { "name": "markup.inserted.kirigami", "match": "^✔.*$" },
+    { "name": "comment.line.kirigami", "match": "^ {4}\\S.*$" },
+    { "name": "comment.line.kirigami", "match": "^ {2}── .* ──$" },
+    {
+      "match": "^(›)\\s",
+      "captures": { "1": { "name": "comment.line.kirigami" } }
+    },
+    { "name": "entity.name.tag.kirigami", "match": "^\\[[\\w:.@/-]+\\]" },
+    { "name": "markup.inserted.kirigami", "match": "✔" },
+    { "name": "token.error-token.kirigami", "match": "❌" },
+    { "name": "markup.underline.link.kirigami", "match": "\\bhttps?://[^\\s)]+" }
+  ]
+}

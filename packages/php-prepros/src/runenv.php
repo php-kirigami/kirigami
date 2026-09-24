@@ -1,7 +1,7 @@
 <?php
 
-include(__DIR__ . '/utils.inc.php');
-
+// Framework bootstrap (autoloader, $argv/$config, aliases, `boot` hook) is
+// loaded via php.ini's auto_prepend_file, not an explicit include here.
 
 try {
 

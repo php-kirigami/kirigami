@@ -81,6 +81,7 @@ function extlink_resolve(array $attrs): string {
     $description = trim($attrs['description'] ?? '') ?: trim($metas->description ?? '');
     $label       = trim($attrs['label'] ?? '') ?: trim($metas->label ?? '');
     $imageUrl    = trim($attrs['image'] ?? '') ?: trim($metas->image ?? '');
+    $class       = trim($attrs['class'] ?? '');
 
     if (!$title) {
         throw new Exception("<extlink src=\"{$src}\"> found no title on the target page — pass one explicitly: <extlink src=\"{$src}\" title=\"…\">.");
@@ -136,15 +137,16 @@ function extlink_resolve(array $attrs): string {
         if ($ready) $image = FS::getRelativePath(PREPROS::$file, $destVirtual);
     }
 
-    return extlink_render($src, $title, $description, $label, $image);
+    return extlink_render($src, $title, $description, $label, $image, $class);
 }
 
 
-function extlink_render(string $src, string $title, string $description, string $label, string $image): string
+function extlink_render(string $src, string $title, string $description, string $label, string $image, string $class = ''): string
 {
     $esc = fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
-    $html = '<a class="extlink" href="' . $esc($src) . '" target="_blank" rel="noopener noreferrer">';
+    $cardClass = 'extlink' . ($class !== '' ? ' ' . $class : '');
+    $html = '<a class="' . $esc($cardClass) . '" href="' . $esc($src) . '" target="_blank" rel="noopener noreferrer">';
     if ($image) {
         $html .= '<img class="extlink__image" src="' . $esc($image) . '" alt="" loading="lazy">';
     }
