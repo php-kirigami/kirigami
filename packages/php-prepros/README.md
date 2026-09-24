@@ -34,7 +34,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
 - [Overview](#overview)
-- [Unreleased](#unreleased)
+- [What's new in 3.0.1](#whats-new-in-301)
 - [What's new in 3.0.0](#whats-new-in-300)
 - [What's new in 2.0.0](#whats-new-in-200)
 - [What's new in 1.9.3](#whats-new-in-193)
@@ -106,7 +106,7 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
-## Unreleased
+## What's new in 3.0.1
 
 A registered tag written inside Markdown code is no longer processed. `<markdown>`, `<img asset="...">` or a plugin tag shown in an inline code span (`` `<markdown prose>` ``) or a fenced block (` ``` ` / `~~~`) stays example text: before, a `<markdown>` in a code span paired with the real block's closing tag and broke the rest of the page, and an `<img asset>` in one became an empty image. Indented (four-space) code blocks are not recognized, since `<markdown>` bodies are indented; use a fence there.
 

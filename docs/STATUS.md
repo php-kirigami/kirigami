@@ -1,6 +1,9 @@
 # Status
 
-## Tags inside Markdown code are left alone (php-prepros, unreleased) — 2026-09-24
+## Tags inside Markdown code are left alone (php-prepros 3.0.1) — 2026-09-24
+
+- Released as php-prepros 3.0.1, `@kirigami/kirigami` 3.0.2, cli and mcp
+  0.1.2, and the VS Code extension 0.1.1.
 
 - `STR::replaceTags()` (behind every `PREPROS::registerTag()`) masks inline
   code spans and fenced blocks before matching and restores them after, in

@@ -27,6 +27,15 @@ Use [the CLI](../cli/README.md) for terminal commands. This package is the progr
 
 ---
 
+## What's new in 3.0.2
+
+- Ships `@kirigami/php-prepros` 3.0.1: a registered tag written inside
+  Markdown code (an inline code span or a fenced block), such as a
+  `<markdown>` or `<img asset>` example, is shown as written instead of
+  being processed.
+
+---
+
 ## What's new in 3.0.1
 
 - `kiri create` also writes `.vscode/extensions.json` when the template has
@@ -162,6 +171,7 @@ Dependency bumps: [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirig
 
 - [@kirigami/kirigami](#kirigamikirigami)
 - [Overview](#overview)
+- [What's new in 3.0.2](#whats-new-in-302)
 - [What's new in 3.0.1](#whats-new-in-301)
 - [3.0.0 — breaking](#300--breaking)
 - [What's new in 2.0.0](#whats-new-in-200)
