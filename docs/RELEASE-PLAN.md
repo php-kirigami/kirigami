@@ -142,17 +142,14 @@ true only after this release.
 7. ~~Tag a new `kiribuild` version~~: done 2026-09-23, `v2.1.0` and `v2` on
    e67bdef. Its CI now gates the `@kirigami/cli` layout (`local-cli-package`
    blocking, `CLI_GOOD`/`CORE_GOOD` pins); all 10 jobs green.
-8. Templates (`../template-*/`): already migrated in local, unpushed commits
-   (2026-09-23: `template-default` 141d049, `template-demo` 44df446, with
-   `@kirigami/cli ^0.1.0` + `@kirigami/kirigami ^3.0.0`, page types, no
-   `tasks.json`). Adjust those ranges if the chosen versions differ, restore
-   `node_modules` with `npm install` (it refreshes `package-lock.json`; during
-   development `node_modules/@kirigami` was junctioned to the monorepo, the
-   published copies kept in `node_modules/.kirigami-published`), rebuild,
-   commit, push. Existing `dist/` output folders need the `.kirigami-export`
-   marker once.
-9. Org site (`../php-kirigami.github.io/`): same dependency change, rebuild,
-   deploy.
+8. ~~Templates~~: done 2026-09-24. `template-default` (e2ab649) and
+   `template-demo` (458da31) install core 3.0.1, `@kirigami/cli` 0.1.1,
+   canva 2.7.0 and the 0.2.0 plugins from npm (the monorepo junctions are
+   gone), are rebuilt and pushed; both Pages deploys and kiribuild's CI
+   pass, and `kiri create default` now scaffolds a core-3 project.
+9. ~~Org site~~: done 2026-09-24 (0119427, c6d4937), rebased on the bot's
+   generated-files commit, installed from npm, rebuilt and deployed. The
+   paper design's own `transition` rules now keep canva's theme fade.
 
 ## 4. VSIX facts (checked 2026-09-22, win32-x64)
 
