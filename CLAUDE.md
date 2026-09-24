@@ -18,7 +18,6 @@ evolving material lives in `docs/`, split by topic:
 | [docs/DOCTODO.md](docs/DOCTODO.md) | Documentation debt — pending doc updates code changes left behind |
 | [docs/EXTENSION-VSCODE.md](docs/EXTENSION-VSCODE.md) | VS Code extension implementation, limitations, and remaining work |
 | [docs/UPDATE.md](docs/UPDATE.md) | Procedures for updating repository Markdown and the MCP doc-search index |
-| [docs/RELEASE-PLAN.md](docs/RELEASE-PLAN.md) | Checklist for the pending coordinated release (npm, phpext, VSIX); delete once shipped |
 
 `docs/template-CLAUDE.md` is a different thing entirely — it's the
 `CLAUDE.md` template copied verbatim into every `../template-*/` sibling

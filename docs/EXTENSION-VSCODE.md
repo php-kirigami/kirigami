@@ -47,14 +47,39 @@ node --test --test-isolation=none packages/vscode/test/activation.test.cjs
 
 The Windows host runner uses an isolated temporary profile and site, and retains logs for inspection. Pass `-ExtensionPath <unzipped VSIX>/extension` to test a packaged VSIX instead of the development folder. Runtime staging reflects dependencies installed for the build platform, including native binaries (esbuild, @parcel/watcher), so each VSIX is platform-specific; recompile after core/worker changes, including when using watch mode.
 
+Publishing: version 0.1.0 went out on 2026-09-24 by uploading the six VSIX files from the workflow's artifacts on the publisher page (https://marketplace.visualstudio.com/manage/publishers/php-kirigami: *New extension* for the first, then *Update* for each other platform; each is verified for a few minutes). The workflow's `publish` job needs an Azure DevOps personal access token, which the maintainer's Microsoft account (created with a non-Microsoft email address) could not get: the Azure sign-up pages reject it ("does not exist in tenant 'Microsoft Services'"). The Marketplace publisher page itself works with that account.
+
 The host runner picks a free port and passes it through `kirigami.previewPort`, so a dev server already running on the default port doesn't answer the test.
 
-Packaging and publishing: the `VSIX` workflow (`.github/workflows/vsix.yml`, run by hand from the Actions tab) builds one VSIX per target on its own runner (win32-x64/arm64, linux-x64/arm64, darwin-x64/arm64), checks that the staged runtime matches the target, and uploads the files as artifacts; with `publish` checked it also publishes them with the `VSCE_PAT` secret. It passes `--baseContentUrl`/`--baseImagesUrl` so the README's relative links resolve to `packages/vscode`, not the monorepo root. Locally, `npx @vscode/vsce package --no-dependencies --target win32-x64` from `packages/vscode` builds the Windows VSIX; on 2026-09-24 it passed the real-host test with VS Code 1.139.0. See [RELEASE-PLAN.md](RELEASE-PLAN.md#4-vsix-facts-checked-2026-09-22-win32-x64) for its size, licenses, and path lengths.
+Packaging and publishing: the `VSIX` workflow (`.github/workflows/vsix.yml`, run by hand from the Actions tab) builds one VSIX per target on its own runner (win32-x64/arm64, linux-x64/arm64, darwin-x64/arm64), checks that the staged runtime matches the target, and uploads the files as artifacts; with `publish` checked it also publishes them with the `VSCE_PAT` secret. It passes `--baseContentUrl`/`--baseImagesUrl` so the README's relative links resolve to `packages/vscode`, not the monorepo root. Locally, `npx @vscode/vsce package --no-dependencies --target win32-x64` from `packages/vscode` builds the Windows VSIX; on 2026-09-24 it passed the real-host test with VS Code 1.139.0. See [VSIX facts](#vsix-facts-checked-2026-09-22-win32-x64) for its size, licenses, and path lengths.
+
+## VSIX facts (checked 2026-09-22, win32-x64)
+
+- Builds with `vsce package --no-dependencies --target win32-x64`:
+  19.2 MB, 1,745 files, 56.3 MB unpacked, 63 staged runtime packages. Type
+  declarations and source maps are no longer staged, and the core no longer
+  pulls in `@octokit/rest` (since removed everywhere: core has its own GitHub client).
+- Passes the real-host smoke test in VS Code 1.138.0 when unzipped and loaded
+  through `test/run-host.ps1 -ExtensionPath <unzipped>/extension`.
+- Path length: the longest path inside the extension is 98 characters, 179
+  once installed under `%USERPROFILE%\.vscode\extensions\`. Before the octokit
+  removal it was 140, and the extension host failed to start when the VSIX was
+  unzipped under a 130-character folder (over Windows' 260 limit); the same
+  folder now works.
+- Bundled licenses: 42 MIT, 5 GPL-3.0-or-later (Kirigami), 5 GPL-2.0-or-later
+  (PHP-WASM), 3 Apache-2.0, 3 BSD-3-Clause, and one each of ISC, Python-2.0,
+  CC0-1.0, 0BSD. `@php-wasm/util` declares no license in its manifest but
+  ships a LICENSE file. Five MIT packages ship no license file
+  (`@tokenizer/token`, `@esbuild/win32-x64`, `fontkit`, `brotli`, `dfa`).
+  Consider a generated third-party notices file in the VSIX.
+- Icon: `packages/vscode/images/icon.png`, the elephant from the logo at
+  256 px (vector source: `assets/chart/kirigami-elephant.svg`). The extension
+  README uses `images/logo.png`, because the Marketplace rejects SVG images in
+  READMEs.
 
 ## Remaining work
 
-1. Complete the real-host validation above.
-2. Test the VSIX for the other target platforms in a real host (the workflow only checks what it stages), and consider a generated third-party notices file.
-3. Consider diagnostics, tasks integration, multi-root support, and optional MCP registration after the existing commands are reliable.
+1. Test the VSIX for the other target platforms in a real host (the workflow only checks what it stages), and consider a generated third-party notices file.
+2. Consider diagnostics, tasks integration, multi-root support, and optional MCP registration after the existing commands are reliable.
 
 See [DECISIONS.md](DECISIONS.md), [TODO.md](TODO.md), and [the audit](AUDIT-2026-09-20.md) for rationale and reproductions.
