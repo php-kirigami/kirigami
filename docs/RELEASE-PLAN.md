@@ -139,8 +139,9 @@ true only after this release.
 6. For each target platform: `npm ci`, then in `packages/vscode`
    `npx @vscode/vsce package --no-dependencies --target <target>`, check the
    VSIX (below), then `vsce publish --packagePath <file>`.
-7. Tag a new `kiribuild` version and move the `v2` tag (only after its
-   `@kirigami/cli` change).
+7. ~~Tag a new `kiribuild` version~~: done 2026-09-23, `v2.1.0` and `v2` on
+   e67bdef. Its CI now gates the `@kirigami/cli` layout (`local-cli-package`
+   blocking, `CLI_GOOD`/`CORE_GOOD` pins); all 10 jobs green.
 8. Templates (`../template-*/`): already migrated in local, unpushed commits
    (2026-09-23: `template-default` 141d049, `template-demo` 44df446, with
    `@kirigami/cli ^0.1.0` + `@kirigami/kirigami ^3.0.0`, page types, no

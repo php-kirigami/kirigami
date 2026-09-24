@@ -496,7 +496,8 @@ root), and the three interfaces only ask questions and present results.
   a fallback when the registry is unreachable, because it would stay in
   `package.json` and float across majors.
 - **Starter tooling comes from core, not only from templates.** `.mcp.json`,
-  the GitHub Pages workflow and `.vscode/settings.json` are written when
+  the GitHub Pages workflow, `.vscode/settings.json` and
+  `.vscode/extensions.json` are written when
   missing, like the starter `package.json`/`banner.txt`, so every project
   gets them even from a template that isn't up to date. Existing files are
   never merged: `settings.json` is JSONC (comments, trailing commas) and a
