@@ -21,10 +21,11 @@ exports.run = async function() {
 	assert.match(fs.readFileSync(path.join(folder, 'dist/index.html'), 'utf8'), /<p>Host test<\/p>/);
 	// No script picker is shown when the fixture contains no scripts.
 	await vscode.commands.executeCommand('kirigami.run');
+	const url = `http://127.0.0.1:${vscode.workspace.getConfiguration('kirigami').get('previewPort')}/`;
 	const started = vscode.commands.executeCommand('kirigami.toggleServer');
 	let response;
 	for (let i = 0; i < 100; i++) {
-		try { response = await fetch('http://127.0.0.1:4321/'); break; } catch {}
+		try { response = await fetch(url); break; } catch {}
 		await new Promise(resolve => setTimeout(resolve, 100));
 	}
 	assert.ok(response, 'Dev server started');
@@ -33,6 +34,6 @@ exports.run = async function() {
 	await vscode.commands.executeCommand('workbench.action.closeQuickOpen');
 	await started;
 	await vscode.commands.executeCommand('kirigami.toggleServer');
-	await assert.rejects(fetch('http://127.0.0.1:4321/'));
+	await assert.rejects(fetch(url));
 	fs.writeFileSync(path.join(folder, 'host-test-passed.json'), JSON.stringify({ vscode: vscode.version, hostNode: process.version, cwdUnchanged: process.cwd() === cwd }));
 };

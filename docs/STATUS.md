@@ -1,5 +1,18 @@
 # Status
 
+## VS Code extension ready to publish — 2026-09-24
+
+- New `VSIX` workflow: one VSIX per platform (six targets) on its own
+  runner, checked against the staged runtime's platform, uploaded as
+  artifacts, and published with `VSCE_PAT` when asked.
+- The extension README is rewritten for the Marketplace (users, not
+  monorepo developers; the naming note moved to EXTENSION-VSCODE.md), the
+  CHANGELOG has a single 0.1.0 entry, and `repository` is an https URL with
+  `directory`, which vsce needs for the README's relative images.
+- The host test picks a free port through `kirigami.previewPort` instead of
+  assuming 4321 (a running `kiri serve` answered it). The packaged
+  win32-x64 VSIX passes it with VS Code 1.139.0.
+
 ## Starter `.vscode/extensions.json` (core 3.0.1, cli/mcp 0.1.1) — 2026-09-23
 
 - `kiri create` now also writes `.vscode/extensions.json` when the template

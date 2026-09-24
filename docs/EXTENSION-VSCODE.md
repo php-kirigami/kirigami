@@ -31,6 +31,8 @@ npm run compile -w kirigami-vscode
 code packages/vscode
 ```
 
+The package `name` is unscoped (`kirigami-vscode`, not `@kirigami/vscode`) on purpose: it is also the extension identity (`php-kirigami.kirigami-vscode`), and npm workspaces link every `packages/*` package into the root `node_modules` under that name. A package named `vscode` would shadow the `"vscode"` module for the whole monorepo, which matters for anything that loads the bundle outside the extension host.
+
 Open `packages/vscode` as the workspace root so its launch/tasks configuration resolves correctly. Press F5, then open a disposable Kirigami site in the development host. Verify build failures, configuration changes, script selection, status transitions, browser preview, and deactivation cleanup.
 
 Preview runs an initial build before starting its server and reports failures in the Output channel. Export requires a dedicated destination separate from source files; the core rejects overlapping paths before running export triggers.
@@ -45,12 +47,14 @@ node --test --test-isolation=none packages/vscode/test/activation.test.cjs
 
 The Windows host runner uses an isolated temporary profile and site, and retains logs for inspection. Pass `-ExtensionPath <unzipped VSIX>/extension` to test a packaged VSIX instead of the development folder. Runtime staging reflects dependencies installed for the build platform, including native binaries (esbuild, @parcel/watcher), so each VSIX is platform-specific; recompile after core/worker changes, including when using watch mode.
 
-Packaging (no publish): from `packages/vscode`, run `npx @vscode/vsce package --no-dependencies --target win32-x64`. The win32-x64 VSIX was built and passed the real-host test on 2026-09-22; see [RELEASE-PLAN.md](RELEASE-PLAN.md#4-vsix-facts-checked-2026-09-22-win32-x64) for its size, licenses, and path lengths. Other targets have not been built.
+The host runner picks a free port and passes it through `kirigami.previewPort`, so a dev server already running on the default port doesn't answer the test.
+
+Packaging and publishing: the `VSIX` workflow (`.github/workflows/vsix.yml`, run by hand from the Actions tab) builds one VSIX per target on its own runner (win32-x64/arm64, linux-x64/arm64, darwin-x64/arm64), checks that the staged runtime matches the target, and uploads the files as artifacts; with `publish` checked it also publishes them with the `VSCE_PAT` secret. It passes `--baseContentUrl`/`--baseImagesUrl` so the README's relative links resolve to `packages/vscode`, not the monorepo root. Locally, `npx @vscode/vsce package --no-dependencies --target win32-x64` from `packages/vscode` builds the Windows VSIX; on 2026-09-24 it passed the real-host test with VS Code 1.139.0. See [RELEASE-PLAN.md](RELEASE-PLAN.md#4-vsix-facts-checked-2026-09-22-win32-x64) for its size, licenses, and path lengths.
 
 ## Remaining work
 
 1. Complete the real-host validation above.
-2. Build and test the VSIX for the other target platforms, and consider a generated third-party notices file.
+2. Test the VSIX for the other target platforms in a real host (the workflow only checks what it stages), and consider a generated third-party notices file.
 3. Consider diagnostics, tasks integration, multi-root support, and optional MCP registration after the existing commands are reliable.
 
 See [DECISIONS.md](DECISIONS.md), [TODO.md](TODO.md), and [the audit](AUDIT-2026-09-20.md) for rationale and reproductions.

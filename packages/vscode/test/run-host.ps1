@@ -12,7 +12,11 @@ New-Item -ItemType Directory -Path "$site/src", "$profile/User" -Force | Out-Nul
 Set-Content -LiteralPath "$site/kirigami.yaml" -Encoding utf8 -Value '{"kirigami":{"project":"Host test","root":"src","baseurl":"https://example.com"},"prepros":{},"export":{"path":"dist"}}'
 [System.IO.File]::WriteAllText("$site/src/_index.php", '<p><?= $project ?></p>', [System.Text.UTF8Encoding]::new($false))
 $nodePath = (Get-Command node).Source
-@{ 'kirigami.nodePath' = $nodePath; 'security.workspace.trust.enabled' = $false } | ConvertTo-Json | Set-Content -LiteralPath "$profile/User/settings.json" -Encoding utf8
+# A free port, so a dev server already running on the default one doesn't
+# answer the test's requests.
+$listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
+$listener.Start(); $port = $listener.LocalEndpoint.Port; $listener.Stop()
+@{ 'kirigami.nodePath' = $nodePath; 'kirigami.previewPort' = $port; 'security.workspace.trust.enabled' = $false } | ConvertTo-Json | Set-Content -LiteralPath "$profile/User/settings.json" -Encoding utf8
 $extension = (Resolve-Path $ExtensionPath).Path
 $arguments = @(
     '--new-window', '--skip-welcome', '--skip-release-notes', '--disable-updates',
