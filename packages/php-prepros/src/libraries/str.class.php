@@ -18,7 +18,27 @@ class STR
 			. '|<' . $t . '([^>]*)/>'
 			. '|<' . $t . '([^>]*)>#msi';
 
-		return preg_replace_callback($pattern, function ($m) use ($clb) {
+		// A tag written inside Markdown code (a fenced block or an inline
+		// code span) is example text, not a tag: `<markdown>` shown in a
+		// code span must not close the real block around it, and
+		// `<img asset="...">` shown in one must not become an image. Mask
+		// that code before matching and put it back afterwards, both in the
+		// output and in what the callback receives.
+		$code = [];
+		if (!str_contains($contents, "\x1A")) $contents = preg_replace_callback(
+			'#^[ \t]*(`{3,}|~{3,})[^\n]*\n.*?^[ \t]*\1[ \t]*$'
+			. '|(?<!`)(`+)(?!`)[^\n]*?(?<!`)\2(?!`)#ms',
+			function ($m) use (&$code) {
+				$code[] = $m[0];
+				return "\x1A" . (count($code) - 1) . "\x1A";
+			},
+			$contents
+		);
+		$restore = fn(?string $s) => $s === null || !$code ? $s
+			: preg_replace_callback("#\x1A(\d+)\x1A#", fn($m) => $code[$m[1]], $s);
+
+		$result = preg_replace_callback($pattern, function ($m) use ($clb, $restore) {
+			$m = array_map($restore, $m);
 			if (isset($m[1]) || isset($m[2])) {
 				// paired form: <tag>content</tag>
 				$attrs = $m[1] ?? '';
@@ -34,6 +54,8 @@ class STR
 			}
 			return call_user_func($clb, $m[0], self::parseHtmlAttributes($attrs), $inner);
 		}, $contents, -1, $count, PREG_UNMATCHED_AS_NULL); // <-- the flag that fixes everything
+
+		return $restore($result);
 	}
 
 

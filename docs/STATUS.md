@@ -1,5 +1,21 @@
 # Status
 
+## Tags inside Markdown code are left alone (php-prepros 3.0.1) — 2026-09-24
+
+- Released as php-prepros 3.0.1, `@kirigami/kirigami` 3.0.2, cli and mcp
+  0.1.2, and the VS Code extension 0.1.1.
+
+- `STR::replaceTags()` (behind every `PREPROS::registerTag()`) masks inline
+  code spans and fenced blocks before matching and restores them after, in
+  the output and in what the callback receives. Found on the org site's
+  `/docs/authoring/`: `` `<markdown prose>` `` in a code span paired with the
+  real block's `</markdown>` (the rest of the page came out as raw Markdown
+  and a code block), and `` `<img asset="...">` `` became an empty `<img>`.
+- The site page was also rewritten with `<code>&lt;…&gt;</code>` so it
+  renders with the published 3.0.0; with the fix, the original backtick
+  version renders the same and no other site page changes.
+- Test: `php-prepros/test/tags.test.js` (fails without the fix).
+
 ## Coordinated release shipped — 2026-09-24
 
 - npm: `@kirigami/kirigami` 3.0.1 (3.0.0 first), php-prepros 3.0.0, sdk 0.3.0,

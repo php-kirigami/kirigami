@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1
+
+- Bundles Kirigami 3.0.2: a tag written as an example inside Markdown code
+  (an inline code span or a fenced block), such as `<markdown>` or
+  `<img asset>`, is no longer processed. Before, it could break the rest of
+  the page or produce an empty image.
+
 ## 0.1.0
 
 First release.

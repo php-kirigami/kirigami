@@ -3,7 +3,7 @@
   "displayName": "Kirigami",
   "description": "Build, export, run, and preview a Kirigami static site from VS Code.",
   "keywords": ["vscode-extension","kirigami","static-site","editor"],
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "php-kirigami",
   "icon": "images/icon.png",
   "license": "GPL-3.0-or-later",
@@ -72,8 +72,8 @@
     "vscode:prepublish": "node esbuild.mjs --minify"
   },
   "dependencies": {
-    "@kirigami/kirigami": "3.0.1",
-    "@kirigami/mcp": "0.1.1"
+    "@kirigami/kirigami": "3.0.2",
+    "@kirigami/mcp": "0.1.2"
   },
   "devDependencies": {
     "@types/vscode": "1.90.0",
