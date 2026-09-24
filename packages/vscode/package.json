@@ -11,7 +11,8 @@
   "homepage": "https://php-kirigami.github.io",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/php-kirigami/kirigami.git"
+    "url": "https://github.com/php-kirigami/kirigami.git",
+    "directory": "packages/vscode"
   },
   "bugs": {
     "url": "https://github.com/php-kirigami/kirigami/issues"

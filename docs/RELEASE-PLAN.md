@@ -136,9 +136,10 @@ true only after this release.
    `template-default` from the registry works (one SDK copy, 0.3.0).
 5. ~~Publish the `phpext-*` packages~~: done 2026-09-23, all 27 available
    (`node scripts/publish.js --skip-build`, fixed for npm 12 in 899398c).
-6. For each target platform: `npm ci`, then in `packages/vscode`
-   `npx @vscode/vsce package --no-dependencies --target <target>`, check the
-   VSIX (below), then `vsce publish --packagePath <file>`.
+6. VS Code extension, through the `VSIX` workflow (Actions tab, run by hand):
+   first without `publish` to build and check all six VSIX files, then with
+   `publish` once the `php-kirigami` Marketplace publisher exists and its
+   personal access token is stored as the `VSCE_PAT` repository secret.
 7. ~~Tag a new `kiribuild` version~~: done 2026-09-23, `v2.1.0` and `v2` on
    e67bdef. Its CI now gates the `@kirigami/cli` layout (`local-cli-package`
    blocking, `CLI_GOOD`/`CORE_GOOD` pins); all 10 jobs green.

@@ -1,0 +1,96 @@
+name: VSIX
+
+# Packages the VS Code extension for every platform and, on request, publishes
+# it. The staged runtime (dist/runtime/node_modules) holds native binaries
+# (esbuild, @parcel/watcher) for the machine that builds it, so each target is
+# built on its own runner. Run it from the Actions tab: without `publish`, it
+# only uploads the VSIX files as artifacts.
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the VSIX files to the Visual Studio Marketplace
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  VSCE: "@vscode/vsce@4.0.0"
+
+jobs:
+  package:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: win32-x64,    os: windows-latest }
+          - { target: win32-arm64,  os: windows-11-arm }
+          - { target: linux-x64,    os: ubuntu-latest }
+          - { target: linux-arm64,  os: ubuntu-24.04-arm }
+          - { target: darwin-x64,   os: macos-15-intel }
+          - { target: darwin-arm64, os: macos-latest }
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+
+      - run: npm ci
+
+      # `vscode:prepublish` bundles the extension and stages the runtime. The
+      # base URLs point the README's relative links and images at this package
+      # folder, not at the monorepo root.
+      - name: Package
+        working-directory: packages/vscode
+        shell: bash
+        run: |
+          npx --yes "$VSCE" package --no-dependencies --target ${{ matrix.target }} \
+            --out kirigami-vscode-${{ matrix.target }}.vsix \
+            --baseContentUrl https://github.com/php-kirigami/kirigami/blob/main/packages/vscode \
+            --baseImagesUrl https://raw.githubusercontent.com/php-kirigami/kirigami/main/packages/vscode
+
+      - name: Check the staged runtime matches the target
+        working-directory: packages/vscode
+        shell: bash
+        run: |
+          node -e "
+            const { platform, arch, packages } = require('./dist/runtime/inventory.json');
+            const staged = platform + '-' + arch;
+            if (staged !== '${{ matrix.target }}') { console.error('staged ' + staged + ', expected ${{ matrix.target }}'); process.exit(1); }
+            console.log('staged ' + packages.length + ' runtime packages for ' + staged);
+          "
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: vsix-${{ matrix.target }}
+          path: packages/vscode/kirigami-vscode-${{ matrix.target }}.vsix
+          if-no-files-found: error
+
+  publish:
+    needs: package
+    if: inputs.publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: vsix-*
+          merge-multiple: true
+
+      # VSCE_PAT: an Azure DevOps personal access token with the
+      # Marketplace > Manage scope, for the `php-kirigami` publisher.
+      - name: Publish
+        shell: bash
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: npx --yes "$VSCE" publish --packagePath kirigami-vscode-*.vsix
