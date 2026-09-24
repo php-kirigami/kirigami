@@ -29,9 +29,9 @@ fixes/docs only → patch, and are applied in the manifests.
 | `@kirigami/sdk` | 0.2.1 | 0.2.1 | 8 | 0.3.0 | New hooks (`scripts:register`, `tasks:register`, `commands:register`) |
 | `@kirigami/php-wasm` | 8.5.10-6 | 8.5.10-5 | 6 | **8.5.11** | PHP 8.5.11 core validated (see section 2) |
 | `@kirigami/canva` | 2.6.0 | 2.6.0 | 12 | 2.7.0 | Two `@font-face` blocks for fonts with an `ital` axis |
-| `@kirigami/plugin-embed` | 0.1.5 | 0.1.5 | 4 | 0.1.6 | |
-| `@kirigami/plugin-highlight` | 0.1.7 | 0.1.7 | 5 | 0.1.8 | |
-| `@kirigami/plugin-extlink` | 0.1.3 | 0.1.3 | 3 | 0.1.4 | |
+| `@kirigami/plugin-embed` | 0.1.5 | 0.1.5 | 4 | 0.2.0 | |
+| `@kirigami/plugin-highlight` | 0.1.7 | 0.1.7 | 5 | 0.2.0 | |
+| `@kirigami/plugin-extlink` | 0.1.3 | 0.1.3 | 3 | 0.2.0 | |
 | `@kirigami/audiowaveform-wasm` | 1.1.0 | 1.1.0 | 2 | 1.1.1 | |
 | `@kirigami/struct-walker` | 1.0.5 | 1.0.5 | 2 | 1.0.6 | |
 | `@kirigami/bestframe` | 0.1.0 | 0.1.0 | 1 | 0.1.1 | |
@@ -126,12 +126,16 @@ true only after this release.
    php-prepros, php-wasm, plugin-highlight; new "What's new" sections for
    canva 2.7.0 and sdk 0.3.0). The extension CHANGELOG stays "Unreleased"
    until the extension ships (last).
-3. Merge `refactor/core-api` into `main`, push, and wait for CI to pass on all
-   four jobs.
-4. `npm run release` — publishes the npm packages in dependency order and
-   purges the schema CDN cache. The script skips `kirigami-vscode`
-   (packages with `engines.vscode` go through vsce).
-5. Publish the `phpext-*` packages from `../php-wasm-compiler`.
+3. ~~Merge `refactor/core-api` into `main`~~: done 2026-09-23 (PR #1,
+   443e2cf) after CI passed on all four jobs.
+4. ~~`npm run release`~~ (publishes in dependency order, purges the schema
+   CDN cache, skips `kirigami-vscode`): done 2026-09-23. All 13 packages
+   are `latest` on npm, php-wasm 8.5.11 first; npm holds each new version in
+   "Validating" for a few minutes before it appears. The jsDelivr schemas
+   match `main`, and a fresh `npm install` + `kiri build` of
+   `template-default` from the registry works (one SDK copy, 0.3.0).
+5. ~~Publish the `phpext-*` packages~~: done 2026-09-23, all 27 available
+   (`node scripts/publish.js --skip-build`, fixed for npm 12 in 899398c).
 6. For each target platform: `npm ci`, then in `packages/vscode`
    `npx @vscode/vsce package --no-dependencies --target <target>`, check the
    VSIX (below), then `vsce publish --packagePath <file>`.

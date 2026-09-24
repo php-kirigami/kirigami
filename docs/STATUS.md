@@ -1,5 +1,15 @@
 # Status
 
+## Plugins republished as 0.2.0 — 2026-09-23
+
+- plugin-embed 0.1.6, plugin-extlink 0.1.4 and plugin-highlight 0.1.8 went
+  out as patch versions but require core 3 / SDK 0.3.0, so `^0.1.x` ranges on
+  Kirigami 2 sites picked them up and the build failed ("requires
+  @kirigami/kirigami >= 3.0.0"; kiribuild's `template-demo` job caught it).
+  Republished as 0.2.0, which `^0.1.x` doesn't reach, and the three patch
+  versions are deprecated so npm resolves `^0.1.x` back to 0.1.5 / 0.1.3 /
+  0.1.7.
+
 ## @kirigami/sdk copies share one registry — 2026-09-23
 
 - SDK 0.3.0 keeps hooks, commands and task types on a `globalThis` registry

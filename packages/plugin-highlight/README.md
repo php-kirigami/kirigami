@@ -71,9 +71,11 @@ build. Part of the **Kirigami** project ecosystem.
 
 ---
 
-## 0.1.8
+## 0.2.0
 
-- **Requires `@kirigami/kirigami` 3.0.0** (`@kirigami/sdk` 0.3.0).
+- **Requires `@kirigami/kirigami` 3.0.0** (`@kirigami/sdk` 0.3.0). With
+  Kirigami 2.x, stay on 0.1.7. (Briefly published as 0.1.8, now deprecated:
+  a patch version let `^0.1.x` ranges on Kirigami 2 pick it up.)
 - **The copy button now reaches code blocks inserted after page load.** The
   script uses `@kirigami/canva`'s observer instead of a one-time
   `querySelectorAll` sweep, so blocks added later (fetched content, an SPA
