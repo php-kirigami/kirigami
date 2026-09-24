@@ -27,6 +27,15 @@ Use [the CLI](../cli/README.md) for terminal commands. This package is the progr
 
 ---
 
+## What's new in 3.0.1
+
+- `kiri create` also writes `.vscode/extensions.json` when the template has
+  none: it recommends the Kirigami VS Code extension and the tools the
+  official templates use. The starter `.vscode/settings.json` no longer
+  configures Live Server, which is now listed as unwanted.
+
+---
+
 ## 3.0.0 — breaking
 
 - **Breaking: the `kiri` command moved to
@@ -153,6 +162,8 @@ Dependency bumps: [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirig
 
 - [@kirigami/kirigami](#kirigamikirigami)
 - [Overview](#overview)
+- [What's new in 3.0.1](#whats-new-in-301)
+- [3.0.0 — breaking](#300--breaking)
 - [What's new in 2.0.0](#whats-new-in-200)
 - [What's new in 1.5.7](#whats-new-in-157)
 - [What's new in 1.5.6](#whats-new-in-156)

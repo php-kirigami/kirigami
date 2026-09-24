@@ -1,6 +1,6 @@
 # Status
 
-## Starter `.vscode/extensions.json` — 2026-09-23
+## Starter `.vscode/extensions.json` (core 3.0.1, cli/mcp 0.1.1) — 2026-09-23
 
 - `kiri create` now also writes `.vscode/extensions.json` when the template
   and the target have none (recommends the Kirigami extension, Intelephense,
