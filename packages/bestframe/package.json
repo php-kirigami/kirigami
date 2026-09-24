@@ -1,6 +1,6 @@
 {
 	"name": "@kirigami/bestframe",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Automatic thumbnail/still-frame selection for video, powered by a tiny embedded aesthetic AI model, compiled to WebAssembly for Node.js.",
 	"keywords": [
 		"video",

@@ -17,8 +17,8 @@ Every package differs from its published version, so every one needs a new
 version: `scripts/publish.js` skips versions that already exist on npm.
 
 **Decided (2026-09-23):** every package gets a new version. Core **3.0.0**,
-php-wasm **8.5.11**. The other numbers are proposals (breaking → major,
-feature → minor, fixes/docs only → patch), to confirm on release day.
+php-wasm **8.5.11**. The other numbers follow breaking → major, feature → minor,
+fixes/docs only → patch, and are applied in the manifests.
 
 | Package | Local | npm | Files changed vs npm | Release | Notes |
 |---|---|---|---|---|---|
@@ -118,10 +118,14 @@ true only after this release.
 
 ## 3. Release day, in order
 
-1. Bump versions (section 1) and internal dependency pins; `npm install` to
-   refresh the lockfile; `npm test`.
-2. Replace "Unreleased" headings (core README, extension CHANGELOG) with the
-   chosen versions.
+1. ~~Bump versions and internal dependency pins~~: done ahead of time
+   (2026-09-23) with the numbers in section 1, lockfile refreshed;
+   `npm run release:dry` packs and dry-publishes all 13 packages. Re-run
+   `npm test` and `npm run release:dry` on the day.
+2. ~~Replace "Unreleased" headings~~: done for the npm packages (core,
+   php-prepros, php-wasm, plugin-highlight; new "What's new" sections for
+   canva 2.7.0 and sdk 0.3.0). The extension CHANGELOG stays "Unreleased"
+   until the extension ships (last).
 3. Merge `refactor/core-api` into `main`, push, and wait for CI to pass on all
    four jobs.
 4. `npm run release` — publishes the npm packages in dependency order and

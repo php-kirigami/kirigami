@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/plugin-highlight",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "highlight.js syntax highlighting for Kirigami — applied at build time, zero runtime JavaScript shipped.",
   "keywords": [
     "kirigami",
@@ -41,8 +41,8 @@
     "npm": ">=10.2.3"
   },
   "dependencies": {
-    "@kirigami/canva": "2.6.0",
-    "@kirigami/sdk": "0.2.1",
+    "@kirigami/canva": "2.7.0",
+    "@kirigami/sdk": "0.3.0",
     "highlight.js": "^11.11.1"
   },
   "publishConfig": {

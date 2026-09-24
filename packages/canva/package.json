@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/canva",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "description": "Shared Sass and browser-JS design system for Kirigami projects: design tokens, an inline-SVG icon system, pure Sass utilities, and small DOM helpers.",
   "keywords": ["design-system","sass","scss","css","ui","theme"],
   "license": "GPL-3.0-or-later",

@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/sdk",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Shared runtime for Kirigami plugins: hooks, commands, custom task types, and cache.",
   "license": "GPL-3.0-or-later",
   "author": "Maxime Larrivée-Roy",

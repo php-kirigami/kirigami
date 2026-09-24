@@ -71,7 +71,7 @@ build. Part of the **Kirigami** project ecosystem.
 
 ---
 
-## Unreleased
+## 0.1.8
 
 - **The copy button now reaches code blocks inserted after page load.** The
   script uses `@kirigami/canva`'s observer instead of a one-time

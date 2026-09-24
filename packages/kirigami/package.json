@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/kirigami",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Tools to build static website with PHP",
   "keywords": ["static-site","php","kirigami","ssg","php-wasm"],
   "license": "GPL-3.0-or-later",
@@ -49,10 +49,10 @@
     "./internal/github": "./bin/libs/github.js"
   },
   "dependencies": {
-    "@kirigami/canva": "2.6.0",
-    "@kirigami/php-prepros": "2.0.0",
-    "@kirigami/sdk": "0.2.1",
-    "@kirigami/struct-walker": "1.0.5",
+    "@kirigami/canva": "2.7.0",
+    "@kirigami/php-prepros": "3.0.0",
+    "@kirigami/sdk": "0.3.0",
+    "@kirigami/struct-walker": "1.0.6",
     "ajv": "^8.20.0",
     "chokidar": "^5.0.0",
     "csso": "^5.0.5",

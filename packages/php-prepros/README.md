@@ -34,7 +34,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
 - [Overview](#overview)
-- [Unreleased](#unreleased)
+- [What's new in 3.0.0](#whats-new-in-300)
 - [What's new in 2.0.0](#whats-new-in-200)
 - [What's new in 1.9.3](#whats-new-in-193)
 - [What's new in 1.9.2](#whats-new-in-192)
@@ -105,9 +105,9 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
-## Unreleased
+## What's new in 3.0.0
 
-The current working tree switches `YAML::` to the native YAML extension, `MD::` to native mdhtml, `SCHEMA` to native jsonk, and `Normalizer` to native norm. It also includes page types and request lifecycle hooks. These notes do not assign a release version.
+This release switches `YAML::` to the native YAML extension, `MD::` to native mdhtml, `SCHEMA` to native jsonk, and `Normalizer` to native norm. It also includes page types and request lifecycle hooks.
 
 PHP data files use the native `yaml` extension backed by LibYAML. Its YAML 1.1 implicit booleans include unquoted `y`, `n`, `yes`, `no`, `on`, `off`, `true`, and `false`, including mapping keys. Quote these words when you mean strings (for example, `"NO": Norway`). `YAML::parse()` / `parseFile()` / `loadFile()` preserve the wrapper’s array/object choice; native `yaml_parse()` / `yaml_parse_file()` have their own extension signatures. `yaml_load_file()` remains a wrapper alias. The project’s `kirigami.yaml` is parsed separately in Node through `struct-walker` and `js-yaml`.
 

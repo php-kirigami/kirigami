@@ -38,7 +38,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/php-wasm](#kirigamiphp-wasm)
 - [Overview](#overview)
-- [What's new — next release](#whats-new--next-release)
+- [What's new in 8.5.11](#whats-new-in-8511)
 - [Fork origin](#fork-origin)
 - [Compatibility & Runtime Helpers](#compatibility--runtime-helpers)
 - [Requirements](#requirements)
@@ -62,9 +62,7 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
-## What's new — next release
-
-Unreleased notes for the current embedded build; no package version bump is assigned here.
+## What's new in 8.5.11
 
 The runtime includes a broader native extension set for Kirigami's PHP templates:
 
@@ -81,7 +79,7 @@ The runtime includes a broader native extension set for Kirigami's PHP templates
 
 Comparison source: the README's previously committed `phpinfo()` snapshot versus `node packages/cli/bin/kiri.js phpinfo -m` on 2026-09-20. Only `bz2` is a newly listed extension in that direct comparison; the other extensions should not be described as newly added relative to that snapshot. The current cURL/Navicat build also reports an updated linked zlib library. This comparison describes the local binary, not the contents of a published npm release.
 
-For the PHP wrappers, quote YAML string keys/values such as `"NO"` to avoid YAML 1.1 boolean coercion. Markdown footnotes now use `<section class="footnotes" data-footnotes>`; custom CSS should target `.footnotes` instead of the old `div` tag. See [php-prepros](../php-prepros/README.md#unreleased).
+For the PHP wrappers, quote YAML string keys/values such as `"NO"` to avoid YAML 1.1 boolean coercion. Markdown footnotes now use `<section class="footnotes" data-footnotes>`; custom CSS should target `.footnotes` instead of the old `div` tag. See [php-prepros](../php-prepros/README.md#whats-new-in-300).
 
 ---
 

@@ -36,7 +36,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@kirigami/kirigami": "2.1.0",
+    "@kirigami/kirigami": "3.0.0",
     "ajv": "^8.20.0"
   },
   "repository": {

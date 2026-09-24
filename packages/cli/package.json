@@ -35,9 +35,9 @@
     "url": "https://github.com/php-kirigami/kirigami/issues"
   },
   "dependencies": {
-    "@kirigami/kirigami": "2.1.0",
+    "@kirigami/kirigami": "3.0.0",
     "@kirigami/mcp": "0.1.0",
-    "@kirigami/php-wasm": "8.5.10-6",
-    "@kirigami/sdk": "0.2.1"
+    "@kirigami/php-wasm": "8.5.11",
+    "@kirigami/sdk": "0.3.0"
   }
 }

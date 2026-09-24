@@ -1,5 +1,20 @@
 # Status
 
+## Release versions applied — 2026-09-23
+
+- Every npm package carries its release version (core 3.0.0, php-prepros
+  3.0.0, sdk 0.3.0, php-wasm 8.5.11, canva 2.7.0, patch bumps elsewhere;
+  cli/mcp stay 0.1.0 for their first publish), internal pins and the
+  lockfile follow, and the "Unreleased" headings became version headings
+  (new "What's new" sections for canva 2.7.0 and sdk 0.3.0).
+- canva guards its `font-has-ital-axis()` call with
+  `meta.function-exists()`: Kirigami 2.x has no such Sass function, and an
+  unknown function is plain CSS text in Sass (always true), so canva 2.7.0
+  under an old Kirigami would have emitted a bogus italic face per font.
+- `scripts/publish.js` reads npm 12's `npm pack --json` (an object keyed by
+  package name, no longer an array); `npm run release:dry` passes for all
+  13 packages.
+
 ## Release prep: SCHEMA object enum/const, phpext loader test — 2026-09-23
 
 - `php-prepros/test/schema.test.js` covers object `enum`/`const` (jsonk

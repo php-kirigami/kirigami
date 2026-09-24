@@ -27,7 +27,7 @@ Use [the CLI](../cli/README.md) for terminal commands. This package is the progr
 
 ---
 
-## Unreleased — breaking
+## 3.0.0 — breaking
 
 - **Breaking: the `kiri` command moved to
   [`@kirigami/cli`](https://www.npmjs.com/package/@kirigami/cli).** This

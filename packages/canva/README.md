@@ -39,6 +39,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/canva](#kirigamicanva)
 - [Overview](#overview)
+- [What's new in 2.7.0](#whats-new-in-270)
 - [What's new in 2.6.0](#whats-new-in-260)
 - [What's new in 2.5.2](#whats-new-in-252)
 - [What's new in 2.5.1](#whats-new-in-251)
@@ -70,6 +71,24 @@ Part of the **Kirigami** project ecosystem.
 - [Build](#build)
 - [Requirements](#requirements)
 - [License](#license)
+
+---
+
+## What's new in 2.7.0
+
+- **Italic from variable fonts with an `ital` axis.** When a font in `conf`
+  has a binary `ital` axis, `conf.scss` emits two `@font-face` blocks, one
+  `normal` and one `italic`, each selecting its axis value through
+  `font-variation-settings`, so italic text uses the font's real italic
+  instead of a synthesized slant. Detection uses the `font-has-ital-axis`
+  helper from the Sass task of `@kirigami/kirigami` 3.0.0; with an older
+  Kirigami, canva keeps emitting a single face as before.
+- **`$font-mono` / `--font-mono` token.** The monospace stack is defined once
+  in `conf.scss`; `main` and `prose` use `var(--font-mono)` instead of their
+  own copies.
+- **Type declarations for `dist/scripts/*.js`** (`dom`, `helpers`, `theme`,
+  `observer`, `reveal`, the burger component), so editors resolve
+  `@kirigami/canva/<script>` imports.
 
 ---
 

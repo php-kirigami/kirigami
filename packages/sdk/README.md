@@ -39,6 +39,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/sdk](#kirigamisdk)
 - [Overview](#overview)
+- [What's new in 0.3.0](#whats-new-in-030)
 - [What's new in 0.2.1](#whats-new-in-021)
 - [What's new in 0.2.0](#whats-new-in-020)
 - [Installation](#installation)
@@ -58,6 +59,21 @@ Part of the **Kirigami** project ecosystem.
 - [TypeScript declarations](#typescript-declarations)
 - [Requirements](#requirements)
 - [License](#license)
+
+---
+
+## What's new in 0.3.0
+
+- `registerTaskType()` — a plugin contributes a new task `type`, resolved by
+  the engine alongside the built-in ones.
+- `registerCommand()` — a plugin adds a `kiri <name>` subcommand; also
+  `getCommand()` and `listCommands()`.
+- `scripts:register`, `tasks:register` and `commands:register` hooks — a
+  plugin ships runnable PHP scripts (optionally triggered at a build or
+  export checkpoint), build tasks, and commands, the plugin counterparts of
+  a project's own `scripts:` and `tasks:` entries. See
+  [Available hooks](#available-hooks).
+- These need `@kirigami/kirigami` 3.0.0.
 
 ---
 

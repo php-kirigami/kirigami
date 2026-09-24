@@ -59,7 +59,7 @@ with this one: `template-CLAUDE.md` is the doc for end-user Kirigami
 | `@kirigami/audiowaveform-wasm` | 1.1.0 | Waveform peak extraction + ID3 tag/cover-art reading, BBC's `audiowaveform` compiled to WASM. |
 | `@kirigami/bestframe` | 0.1.0 | Automatic video thumbnail/still-frame selection via a tiny embedded aesthetic-AI model, compiled to WASM. |
 
-Extension version annotations above are retained from the earlier build inventory; inspect `kiri phpinfo -m` for the actual local binary. The current runtime includes native YAML/Markdown and BZip2; see [the next-release notes](../packages/php-wasm/README.md#whats-new--next-release).
+Extension version annotations above are retained from the earlier build inventory; inspect `kiri phpinfo -m` for the actual local binary. The current runtime includes native YAML/Markdown and BZip2; see [the 8.5.11 release notes](../packages/php-wasm/README.md#whats-new-in-8511).
 
 ## Licensing
 

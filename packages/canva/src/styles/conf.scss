@@ -74,8 +74,10 @@ $icons-defaults: (
 	$font-style: font-style-detect($path);
 	// If this font exposes a binary `ital` axis, emit two @font-face blocks
 	// so browsers can select the appropriate face. Each face sets the
-	// 'ital' variation value explicitly via font-variation-settings.
-	@if font-has-ital-axis($path) {
+	// 'ital' variation value explicitly via font-variation-settings. The
+	// helper comes from Kirigami 3's Sass task; with an older build the call
+	// would be plain CSS text (always true), hence the existence check.
+	@if meta.function-exists('font-has-ital-axis') and font-has-ital-axis($path) {
 		@font-face {
 			font-family: $family;
 			font-style: normal;
