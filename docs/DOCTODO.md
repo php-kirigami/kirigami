@@ -19,5 +19,4 @@ Published-consumer and platform verification remain below.
 | Prerequisite | Documentation to finish | Completion evidence |
 |---|---|---|
 | php-prepros `SCHEMA`/`Normalizer` switch to jsonk/norm | The org site's PHP reference (`../php-kirigami.github.io/src/docs/php/_index.php`, `## SCHEMA`) still calls `SCHEMA` a pure-PHP Draft-7 validator with the old keyword list; align it with php-prepros' README (jsonk, draft 2020-12, `SCHEMA_LEGACY`), and mention `NORMALIZER_LEGACY`. | Site section matches the package README. |
-| The site installs a php-prepros with the tags-in-code fix | The site's "authoring gotcha" paragraph (`../php-kirigami.github.io/src/docs/authoring/_index.php`, `## Built-in tags`) and its CLAUDE.md "Authoring pitfalls" say a literal `<markdown>` example always breaks the block; say it is fine inside backticks or a fence and only breaks as bare text. | Both describe the fixed behavior. |
 | Organization profile and site publication | Publish the profile source and regenerate/deploy the public site through the release workflow. | Verify the deployed pages; local Markdown edits do not count as publication. |

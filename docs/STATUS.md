@@ -3,7 +3,11 @@
 ## Tags inside Markdown code are left alone (php-prepros 3.0.1) — 2026-09-24
 
 - Released as php-prepros 3.0.1, `@kirigami/kirigami` 3.0.2, cli and mcp
-  0.1.2, and the VS Code extension 0.1.1.
+  0.1.2 (npm), and the VS Code extension 0.1.1 (six VSIX files from the
+  `VSIX` workflow, uploaded on the publisher page).
+- `template-default`, `template-demo` and the org site floor their ranges at
+  core 3.0.2 / cli 0.1.2 (a PR in each). The site's authoring page is back to
+  backtick examples; its gotcha paragraph and CLAUDE.md describe the new rule.
 
 - `STR::replaceTags()` (behind every `PREPROS::registerTag()`) masks inline
   code spans and fenced blocks before matching and restores them after, in
