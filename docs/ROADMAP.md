@@ -34,8 +34,22 @@ than reproduce its workflows.
 - **Native JSON Schema validation** — assess `jsonk` against Kirigami and plugin
   schemas, then replace `SCHEMA`'s pure-PHP validator only if compatibility is
   demonstrated. Its JSON encode/decode replacement is already active.
-- **Official document importers** — provide Google Docs to Markdown and Excel
-  to JSON actions or scripts for page and `_data/` inputs.
+
+## Upcoming plugins
+
+- **`plugin-player` (audio player)** — a player card with a waveform under
+  the seek bar; peaks are extracted at build time by the WebAssembly build of
+  BBC's `audiowaveform` (`../audiowaveform-wasm-compiler`).
+- **`plugin-clip` (video player)** — a video card whose cover image is picked
+  at build time by `@kirigami/bestframe` (WebAssembly, built by
+  `../libbestframe`).
+- **`plugin-gdrive` (Google Docs/Sheets)** — build a site from Google Drive:
+  Docs become Markdown pages, Sheets become `_data/` files, so editors never
+  touch the repo. Cache fetched documents on disk like plugin-extlink so rebuilds and CI
+  only download what changed. Open: access model (published-to-web links vs.
+  a service-account token from the environment), page/section mapping, and
+  image handling. Replaces the earlier Docs→Markdown / Excel→JSON importer
+  scripts idea.
 
 ## Generated site features
 
@@ -56,8 +70,28 @@ than reproduce its workflows.
 - **MCP background operations** — expose serve/watch only with explicit
   start, status, and stop ownership for their long-lived resources.
 - **Editor integration beyond v1** — after the current VSIX verification,
-  consider editor diagnostics, task integration, multi-root workspaces, and
-  optional MCP registration.
+  consider editor diagnostics, task integration, and multi-root workspaces.
+- **MCP discovery beyond Claude Code and the VS Code extension** — today only
+  the starter `.mcp.json` (read by Claude Code) and the extension's
+  `mcpServerDefinitionProviders` registration expose `kiri mcp` automatically.
+  Extend `createProject()`'s starter tooling so other clients find it too,
+  following the existing rule (write only when missing, never merge):
+  - `.vscode/mcp.json` (`servers` key, `type: "stdio"`) for VS Code without
+    the extension;
+  - `.cursor/mcp.json` (`mcpServers`) for Cursor;
+  - `.gemini/settings.json` (`mcpServers`) for Gemini CLI — a general settings
+    file, so an existing one must be left alone;
+  - `.codex/config.toml` (`[mcp_servers.kirigami]`) for Codex, if its
+    project-scoped config is reliable; otherwise document `codex mcp add`;
+  - `.zed/settings.json` (`context_servers`) for Zed;
+  - global-only clients (Windsurf, Claude Desktop) get a documented snippet in
+    the MCP README instead of a generated file.
+
+  Decide whether these are written by default or behind an opt-in (e.g.
+  `--agents cursor,codex`), since each adds a tool-specific file to every
+  project. All must reuse the same
+  `node node_modules/@kirigami/cli/bin/kiri.js mcp` command to stay
+  cross-platform.
 - **Deploy command and provider plugins** — deploy an exported `dist/` through
   FTP, Git branches, or other providers without replacing kiribuild's GitHub
   Pages workflow.

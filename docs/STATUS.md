@@ -1,5 +1,16 @@
 # Status
 
+## Roadmap refresh: MCP discovery, upcoming plugins — 2026-09-24
+
+- `docs/ROADMAP.md` gains MCP discovery for more AI clients (`.vscode/mcp.json`,
+  `.cursor/mcp.json`, `.gemini/settings.json`, `.codex/config.toml`,
+  `.zed/settings.json`, documented snippets for global-only clients) and an
+  *Upcoming plugins* section: `plugin-player` (audiowaveform WASM),
+  `plugin-clip` (bestframe WASM) and `plugin-gdrive`, which replaces the
+  Docs→Markdown / Excel→JSON importer idea.
+- The org site's `/roadmap/` page was rewritten from it; the old page still
+  listed shipped items (plugin task types, `<extlink class>`, `humans.txt`).
+
 ## Tags inside Markdown code are left alone (php-prepros 3.0.1) — 2026-09-24
 
 - Released as php-prepros 3.0.1, `@kirigami/kirigami` 3.0.2, cli and mcp
