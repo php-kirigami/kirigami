@@ -1,5 +1,22 @@
 # Status
 
+## Final PHP-WASM core validated; mysqlnd handshake fixed — 2026-09-23
+
+- Final core 69c3280 (wasm sha1 `2d64ca87c051`) validated against all 27
+  `phpext-*` packages, network probes, and real MySQL 8.4 / PostgreSQL 17
+  servers in Docker; `npm test` 89/89 on Windows. See RELEASE-PLAN.
+- MySQL: every connection failed with "Bad handshake". The phpize-built
+  `mysqlnd.so` only saw its `config.h` defines in `php_mysqlnd.c`, so
+  `enable_ssl()` compiled its no-SSL branch and sent a 32-byte auth packet
+  before the real one. Fixed in php-wasm-compiler (explicit
+  `MYSQLND_SSL_SUPPORTED`/`MYSQLND_HAVE_SSL`/`MYSQLND_COMPRESSION_ENABLED`
+  CFLAGS; phpext-mysqli 0.1.4, phpext-pdo_mysql 0.1.3). mysqli, pdo_mysql
+  and TLS 1.3 to MySQL now work.
+- Also fixed by this core: closing a curl HTTPS connection no longer waits
+  for the server (`curl-tls.test.js` ~45 s → ~5 s), and curl now sends
+  `TCP_NODELAY` to the proxy (`TCP_NODELAY` on a UDP socket fails with
+  `ENOPROTOOPT`).
+
 ## One `seo:` block for META and JSON-LD; shorter template CLAUDE.md — 2026-09-23
 
 - **Breaking (php-prepros / core schema):** `seo.jsonld` is no longer a

@@ -16,21 +16,25 @@ For the standing procedure (publish script, 2FA, propagation), see
 Every package differs from its published version, so every one needs a new
 version: `scripts/publish.js` skips versions that already exist on npm.
 
-| Package | Local | npm | Files changed vs npm | Notes |
-|---|---|---|---|---|
-| `@kirigami/kirigami` | 2.1.0 | 2.0.0 | 29 | **Breaking**; see below. Suggested **3.0.0** |
-| `@kirigami/cli` | 0.1.0 | — | — | First publish; now owns `kiri` |
-| `@kirigami/mcp` | 0.1.0 | — | — | First publish |
-| `@kirigami/php-prepros` | 2.0.0 | 2.0.0 | 15 | New `runPluginScript()` API |
-| `@kirigami/sdk` | 0.2.1 | 0.2.1 | 8 | New hooks (`scripts:register`, `tasks:register`, `commands:register`) |
-| `@kirigami/php-wasm` | 8.5.10-6 | 8.5.10-5 | 6 | Working-tree README says PHP 8.5.11: binary update pending? |
-| `@kirigami/canva` | 2.6.0 | 2.6.0 | 12 | |
-| `@kirigami/plugin-embed` | 0.1.5 | 0.1.5 | 4 | |
-| `@kirigami/plugin-highlight` | 0.1.7 | 0.1.7 | 5 | |
-| `@kirigami/plugin-extlink` | 0.1.3 | 0.1.3 | 3 | |
-| `@kirigami/audiowaveform-wasm` | 1.1.0 | 1.1.0 | 2 | |
-| `@kirigami/struct-walker` | 1.0.5 | 1.0.5 | 2 | |
-| `@kirigami/bestframe` | 0.1.0 | 0.1.0 | 1 | |
+**Decided (2026-09-23):** every package gets a new version. Core **3.0.0**,
+php-wasm **8.5.11**. The other numbers are proposals (breaking → major,
+feature → minor, fixes/docs only → patch), to confirm on release day.
+
+| Package | Local | npm | Files changed vs npm | Release | Notes |
+|---|---|---|---|---|---|
+| `@kirigami/kirigami` | 2.1.0 | 2.0.0 | 29 | **3.0.0** | **Breaking**; see below |
+| `@kirigami/cli` | 0.1.0 | — | — | 0.1.0 | First publish; now owns `kiri` |
+| `@kirigami/mcp` | 0.1.0 | — | — | 0.1.0 | First publish |
+| `@kirigami/php-prepros` | 2.0.0 | 2.0.0 | 15 | 3.0.0 | New `runPluginScript()` API; **breaking** `seo:` block (`seo.jsonld` merged) |
+| `@kirigami/sdk` | 0.2.1 | 0.2.1 | 8 | 0.3.0 | New hooks (`scripts:register`, `tasks:register`, `commands:register`) |
+| `@kirigami/php-wasm` | 8.5.10-6 | 8.5.10-5 | 6 | **8.5.11** | PHP 8.5.11 core validated (see section 2) |
+| `@kirigami/canva` | 2.6.0 | 2.6.0 | 12 | 2.7.0 | Two `@font-face` blocks for fonts with an `ital` axis |
+| `@kirigami/plugin-embed` | 0.1.5 | 0.1.5 | 4 | 0.1.6 | |
+| `@kirigami/plugin-highlight` | 0.1.7 | 0.1.7 | 5 | 0.1.8 | |
+| `@kirigami/plugin-extlink` | 0.1.3 | 0.1.3 | 3 | 0.1.4 | |
+| `@kirigami/audiowaveform-wasm` | 1.1.0 | 1.1.0 | 2 | 1.1.1 | |
+| `@kirigami/struct-walker` | 1.0.5 | 1.0.5 | 2 | 1.0.6 | |
+| `@kirigami/bestframe` | 0.1.0 | 0.1.0 | 1 | 0.1.1 | |
 
 "Files changed" comes from `npm diff --diff-name-only` against the published
 tarball, excluding `package.json`. Internal dependencies are pinned to exact
@@ -44,6 +48,10 @@ README's "Unreleased — breaking" section documents the migration. Export's
 new marker check and duplicate-task rejection are further behavior breaks.
 
 ### VS Code extension
+
+**Decided (2026-09-23):** ship every platform, and publish the extension
+last, after everything else is out; the Marketplace setup is still to be
+worked out then.
 
 - **Target platforms.** The staged runtime contains native binaries
   (`@esbuild/<platform>`, `@parcel/watcher-<platform>`), so the VSIX is
@@ -69,7 +77,7 @@ true only after this release.
       Node 24.21.0 and a static PHP 8.5.8: 68 passed, 0 failed, 1 skipped (the
       Windows-only npm launcher test). CI itself has never run.
 - [x] **Interactive VS Code checks** (2026-09-23, by Maxime in a real editor).
-- [ ] **phpext compatibility**: load every `phpext-*` artifact with the
+- [x] **phpext compatibility**: load every `phpext-*` artifact with the
       php-wasm binary being released (`getLoadedExtensions()`), since artifact
       selection does not prove binary compatibility. First pass on 2026-09-23
       (PHP 8.5.11 binary, 18 packages, 19 modules): all load together once
@@ -78,7 +86,16 @@ true only after this release.
       8ac01de, all 27 packages, 28 modules): all load together with empty
       stderr, `pdo_firebird` included (its exit-time `Aborted()` is fixed),
       and smoke calls pass (gmp, sodium, fileinfo, tidy, dba, intl, the six
-      PDO drivers, snmp over UDP). Redo the check with the final binary.
+      PDO drivers, snmp over UDP). Third pass (same day, against real
+      MySQL 8.4 and PostgreSQL 17 in Docker): every MySQL connection failed
+      with "Bad handshake" because the phpize-built `mysqlnd.so` lost its
+      `config.h` defines (`MYSQLND_SSL_SUPPORTED` etc.) and sent two auth
+      packets; fixed in the compiler (phpext-mysqli 0.1.4, phpext-pdo_mysql
+      0.1.3). mysqli, pdo_mysql, TLS 1.3 to MySQL, pgsql, pdo_pgsql and
+      async pgsql now pass. Final pass (same day, final core 69c3280, wasm
+      sha1 `2d64ca87c051`): all 28 modules load together with empty stderr,
+      the smoke calls, the network probes (TCP/UDP/SNMP) and the MySQL/
+      PostgreSQL checks above pass, and `npm test` passes 89/89 on Windows.
 - [x] **kiribuild** (2026-09-23, local changes in `../kiribuild`, not
       committed): the global fallback installs `@kirigami/cli@<cli-version>`
       (new input, default `latest`); `kirigami-version` becomes a legacy
