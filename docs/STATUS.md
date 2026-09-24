@@ -1,5 +1,18 @@
 # Status
 
+## Release prep: SCHEMA object enum/const, phpext loader test — 2026-09-23
+
+- `php-prepros/test/schema.test.js` covers object `enum`/`const` (jsonk
+  0.1.5 is in the core): equal whatever the key order, arrays and stdClass.
+- New `php-wasm/test/phpext-discovery.test.js`: fake phpext packages (no
+  real `.so`) check that a module bundled by two packages (mysqlnd) loads
+  once, before its dependents, that each `.ini` is numbered in load order,
+  that `iniEntries` are written, and that a missing or throwing
+  `register()` falls back to `manifest.json`.
+- The loader now sorts `node_modules` entries before discovery, so the
+  load order is the same on every file system (readdir order isn't
+  guaranteed on Linux).
+
 ## Final PHP-WASM core validated; mysqlnd handshake fixed — 2026-09-23
 
 - Final core 69c3280 (wasm sha1 `2d64ca87c051`) validated against all 27

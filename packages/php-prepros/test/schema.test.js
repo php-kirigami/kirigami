@@ -31,6 +31,11 @@ echo json_encode([
     'tupleExtra'   => $check($tuple, ['a', 1, 2]),
     'url'          => $check(['format' => 'url'], 'not a url'),
     'badRef'       => $check(['$ref' => '#/definitions/missing'], 1),
+    // Object enum/const compare by value, whatever the key order.
+    'enumObj'      => $check(['enum' => [['a' => 1, 'b' => 2], 'x']], ['b' => 2, 'a' => 1]),
+    'enumObjMiss'  => $check(['enum' => [['a' => 1]]], ['a' => 2]),
+    'constObj'     => $check(['const' => ['a' => [1, 2]]], json_decode('{"a":[1,2]}')),
+    'constObjMiss' => $check(['const' => ['a' => 1]], ['a' => 1, 'b' => 2]),
     'alias'        => [schema_validate(['type' => 'integer'], 'x', $errors), $errors],
     'legacy'       => (new SCHEMA_LEGACY(['type' => 'integer']))->isValid(3),
     'normalizer'   => (new ReflectionClass('Normalizer'))->isInternal(),
@@ -72,6 +77,10 @@ test('SCHEMA validates through jsonk and keeps the previous API', async t => {
     assert.equal(r.url[0], false);
     assert.equal(r.badRef[0], false);
     assert.match(r.badRef[1][0], /^\(root\): .*#\/definitions\/missing/);
+    assert.deepEqual(r.enumObj, [true, []]);
+    assert.equal(r.enumObjMiss[0], false);
+    assert.deepEqual(r.constObj, [true, []]);
+    assert.equal(r.constObjMiss[0], false);
     assert.equal(r.alias[0], false);
     assert.match(r.alias[1][0], /^\(root\): /);
     assert.equal(r.legacy, true);

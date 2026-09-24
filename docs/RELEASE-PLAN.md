@@ -96,17 +96,19 @@ true only after this release.
       sha1 `2d64ca87c051`): all 28 modules load together with empty stderr,
       the smoke calls, the network probes (TCP/UDP/SNMP) and the MySQL/
       PostgreSQL checks above pass, and `npm test` passes 89/89 on Windows.
-- [x] **kiribuild** (2026-09-23, local changes in `../kiribuild`, not
-      committed): the global fallback installs `@kirigami/cli@<cli-version>`
+- [x] **kiribuild** (2026-09-23, committed and pushed in `../kiribuild`,
+      06ada1f): the global fallback installs `@kirigami/cli@<cli-version>`
       (new input, default `latest`); `kirigami-version` becomes a legacy
       input, empty by default, that still installs `@kirigami/kirigami` < 3.
       The JSPI flag is only passed when `node` accepts it (Node 26 rejects
       it). Tests: new non-blocking `local-cli-package` scenario, canary on
       `@kirigami/cli@latest`. Tag `v2.1.0` on release day (step 7), then
       make `local-cli-package` blocking.
-- [ ] Commit or discard the pending working-tree changes here
-      (`packages/php-wasm/README.md`) and in `../php-wasm-compiler`. Waiting
-      on the corrected WASM builds.
+- [ ] Commit the pending working-tree changes. Done here (f340a51, final
+      8.5.11 core with mdhtml 0.1.4); still pending in `../php-wasm-compiler`
+      (mysqlnd fix). A rebuild with php-mdhtml v0.1.5 (plugin tags inside
+      code) is in progress: swap it in, redo the phpext/network/DB pass, and
+      add the php-prepros test (see TODO).
 - [x] **CI dry run with `act`** (2026-09-23): `act push -W
       .github/workflows/ci.yml -j test --matrix os:ubuntu-latest` passes both
       Linux jobs (act cannot run the Windows ones). It first failed on Node

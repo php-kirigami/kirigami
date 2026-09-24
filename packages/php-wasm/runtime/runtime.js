@@ -98,7 +98,10 @@ function isDirectory(path) {
 function addPackageDirs(dir, seen) {
     if (!dir || !existsSync(dir)) return;
 
-    for (const entry of safeReadDir(dir)) {
+    // Sorted: readdir order isn't guaranteed on every file system, and it
+    // decides the load order.
+    const entries = safeReadDir(dir).sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+    for (const entry of entries) {
         const childPath = join(dir, entry.name);
         // npm link and workspaces install packages as symlinks (junctions on Windows).
         if (!entry.isDirectory() && !(entry.isSymbolicLink() && isDirectory(childPath))) continue;
