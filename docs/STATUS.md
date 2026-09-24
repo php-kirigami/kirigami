@@ -1,5 +1,14 @@
 # Status
 
+## Starter `.vscode/extensions.json` (core 3.0.1, cli/mcp 0.1.1) — 2026-09-23
+
+- `kiri create` now also writes `.vscode/extensions.json` when the template
+  and the target have none (recommends the Kirigami extension, Intelephense,
+  YAML, Markdown All in One, Folder Path Color; marks Live Server, Live Sass
+  and MinifyAll unwanted), from `assets/starter/vscode/extensions.json`.
+- The starter `settings.json` drops its Live Server settings, matching the
+  templates' copy (Live Server is now an unwanted recommendation).
+
 ## Plugins republished as 0.2.0 — 2026-09-23
 
 - plugin-embed 0.1.6, plugin-extlink 0.1.4 and plugin-highlight 0.1.8 went

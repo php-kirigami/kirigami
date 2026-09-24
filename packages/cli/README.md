@@ -175,8 +175,9 @@ or `banner.txt`, a starter one is written — the banner keeps its `### ###` tok
 `###BASEURL###`), which `kiri build` / `kiri export` fill from `kirigami.yaml`
 every time. The same goes for the project tooling: a `.mcp.json` registering
 `kiri mcp` for Claude Code, a GitHub Pages build-and-deploy workflow
-(`.github/workflows/page.yml`), and `.vscode/settings.json` (schema,
-Intelephense, terminal PATH) — each written only when neither the template nor
+(`.github/workflows/page.yml`), `.vscode/settings.json` (schema,
+Intelephense, terminal PATH) and `.vscode/extensions.json` (the Kirigami
+extension and the other recommended ones) — each written only when neither the template nor
 the target has one. Then, unless the target is already inside a git worktree (or
 `--no-git`), `git init` + an initial commit; then `npm install` unless
 `--no-install`. `.cache.db`, `.node.db`, `.cookie.txt` and `package-lock.json`

@@ -21,21 +21,6 @@
     "yaml.schemas": {
         "https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/kirigami/kirigami.schema.json": "kirigami.yaml"
     },
-    "liveServer.settings.port": 5520,
-    "liveServer.settings.CustomBrowser": "chrome",
-    "liveServer.settings.root": "./src/",
-    "liveServer.settings.ignoreFiles": [
-        ".vscode/**",
-        ".github/**",
-        "**/_*.php",
-        "**/.git/**",
-        "**/node_modules/**",
-        "**/*.scss",
-        "**/*.sass",
-        "**/*.php",
-        "**/*.ts",
-        "**/!(*.min).js"
-    ],
     "folder-path-color.folders": [
         { "path": "src", "color": "cyan" },
         { "path": "assets", "color": "magenta" }

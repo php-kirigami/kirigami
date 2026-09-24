@@ -350,13 +350,15 @@ export function writeStarterBanner(target) {
 
 // Tooling every Kirigami project gets when the template ships none of its
 // own: the MCP server for Claude Code (.mcp.json), the GitHub Pages
-// build-and-deploy workflow, and the VS Code workspace settings. Stored
+// build-and-deploy workflow, and the VS Code workspace settings and
+// recommended extensions. Stored
 // without their leading dot under assets/starter/ so npm and vsce never drop
 // them. Keyed by destination, relative to the project.
 export const STARTER_FILES = {
 	".mcp.json": "mcp.json",
 	".github/workflows/page.yml": "github/workflows/page.yml",
 	".vscode/settings.json": "vscode/settings.json",
+	".vscode/extensions.json": "vscode/extensions.json",
 };
 
 // Copies each STARTER_FILES entry that is missing — an existing file is never
