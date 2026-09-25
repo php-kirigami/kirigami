@@ -12,7 +12,6 @@
     "jspi/*.js",
     "jspi/*/*.wasm",
     "emscripten",
-    "wordpress-playground",
     "sandbox",
     "curl",
     "kirigami"

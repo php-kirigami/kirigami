@@ -2,9 +2,9 @@
  * @kirigami/php-wasm
  *
  * A custom PHP-WASM build for Node.js — JSPI only, no browser support.
- * Built for the Kirigami project as a fork of wordpress-playground.
+ * Built for the Kirigami project by php-wasm-compiler.
  *
- * @see https://github.com/WordPress/wordpress-playground
+ * @see https://github.com/php-kirigami/php-wasm-compiler
  */
 
 import type { PHP } from '@php-wasm/universal';

@@ -102,7 +102,6 @@ than reproduce its workflows.
 
 ## Runtime and toolchain
 
-- **Reproducible PHP-WASM builder** — evolve the existing upstream-derived
-  compiler into a clearly owned build pipeline for PHP, libraries, and bundled
-  extensions. Scope the supported extension matrix and reproducibility checks
-  before replacing the current process.
+- **Reproducible PHP-WASM builds** — add reproducibility checks to
+  `../php-wasm-compiler/` (same `config.yaml` → same PHP, libraries, and
+  bundled extensions) and scope the supported extension matrix.

@@ -21,7 +21,7 @@ Built for the **[Kirigami](https://github.com/php-kirigami)** static site genera
 
 ## Overview
 
-`@kirigami/php-wasm` is a **custom fork** of the PHP-WASM package from the [WordPress Playground](https://github.com/WordPress/wordpress-playground) project. It ships a pre-compiled PHP 8.5.11 WebAssembly binary and its Node.js loader, stripped down to exactly what the Kirigami project needs:
+`@kirigami/php-wasm` ships a PHP 8.5.11 WebAssembly binary compiled by Kirigami's own toolchain, [`php-wasm-compiler`](https://github.com/php-kirigami/php-wasm-compiler), together with its Node.js loader and runtime helpers. It is built for exactly what the Kirigami project needs:
 
 - ✅ **JSPI** (JavaScript Promise Integration) target only
 - ✅ **Node.js** runtime only
@@ -39,7 +39,7 @@ Part of the **Kirigami** project ecosystem.
 - [@kirigami/php-wasm](#kirigamiphp-wasm)
 - [Overview](#overview)
 - [What's new in 8.5.11](#whats-new-in-8511)
-- [Fork origin](#fork-origin)
+- [Build origin](#build-origin)
 - [Compatibility & Runtime Helpers](#compatibility--runtime-helpers)
 - [Requirements](#requirements)
 - [Installation](#installation)
@@ -83,13 +83,15 @@ For the PHP wrappers, quote YAML string keys/values such as `"NO"` to avoid YAML
 
 ---
 
-## Fork origin
+## Build origin
 
-This package is derived from the [`@php-wasm/node`](https://github.com/WordPress/wordpress-playground/tree/trunk/packages/php-wasm/node) package inside the WordPress Playground monorepo:
+The WASM binary (`jspi/8_5_11/php_8_5.wasm`) and the Emscripten-generated loader (`jspi/php_8_5.js`) are produced by [`php-wasm-compiler`](https://github.com/php-kirigami/php-wasm-compiler), Kirigami's own PHP → WebAssembly compiler (Docker + Emscripten). A single `config.yaml` there drives the PHP version, the statically compiled extensions, the third-party libraries, and the build options; it targets JSPI and Node.js only, with no Asyncify build, browser polyfills, or DOM stubs.
 
-> **Upstream:** https://github.com/WordPress/wordpress-playground
+The same compiler also builds and publishes the optional `@kirigami/phpext-*` extension packages described in [Loading additional extensions](#loading-additional-extensions).
 
-The WASM binary (`jspi/8_5_11/php_8_5.wasm`) and the Emscripten-generated loader (`jspi/php_8_5.js`) are built from that upstream source with a custom Dockerfile that enables JSPI and targets the Node.js environment only. No browser polyfills, no `TextEncoder`/`TextDecoder` shims, no DOM stubs.
+The JavaScript side of this package (`index.js`, `runtime/runtime.js`: the networking proxy, extension discovery, and `php.ini` helpers) is Kirigami code. It plugs the loader into [`@php-wasm/universal`](https://www.npmjs.com/package/@php-wasm/universal), which still provides the `PHP` class and `loadPHPRuntime()`.
+
+The compiler's Docker recipes originally started from WordPress Playground's `compile` pipeline; see its [NOTICE.md](https://github.com/php-kirigami/php-wasm-compiler/blob/main/NOTICE.md) for provenance details.
 
 ---
 
@@ -342,7 +344,7 @@ npm install @kirigami/phpext-pgsql
 
 ## Related
 
-* [WordPress Playground](https://github.com/WordPress/wordpress-playground) — upstream project
+* [`php-wasm-compiler`](https://github.com/php-kirigami/php-wasm-compiler) — the compiler that builds the WASM binary and the `@kirigami/phpext-*` packages
 * [`@php-wasm/universal`](https://www.npmjs.com/package/@php-wasm/universal) — the runtime this loader integrates with
 * [`wasm-feature-detect`](https://www.npmjs.com/package/wasm-feature-detect) — used for JSPI detection
 
