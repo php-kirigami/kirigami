@@ -125,29 +125,18 @@ studio: {}
   exclude: [src/data/_stats.json]
   labels:
     src/data/_articles.yaml: Articles
-  forms:
-    _data/team.yaml: _schemas/team.json
-    src/data/_articles.yaml:
-      title: text
-      date: date
-      blurb: { type: textarea, label: Summary, required: true }
-      tags: { type: list, of: text }
-      category: { type: select, options: [news, events] }
-      links:
-        type: list
-        fields:
-          label: text
-          url: url`);
-	assert.equal(config.studio.forms['src/data/_articles.yaml'].links.fields.url, 'url');
+  schemas:
+    _schemas/team.json: _data/team.yaml
+    https://example.com/articles.schema.json: [_articles.yaml, src/news/*.yaml]`);
 	assert.equal(config.studio.include[0], '_data/team.yaml');
-	assert.equal(config.studio.forms['_data/team.yaml'], '_schemas/team.json');
+	assert.equal(config.studio.schemas['_schemas/team.json'], '_data/team.yaml');
+	assert.deepEqual(config.studio.schemas['https://example.com/articles.schema.json'], ['_articles.yaml', 'src/news/*.yaml']);
 	assert.equal(config.studio.files, 'src/documents');
 	assert.equal((await load('  images: false')).studio.images, false);
 
 	await assert.rejects(() => load('  unknown: true'));
 	await assert.rejects(() => load('  images: true'));
 	await assert.rejects(() => load('  include:\n    - label: No path'));
-	await assert.rejects(() => load('  forms:\n    a.yaml: schema.yaml'));
-	await assert.rejects(() => load('  forms:\n    a.yaml:\n      title: colour'));
-	await assert.rejects(() => load('  forms:\n    a.yaml:\n      title: { label: No type }'));
+	await assert.rejects(() => load('  schemas:\n    a.json: { file: a.yaml }'));
+	await assert.rejects(() => load('  schemas:\n    a.json: [1]'));
 });

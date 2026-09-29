@@ -514,29 +514,29 @@
             }
           ]
         },
-        "forms": {
+        "schemas": {
           "type": "object",
-          "description": "Form definitions for YAML/JSON files, by file path. Either a field map (for a list file, the fields of each item) or the path of a JSON Schema file for complex cases. Files without an entry get fields guessed from their content.",
+          "description": "JSON Schemas for YAML/JSON data files, in the same format as VS Code's `yaml.schemas` setting: schema path (relative to cwd()) or URL → file glob or globs; a glob without `/` matches the file name anywhere. Kiri Studio checks the client's edits against them and offers help as they type. A `# yaml-language-server: $schema=` line in the file takes precedence; `yaml.schemas` in .vscode/settings.json is read after this map, so a site already set up for VS Code needs nothing here.",
           "additionalProperties": {
             "oneOf": [
               {
-                "type": "string",
-                "pattern": "\\.json$",
-                "description": "Path of a JSON Schema file describing the data file."
+                "type": "string"
               },
               {
-                "$ref": "#/definitions/studioFields"
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               }
             ]
           },
           "examples": [
             {
-              "src/features/data/_articles.yaml": {
-                "title": "text",
-                "date": "date",
-                "url": "url",
-                "blurb": "textarea"
-              }
+              "assets/schemas/publications.schema.json": "publications.yaml",
+              "assets/schemas/team.schema.json": [
+                "_data/team.yaml",
+                "_data/board.yaml"
+              ]
             }
           ]
         }
@@ -930,74 +930,6 @@
           }
         ]
       ]
-    }
-  },
-  "definitions": {
-    "studioFieldType": {
-      "type": "string",
-      "description": "Form input shown to the client in Kiri Studio.",
-      "enum": [
-        "text",
-        "textarea",
-        "markdown",
-        "number",
-        "boolean",
-        "date",
-        "url",
-        "email",
-        "image",
-        "select",
-        "list"
-      ]
-    },
-    "studioFields": {
-      "type": "object",
-      "description": "Form fields by data key: a type name, or an object for a label, choices, or nested fields.",
-      "additionalProperties": {
-        "oneOf": [
-          {
-            "$ref": "#/definitions/studioFieldType"
-          },
-          {
-            "type": "object",
-            "required": [
-              "type"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "type": {
-                "$ref": "#/definitions/studioFieldType"
-              },
-              "label": {
-                "type": "string",
-                "description": "Name shown to the client. Defaults to the key, humanized."
-              },
-              "required": {
-                "type": "boolean",
-                "default": false
-              },
-              "options": {
-                "type": "array",
-                "description": "Choices for a `select` field.",
-                "items": {
-                  "type": [
-                    "string",
-                    "number"
-                  ]
-                }
-              },
-              "fields": {
-                "$ref": "#/definitions/studioFields",
-                "description": "Fields of each item of a `list` of objects."
-              },
-              "of": {
-                "$ref": "#/definitions/studioFieldType",
-                "description": "Type of each item of a `list` of plain values (e.g. tags)."
-              }
-            }
-          }
-        ]
-      }
     }
   }
 }

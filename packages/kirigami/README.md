@@ -410,7 +410,7 @@ What Kiri Studio, the desktop app for site owners, lets a client edit. The
 build ignores this block. Its presence makes the repo a Kiri Studio site, and
 `studio: {}` is enough: every `.md` / `.yaml` / `.yml` / `.json` file a page
 loads through a PHPDOC annotation (`@content _about.md`,
-`@articles _articles.yaml`) becomes editable, labeled after the page's
+`@articles _articles.yaml`) becomes editable, grouped under the page's
 `@title`. Paths are relative to `cwd()`. Unlike the rest of the file, paths
 here are never replaced by the content of the file they name.
 
@@ -422,12 +422,20 @@ here are never replaced by the content of the file they name.
 | `include` | `[]` | Extra editable paths or globs; `{ path, label, create }` lets clients add/delete files matching a glob. |
 | `exclude` | `[]` | Paths or globs hidden from clients, even when a page references them. |
 | `labels` | `{}` | Names shown to clients, by path. |
-| `forms` | `{}` | Form for a YAML/JSON file, by path: a field map, or a JSON Schema file path. Unlisted files get fields guessed from their content. |
+| `schemas` | `{}` | JSON Schemas for data files, in VS Code's `yaml.schemas` format: schema path or URL → file glob(s). |
 
-Field types: `text`, `textarea`, `markdown`, `number`, `boolean`, `date`,
-`url`, `email`, `image`, `select` (with `options`), and `list` (with `of` for
-plain values, or `fields` for objects). For a file holding a list, the field
-map describes each item.
+Clients edit YAML/JSON files as text, checked against a JSON Schema as they
+type (errors underlined in plain language, key completion, descriptions on
+hover). A file's schema is found like VS Code's YAML extension finds it, so a
+site already set up for VS Code needs no `schemas` entry. First match wins:
+
+1. a `# yaml-language-server: $schema=<path or URL>` line in the file (path
+   relative to the file);
+2. `studio.schemas`;
+3. `yaml.schemas` in the repo's `.vscode/settings.json`.
+
+In both maps, schema paths are relative to `cwd()`, and a glob without `/`
+matches the file name anywhere.
 
 ```yaml
 studio:
@@ -435,12 +443,8 @@ studio:
   exclude: [src/features/data/_stats.json]
   labels:
     src/features/data/_articles.yaml: Articles
-  forms:
-    src/features/data/_articles.yaml:
-      title: text
-      date:  date
-      blurb: { type: textarea, label: Summary }
-      tags:  { type: list, of: text }
+  schemas:
+    assets/schemas/articles.schema.json: _articles.yaml
 ```
 
 ### `plugins:`
