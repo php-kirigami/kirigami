@@ -2,7 +2,7 @@
 
 ## 0.1.2
 
-- Bundles Kirigami 3.1.0 and PHP 8.5.11-1 (with the Aura and translit
+- Bundles Kirigami 3.1.1 and PHP 8.5.11-1 (with the Aura and translit
   extensions built in). `IMG::palette()` and the `colors()` Sass function
   now extract colours with Aura: up to six, most populated first.
 - With several Sass or esbuild tasks, the files plugins inject (Canva and

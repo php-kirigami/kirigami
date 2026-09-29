@@ -1,5 +1,16 @@
 # Status
 
+## Fix release: php-prepros 3.1.1, core 3.1.1, cli/mcp 0.1.4 — 2026-09-29
+
+- php-prepros 3.1.0 (and so core 3.1.0, cli/mcp 0.1.3) shipped pinned to
+  `@kirigami/php-wasm` 8.5.11: a stale pin, lost when dependencies were
+  updated by hand during the release. A site installed its own older php-wasm
+  under php-prepros, without Aura, and `IMG::palette()` failed with "The aura
+  extension is not available". Found by building template-demo with the
+  published packages. Fixed by pinning 8.5.11-1 and re-releasing the four
+  dependents. `scripts/publish.js` now refuses to run when an internal
+  exact pin differs from the local version.
+
 ## Release: core 3.1.0, php-wasm 8.5.11-1, VS Code 0.1.2 — 2026-09-29
 
 - Published to npm: php-wasm 8.5.11-1 (tag `latest`), php-prepros 3.1.0, sdk

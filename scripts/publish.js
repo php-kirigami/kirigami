@@ -220,6 +220,23 @@ async function main() {
 	const allPkgs = readPackages();
 	let pkgs = allPkgs;
 
+	// Internal deps are pinned to exact versions. A stale pin publishes a
+	// package that installs its own older copy of a sibling (php-prepros 3.1.0
+	// once shipped with php-wasm 8.5.11 and so lacked the Aura extension).
+	const stale = [];
+	for (const { json } of allPkgs.values()) {
+		for (const field of ['dependencies', 'peerDependencies']) {
+			for (const [dep, range] of Object.entries(json[field] || {})) {
+				const local = allPkgs.get(dep);
+				if (local && /^\d/.test(range) && range !== local.json.version) stale.push(`${json.name} ${field}: ${dep} ${range} (local ${local.json.version})`);
+			}
+		}
+	}
+	if (stale.length && !opt['purge-only']) {
+		console.error(`Stale internal pins, fix them before releasing:\n  ${stale.join('\n  ')}`);
+		process.exit(1);
+	}
+
 	if (opt.only) {
 		const want = opt.only.startsWith('@') ? opt.only : `@kirigami/${opt.only}`;
 		if (!allPkgs.has(want)) {
