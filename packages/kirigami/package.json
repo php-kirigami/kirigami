@@ -46,7 +46,8 @@
     "./internal/phpinfoparser": "./bin/libs/phpinfoparser.js",
     "./internal/utils": "./bin/utils.js",
     "./internal/npm": "./bin/libs/npm.js",
-    "./internal/github": "./bin/libs/github.js"
+    "./internal/github": "./bin/libs/github.js",
+    "./internal/tar": "./bin/libs/tar.js"
   },
   "dependencies": {
     "@kirigami/canva": "2.7.0",

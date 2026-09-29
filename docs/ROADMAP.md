@@ -50,6 +50,15 @@ than reproduce its workflows.
   a service-account token from the environment), page/section mapping, and
   image handling. Replaces the earlier Docs→Markdown / Excel→JSON importer
   scripts idea.
+- **Markdown pages (`_index.md`)** — a plugin task type that compiles
+  `_index.md` files directly into pages, next to (not instead of) PHP's
+  `_index.php`: front matter for the PHPDOC metadata (`title`, `type`,
+  `description`, …), the body rendered through the same Markdown pipeline, and
+  the page wrapped in the site's layout/page type like a PHP page. Whole pages
+  become plain Markdown files a client can create and edit, which fits Kiri
+  Studio ([DESKTOP-APP.md](DESKTOP-APP.md)) and plugin-gdrive. Open: how front
+  matter maps to PHPDOC annotations, and whether it's a new task type or a
+  prepros extension point.
 
 ## Generated site features
 

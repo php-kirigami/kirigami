@@ -5,7 +5,9 @@
 // extensions GitHub uses for long paths.
 // ---------------------------------------------------------------------------
 
-// Returns [{ name, type: 'file' | 'dir', data: Buffer | null }].
+// Returns [{ name, type: 'file' | 'dir', data: Buffer | null, mode }].
+// `mode` is the header's permission bits (e.g. 0o755), so callers extracting
+// npm tarballs can keep executables executable on macOS/Linux.
 export function parseTar(buf) {
 	const entries = [];
 	let offset = 0;
@@ -52,6 +54,7 @@ export function parseTar(buf) {
 			name,
 			type: type === '5' ? 'dir' : 'file',
 			data: type === '5' ? null : data,
+			mode: readOctal(100, 8),
 		});
 	}
 
