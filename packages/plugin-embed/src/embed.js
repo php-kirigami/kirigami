@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // @kirigami/plugin-embed — <youtube id="…"> / <vimeo id="…"> video embeds.
 //
-// Bundled into every esbuild task (`esbuild:after`) — a side-effect import,
+// Bundled into the first esbuild task (`esbuild:after`) — a side-effect import,
 // registers both tags on @kirigami/canva's observer
 // (https://github.com/php-kirigami/kirigami/tree/main/packages/canva).
 // Each tag is swapped, right away, for a `.embed` placeholder sized by the

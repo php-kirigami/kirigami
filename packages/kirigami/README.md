@@ -538,7 +538,8 @@ of `kiri export`. Resolves `@use`/`@forward` through Sass's
 implicit `styles/` prefix (so `@use '@scope/pkg/x'` finds `@scope/pkg/styles/x`)
 and falls back to the global `npm root -g`. `sass.before` / `sass.after` and the
 `@kirigami/sdk` hooks `SASS_BEFORE` / `SASS_AFTER` / `SASS_FUNCTIONS` let other
-packages contribute files and functions.
+packages contribute files and functions. `SASS_BEFORE` / `SASS_AFTER` (and
+their esbuild counterparts) only fire for the first task of that type.
 
 ### prepros task
 

@@ -7,7 +7,7 @@ import { getConfig } from '../config.js';
 import { execSync } from 'child_process';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
-import { replaceRoot, joinWith, log, c } from '../utils.js';
+import { replaceRoot, joinWith, isFirstOfType, log, c } from '../utils.js';
 import { run as runHook, HOOKS, Cache } from '@kirigami/sdk';
 
 
@@ -83,10 +83,14 @@ export default async function build(__root, task, exportPath = null) {
 	// inline-file()/img-asset()/etc. below — each listener returns an object
 	// { 'my-function($arg)': (args) => ... }, in the same format as the Sass
 	// API `functions` argument.
+	// 'sass:before' / 'sass:after' only fire for the first sass task: the files
+	// they inject would otherwise be compiled into every stylesheet.
+	// 'sass:functions' fires for all, since every task needs them to compile.
 	const hookContext = { __root, task, exportPath, config };
+	const injects = isFirstOfType(config, task);
 	const [hookBefore, hookAfter, hookFunctions] = await Promise.all([
-		runHook(HOOKS.SASS_BEFORE, hookContext),
-		runHook(HOOKS.SASS_AFTER, hookContext),
+		injects ? runHook(HOOKS.SASS_BEFORE, hookContext) : [],
+		injects ? runHook(HOOKS.SASS_AFTER, hookContext) : [],
 		runHook(HOOKS.SASS_FUNCTIONS, hookContext),
 	]);
 	const beforeFiles = [...[].concat(before), ...hookBefore].filter(Boolean).map((p) => path.resolve(process.cwd(), p));

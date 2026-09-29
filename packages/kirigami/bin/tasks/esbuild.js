@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from "path";
 import util from "util";
 import esbuild from "esbuild";
-import { replaceRoot, joinWith, c, log } from '../utils.js';
+import { replaceRoot, joinWith, isFirstOfType, c, log } from '../utils.js';
 import { getConfig } from '../config.js';
 import { run as runHook, HOOKS } from '@kirigami/sdk';
 
@@ -31,10 +31,14 @@ export default async function build(__root, task, exportPath = null) {
 	// paths; they're bundled as bare side-effect imports, so order is
 	// preserved: before → entry → after. The 'esbuild:plugins' hook adds
 	// esbuild plugins, same shape as the API's `plugins` option.
+	// 'esbuild:before' / 'esbuild:after' only fire for the first esbuild task:
+	// the files they inject would otherwise be bundled into every script.
+	// 'esbuild:plugins' fires for all, since every bundle needs them to build.
 	const hookContext = { __root, task, exportPath, config };
+	const injects = isFirstOfType(config, task);
 	const [hookBefore, hookAfter, hookPlugins] = await Promise.all([
-		runHook(HOOKS.ESBUILD_BEFORE, hookContext),
-		runHook(HOOKS.ESBUILD_AFTER, hookContext),
+		injects ? runHook(HOOKS.ESBUILD_BEFORE, hookContext) : [],
+		injects ? runHook(HOOKS.ESBUILD_AFTER, hookContext) : [],
 		runHook(HOOKS.ESBUILD_PLUGINS, hookContext),
 	]);
 	const beforeFiles = [...[].concat(before), ...hookBefore].filter(Boolean).map((p) => path.resolve(process.cwd(), p));

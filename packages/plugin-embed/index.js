@@ -6,7 +6,7 @@
 //   - PREPROS_PHP   : includes php/embed.php, which registers the
 //                     {% youtube %} / {% vimeo %} Markdown shortcuts (emit
 //                     the bare <youtube id="…"> / <vimeo id="…"> tag).
-//   - ESBUILD_AFTER : bundles src/embed.js into every esbuild task — the
+//   - ESBUILD_AFTER : bundles src/embed.js into the first esbuild task — the
 //                     observer registration + oEmbed fetch/cache + play
 //                     button that actually turns the tag into a card.
 //   - SASS_AFTER    : appends the default `.embed` card styles, unless

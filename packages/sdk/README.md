@@ -126,7 +126,7 @@ on(HOOKS.SASS_FUNCTIONS, () => ({
 	},
 }));
 
-// Inject a client-side script into every esbuild bundle.
+// Inject a client-side script into the first esbuild bundle.
 on(HOOKS.ESBUILD_AFTER, () => path.join(pluginDir, 'client/init.js'));
 
 // Rewrite the rendered HTML of every page (waterfall — return the new string).
@@ -199,6 +199,13 @@ itself (as in the example above) — a relative path would be resolved from the
 `cwd()` of the project using kirigami, not from the plugin. `esbuild:before` /
 `esbuild:after` files are bundled as bare side-effect `import`s, so their order
 is preserved: before → entry → after.
+
+`*_BEFORE` / `*_AFTER` fire for the **first** sass task and the **first**
+esbuild task only (first in `tasks:` order, plugin-injected tasks last), so a
+site with several stylesheets or bundles does not get each plugin's files
+repeated in all of them. `SASS_FUNCTIONS` and `ESBUILD_PLUGINS` still fire
+for every task, since each one needs them to compile. `sass.before` /
+`sass.after` from `kirigami.yaml` are not affected.
 
 For `SASS_FUNCTIONS`, if the signature collides with one of kirigami's native
 functions (`inline-file`, `img-asset`, `colors`, `font-*`), the native one

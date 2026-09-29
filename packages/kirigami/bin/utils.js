@@ -90,6 +90,17 @@ export const replaceRoot = (path) => {
 
 
 
+// True when `task` is the first task of its type in config.tasks (plugin
+// tasks from tasks:register come after the project's own). The sass/esbuild
+// tasks only run the before/after injection hooks for that one: a site with
+// several stylesheets or bundles must not get every plugin's CSS/JS copied
+// into each. Compared by name (unique), since export passes a per-run copy.
+export function isFirstOfType(config, task) {
+	return (config.tasks || []).find((t) => t.type === task.type)?.name === task.name;
+}
+
+
+
 export function joinWith(part1, part2, separator = '/', prefix = '') {
 	let join = '';
 	let separatorsFound = 0;

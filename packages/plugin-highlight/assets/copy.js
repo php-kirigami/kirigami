@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // Hover "Copy" button on every highlighted code block.
 //
-// @kirigami/plugin-highlight appends this to every esbuild bundle (the
+// @kirigami/plugin-highlight appends this to the first esbuild bundle (the
 // `esbuild:after` hook) when `copyButton` is on. It's a side-effect module —
 // importing it registers `<pre>` on @kirigami/canva's observer, which hands
 // over every block already in the page and every one inserted later (content
