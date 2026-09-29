@@ -116,6 +116,7 @@ studio: {}
 
 	const config = await load(`  branch: main
   images: assets/images
+  imageWidth: 640
   files: src/documents
   include:
     - _data/team.yaml
@@ -132,10 +133,12 @@ studio: {}
 	assert.equal(config.studio.schemas['_schemas/team.json'], '_data/team.yaml');
 	assert.deepEqual(config.studio.schemas['https://example.com/articles.schema.json'], ['_articles.yaml', 'src/news/*.yaml']);
 	assert.equal(config.studio.files, 'src/documents');
+	assert.equal(config.studio.imageWidth, 640);
 	assert.equal((await load('  images: false')).studio.images, false);
 
 	await assert.rejects(() => load('  unknown: true'));
 	await assert.rejects(() => load('  images: true'));
+	await assert.rejects(() => load('  imageWidth: wide'));
 	await assert.rejects(() => load('  include:\n    - label: No path'));
 	await assert.rejects(() => load('  schemas:\n    a.json: { file: a.yaml }'));
 	await assert.rejects(() => load('  schemas:\n    a.json: [1]'));

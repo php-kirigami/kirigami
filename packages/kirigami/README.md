@@ -418,6 +418,7 @@ here are never replaced by the content of the file they name.
 |---|---|---|
 | `branch` | repo default | Branch synced from and published to. |
 | `images` | `image.source` | Image manager folder; clients can create subfolders. `false` hides it. |
+| `imageWidth` | `800` | Width in the `{% img-asset <path> <width> %}` code Kiri Studio inserts or copies for an image. |
 | `files` | – | File manager folder for documents (PDF, …), under `kirigami.root`; clients can create subfolders. |
 | `include` | `[]` | Extra editable paths or globs; `{ path, label, create }` lets clients add/delete files matching a glob. |
 | `exclude` | `[]` | Paths or globs hidden from clients, even when a page references them. |

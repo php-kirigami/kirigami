@@ -440,6 +440,15 @@
             "assets/images"
           ]
         },
+        "imageWidth": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 800,
+          "description": "Width, in pixels, Kiri Studio puts in the `{% img-asset <path> <width> %}` Markdown code it inserts or copies for an image. The client can change it in the text afterwards.",
+          "examples": [
+            800
+          ]
+        },
         "files": {
           "type": "string",
           "description": "Folder shown in the file manager, for documents the site links to (PDF, spreadsheets, …); clients add, replace, and organize them in subfolders. Must be under kirigami.root so the files are published as is. Omit to hide the file manager.",
