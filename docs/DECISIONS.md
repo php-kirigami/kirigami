@@ -560,3 +560,24 @@ Full plan and spike findings: [kiri-studio's docs/PLAN.md](https://github.com/ph
 - **The client's version wins on concurrent edits, without asking.** Git
   history keeps the other version; a "which one do you keep?" dialog is a
   decision a non-technical client shouldn't face.
+
+## Watch: a data file re-renders the pages that load it — 2026-09-29
+
+A modified `.yaml`/`.yml`/`.md`/`.json` used to re-render its own directory.
+That only works when data sits next to its page (`src/about/_about.md`);
+sites that keep data apart (`src/_data/publications/` loaded by
+`src/publications/_index.php`, like humainhumain) re-rendered nothing, so
+`kiri serve` and Kiri Studio's live preview went stale. Each watch batch with
+a data change now builds a map, data file → pages, from the pages' PHPDOC
+headers (`bin/libs/phpdoc.js`, a port of php-prepros's `FS::parseDocBlock()`
+and its `page_info` data rule), and re-renders exactly those pages (their
+directories with `prepros.deep`). A file no header references (read by PHP
+code) still re-renders its directory. The map is rebuilt per batch rather
+than cached: a page edit can change what it loads, and reading page headers
+is cheap next to a PHP render.
+
+Found along the way: `render()` remounts the page it renders into the PHP
+VFS, not the data it loads, so a changed data file rendered from its stale
+VFS copy; the callback now remounts changed data files first. Data outside
+`kirigami.root` is never mounted, so pages can't load it at all; it isn't
+watched either.

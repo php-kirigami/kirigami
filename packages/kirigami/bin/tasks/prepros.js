@@ -1,9 +1,10 @@
 import fs from "fs";
 import path from "path";
 import { joinWith, replaceRoot, log, c, printTaskError } from '../utils.js';
-import { render, sitemap, resetRuntime } from "@kirigami/php-prepros";
+import { render, sitemap, resetRuntime, mountPath } from "@kirigami/php-prepros";
 import { has as hasHook, run as runHook, runWaterfall, HOOKS } from '@kirigami/sdk';
 import { getConfig } from '../config.js';
+import { pageDataFiles } from '../libs/phpdoc.js';
 
 export const taskname = 'PREPROS';
 export const canwatch = true;
@@ -117,18 +118,39 @@ function isPage(rel) {
 	return /^_.*\.php$/i.test(name) && !parts.some(part => part.startsWith('_'));
 }
 
-// What a modified file re-renders: `null` for the whole site, else a target
-// relative to kirigami.root (a page, or a directory rendered recursively).
+// Data file → the pages whose PHPDOC header loads it (`@content _about.md`,
+// `@team ../_data/team.yaml`), all relative to kirigami.root. Read fresh on
+// each watch batch: a page edit can change what it loads.
+export function dataDependents(root) {
+	const dependents = new Map();
+	for (const file of pageOutputs(root).keys()) {
+		const pageRel = path.relative(root, file).replace(/\\/g, '/');
+		let source;
+		try { source = fs.readFileSync(file, 'utf8'); } catch { continue; }
+		for (const dataRel of pageDataFiles(pageRel, source)) {
+			if (!dependents.has(dataRel)) dependents.set(dataRel, []);
+			dependents.get(dataRel).push(pageRel);
+		}
+	}
+	return dependents;
+}
+
+// What a modified file re-renders: `null` for the whole site, else targets
+// relative to kirigami.root (pages, or directories rendered recursively).
 //   - a page: just that page — its directory when `prepros: { deep: true }`
 //   - any other PHP (layouts, includes, partials, `_*/` helpers): every page
 //     may use it, so the whole site
-//   - a data file (.yaml/.yml/.md/.json): its directory
-export function changeTarget(rel, { deep = false } = {}) {
+//   - a data file (.yaml/.yml/.md/.json): the pages that load it through
+//     their PHPDOC header (`dependents`, see dataDependents()); one no header
+//     references (read by PHP code) re-renders its directory
+export function changeTarget(rel, { deep = false, dependents = null } = {}) {
 	const dir = path.posix.dirname(rel);
 	if (/\.php$/i.test(rel)) {
 		if (!isPage(rel)) return null;
 		return deep ? dir : rel;
 	}
+	const pages = dependents?.get(rel);
+	if (pages?.length) return deep ? pages.map((page) => path.posix.dirname(page)) : pages;
 	return dir;
 }
 
@@ -139,10 +161,8 @@ export function getWatcher(__root, task) {
 	// Every PHP file, not just pages: layouts (`_layouts/header.php`) and
 	// includes (`_lib/functions.php`) don't start with "_" themselves.
 	const patterns = [joinWith(root, '**/*.php'), joinWith(root, '**/*.yaml'), joinWith(root, '**/*.yml'), joinWith(root, '**/*.md'), joinWith(root, '**/*.json')]
-	const relative = (file) => {
-		const posix = file.replace(/\\/g, '/');
-		return root && posix.startsWith(`${root}/`) ? posix.slice(root.length + 1) : posix;
-	};
+	// A watched file's path relative to kirigami.root.
+	const relative = (file) => path.posix.relative(root || '.', file.replace(/\\/g, '/'));
 	return {
 		name: task.name,
 		patterns: patterns,
@@ -159,7 +179,12 @@ export function getWatcher(__root, task) {
 				else printTaskError(results);
 				return { ...results, files: [...(results.files || []), ...removed] };
 			}
-			const targets = [...new Set(events.map(e => changeTarget(relative(e.file), { deep })))];
+			const dataEvents = events.filter(e => !/\.php$/i.test(e.file));
+			// render() remounts the page it renders, not the data it loads:
+			// refresh the PHP VFS copy of each changed data file first.
+			for (const e of dataEvents) await mountPath(e.file);
+			const dependents = dataEvents.length ? dataDependents(__root) : null;
+			const targets = [...new Set(events.flatMap(e => [changeTarget(relative(e.file), { deep, dependents })].flat()))];
 			// One global change re-renders everything (plus the sitemap) once.
 			const renders = targets.includes(null) ? [null] : targets;
 			const allResults = await Promise.all(renders.map(async target => {
