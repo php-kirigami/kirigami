@@ -253,9 +253,8 @@ Two update flows are independent, and the client sees neither:
    still needs the App installed on a test repo).
 3. ✅ Publishing through the API: size limits and concurrent-change detection.
 4. ✅ Dependency install without npm, on `template-demo` (Windows only so far).
-5. Re-run spikes 1 and 4 on macOS (arm64 + x64) and Linux x64 in a GitHub
-   Actions matrix, like the VSIX workflow; the file-mode fix below is expected
-   to be needed there.
+5. ✅ Spikes 1 and 4 re-run on macOS (arm64 + x64) and Linux (x64 + arm64) in
+   a GitHub Actions matrix.
 
 Spikes 2 and 3 need the GitHub App registered and a throwaway test repo.
 
@@ -320,9 +319,26 @@ Electron build and serve spikes above then pass on that tree.
 - Install scripts are **not** run, and don't need to be: the two packages that
   have one (`esbuild`, `@parcel/watcher`) find their prebuilt binary in the
   platform-specific optional package the lockfile already lists.
-- macOS/Linux: `parseTar()` doesn't return file modes, so extracted binaries
-  (esbuild's) won't be executable. The installer must `chmod +x` them (read the
-  mode from the tar header, or mark `bin/` files).
+- macOS/Linux: core's `parseTar()` doesn't return file modes, so extracted
+  binaries (esbuild's) wouldn't be executable. Fixed in the spike by reading the
+  mode from the tar header (`readOctal(100, 8)`) and writing files with the
+  exec bit kept (5 executables in `template-demo`'s tree).
+- Linux: the lockfile's `libc` field must be honored too (glibc vs musl
+  variants), detected from `process.report`.
+
+**Spike 5 — all client platforms: works.** The `Spike (cross-platform)`
+workflow in `php-kirigami/kiri-studio-sandbox` runs, on each OS, the npm-less
+install (with Electron itself as the Node, `ELECTRON_RUN_AS_NODE=1`), then a
+build and a serve + live-edit in a `utilityProcess`. All green on
+`windows-latest` (x64), `macos-latest` (arm64), `macos-15-intel` (x64),
+`ubuntu-latest` (x64), and `ubuntu-24.04-arm` (arm64): 69 packages installed
+(~22 MB) in 1–5 s, esbuild binary executable, full build in 1.4–4 s, live
+edit visible 0.3–0.45 s after saving. Linux runs Electron under `xvfb-run`
+with `--no-sandbox` (CI only).
+
+**Phase 0 outcome: no blocker.** Every risky part works on every client
+platform. Known follow-ups carried into phase 1: tar file modes in core, the
+`editor:` schema block, single-file size cap + upload retries on publish.
 - Requires the site repo to commit its `package-lock.json` (templates already
   do). A repo without one gets a clear maintainer-facing error.
 - Guard every extracted path against escaping its package folder.
@@ -334,6 +350,8 @@ Electron build and serve spikes above then pass on that tree.
 - Kiri Studio starts with its own worker, adapted from the VS Code extension's
   (process spawn, message protocol, runtime staging). If both stay alike,
   extract a published shared package later, not up front.
+- In this monorepo: make `parseTar()` return each entry's `mode` (spike 4),
+  so Kiri Studio can reuse core's tar reader for dependency installs.
 - In this monorepo: add the `editor:` block to `kirigami.schema.json`, with tests; document it in
   the core README.
 - Try it on `template-demo`: move some content to `.yaml`/`.md` files, add
