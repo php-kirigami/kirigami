@@ -65,6 +65,12 @@ export default async function exportDist(args) {
 
 	log.step(`Export    : ${c.dim(result.dist)}`);
 
+	if (result.error) {
+		console.log(c.red("\n› Error:"));
+		console.log(result.error);
+		process.exit(1);
+	}
+
 	printTriggerResults(result.beforeExport);
 	printTriggerResults(result.beforeBuild);
 
