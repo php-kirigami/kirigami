@@ -24,8 +24,11 @@
   (VS Code 1.139.1) from the unzipped VSIX. The other five targets come from
   the `VSIX` workflow; upload on the Marketplace publisher page by hand (see
   [EXTENSION-VSCODE.md](EXTENSION-VSCODE.md)).
-- Still to do after this release: `../template-*/` floors, Kiri Studio
-  checks on humainhumain once its app is rebuilt.
+- Templates (`template-default`, `template-demo`) now require core `^3.1.1`
+  and cli `^0.1.4`, are rebuilt and pushed. VS Code 0.1.2 was rebuilt on
+  core 3.1.1 and passes the real-host test. Still to do: the other five VSIX
+  targets and the Marketplace upload, the org site, and Kiri Studio checks on
+  humainhumain once its app is rebuilt.
 
 ## Injection hooks fire on the first sass/esbuild task only — 2026-09-29
 
