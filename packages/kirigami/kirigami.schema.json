@@ -414,6 +414,134 @@
         }
       }
     },
+    "studio": {
+      "type": "object",
+      "description": "What Kiri Studio (the desktop app for site owners) lets a client edit. Presence of the block turns a repo into a Kiri Studio site; `studio: {}` is enough. Content files are found automatically: every .md/.yaml/.yml/.json file a page loads through a PHPDOC annotation (e.g. `@content _about.md`), labeled after the page's @title. Paths are relative to cwd(), like image.source. Ignored by the build.",
+      "additionalProperties": false,
+      "properties": {
+        "branch": {
+          "type": "string",
+          "description": "Branch Kiri Studio syncs from and publishes to. Defaults to the repository's default branch.",
+          "examples": [
+            "main"
+          ]
+        },
+        "images": {
+          "description": "Folder shown in the image manager, where clients add, replace, and organize pictures in subfolders. Defaults to image.source. `false` hides the image manager.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "const": false
+            }
+          ],
+          "examples": [
+            "assets/images"
+          ]
+        },
+        "files": {
+          "type": "string",
+          "description": "Folder shown in the file manager, for documents the site links to (PDF, spreadsheets, …); clients add, replace, and organize them in subfolders. Must be under kirigami.root so the files are published as is. Omit to hide the file manager.",
+          "examples": [
+            "src/documents"
+          ]
+        },
+        "include": {
+          "type": "array",
+          "description": "Extra editable files that no page annotation references, as paths or globs. The object form sets a label and, for globs, whether the client may create and delete files there (e.g. blog posts).",
+          "items": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "path"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "description": "File path or glob."
+                  },
+                  "label": {
+                    "type": "string",
+                    "description": "Name shown to the client."
+                  },
+                  "create": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Let the client add and delete files matching the glob."
+                  }
+                }
+              }
+            ]
+          },
+          "examples": [
+            [
+              "_data/team.yaml",
+              {
+                "path": "src/blog/*.md",
+                "label": "Blog posts",
+                "create": true
+              }
+            ]
+          ]
+        },
+        "exclude": {
+          "type": "array",
+          "description": "Paths or globs hidden from the client, even when a page annotation references them.",
+          "items": {
+            "type": "string"
+          },
+          "examples": [
+            [
+              "src/features/data/_stats.json"
+            ]
+          ]
+        },
+        "labels": {
+          "type": "object",
+          "description": "Names shown to the client, by file path, overriding the page-title default.",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "examples": [
+            {
+              "src/features/data/_articles.yaml": "Articles"
+            }
+          ]
+        },
+        "forms": {
+          "type": "object",
+          "description": "Form definitions for YAML/JSON files, by file path. Either a field map (for a list file, the fields of each item) or the path of a JSON Schema file for complex cases. Files without an entry get fields guessed from their content.",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "\\.json$",
+                "description": "Path of a JSON Schema file describing the data file."
+              },
+              {
+                "$ref": "#/definitions/studioFields"
+              }
+            ]
+          },
+          "examples": [
+            {
+              "src/features/data/_articles.yaml": {
+                "title": "text",
+                "date": "date",
+                "url": "url",
+                "blurb": "textarea"
+              }
+            }
+          ]
+        }
+      }
+    },
     "plugins": {
       "type": "array",
       "description": "List of Kirigami plugins. Each plugin must use a supported package naming convention.",
@@ -802,6 +930,74 @@
           }
         ]
       ]
+    }
+  },
+  "definitions": {
+    "studioFieldType": {
+      "type": "string",
+      "description": "Form input shown to the client in Kiri Studio.",
+      "enum": [
+        "text",
+        "textarea",
+        "markdown",
+        "number",
+        "boolean",
+        "date",
+        "url",
+        "email",
+        "image",
+        "select",
+        "list"
+      ]
+    },
+    "studioFields": {
+      "type": "object",
+      "description": "Form fields by data key: a type name, or an object for a label, choices, or nested fields.",
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "$ref": "#/definitions/studioFieldType"
+          },
+          {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "$ref": "#/definitions/studioFieldType"
+              },
+              "label": {
+                "type": "string",
+                "description": "Name shown to the client. Defaults to the key, humanized."
+              },
+              "required": {
+                "type": "boolean",
+                "default": false
+              },
+              "options": {
+                "type": "array",
+                "description": "Choices for a `select` field.",
+                "items": {
+                  "type": [
+                    "string",
+                    "number"
+                  ]
+                }
+              },
+              "fields": {
+                "$ref": "#/definitions/studioFields",
+                "description": "Fields of each item of a `list` of objects."
+              },
+              "of": {
+                "$ref": "#/definitions/studioFieldType",
+                "description": "Type of each item of a `list` of plain values (e.g. tags)."
+              }
+            }
+          }
+        ]
+      }
     }
   }
 }

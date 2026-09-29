@@ -5,6 +5,7 @@ import Ajv from 'ajv';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'url';
 import { walkFile } from "@kirigami/struct-walker";
+import * as yaml from 'js-yaml';
 import { formatDate } from "./utils.js";
 import { resolveTaskType, builtInTaskTypes } from "./libs/tasktypes.js";
 
@@ -26,9 +27,20 @@ export async function loadConfig(configPath = __configpath, { deferTaskTypes = f
 	if (!fs.existsSync(configPath)) throw `Config file not found: ${configPath}`;
 	const _config = await walkFile(configPath);
 	if(!_config) throw `Invalid config file: ${configPath}`;
+	keepStudioPathsRaw(_config, configPath);
 	validateAgainstSchema(_config, configPath);
 	await validateConfig(_config, configPath, { deferTaskTypes });
 	return _config;
+}
+
+
+// `studio:` lists file paths for Kiri Studio (what a client may edit), never
+// references to inline — but walkFile() replaces any string naming an existing
+// .yaml/.json file with that file's content (`_data/team.yaml` would become the
+// team data). Take the block from a plain parse instead.
+function keepStudioPathsRaw(_config, configPath) {
+	if (!_config || typeof _config !== 'object' || !('studio' in _config)) return;
+	_config.studio = yaml.load(fs.readFileSync(configPath, 'utf8')).studio;
 }
 
 

@@ -186,6 +186,7 @@ Dependency bumps: [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirig
   - [`kirigami:`](#kirigami)
   - [`prepros:`](#prepros)
   - [`image:`](#image)
+  - [`studio:`](#studio)
   - [`plugins:`](#plugins)
   - [`esbuild:` / `sass:`](#esbuild--sass)
   - [`export:`](#export)
@@ -403,6 +404,45 @@ when the block is absent.
 | `source` | `assets/images` | Source image folder, relative to `cwd()`. |
 | `dest` | `images` | Output folder for generated images, relative to `kirigami.root`. |
 
+### `studio:`
+
+What Kiri Studio, the desktop app for site owners, lets a client edit. The
+build ignores this block. Its presence makes the repo a Kiri Studio site, and
+`studio: {}` is enough: every `.md` / `.yaml` / `.yml` / `.json` file a page
+loads through a PHPDOC annotation (`@content _about.md`,
+`@articles _articles.yaml`) becomes editable, labeled after the page's
+`@title`. Paths are relative to `cwd()`. Unlike the rest of the file, paths
+here are never replaced by the content of the file they name.
+
+| Key | Default | Description |
+|---|---|---|
+| `branch` | repo default | Branch synced from and published to. |
+| `images` | `image.source` | Image manager folder; clients can create subfolders. `false` hides it. |
+| `files` | – | File manager folder for documents (PDF, …), under `kirigami.root`; clients can create subfolders. |
+| `include` | `[]` | Extra editable paths or globs; `{ path, label, create }` lets clients add/delete files matching a glob. |
+| `exclude` | `[]` | Paths or globs hidden from clients, even when a page references them. |
+| `labels` | `{}` | Names shown to clients, by path. |
+| `forms` | `{}` | Form for a YAML/JSON file, by path: a field map, or a JSON Schema file path. Unlisted files get fields guessed from their content. |
+
+Field types: `text`, `textarea`, `markdown`, `number`, `boolean`, `date`,
+`url`, `email`, `image`, `select` (with `options`), and `list` (with `of` for
+plain values, or `fields` for objects). For a file holding a list, the field
+map describes each item.
+
+```yaml
+studio:
+  files: src/documents
+  exclude: [src/features/data/_stats.json]
+  labels:
+    src/features/data/_articles.yaml: Articles
+  forms:
+    src/features/data/_articles.yaml:
+      title: text
+      date:  date
+      blurb: { type: textarea, label: Summary }
+      tags:  { type: list, of: text }
+```
+
 ### `plugins:`
 
 List of Kirigami plugins (see [`@kirigami/sdk`](https://www.npmjs.com/package/@kirigami/sdk)).
@@ -617,6 +657,7 @@ Every official template (`kiri create`) ships this workflow already, at
 | [`@kirigami/sdk`](https://www.npmjs.com/package/@kirigami/sdk) | Hook registry + `Cache` (`.node.db`). |
 | [`@kirigami/struct-walker`](https://www.npmjs.com/package/@kirigami/struct-walker) | Loads and resolves `kirigami.yaml`. |
 | [`ajv`](https://ajv.js.org/) | `kirigami.yaml` schema validation. |
+| [`js-yaml`](https://github.com/nodeca/js-yaml) | Reads the `studio:` block without file-reference resolution. |
 | [`sass`](https://sass-lang.com/) · [`csso`](https://github.com/css/csso) | Sass compilation + CSS minification. |
 | [`esbuild`](https://esbuild.github.io/) | JS/TS bundling. |
 | [`fontkit`](https://github.com/foliojs/fontkit) | Font metadata for the `font-*()` Sass functions. |

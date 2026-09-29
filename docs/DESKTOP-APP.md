@@ -130,37 +130,57 @@ form, no server to run). Then:
   only one. A maintainer who wants their own branding can register their own
   App and point Kiri Studio at its client ID (later).
 - The project list = repos the App is installed on, that the client can write
-  to, **and** whose `kirigami.yaml` has an `editor:` block.
+  to, **and** whose `kirigami.yaml` has a `studio:` block.
 
 Registering the App (org settings → Developer settings → GitHub Apps → New):
 name, homepage, *Enable Device Flow* on, no webhook, the two permissions above,
 "Any account" can install. The resulting client ID is compiled into Kiri Studio.
 
-### 3. Editable scope: an `editor:` block in `kirigami.yaml`
+### 3. Editable scope: a `studio:` block in `kirigami.yaml`
 
-Sketch (names to be settled in phase 1):
+Settled 2026-09-29 and in core's schema (see the core README's `studio:`
+section for the reference). The maintainer writes almost nothing:
 
 ```yaml
-editor:
-  branch: main                  # default: repo default branch
-  images: src/assets/images     # image manager root; defaults to image.source
-  content:
-    - label: Team
-      path: _data/team.yaml
-      schema: _data/team.schema.json   # optional: renders a form
-    - label: Blog posts
-      path: src/blog/*.md
-      create: true                     # client may add/delete files here
+studio:
+  files: src/documents                    # file manager (PDF, …); omit to hide
+  exclude: [src/features/data/_stats.json]
+  labels:
+    src/features/data/_articles.yaml: Articles
+  forms:
+    src/features/data/_articles.yaml:     # inline fields…
+      title: text
+      date:  date
+      blurb: { type: textarea, label: Summary }
+    _data/team.yaml: _schemas/team.json   # …or a JSON Schema
 ```
 
-- Everything outside these paths is invisible in the app.
-- YAML with a `schema` gets a **form** (text fields, lists, image pickers);
-  without one it falls back to a guarded YAML editor that validates before save.
-  Forms matter: most clients should never see YAML syntax.
-- This fits how Kirigami sites already work: pages load `.yaml`/`.md` data
-  through PHPDOC annotations, so content can live outside the PHP templates.
-- Core's schema validation is strict, so `kirigami.schema.json` must learn
-  this block before any site can use it.
+- **Automatic discovery.** `studio: {}` is enough: every `.md`/`.yaml`/
+  `.yml`/`.json` file a page loads through a PHPDOC annotation (`@content
+  _about.md`, `@articles _articles.yaml`) is editable, labeled after the
+  page's `@title`. This fits how Kirigami sites already work: content lives in
+  data files next to the PHP templates. `exclude` hides some, `include` adds
+  files no page references (with `create: true` on a glob, the client can add
+  and delete files, e.g. blog posts), `labels` renames.
+- **Forms, never raw YAML.** A `forms` entry is either a field map (types:
+  text, textarea, markdown, number, boolean, date, url, email, image, select,
+  list) or a JSON Schema file for complex cases. Files without one get fields
+  guessed from their content (a date string → date picker, a URL → url field,
+  long text → textarea). Guessing must be good enough that most sites need no
+  `forms` at all.
+- **Image manager** on `images` (default: `image.source`) and **file manager**
+  on `files` (documents the site links to, published as is from under
+  `kirigami.root`). In both, the client can create, rename, and delete
+  **subfolders** to organize their media.
+- Everything else in the repo is invisible in the app.
+- Discovery (reading PHPDOC headers) happens in the app. The rules must match
+  php-prepros's annotation parsing; reuse it through the site's own PHP
+  runtime (`FS::phpFileInfo()` via a small script) rather than re-implementing
+  it in JS.
+- Core gotcha found while adding the block: `kirigami.yaml` is loaded by
+  `struct-walker`, which replaces any value naming an existing `.yaml`/`.json`
+  file with that file's content. The core now re-reads `studio:` with a plain
+  YAML parse so its paths stay paths.
 
 **Limit:** the scope is enforced by the app, not by GitHub. The App token can
 write anywhere in the repo. Server-side enforcement is an optional later phase
@@ -181,8 +201,14 @@ write anywhere in the repo. Server-side enforcement is an optional later phase
 - No external Node either: Electron's bundled Node runs Kirigami directly
   (validated in phase 0), unlike the VS Code extension.
 
-### 5. Images
+### 5. Images and files
 
+- Both managers show a folder tree: create, rename, move, and delete
+  subfolders; drag files between folders. Moving or renaming updates nothing
+  automatically in content files, so it warns when something references the
+  old path (and later could offer to fix the references).
+- Files (documents): any type the site can serve; cap the size per file (same
+  cap as publish, e.g. 25 MB) and suggest a video host for video.
 - Drag and drop into the image manager; **downscale only oversized originals**
   (e.g. > 3000 px wide) with the browser's canvas, before the file enters the
   draft. Responsive variants and formats are already produced at build time by
@@ -325,6 +351,9 @@ Electron build and serve spikes above then pass on that tree.
   exec bit kept (5 executables in `template-demo`'s tree).
 - Linux: the lockfile's `libc` field must be honored too (glibc vs musl
   variants), detected from `process.report`.
+- Requires the site repo to commit its `package-lock.json` (templates already
+  do). A repo without one gets a clear maintainer-facing error.
+- Guard every extracted path against escaping its package folder.
 
 **Spike 5 — all client platforms: works.** The `Spike (cross-platform)`
 workflow in `php-kirigami/kiri-studio-sandbox` runs, on each OS, the npm-less
@@ -338,10 +367,7 @@ with `--no-sandbox` (CI only).
 
 **Phase 0 outcome: no blocker.** Every risky part works on every client
 platform. Known follow-ups carried into phase 1: tar file modes in core, the
-`editor:` schema block, single-file size cap + upload retries on publish.
-- Requires the site repo to commit its `package-lock.json` (templates already
-  do). A repo without one gets a clear maintainer-facing error.
-- Guard every extracted path against escaping its package folder.
+`studio:` schema block, single-file size cap + upload retries on publish.
 
 ### Phase 1 — Foundations
 
@@ -350,12 +376,13 @@ platform. Known follow-ups carried into phase 1: tar file modes in core, the
 - Kiri Studio starts with its own worker, adapted from the VS Code extension's
   (process spawn, message protocol, runtime staging). If both stay alike,
   extract a published shared package later, not up front.
-- In this monorepo: make `parseTar()` return each entry's `mode` (spike 4),
-  so Kiri Studio can reuse core's tar reader for dependency installs.
-- In this monorepo: add the `editor:` block to `kirigami.schema.json`, with tests; document it in
-  the core README.
-- Try it on `template-demo`: move some content to `.yaml`/`.md` files, add
-  schemas.
+- ✅ In this monorepo: `parseTar()` returns each entry's `mode` and is exported
+  as `@kirigami/kirigami/internal/tar`, so Kiri Studio reuses it.
+- ✅ In this monorepo: the `studio:` block in `kirigami.schema.json`, with
+  tests, documented in the core README. Ships with the next core release.
+- After that release: add a `studio:` block to `template-demo` (validated
+  locally on a copy: the build ignores it) and, where useful, move page
+  content into `.yaml`/`.md` files so clients can edit it.
 
 ### Phase 2 — App skeleton
 
@@ -409,7 +436,7 @@ platform. Known follow-ups carried into phase 1: tar file modes in core, the
 ### Phase 7 — Later
 
 - Server-side scope enforcement: publish to a branch, and a check action
-  (kiribuild-like) that rejects paths outside `editor:` before auto-merge.
+  (kiribuild-like) that rejects paths outside `studio:` before auto-merge.
 - History / "undo a publish" from the commit list.
 - LFS support, multiple editors per site, per-client branding.
 

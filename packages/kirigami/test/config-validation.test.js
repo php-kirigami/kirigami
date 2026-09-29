@@ -81,3 +81,73 @@ ${seo}
 	const config = await load('  jsonld: false\n  lang: fr-CA\n  logo: images/logo.png');
 	assert.equal(config.seo.jsonld, false);
 });
+
+test('loadConfig validates the studio block for Kiri Studio', async (t) => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kiri-config-'));
+	fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+	t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+	const load = (studio) => {
+		fs.writeFileSync(path.join(dir, 'kirigami.yaml'), `
+kirigami:
+  project: Demo
+  baseurl: https://example.com
+  root: src
+studio:
+${studio}
+`);
+		return loadConfig(path.join(dir, 'kirigami.yaml'));
+	};
+
+	// An empty block is enough to make the site editable.
+	fs.writeFileSync(path.join(dir, 'kirigami.yaml'), `
+kirigami:
+  project: Demo
+  baseurl: https://example.com
+  root: src
+studio: {}
+`);
+	assert.deepEqual((await loadConfig(path.join(dir, 'kirigami.yaml'))).studio, {});
+
+	// Paths to existing .yaml/.json files must stay paths, not get inlined.
+	fs.mkdirSync(path.join(dir, '_data'));
+	fs.mkdirSync(path.join(dir, '_schemas'));
+	fs.writeFileSync(path.join(dir, '_data', 'team.yaml'), '- name: Ada\n');
+	fs.writeFileSync(path.join(dir, '_schemas', 'team.json'), '{ "type": "array" }');
+
+	const config = await load(`  branch: main
+  images: assets/images
+  files: src/documents
+  include:
+    - _data/team.yaml
+    - path: src/blog/*.md
+      label: Blog posts
+      create: true
+  exclude: [src/data/_stats.json]
+  labels:
+    src/data/_articles.yaml: Articles
+  forms:
+    _data/team.yaml: _schemas/team.json
+    src/data/_articles.yaml:
+      title: text
+      date: date
+      blurb: { type: textarea, label: Summary, required: true }
+      tags: { type: list, of: text }
+      category: { type: select, options: [news, events] }
+      links:
+        type: list
+        fields:
+          label: text
+          url: url`);
+	assert.equal(config.studio.forms['src/data/_articles.yaml'].links.fields.url, 'url');
+	assert.equal(config.studio.include[0], '_data/team.yaml');
+	assert.equal(config.studio.forms['_data/team.yaml'], '_schemas/team.json');
+	assert.equal(config.studio.files, 'src/documents');
+	assert.equal((await load('  images: false')).studio.images, false);
+
+	await assert.rejects(() => load('  unknown: true'));
+	await assert.rejects(() => load('  images: true'));
+	await assert.rejects(() => load('  include:\n    - label: No path'));
+	await assert.rejects(() => load('  forms:\n    a.yaml: schema.yaml'));
+	await assert.rejects(() => load('  forms:\n    a.yaml:\n      title: colour'));
+	await assert.rejects(() => load('  forms:\n    a.yaml:\n      title: { label: No type }'));
+});
