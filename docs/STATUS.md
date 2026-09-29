@@ -1,5 +1,16 @@
 # Status
 
+## Site docs for the 3.1.1 release — 2026-09-29
+
+- `php-kirigami.github.io` PR #2 (branch `docs/release-3.1.1`): `studio:` config
+  section, `IMG::palette()` on Aura, first-task-only injection hooks, a
+  September 29 changelog entry, Kirigami floors raised. Merging deploys the
+  public site; check the deployed pages after that. The site's `SCHEMA` /
+  `NORMALIZER_LEGACY` section already matched php-prepros' README, so that
+  row left `DOCTODO.md`.
+- Added `packages/php-prepros/test/palette.test.js` (palette through
+  `processImages`, the path Sass's `colors()` uses).
+
 ## Fix release: php-prepros 3.1.1, core 3.1.1, cli/mcp 0.1.4 — 2026-09-29
 
 - php-prepros 3.1.0 (and so core 3.1.0, cli/mcp 0.1.3) shipped pinned to

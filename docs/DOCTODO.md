@@ -18,5 +18,4 @@ Published-consumer and platform verification remain below.
 
 | Prerequisite | Documentation to finish | Completion evidence |
 |---|---|---|
-| php-prepros `SCHEMA`/`Normalizer` switch to jsonk/norm | The org site's PHP reference (`../php-kirigami.github.io/src/docs/php/_index.php`, `## SCHEMA`) still calls `SCHEMA` a pure-PHP Draft-7 validator with the old keyword list; align it with php-prepros' README (jsonk, draft 2020-12, `SCHEMA_LEGACY`), and mention `NORMALIZER_LEGACY`. | Site section matches the package README. |
 | Organization profile and site publication | Publish the profile source and regenerate/deploy the public site through the release workflow. | Verify the deployed pages; local Markdown edits do not count as publication. |
