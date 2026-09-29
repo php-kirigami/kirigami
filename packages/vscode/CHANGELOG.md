@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.2
+
+- Bundles Kirigami 3.1.0 and PHP 8.5.11-1 (with the Aura and translit
+  extensions built in). `IMG::palette()` and the `colors()` Sass function
+  now extract colours with Aura: up to six, most populated first.
+- With several Sass or esbuild tasks, the files plugins inject (Canva and
+  plugin styles and scripts) go into the first task of each type only, no
+  longer repeated in every stylesheet and bundle.
+- Adds the `studio:` block to the `kirigami.yaml` schema (for Kiri Studio).
+
 ## 0.1.1
 
 - Bundles Kirigami 3.0.2: a tag written as an example inside Markdown code

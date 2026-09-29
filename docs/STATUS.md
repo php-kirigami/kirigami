@@ -1,5 +1,21 @@
 # Status
 
+## Release: core 3.1.0, php-wasm 8.5.11-1, VS Code 0.1.2 — 2026-09-29
+
+- Published to npm: php-wasm 8.5.11-1 (tag `latest`), php-prepros 3.1.0, sdk
+  0.3.1, kirigami 3.1.0, mcp 0.1.3, cli 0.1.3, plugin-embed / extlink /
+  highlight 0.2.1. Covers the `studio:` block, `internal/tar`, the watch
+  data→pages fix, `IMG::palette()` on Aura, first-task-only injection hooks,
+  and `kiri export` printing the refusal reason. Right after the run the
+  registry showed `sdk@0.3.1` as missing for a few minutes although the
+  script had reported it published; it caught up on its own.
+- VS Code 0.1.2: `win32-x64` VSIX built locally and passes the real-host test
+  (VS Code 1.139.1) from the unzipped VSIX. The other five targets come from
+  the `VSIX` workflow; upload on the Marketplace publisher page by hand (see
+  [EXTENSION-VSCODE.md](EXTENSION-VSCODE.md)).
+- Still to do after this release: `../template-*/` floors, Kiri Studio
+  checks on humainhumain once its app is rebuilt.
+
 ## Injection hooks fire on the first sass/esbuild task only — 2026-09-29
 
 - `sass:before` / `sass:after` and `esbuild:before` / `esbuild:after` now run
