@@ -333,6 +333,62 @@ class IMG
 
 
 	/**
+	 * Extracts a color palette with Aura (the static `aura` extension), which
+	 * picks up to six named swatches (vibrant, muted, each in a dark and a
+	 * light variant) instead of clustering N arbitrary colors.
+	 *
+	 * Swatches Aura had to fake (`was_ineligible`) are dropped, then colors
+	 * are ordered by descending population and deduplicated.
+	 *
+	 * @param int $numColors Number of colors to return (at most 6).
+	 * @return string[] Colors as "#rrggbb".
+	 */
+	public function getAuraColors(int $numColors = 5): array
+	{
+		if (!class_exists('Aura\Palette')) throw new Exception("The aura extension is not available.");
+
+		// Aura reads raw RGBA bytes. A small sample is plenty to find the
+		// dominant colors, and keeps the PHP pixel loop cheap.
+		$srcW = $this->width;
+		$srcH = $this->height;
+		$scale = min(1, 150 / max($srcW, $srcH));
+		$w = max(1, (int) round($srcW * $scale));
+		$h = max(1, (int) round($srcH * $scale));
+
+		$sample = imagecreatetruecolor($w, $h);
+		imagealphablending($sample, false);
+		imagesavealpha($sample, true);
+		imagefill($sample, 0, 0, imagecolorallocatealpha($sample, 0, 0, 0, 127));
+		imagecopyresampled($sample, $this->im, 0, 0, 0, 0, $w, $h, $srcW, $srcH);
+
+		$rgba = '';
+		for ($y = 0; $y < $h; $y++) {
+			for ($x = 0; $x < $w; $x++) {
+				$c = imagecolorat($sample, $x, $y);
+				$alpha = 255 - (($c >> 24) & 127) * 2; // GD alpha is 0 (opaque) to 127
+				$rgba .= chr(($c >> 16) & 255) . chr(($c >> 8) & 255) . chr($c & 255) . chr(min(255, $alpha));
+			}
+		}
+
+		$palette = \Aura\Palette::generate($rgba);
+
+		$swatches = [];
+		foreach (['vibrant', 'vibrant_dark', 'vibrant_light', 'muted', 'muted_dark', 'muted_light'] as $name) {
+			$swatch = $palette->$name;
+			if ($swatch && !$swatch->was_ineligible) $swatches[] = $swatch;
+		}
+		usort($swatches, fn($a, $b) => $b->population <=> $a->population);
+
+		$colors = [];
+		foreach ($swatches as $swatch) {
+			$colors[] = sprintf('#%02x%02x%02x', $swatch->color->r, $swatch->color->g, $swatch->color->b);
+		}
+
+		return array_slice(array_values(array_unique($colors)), 0, $numColors);
+	}
+
+
+	/**
 	 * The AVIF encoder (libavif/aom) used by imageavif() can fail with
 	 * "Encoding of color planes failed" in two common cases:
 	 *  - odd width/height (4:2:0 chroma subsampling constraint)
@@ -463,10 +519,10 @@ class IMG
 	{
 		$srcfile = FS::pathJoin(PREPROS::$config->image->source, $path);
 		if(!$srcinfo = PREPROS::fstat($srcfile)) throw new Exception("Invalid image file.");
-		$key = 'palette_' . STR::shorthash("{$srcfile}:{$srcinfo->modifiedAt}:{$colors}");
+		$key = 'aura_palette_' . STR::shorthash("{$srcfile}:{$srcinfo->modifiedAt}:{$colors}");
 		if($palette = CACHE::get($key)) return $palette;
 		if(!$localfile = current(PREPROS::mount($srcfile))) throw new Exception("Can't mount image.");
-		if(!$palette = (new self($localfile))->getRepresentativeColors($colors)) throw new Exception("Can't extract palette from image \"{$path}\".");
+		if(!$palette = (new self($localfile))->getAuraColors($colors)) throw new Exception("Can't extract palette from image \"{$path}\".");
 		CACHE::set($key, $palette);
 		return $palette;
 	}

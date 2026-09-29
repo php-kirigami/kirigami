@@ -1521,11 +1521,12 @@ $img->height  // int
 // Instance methods (resize/save are chainable)
 $img->resize(int $width, int $height = 0, bool $cover = false): self
 $img->save(string $dest, ?int $quality = null): self       // quality 0-100 for jpg/webp/avif; null = per-format default (82)
-$img->getRepresentativeColors(int $count = 5): string[]   // ['#rrggbb', …]
+$img->getRepresentativeColors(int $count = 5): string[]   // ['#rrggbb', …], median-cut + Lab merge
+$img->getAuraColors(int $count = 5): string[]             // ['#rrggbb', …], up to 6, via the Aura extension
 
 // Static helpers
 IMG::asset(string $path, int $width = 0, int $height = 0, bool $cover = false): string  // same feature as the <img asset> tag and the img-asset() Sass function
-IMG::palette(string $path, int $colors = 5): string[]
+IMG::palette(string $path, int $colors = 5): string[]      // Aura-backed: at most 6 colours
 ```
 
 `resize()` operates in *contain* mode by default (scales to fit within the target box while preserving aspect ratio). Pass `$cover = true` to crop and fill the exact target dimensions.
@@ -1543,7 +1544,10 @@ IMG::palette(string $path, int $colors = 5): string[]
 and `colors()` Sass functions: they resolve `$path` against `image.source` from
 `kirigami.yaml`, generate a resized/re-encoded file under `image.dest` (only
 when missing or stale), or return a `CACHE`-backed list of representative
-colours. Both are equally usable from your own PHP.
+colours. `IMG::palette()` extracts them with the Aura extension (vibrant and
+muted swatches, each in a dark and a light variant), so it returns at most six
+colours, most populated first; asking for more returns what Aura found. Both
+are equally usable from your own PHP.
 
 `IMG::asset()` is the single implementation behind the [`<img asset>` tag](#built-in-tags)
 too — the tag is just a thin wrapper. Generated files are named after the source
