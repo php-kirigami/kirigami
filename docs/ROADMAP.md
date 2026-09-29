@@ -56,7 +56,7 @@ than reproduce its workflows.
   `description`, …), the body rendered through the same Markdown pipeline, and
   the page wrapped in the site's layout/page type like a PHP page. Whole pages
   become plain Markdown files a client can create and edit, which fits Kiri
-  Studio ([DESKTOP-APP.md](DESKTOP-APP.md)) and plugin-gdrive. Open: how front
+  Studio ([plan](https://github.com/php-kirigami/kiri-studio/blob/main/docs/PLAN.md)) and plugin-gdrive. Open: how front
   matter maps to PHPDOC annotations, and whether it's a new task type or a
   prepros extension point.
 
@@ -106,7 +106,7 @@ than reproduce its workflows.
   Pages workflow.
 - **Desktop UI** — provide an Electron interface for users outside an editor,
   backed by the same `Project` API as the existing surfaces. Planned in
-  [DESKTOP-APP.md](DESKTOP-APP.md).
+  [php-kirigami/kiri-studio](https://github.com/php-kirigami/kiri-studio) ([plan](https://github.com/php-kirigami/kiri-studio/blob/main/docs/PLAN.md)).
 - **SchemaStore registration** — submit `kirigami.schema.json` so YAML tooling
   can discover it without a per-file schema comment.
 

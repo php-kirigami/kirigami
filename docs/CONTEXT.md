@@ -29,6 +29,7 @@ Cloned as siblings of this repo (`../<name>/`), all under the `php-kirigami` org
 | `../template-*/` | `php-kirigami/template-<name>` | every Kirigami template — `kiri create <name>` clones these. Currently `../template-default/` (minimal starter) and `../template-demo/` (full feature tour; has its own `todo.md`). |
 | `../php-kirigami.github.io/` | `php-kirigami/php-kirigami.github.io` | the org site, itself built with Kirigami |
 | `../kiribuild/` | `php-kirigami/kiribuild` | the reusable GitHub Action (v2: Node 24 + `kiri` CLI + `kiri export` only — checkout/commit-back/Pages upload-deploy live in the caller's workflow) |
+| `../kiri-studio/` | `php-kirigami/kiri-studio` | Kiri Studio, the Electron desktop app for site owners (edit + publish through the GitHub API); configured per site by the `studio:` block |
 | `../php-wasm-compiler/` | `php-kirigami/php-wasm-compiler` | toolchain that compiles the custom PHP WASM in `@kirigami/php-wasm` |
 | `../audiowaveform-wasm-compiler/` | `php-kirigami/audiowaveform-wasm-compiler` | Docker/Emscripten pipeline that produces `@kirigami/audiowaveform-wasm`'s compiled output |
 

@@ -17,7 +17,6 @@ evolving material lives in `docs/`, split by topic:
 | [docs/TODO.md](docs/TODO.md) | Small, concrete, near-term action items |
 | [docs/DOCTODO.md](docs/DOCTODO.md) | Documentation debt — pending doc updates code changes left behind |
 | [docs/EXTENSION-VSCODE.md](docs/EXTENSION-VSCODE.md) | VS Code extension implementation, limitations, and remaining work |
-| [docs/DESKTOP-APP.md](docs/DESKTOP-APP.md) | Planned Electron app for non-technical clients to edit and publish their site |
 | [docs/UPDATE.md](docs/UPDATE.md) | Procedures for updating repository Markdown and the MCP doc-search index |
 
 `docs/template-CLAUDE.md` is a different thing entirely — it's the

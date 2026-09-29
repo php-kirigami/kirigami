@@ -532,7 +532,7 @@ root), and the three interfaces only ask questions and present results.
 
 ## Kiri Studio (desktop app): GitHub API instead of Git, deps without npm — 2026-09-29
 
-Full plan and spike findings: [DESKTOP-APP.md](DESKTOP-APP.md). The short "why":
+Full plan and spike findings: [kiri-studio's docs/PLAN.md](https://github.com/php-kirigami/kiri-studio/blob/main/docs/PLAN.md). The short "why":
 
 - **Sibling repo `php-kirigami/kiri-studio`, not `packages/`.** It's an end-user
   app that consumes published `@kirigami/*` packages; Electron's toolchain has
