@@ -36,7 +36,7 @@
     "npm": ">=10.2.3"
   },
   "dependencies": {
-    "@kirigami/sdk": "0.3.0"
+    "@kirigami/sdk": "0.3.1"
   },
   "publishConfig": {
     "access": "public"

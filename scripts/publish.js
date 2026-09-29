@@ -148,6 +148,9 @@ function packAndPublish(pkg) {
 	console.log(`  ${dim('·')} ${name}: packed ${dim(path.relative(ROOT, tarball))}`);
 
 	let cmd = `npm publish ${q(tarball)} --access public`;
+	// npm refuses a prerelease-looking version (php-wasm's "8.5.11-1" rebuilds)
+	// without an explicit tag, and those must still become "latest".
+	if (version.includes('-')) cmd += ' --tag latest';
 	if (opt['dry-run']) cmd += ' --dry-run';
 	if (opt.otp) cmd += ` --otp ${q(opt.otp)}`;
 	inherit(cmd, dir);

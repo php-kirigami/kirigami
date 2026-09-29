@@ -1,5 +1,42 @@
 # Status
 
+## Injection hooks fire on the first sass/esbuild task only — 2026-09-29
+
+- `sass:before` / `sass:after` and `esbuild:before` / `esbuild:after` now run
+  only for the first task of their type in `config.tasks` (`isFirstOfType()`
+  in `bin/utils.js`; the project's own tasks come before plugin-injected
+  ones). Before, a site with several stylesheets or bundles got every
+  plugin's CSS/JS (canva, embed, highlight, extlink) repeated in each.
+  `sass:functions` and `esbuild:plugins` still fire for every task, since each
+  needs them to compile; `sass.before` / `sass.after` from `kirigami.yaml` are
+  unchanged. A later task run alone (a watcher, `runTask`) is judged by its
+  position, not by run order. Covered by
+  `test/hook-injection-first-task.test.js`; SDK and core READMEs updated.
+
+## `IMG::palette()` uses Aura — 2026-09-29
+
+- The rebuilt `@kirigami/php-wasm` now statically includes the `aura`
+  extension (with `translit`). `IMG::palette()` (and so the `colors()` Sass
+  function) extracts colours with `Aura\Palette::generate()` through the new
+  `IMG::getAuraColors()`: Aura's up-to-six named swatches (vibrant/muted, each
+  dark/light), faked ones dropped, ordered by population, deduplicated. The
+  return type is unchanged (`['#rrggbb', …]`), but `$colors` is now capped at
+  6. The cache key prefix changed (`aura_palette_`) so old entries are not
+  reused. `getRepresentativeColors()` is kept as is. No test covers palettes
+  yet. Needs the new php-wasm release: it fails with "The aura extension is
+  not available" on the previous binary. `@kirigami/php-wasm` is bumped to
+  `8.5.11-1` (cli and php-prepros pin it exactly); `scripts/publish.js` now
+  adds `--tag latest` for any version with a `-` suffix, which npm otherwise
+  refuses as a prerelease.
+
+## `kiri export` prints the refusal reason — 2026-09-29
+
+- Found on humainhumain.github.io (CLI 0.1.2 / core 3.0.2): exporting into an
+  existing `dist/` without the export marker exited 1 with no message.
+  `packages/cli/bin/cmd/export.js` now prints the top-level `result.error`
+  and exits 1. `build` has no such early return, so it is unchanged; the VS
+  Code extension already handled it. Not yet released (next CLI patch).
+
 ## Roadmap refresh: MCP discovery, upcoming plugins — 2026-09-24
 
 - `docs/ROADMAP.md` gains MCP discovery for more AI clients (`.vscode/mcp.json`,
