@@ -96,7 +96,8 @@ than reproduce its workflows.
   FTP, Git branches, or other providers without replacing kiribuild's GitHub
   Pages workflow.
 - **Desktop UI** — provide an Electron interface for users outside an editor,
-  backed by the same `Project` API as the existing surfaces.
+  backed by the same `Project` API as the existing surfaces. Planned in
+  [DESKTOP-APP.md](DESKTOP-APP.md).
 - **SchemaStore registration** — submit `kirigami.schema.json` so YAML tooling
   can discover it without a per-file schema comment.
 

@@ -529,3 +529,34 @@ root), and the three interfaces only ask questions and present results.
   Creating a project from VS Code goes through the *Create Project* command;
   `kirigami_create_project` is for MCP clients launched elsewhere (`kiri mcp`,
   `kiri-mcp`).
+
+## Kiri Studio (desktop app): GitHub API instead of Git, deps without npm — 2026-09-29
+
+Full plan and spike findings: [DESKTOP-APP.md](DESKTOP-APP.md). The short "why":
+
+- **Sibling repo `php-kirigami/kiri-studio`, not `packages/`.** It's an end-user
+  app that consumes published `@kirigami/*` packages; Electron's toolchain has
+  no business in the monorepo.
+- **No local Git.** Sync is a repo tarball; publish goes through the Git Data
+  REST API (blobs → tree → commit → ref update with `force: false`): atomic at
+  the ref, no Git binary, and it detects concurrent pushes ("not a fast
+  forward"). A client edits a handful of files; a Git client (or
+  `isomorphic-git`) is overkill. GraphQL `createCommitOnBranch` was rejected
+  after the spike: it fails above ~5 MB of total file content.
+- **No Git LFS.** Images are downscaled before commit, so they stay small;
+  LFS would burn the LFS bandwidth quota on every Pages build checkout, need
+  `lfs: true` in every site workflow, and add a second upload path.
+- **Self-installing app updates** through `electron-updater` and GitHub
+  Releases, installed on quit. Kirigami itself is not bundled: each site's
+  lockfile pins it, so app and engine updates are decoupled.
+- **One org-owned GitHub App with device flow and non-expiring user tokens.**
+  Device flow needs only the public client ID; refreshing expiring tokens would
+  need the client secret, which a public desktop app can't keep.
+- **Kirigami runs on Electron's own Node, and the app installs site
+  dependencies from `package-lock.json` itself.** Both validated by spike on
+  Electron 44.4.5: JSPI and `node:sqlite` work without flags, and esbuild /
+  @parcel/watcher work without their install scripts. So the client installs
+  nothing but the app.
+- **The client's version wins on concurrent edits, without asking.** Git
+  history keeps the other version; a "which one do you keep?" dialog is a
+  decision a non-technical client shouldn't face.
