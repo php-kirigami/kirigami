@@ -1,5 +1,11 @@
 # Status
 
+## Release: php-prepros and core 3.2.1, cli and mcp 0.1.7 — 2026-09-30
+
+- Published: the `prepros.format` inline-spacing fix and the MCP manifest/pages hint for Markdown
+  pages (follow-up to 3.2.0 / mcp 0.1.6). The index was regenerated before publishing this time
+  (36 files). VS Code deps bumped for its next VSIX, not packaged.
+
 ## MCP doc index and hints after 3.2.0 — 2026-09-30
 
 - `@kirigami/mcp` 0.1.6 went out without the usual doc step. The index (`.kirigami/mcp-doc-index.json`)
