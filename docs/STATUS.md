@@ -6,7 +6,8 @@
   (spans crossing a line break are closed/reopened per line) and the number is a CSS counter in
   `_highlight.scss`, so copy/select ignores it. Per-block override: `line-numbers` /
   `no-line-numbers` class, or `<highlight lines="true|false">`. Removed from the ROADMAP.
-  Version bumped to 0.3.0 (README "0.3.0" section, lockfile); not yet committed or published.
+  Released as `@kirigami/plugin-highlight` 0.3.0 (npm, jsDelivr schemas purged). `template-demo` bumped to
+  `^0.3.0` and rebuilt (main); the org site enables `lineNumbers: true` and is deployed (PR #3 merged 2026-09-30).
 
 ## VS Code 0.1.3 — 2026-09-30
 
