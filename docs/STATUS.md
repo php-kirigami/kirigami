@@ -1,5 +1,12 @@
 # Status
 
+## Kiri Studio 0.4.0 released and verified — 2026-09-30
+
+- Tag `v0.4.0`: installers built on the three OSes (smoke on each packaged app), draft release
+  published by the maintainer. The Markdown-page features (header form, `_index.md` folder and tree
+  collections, deleting, page layout, preview following the page) were checked by the maintainer with
+  a real GitHub account and the App. Nothing left open from this batch.
+
 ## VS Code 0.1.4 on the Marketplace, Kiri Studio pushed — 2026-09-30
 
 - The six VSIX files of 0.1.4 were uploaded by the maintainer. Kiri Studio's Markdown-page work
