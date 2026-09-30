@@ -1,5 +1,15 @@
 # Status
 
+## History rewritten to drop two local VSIX files — 2026-09-30
+
+- The 3.2.0 release commit had picked up two local VSIX files (~40 MB). The 8 commits from that one
+  on were rewritten without `*.vsix` (`git filter-branch`, tree identical apart from those files) and
+  `main` was force-pushed (`9e37efb`…`7b884e6`; old tip `e30edd1`). No other branch contained them.
+  A full mirror backup of the old state is at `../kirigami-backup-before-vsix-purge.git`. Anyone with a
+  clone must re-clone or `git reset --hard origin/main`. GitHub may keep the old commits reachable by
+  their hash until it garbage-collects. The `gitHead` recorded in the published 3.2.0 / mcp 0.1.6
+  packages points at an old hash (cosmetic).
+
 ## VS Code 0.1.4 prepared — 2026-09-30
 
 - Extension 0.1.4 bundles core 3.2.1 and MCP 0.1.7 (Markdown pages, `@@`, format fix, `studio.*`
