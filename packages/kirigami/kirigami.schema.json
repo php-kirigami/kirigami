@@ -460,6 +460,29 @@
             ]
           ]
         },
+        "pageMedia": {
+          "description": "Per-page media management in Kiri Studio: the pictures and videos of a Markdown page live in folders next to its `_index.md`, and the page editor gets a \"Media of this page\" panel to add, insert and delete them. `true` uses `images/` and `videos/`; a list names other folders. Off when omitted (the shared image manager is used instead). Only pages an `include` glob lists (or content of their own) get the panel.",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+              }
+            }
+          ],
+          "examples": [
+            true,
+            [
+              "images",
+              "videos",
+              "audio"
+            ]
+          ]
+        },
         "imageWidth": {
           "type": "integer",
           "minimum": 1,

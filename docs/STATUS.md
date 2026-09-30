@@ -1,5 +1,12 @@
 # Status
 
+## `studio.pageMedia` in the schema — 2026-09-30
+
+- New `studio.pageMedia` option (`true` | list of folder names) in `kirigami.schema.json`: Kiri Studio gives each
+  Markdown page its own `images/` and `videos/` (see `../kiri-studio/docs/PLAN.md`). Committed to the schema but
+  **not released**: core 3.2.1 rejects the key ("/studio must NOT have additional properties"), so
+  template-kiridoc keeps `pageMedia` commented out until a core release (> 3.2.1) ships the schema.
+
 ## Released and pushed — 2026-09-30
 
 - `@kirigami/plugin-educ` 0.1.0 is on npm; monorepo pushed (`78ba896`). `php-kirigami/template-kiridoc` is
