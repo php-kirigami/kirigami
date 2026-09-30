@@ -1,11 +1,13 @@
 # Status
 
-## `studio.pageMedia` in the schema — 2026-09-30
+## `studio.pageMedia`: core 3.2.2, cli 0.1.8 — 2026-09-30
 
 - New `studio.pageMedia` option (`true` | list of folder names) in `kirigami.schema.json`: Kiri Studio gives each
-  Markdown page its own `images/` and `videos/` (see `../kiri-studio/docs/PLAN.md`). Committed to the schema but
-  **not released**: core 3.2.1 rejects the key ("/studio must NOT have additional properties"), so
-  template-kiridoc keeps `pageMedia` commented out until a core release (> 3.2.1) ships the schema.
+  Markdown page its own `images/` and `videos/` (see `../kiri-studio/docs/PLAN.md`). Released as
+  `@kirigami/kirigami` 3.2.2 and `@kirigami/cli` 0.1.8 (cli pins core exactly, so it had to follow; the CI run of the
+  core-only commit failed on the `create` banner test and went green with the cli bump). template-kiridoc enables
+  it. **Still on core 3.2.1**: `@kirigami/mcp` 0.1.6 and the VS Code extension (0.1.4): they reject `pageMedia`
+  until their next releases bump the pin.
 
 ## Released and pushed — 2026-09-30
 
