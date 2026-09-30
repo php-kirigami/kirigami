@@ -25,7 +25,7 @@ Built for the **[Kirigami](https://github.com/php-kirigami)** static site genera
 - ✅ **Node.js** only, no browser target
 - ✅ **Buffer or file-path input** — file paths are read from disk; the WASM module is loaded lazily and reused, without temporary output files
 - ✅ **Multithreaded** decode, using the available CPU count up to the binary’s build-time limit
-- ✅ **Four mainstream web video codecs**: H.264, VP9, HEVC, AV1 — in MP4, Matroska (`.mkv`), and WebM containers
+- ✅ **Mainstream web codecs** — H.264, VP9, HEVC, AV1 — plus older ones (MPEG-4 part 2, VP8, Theora, MPEG-1/2), in MP4, Matroska, WebM, AVI, Ogg and MPEG program/transport streams
 - ✅ **A real AI model picks the frame**, not just "highest contrast" or "N seconds in" — a MobileNet-based NIMA aesthetic model, embedded directly in the WASM binary (no separate model file to fetch)
 - ✅ **Fallback frame for decodable input** — even if every sampled frame fails the technical filters, you get the least-bad one back instead of nothing
 - ✅ **JPEG or PNG** output, your choice
@@ -47,10 +47,19 @@ Part of the **Kirigami** project ecosystem.
 - [Options](#options)
 - [Runtime and failure behavior](#runtime-and-failure-behavior)
 - [Result](#result)
+- [What's new in 0.2.0](#whats-new-in-020)
 - [Codec & container support](#codec--container-support)
 - [How the frame gets picked](#how-the-frame-gets-picked)
 - [License](#license)
 - [Author](#author)
+
+---
+
+## What's new in 0.2.0
+
+- **More codecs and containers**: MPEG-4 part 2 (DivX/Xvid), VP8, Theora, MPEG-2 and MPEG-1, in AVI, Ogg, and MPEG program/transport streams — old `.avi`/`.mkv`/`.mpg` files that used to resolve to `null` now work. See [Codec & container support](#codec--container-support).
+- **Silent**: FFmpeg no longer writes its own warnings (for example for the attached-picture streams of an MKV) to the console of the Node process.
+- Built on FFmpeg 9.0.2 (was 9.0.1). The WASM module grows from 7.4 MB to 8.3 MB.
 
 ---
 
@@ -165,11 +174,13 @@ It did not rerun every codec combination listed below.
 
 | | Supported |
 | --- | --- |
-| **Video codecs** | H.264, VP9, HEVC (H.265), AV1 |
-| **Containers** | MP4, Matroska (`.mkv`), WebM |
+| **Video codecs** | H.264, VP9, HEVC (H.265), AV1, MPEG-4 part 2 (DivX/Xvid), VP8, Theora, MPEG-2, MPEG-1 |
+| **Containers** | MP4, Matroska (`.mkv`), WebM, AVI, Ogg (`.ogv`), MPEG program stream (`.mpg`, `.vob`), MPEG transport stream (`.ts`) |
 | **Audio** | Not read at all — thumbnails don't need it |
 
-Older/niche codecs (MPEG-4 part 2 / Xvid, etc.) aren't supported — `bestFrame()` resolves to `null` for those, same as any other undecodable input.
+Anything else (WMV/VC-1, ProRes, raw formats, ...) isn't supported — `bestFrame()` resolves to `null` for those, same as any other undecodable input.
+
+Checked on 2026-09-29 against files made with `ffmpeg`: MPEG-4 in AVI and MP4, MPEG-1 and MPEG-2 in a program stream, MPEG-2 in a transport stream, VP8 in WebM, Theora in Ogg, plus real H.264 and MPEG-4 Matroska files. The build's FFmpeg is 9.0.2.
 
 ---
 

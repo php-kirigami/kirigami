@@ -105,8 +105,9 @@ or, inside Markdown, the shorthand:
 ```
 
 Use **MP4 (H.264)** or **WebM** so that browsers can play the file. `bestframe`
-also reads Matroska (`.mkv`), VP9, HEVC and AV1, but a build warning is printed
-for a file type most browsers won't play. A video `bestframe` can't decode gives
+also reads Matroska, AVI, Ogg, MPEG streams and older codecs (MPEG-4, VP8, Theora,
+MPEG-1/2) to pick a poster, but a build warning is printed for a file type most
+browsers won't play. A video `bestframe` can't decode gives
 a warning and an HTML comment; it never fails the build.
 
 A **vertical video** (width smaller than height) is shown in a default 16:9 box

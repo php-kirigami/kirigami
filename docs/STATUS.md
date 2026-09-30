@@ -1,5 +1,17 @@
 # Status
 
+## bestframe 0.2.0: more codecs, silent (unreleased) — 2026-09-30
+
+- `libbestframe` rebuilt on FFmpeg 9.0.2 (matrix bump) with MPEG-4 part 2, VP8,
+  Theora, MPEG-2 and MPEG-1 decoders and AVI, Ogg, MPEG program/transport
+  stream demuxers (`config.json`; the `mpegvideo` raw demuxer is needed too,
+  because a program stream identifies its video codec by probing the ES).
+  FFmpeg's own log output is muted in the WASM build (`src/video.c`), so it no
+  longer prints to the Node console. Wasm 7.4 -> 8.3 MB. Checked on 11 files
+  (ffmpeg-made clips for each pair, plus real H.264 and MPEG-4 MKVs — the old
+  MKV that returned `null` now works). New `packages/bestframe/test/codecs.test.js`.
+  `@kirigami/bestframe` 0.2.0 prepared; plugin-clip pins it. Not yet published.
+
 ## plugin-clip 0.1.0 (unreleased) — 2026-09-29
 
 - New `packages/plugin-clip`: `<clip src="…">` and `{% clip %}`, the local-file

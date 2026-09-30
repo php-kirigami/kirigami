@@ -70,8 +70,9 @@ export interface BestFrameResult {
  * an outright decode failure (unsupported codec/container, corrupt
  * input) — never merely "the video wasn't great."
  *
- * Supports the four mainstream web video codecs — H.264, VP9, HEVC, and
- * AV1 — in MP4, Matroska (`.mkv`), and WebM containers. No file I/O
+ * Supports H.264, VP9, HEVC, AV1, MPEG-4 part 2, VP8, Theora, MPEG-2 and
+ * MPEG-1, in MP4, Matroska (`.mkv`), WebM, AVI, Ogg, and MPEG program and
+ * transport streams. No file I/O
  * happens internally: pass a path and it's read once into memory, or
  * pass an already-loaded buffer directly.
  *

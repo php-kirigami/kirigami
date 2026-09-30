@@ -118,7 +118,7 @@ async function loadClip(abs, attrs, state, inline = false) {
 		|| !fs.existsSync(path.join(imageSource, entry.poster));
 	if (stale) {
 		const result = await bestFrame(abs, { samples, width: posterWidth, format: 'jpeg', quality: 90 });
-		if (!result) throw new Error('bestframe could not decode this video (supported: H.264, VP9, HEVC, AV1 in MP4, WebM or Matroska)');
+		if (!result) throw new Error('bestframe could not decode this video (see the @kirigami/bestframe README for the supported codecs and containers)');
 		entry = {
 			version: CACHE_VERSION,
 			posterWidth,
