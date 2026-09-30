@@ -458,8 +458,9 @@ final class META
         $url = trim($url);
         if (preg_match('#^(https?:)?//#', $url) || str_starts_with($url, 'data:')) return $url;
 
-        $origin = preg_replace('#^(https?://[^/]+).*#', '$1', (string) (self::data()->baseurl ?? ''));
-        return $origin === '' ? $url : $origin . '/' . ltrim($url, '/');
+        // Against the whole baseurl, path included: a site on `user.github.io/repo` keeps `/repo`.
+        $base = rtrim((string) (self::data()->baseurl ?? ''), '/');
+        return $base === '' ? $url : $base . '/' . ltrim($url, '/');
     }
 
     /** `@user` / `user` / `https://twitter.com/user` → `@user`. */

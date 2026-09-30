@@ -12,8 +12,8 @@ test('one seo block feeds META tags and the JSON-LD graph', async t => {
         fs.mkdirSync(path.dirname(target), { recursive: true });
         fs.writeFileSync(target, text);
     };
-    const configure = seo => write('kirigami.yaml', JSON.stringify({
-        kirigami: { root: 'src', project: 'Atelier', baseurl: 'https://example.com', description: 'Loose description.' },
+    const configure = (seo, baseurl = 'https://example.com') => write('kirigami.yaml', JSON.stringify({
+        kirigami: { root: 'src', project: 'Atelier', baseurl, description: 'Loose description.' },
         prepros: {},
         ...(seo === undefined ? {} : { seo }),
     }));
@@ -53,6 +53,14 @@ test('one seo block feeds META tags and the JSON-LD graph', async t => {
         assert.equal(byType('Person').jobTitle, 'Engineer');
         assert.equal(byType('WebSite').inLanguage, 'fr-CA');
         assert.ok(byType('BreadcrumbList'));
+    });
+
+    await t.test('image paths are resolved against the whole baseurl, path included', async () => {
+        configure({ logo: 'images/logo.png' }, 'https://example.com/docs/');
+        const { html, graph } = await renderAbout();
+        assert.match(html, /<meta property="og:image" content="https:\/\/example.com\/docs\/images\/logo.png">/);
+        assert.match(JSON.stringify(graph), /https:\/\/example.com\/docs\/images\/logo.png/);
+        assert.doesNotMatch(JSON.stringify(graph), /https:\/\/example.com\/images\/logo.png/);
     });
 
     await t.test('jsonld: false keeps the META tags and drops only the JSON-LD', async () => {
