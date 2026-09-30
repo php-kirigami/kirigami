@@ -57,8 +57,8 @@ with this one: `template-CLAUDE.md` is the doc for end-user Kirigami
 | `@kirigami/plugin-highlight` | 0.1.7 | Build-time `highlight.js` syntax highlighting; the optional copy button adds client-side JavaScript. |
 | `@kirigami/plugin-extlink` | 0.1.3 | `<extlink>` authoring tag — `SCRAPER`-backed external link preview card, disk-cached. |
 | `@kirigami/plugin-embed` | 0.1.5 | `<youtube>`/`<vimeo>` oEmbed video cards, entirely client-side. |
-| `@kirigami/plugin-clip` | 0.1.0 | `<clip>` local video player: poster picked at build time by `@kirigami/bestframe`, cached in `<root>/_data/clip/`, published through the image pipeline. |
-| `@kirigami/plugin-player` | 0.1.0 | `<player>`/`<playlist>` audio players: waveform SVG, tags and cover baked at build time with audiowaveform-wasm, cached in `<root>/_data/player/`. |
+| `@kirigami/plugin-clip` | 0.1.1 | `<clip>` local video player: poster picked at build time by `@kirigami/bestframe`, cached in `<root>/_data/clip/`, published through the image pipeline. |
+| `@kirigami/plugin-player` | 0.1.1 | `<player>`/`<playlist>` audio players: waveform SVG, tags and cover baked at build time with audiowaveform-wasm, cached in `<root>/_data/player/`. |
 | `@kirigami/audiowaveform-wasm` | 1.2.0 | Waveform peak extraction + ID3 tag/cover-art reading, BBC's `audiowaveform` compiled to WASM. |
 | `@kirigami/bestframe` | 0.1.0 | Automatic video thumbnail/still-frame selection via a tiny embedded aesthetic-AI model, compiled to WASM. |
 

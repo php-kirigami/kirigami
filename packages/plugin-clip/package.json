@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/plugin-clip",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "<clip> local video player for Kirigami — the poster is picked at build time by @kirigami/bestframe and published through the image pipeline; click to play an MP4/WebM served from your own site.",
   "keywords": [
     "kirigami",

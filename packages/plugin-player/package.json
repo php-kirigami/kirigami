@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/plugin-player",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "<player> / <playlist> audio players for Kirigami — SoundCloud-style waveform baked at build time with audiowaveform-wasm, cached in src/_data/player.",
   "keywords": [
     "kirigami",

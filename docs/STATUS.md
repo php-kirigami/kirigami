@@ -1,5 +1,15 @@
 # Status
 
+## Fix release: plugin-player and plugin-clip 0.1.1 — 2026-09-30
+
+- `kiri export` failed in CI (template-demo, fresh checkout): both plugins wrote the
+  cover/poster images into the export folder during `prepros:html`, before the
+  `dist` task, which then refused to empty a folder with no `.kirigami-export`
+  marker. Local builds passed because `dist/` already existed. Fixed: images go to
+  the source tree only, `dist` copies them. Regression tests in both plugins (they
+  fail on the old code). Caught only by exporting from a clean clone — do that
+  before publishing anything that writes files at render time.
+
 ## Templates and site for core 3.1.2 and the new plugins — 2026-09-30
 
 - `template-default`: floors kirigami ^3.1.2, cli ^0.1.5; rebuilt (commit

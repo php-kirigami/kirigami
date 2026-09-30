@@ -93,3 +93,18 @@ test('a vertical video gets the default landscape box and a poster sized to it',
 		process.chdir(cwd);
 	}
 });
+
+test('during an export, images go to the source tree only: the export folder is left for the dist task', { skip: !hasFfmpeg && 'ffmpeg not found', timeout: 180000 }, async () => {
+	const dir = makeProject();
+	const dist = path.join(dir, 'dist');
+	const cwd = process.cwd();
+	process.chdir(dir);
+	try {
+		const ctx = { ...ctxFor(dir), exportPath: dist };
+		const out = await renderClips('<clip src="../video/04_my-clip.mp4">', ctx, opts);
+		assert.match(out, /src="\.\.\/images\/clip\/[0-9a-f]{16}-320w\.webp"/);
+		assert.equal(fs.existsSync(dist), false, 'nothing may be written into the export folder before dist runs');
+	} finally {
+		process.chdir(cwd);
+	}
+});

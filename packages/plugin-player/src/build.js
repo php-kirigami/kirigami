@@ -35,7 +35,6 @@ export async function renderPlayers(html, ctx, opts) {
 	const state = {
 		opts,
 		config,
-		exportPath: ctx.exportPath || null,
 		root: path.resolve(process.cwd(), config.root || 'src'),
 		pageDir: path.dirname(ctx.abs),
 		waveIds: 0,
@@ -165,9 +164,12 @@ async function publishCover(coverRel, imageSource, state) {
 	const outRel = `${dir}/${name}-${size}x${size}-cover.${format}`;
 
 	const imgDest = state.config.image?.dest || 'images';
-	const destAbs = path.join(path.resolve(state.exportPath || state.root, imgDest), outRel);
-	const destSource = state.exportPath ? path.join(path.resolve(state.root, imgDest), outRel) : null;
-	const dests = [destAbs, destSource].filter(Boolean);
+	// Always the source tree, even during an export: this pass runs (prepros:html)
+	// before the `dist` task, which still has to empty and refill the export
+	// folder — writing into it now makes it refuse ("not empty, no export marker").
+	// `dist` then copies these images along with the rest of the source tree.
+	const destAbs = path.join(path.resolve(state.root, imgDest), outRel);
+	const dests = [destAbs];
 
 	const srcMtime = fs.statSync(path.join(imageSource, coverRel)).mtimeMs;
 	const stale = dests.filter((d) => !doneImages.has(d) && (!fs.existsSync(d) || fs.statSync(d).mtimeMs < srcMtime));

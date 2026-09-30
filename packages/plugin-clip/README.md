@@ -41,6 +41,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/plugin-clip](#kirigamiplugin-clip)
 - [Overview](#overview)
+- [What's new in 0.1.1](#whats-new-in-011)
 - [Installation](#installation)
 - [Configuration](#configuration)
   - [Options](#options)
@@ -50,6 +51,16 @@ Part of the **Kirigami** project ecosystem.
 - [Styling](#styling)
 - [Requirements](#requirements)
 - [License](#license)
+
+---
+
+## What's new in 0.1.1
+
+- **Fix: `kiri export` failed** ("Refusing to empty export destination … no
+  .kirigami-export marker") on a fresh checkout, such as CI. The poster image was
+  written into the export folder during the render pass, before the `dist`
+  task had emptied and refilled it. It now goes to the source tree only, and
+  `dist` copies it with the rest.
 
 ---
 
