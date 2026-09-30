@@ -34,7 +34,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
 - [Overview](#overview)
-- [Unreleased](#unreleased)
+- [What's new in 3.2.0](#whats-new-in-320)
 - [What's new in 3.0.1](#whats-new-in-301)
 - [What's new in 3.0.0](#whats-new-in-300)
 - [What's new in 2.0.0](#whats-new-in-200)
@@ -107,7 +107,7 @@ Part of the **Kirigami** project ecosystem.
 
 ---
 
-## Unreleased
+## What's new in 3.2.0
 
 - **Markdown pages.** An `_index.md` whose first lines are `@tag value` annotations is a page, like an `_index.php`: its body is rendered as Markdown and wrapped by the layouts. Without that header, or next to an `_index.php`, it stays a data file and is left alone. See [Markdown pages](#markdown-pages).
 - **Inherited annotations.** `@@tag value` sets `tag` on the page and on every page below it; a child's `@tag` overrides it for that page only, a child's `@@tag` overrides it and passes the new value down. Works in PHPDOC blocks and Markdown headers. See [Inherited annotations (`@@`)](#inherited-annotations-).

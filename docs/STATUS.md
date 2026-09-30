@@ -1,5 +1,12 @@
 # Status
 
+## Release: php-prepros and core 3.2.0, cli and mcp 0.1.6 — 2026-09-30
+
+- Ships Markdown pages (`_index.md` with an `@tag` header), `@@` inherited annotations, the
+  watcher rules that follow them, and the `studio.include[].header` / `studio.types` schema keys.
+  cli and mcp only move their pins; the VS Code extension's deps are bumped for its next VSIX
+  (version unchanged, not packaged).
+
 ## Kiri Studio: Markdown pages, folder/tree collections — 2026-09-30
 
 - `../kiri-studio` follows the Markdown-page rules and edits a page's `@tag` header as a form

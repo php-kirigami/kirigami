@@ -27,7 +27,7 @@ Use [the CLI](../cli/README.md) for terminal commands. This package is the progr
 
 ---
 
-## Unreleased
+## What's new in 3.2.0
 
 - **Markdown pages and inherited annotations** (from `@kirigami/php-prepros`): an `_index.md` starting with `@tag value` lines is a page, and `@@tag` passes a value down to every page below. See php-prepros' [Markdown pages](../php-prepros/README.md#markdown-pages) and [Inherited annotations](../php-prepros/README.md#inherited-annotations-).
 - Watch follows them: a modified `_index.md` page re-renders itself; one gaining or losing its header becomes a page or data again (its old HTML is removed); a page with `@@` tags (now or before the edit) re-renders its whole directory; a data file passed down with `@@` re-renders every page below the page that declares it. A target already covered by a directory target is rendered once.
@@ -178,7 +178,7 @@ Dependency bumps: [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirig
 
 - [@kirigami/kirigami](#kirigamikirigami)
 - [Overview](#overview)
-- [Unreleased](#unreleased)
+- [What's new in 3.2.0](#whats-new-in-320)
 - [What's new in 3.0.2](#whats-new-in-302)
 - [What's new in 3.0.1](#whats-new-in-301)
 - [3.0.0 — breaking](#300--breaking)
