@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.4
+
+- Bundles Kirigami 3.2.1 and MCP 0.1.7. A folder's `_index.md` whose first
+  lines are `@tag value` annotations is now a page (Markdown, no PHP), and
+  `@@tag` passes a value down to every page below it. The preview and
+  watch mode follow them.
+- `prepros.format` no longer puts a space before punctuation after an inline
+  element (`<strong>bold</strong>,` rendered as "bold ,").
+- The `kirigami.yaml` schema knows `studio.include[].header` and
+  `studio.types` (for Kiri Studio).
+
 ## 0.1.3
 
 - Bundles Kirigami 3.1.2. The preview server now answers HTTP Range requests

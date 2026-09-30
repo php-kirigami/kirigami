@@ -1,5 +1,14 @@
 # Status
 
+## VS Code 0.1.4 prepared — 2026-09-30
+
+- Extension 0.1.4 bundles core 3.2.1 and MCP 0.1.7 (Markdown pages, `@@`, format fix, `studio.*`
+  schema keys; CHANGELOG). The `win32-x64` VSIX (19.65 MB, 1763 files) was built locally and passes the
+  real-host test (`run-host.ps1` against the unzipped VSIX, VS Code 1.140.0). The other five targets
+  come from the `VSIX` workflow; uploading to the Marketplace is the maintainer's step (see
+  [EXTENSION-VSCODE.md](EXTENSION-VSCODE.md)).
+- Org site PR #4 merged (ecosystem page shows core 3.2.1, cli/mcp 0.1.7).
+
 ## Templates and site on core 3.2.1 — 2026-09-30
 
 - `template-default`, `template-demo`, `template-blog` moved to core `^3.2.1` / cli `^0.1.7`, rebuilt,
