@@ -28,8 +28,19 @@ PREPROS::registerTag('highlight', function ($tag, $attrs, $body) {
     $code = STR::trimIndent(trim($body, "\r\n"));
     $code = htmlspecialchars($code, ENT_QUOTES, 'UTF-8');
 
-    $class = $lang !== ''
-        ? ' class="language-' . htmlspecialchars($lang, ENT_QUOTES, 'UTF-8') . '"'
+    $classes = $lang !== '' ? ['language-' . $lang] : [];
+
+    // lines / numbers = "true" | "false": force line numbers on or off for this
+    // block, overriding the plugin's `lineNumbers` option.
+    foreach (['lines', 'numbers'] as $key) {
+        if (!isset($attrs[$key])) continue;
+        $on = filter_var($attrs[$key], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        if ($on !== null) $classes[] = $on ? 'line-numbers' : 'no-line-numbers';
+        break;
+    }
+
+    $class = $classes
+        ? ' class="' . htmlspecialchars(implode(' ', $classes), ENT_QUOTES, 'UTF-8') . '"'
         : '';
 
     return "<pre><code{$class}>{$code}</code></pre>";

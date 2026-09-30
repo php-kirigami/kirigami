@@ -323,6 +323,25 @@ $presets: (
 		text-underline-offset: 2px;
 	}
 
+	// Line numbers (`lineNumbers` option): one counter per block, drawn in ::before.
+	.hljs-numbered {
+		counter-reset: hljs-line;
+	}
+
+	.hljs-numbered .hljs-line::before {
+		content: counter(hljs-line);
+		counter-increment: hljs-line;
+
+		display: inline-block;
+		min-width: 2ch;
+		margin-right: 1.25rem;
+
+		color: $ink-muted;
+		opacity: 0.6;
+		text-align: right;
+		user-select: none;
+	}
+
 	// Copy button (layout comes from `copystructure`, added by copy.js).
 	.hljs-copy {
 		color: $ink-muted;

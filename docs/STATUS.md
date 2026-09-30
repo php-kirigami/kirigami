@@ -1,5 +1,13 @@
 # Status
 
+## plugin-highlight line numbers — 2026-09-30
+
+- New `lineNumbers` option (default `false`): each line is wrapped in `<span class="hljs-line">`
+  (spans crossing a line break are closed/reopened per line) and the number is a CSS counter in
+  `_highlight.scss`, so copy/select ignores it. Per-block override: `line-numbers` /
+  `no-line-numbers` class, or `<highlight lines="true|false">`. Removed from the ROADMAP.
+  Version bumped to 0.3.0 (README "0.3.0" section, lockfile); not yet committed or published.
+
 ## VS Code 0.1.3 — 2026-09-30
 
 - Extension 0.1.3 bundles Kirigami 3.1.2 (dev-server Range requests and audio/video types for

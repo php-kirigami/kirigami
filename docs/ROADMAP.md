@@ -69,8 +69,6 @@ than reproduce its workflows.
   source of truth for the storage, event, and attribute contract.
 - **Icon generation** — generate `favicon.ico` and `apple-touch-icon.png` from
   one source image through Imagick and the existing image configuration.
-- **Highlight line numbers** — add a `plugin-highlight` option and matching
-  generated markup/styles for numbered code blocks.
 - **React template** — define whether an official JSX/TSX template produces
   build-time static HTML, client hydration, or both before adding it.
 

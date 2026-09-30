@@ -30,7 +30,8 @@ const DEFAULTS = {
 	autodetect: true,   // guess the language of un-tagged code blocks
 	embedFont: true,    // emit the embedded JetBrains Mono @font-face
 	copyButton: true,   // hover "Copy" button on every code block
-	tag: true,          // register the <highlight lang="…"> authoring tag
+	lineNumbers: false, // number the lines of every code block (per-block: line-numbers / no-line-numbers class)
+	tag: true,         // register the <highlight lang="…"> authoring tag
 };
 
 const THEMES = new Set(['auto', 'dark', 'light']);

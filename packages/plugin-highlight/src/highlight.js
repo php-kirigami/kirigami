@@ -50,6 +50,31 @@ const SKIP_MARKER = /\s*<!--\s*kirigami:nohighlight\s*-->/i;
 // Per-block opt-out on the `<code>` class — leave the block exactly as authored.
 const NOHIGHLIGHT_CLASS = /(?:^|\s)(?:no-?highlight|language-(?:plain(?:text)?|text|none))(?:\s|$)/i;
 
+// Per-block line-number overrides on the `<code>` class (win over the option).
+const LINENUMS_CLASS = /(?:^|\s)line-?numbers(?:\s|$)/i;
+const NO_LINENUMS_CLASS = /(?:^|\s)no-line-?numbers(?:\s|$)/i;
+
+// Splits highlight.js output on newlines into balanced per-line HTML: a span
+// that runs across a line break (a block comment, a template string) is closed
+// at the end of each line and reopened on the next, so every line stands alone.
+function splitLines(html) {
+	const lines = [];
+	const open = [];   // opening tags of the spans still open
+	let cur = '';
+	for (const part of html.split(/(<span[^>]*>|<\/span>|\n)/)) {
+		if (part === '\n') {
+			lines.push(cur + '</span>'.repeat(open.length));
+			cur = open.join('');
+		} else {
+			if (part.startsWith('<span')) open.push(part);
+			else if (part === '</span>') open.pop();
+			cur += part;
+		}
+	}
+	lines.push(cur + '</span>'.repeat(open.length));
+	return lines;
+}
+
 function langFromClass(cls) {
 	if (!cls) return null;
 	const m = cls.match(/(?:^|\s)(?:language|lang)-([\w+#.-]+)/i);
@@ -184,16 +209,32 @@ export async function highlightHtml(html, options = {}) {
 		}
 
 		touched = true;
-		const classes = ['hljs', resolved ? `language-${resolved}` : null].filter(Boolean).join(' ');
+		const numbered = cls && NO_LINENUMS_CLASS.test(cls) ? false
+			: (cls && LINENUMS_CLASS.test(cls)) || options.lineNumbers === true;
+		const classes = [
+			'hljs',
+			resolved ? `language-${resolved}` : null,
+			numbered ? 'hljs-numbered' : null,
+		].filter(Boolean).join(' ');
+
+		// Each line becomes `<span class="hljs-line">` (the number is a CSS
+		// counter on ::before, so copy/select never picks it up). The line
+		// break stays outside the spans so the source text is unchanged.
+		let lines = rendered.split('\n');
+		if (numbered) {
+			lines = splitLines(rendered);
+			if (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
+		}
+		const wrap = numbered ? (l => `<span class="hljs-line">${l}</span>`) : (l => l);
 
 		if (wasFormatted) {
 			const pad = indent + '    ';
-			const inner = rendered.split('\n')
-				.map(line => line === '' ? '' : pad + line)
+			const inner = lines
+				.map(line => line === '' && !numbered ? '' : pad + wrap(line))
 				.join('\n');
 			return `${indent}<pre><code class="${classes}">\n${inner}\n${indent}</code></pre>`;
 		}
-		return `${indent}<pre><code class="${classes}">${rendered}</code></pre>`;
+		return `${indent}<pre><code class="${classes}">${lines.map(wrap).join('\n')}</code></pre>`;
 	});
 
 	return touched ? out : html;

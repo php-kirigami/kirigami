@@ -39,6 +39,11 @@
       "type": "boolean",
       "default": true
     },
+    "lineNumbers": {
+      "description": "Number the lines of every code block. Each line is wrapped in <span class=\"hljs-line\"> and the number is a CSS counter, so copying or selecting the code never includes it. A single block can opt in or out with a `line-numbers` / `no-line-numbers` class on its <code>.",
+      "type": "boolean",
+      "default": false
+    },
     "tag": {
       "description": "Register the <highlight lang=\"…\">…</highlight> authoring tag (PHP-side, via the prepros:php hook). It emits <pre><code class=\"language-…\">; the highlighting itself still happens in the prepros:html pass.",
       "type": "boolean",

@@ -40,6 +40,7 @@ build. Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/plugin-highlight](#kirigamiplugin-highlight)
 - [Overview](#overview)
+- [0.3.0](#030)
 - [What's new in 0.1.7](#whats-new-in-017)
 - [What's new in 0.1.6](#whats-new-in-016)
 - [What's new in 0.1.5](#whats-new-in-015)
@@ -60,6 +61,19 @@ build. Part of the **Kirigami** project ecosystem.
 - [Per-page and per-block control](#per-page-and-per-block-control)
 - [Requirements](#requirements)
 - [License](#license)
+
+---
+
+## 0.3.0
+
+- **Line numbers.** New `lineNumbers` option (default `false`) numbers the
+  lines of every code block. Each line is wrapped in
+  `<span class="hljs-line">` and the number is a CSS counter, so copying or
+  selecting the code never includes it. A single block opts in or out with a
+  `line-numbers` / `no-line-numbers` class on its `<code>`, or
+  `<highlight lines="true|false">`. The look ships in the `theme()` mixin;
+  with `theme: none` and no mixin, style `.hljs-numbered .hljs-line::before`
+  yourself.
 
 ---
 
@@ -184,6 +198,7 @@ validates `options:` as you type** (once `name:` is set), via the
 | `autodetect` | `boolean` | `true` | Guess the language of code blocks that have no `language-…` class (restricted to the registered set). |
 | `embedFont` | `boolean` | `true` | Append the embedded JetBrains Mono `@font-face` (~39 KB woff2, base64) to the Sass build. |
 | `copyButton` | `boolean` | `true` | Hover "Copy" button on every code block. Bundles a ~2.4 KB minified script (with `@kirigami/canva`'s observer, shared with other plugins that use it) into every `esbuild` task (you need one) and appends the button styles to the Sass build. |
+| `lineNumbers` | `boolean` | `false` | Number the lines of every code block. Lines are wrapped in `<span class="hljs-line">` and the number is a CSS counter (`.hljs-numbered .hljs-line::before`), so copy/select never includes it. One block can opt in or out with a `line-numbers` / `no-line-numbers` class on its `<code>`, or `<highlight lines="true">` / `lines="false"`. Needs a `theme` (or your own styles) for the look. |
 | `tag` | `boolean` | `true` | Register the `<highlight lang="…">…</highlight>` authoring tag (PHP-side). |
 
 Configured aliases include `html`/`htm`/`svg` → `xml`, `js`/`jsx` → `javascript`,
