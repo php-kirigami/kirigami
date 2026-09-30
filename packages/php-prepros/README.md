@@ -249,7 +249,7 @@ seo:                           seo:
 
   Positional args: source path (relative to `image.source`), width, height,
   and the literal `cover` keyword. Registered in `md.plugins.php` alongside
-  `codepen`/`youtube`/`checklist`/`callout` — available out of the box, drop
+  `codepen`/`youtube`/`callout` — available out of the box, drop
   it with `MD::unregisterPlugin('img-asset')` if you don't want it.
 
 ---
@@ -2007,18 +2007,6 @@ Embeds a CodePen result via `<iframe>`. `user` defaults to `anonymous`, `height`
 ```
 {% codepen abcXYZ %}
 {% codepen abcXYZ jsmith 500 %}
-```
-
-#### `{% checklist ["Title"] items %}`
-
-Renders a block-syntax list of checkbox items, one per line, with an optional title.
-
-```
-{% checklist "Today"
-Do the dishes
-Walk the dog
-Read a book
-%}
 ```
 
 ---

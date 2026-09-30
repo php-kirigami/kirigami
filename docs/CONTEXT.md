@@ -26,7 +26,7 @@ Cloned as siblings of this repo (`../<name>/`), all under the `php-kirigami` org
 
 | Path | Repo | What it is |
 |---|---|---|
-| `../template-*/` | `php-kirigami/template-<name>` | every Kirigami template — `kiri create <name>` clones these. Currently `../template-default/` (minimal starter), `../template-blog/` (Markdown blog: posts, archive, tags) and `../template-demo/` (full feature tour; has its own `todo.md`). |
+| `../template-*/` | `php-kirigami/template-<name>` | every Kirigami template — `kiri create <name>` clones these. Currently `../template-default/` (minimal starter), `../template-blog/` (Markdown blog: posts, archive, tags) and `../template-demo/` (full feature tour; has its own `todo.md`) and `../template-kiridoc/` (course documentation, successor of Timdoc). |
 | `../php-kirigami.github.io/` | `php-kirigami/php-kirigami.github.io` | the org site, itself built with Kirigami |
 | `../kiribuild/` | `php-kirigami/kiribuild` | the reusable GitHub Action (v2: Node 24 + `kiri` CLI + `kiri export` only — checkout/commit-back/Pages upload-deploy live in the caller's workflow) |
 | `../kiri-studio/` | `php-kirigami/kiri-studio` | Kiri Studio, the Electron desktop app for site owners (edit + publish through the GitHub API); configured per site by the `studio:` block |
@@ -57,6 +57,7 @@ with this one: `template-CLAUDE.md` is the doc for end-user Kirigami
 | `@kirigami/plugin-highlight` | 0.1.7 | Build-time `highlight.js` syntax highlighting; the optional copy button adds client-side JavaScript. |
 | `@kirigami/plugin-extlink` | 0.1.3 | `<extlink>` authoring tag — `SCRAPER`-backed external link preview card, disk-cached. |
 | `@kirigami/plugin-embed` | 0.1.5 | `<youtube>`/`<vimeo>` oEmbed video cards, entirely client-side. |
+| `@kirigami/plugin-educ` | 0.1.0 | Course-page authoring tags, ported from the Vue "manuel" components. First tag: `<checklist>` (build-time markup, client-side progress, state in the reader's localStorage). |
 | `@kirigami/plugin-clip` | 0.1.1 | `<clip>` local video player: poster picked at build time by `@kirigami/bestframe`, cached in `<root>/_data/clip/`, published through the image pipeline. |
 | `@kirigami/plugin-player` | 0.1.1 | `<player>`/`<playlist>` audio players: waveform SVG, tags and cover baked at build time with audiowaveform-wasm, cached in `<root>/_data/player/`. |
 | `@kirigami/audiowaveform-wasm` | 1.2.0 | Waveform peak extraction + ID3 tag/cover-art reading, BBC's `audiowaveform` compiled to WASM. |

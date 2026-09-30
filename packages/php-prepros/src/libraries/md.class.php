@@ -49,7 +49,7 @@ class MD
 }
 
 
-// Default Markdown plugins ({% codepen %}, {% checklist %}, {% callout %},
+// Default Markdown plugins ({% codepen %}, {% callout %},
 // {% img-asset %}) — "registered out of the box" per the README. Loaded here
 // so every entrypoint (prepros.php, runenv.php, imagebatch.php) gets them
 // without an explicit include. A project can still MD::unregisterPlugin() any

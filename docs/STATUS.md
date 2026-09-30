@@ -1,5 +1,48 @@
 # Status
 
+## template-kiridoc: media plugins and exercise course — 2026-09-30
+
+- `template-kiridoc` now also loads `@kirigami/plugin-embed` (the oEmbed `<youtube>`/`<vimeo>` cards),
+  `plugin-player` and `plugin-clip` (installed from npm; `plugin-educ` is still linked locally).
+- `{% checklist %}` items are now inline Markdown (plugin-educ); the "Requis" sections of the exercises are
+  checklists (one item per sentence / bullet).
+- New course `src/exercices-css/` reproducing three of https://zmotrin.github.io/exercices-css/ (AIR,
+  Nirvana, Pink Floyd) with the educ components. `@list cards` on a course or listing shows its pages as
+  `<intlink>` cards (`doc_page_list($nodes, $relroot, true)`). The preview videos (`videos/apercu.mp4`,
+  shown with `{% inline-clip %}`), each exercise's card image (`images/image.webp`, its `@image`), the
+  Nirvana media images and the course icon were downloaded from that site; the CodePen links are the real
+  ones. The zip / font / demo links keep the original file names but the files are not in the repo. "Ambiance"
+  is a YouTube video of the album (`{% youtube id %}`, plugin-embed). Not done: the site-wide default OG image
+  (`images/image.webp` on the source site).
+- The top bar lists only "Accueil" and the course being read (there may be ~20 courses; the home page lists
+  them all).
+
+## template-kiridoc created — 2026-09-30
+
+- New `../template-kiridoc/` (local only, not pushed, no GitHub repo yet): course documentation, the Kirigami
+  successor of the VueJS Timdoc. `doc_courses()` / `doc_pages()` in `_lib/functions.php`; page types `course`
+  (folder `_index.php`, `@code`) and `doc` (`<course>/<page>/_index.md`, `@course`, `@order`) with sidebar and
+  prev/next. French sample content. Needs `@kirigami/plugin-educ` published (tested via a local install).
+  In Markdown only `{% checklist %}` works: cmark drops unknown tags like `<checklist>`.
+
+## template-kiridoc: deep page trees and `listing` — 2026-09-30
+
+- Pages now nest to any depth (course → section → page …): `doc_tree()` / `doc_trail()` / `doc_flatten()` in `_lib/functions.php`. Sidebar opens only the current branch, breadcrumb, prev/next in reading order across the whole course, course of a page = its first folder (`@course` no longer needed). New page type `listing` (same layout as `doc`, no content: title + lead + the list of its sub-pages); a `doc` with sub-pages also ends with that list unless `@list false`. Sticky table of contents (right column from 75rem, only with 2+ `##` headings): `doc_toc()` post_render hook replaces a `<!--toc-->` marker in `doc.after.php`, scrollspy in `kirigami.core.js`. Pages in a folder without an index (e.g. `exercices/skate/`) are built and linkable but stay out of the tree; their breadcrumb/sidebar follow the nearest listed ancestor (`doc_context()`). Sample course restructured (`html/`, `css/` listings). Modeled on Timdoc's course → section → topic pages (e.g. 582-215MO: autres/css/html); not checked against a real deep course yet.
+
+## plugin-educ started with `<checklist>` — 2026-09-30
+
+- Then the five bubbles `<info>` `<warning>` `<alert>` `<thumbsup>` `<bravo>` (+ `{% info %}` … shortcodes rendering Markdown); icons are CSS masks (the original SVGs).
+- Then `<quote>` (author/title/round photo, shortcode `{% quote "Author" "Title" "photo" … %}`; photo thumbnails reuse intlink's cache helper). Responsive pass over every plugin-educ component and the kiridoc layout (wrapping, 52rem breakpoint for bubbles, clamped paddings, sidebar as a scrollable block on phones) — by CSS review and a clean build only, not checked in a browser at real widths.
+- Then `<color>` (hex swatch badge, click copies the code; build-time black/white text contrast; the only inline style is `--color`).
+- Then `<intlink>`: card for an internal page (title, abstract, `@label`/`@code` and `@image` read from the target header; falls back to the site default OG image `seo.image`/`logo`), square webp cached under `assets/images/intlink/`.
+- Later the same day: `<doclink>` added (build-time favicon lookup → webp, per-host cache in `_data/doclink/`, needs `prepros.network`). Original Vue domain-to-icon table dropped in favour of scraping. A plugin may return several PHP files from `prepros:php` (a PHP file cannot `require` a sibling: only the listed files are mounted, flattened under `/plugins/`). The `spacer` attribute was not ported.
+
+- New `packages/plugin-educ` (0.1.0, unpublished; built end-to-end in `../template-kiridoc`). `<checklist>` /
+  `{% checklist %}`: items rendered at build time by PHP, `src/educ.js` restores/persists checked
+  items in the reader's localStorage (key = page path + hash of the items) and updates the progress
+  bar. php-prepros' old built-in `{% checklist %}` was removed (unused; the plugin owns it). Next tags: port the other
+  components from https://zmotrin.github.io/manuel/components/.
+
 ## Kiri Studio 0.4.0 released and verified — 2026-09-30
 
 - Tag `v0.4.0`: installers built on the three OSes (smoke on each packaged app), draft release
