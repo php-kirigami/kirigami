@@ -27,6 +27,12 @@ Use [the CLI](../cli/README.md) for terminal commands. This package is the progr
 
 ---
 
+## What's new in 3.2.3
+
+- **`studio.pageImage`** in `kirigami.schema.json`: `true` lets the client pick, in Kiri Studio, the image that represents a page (its `@image`: og:image / twitter:image and `<intlink>` cards) from the "Media of this page" panel. Needs `studio.pageMedia`. Off when omitted. Before this version the schema rejected the key.
+
+---
+
 ## What's new in 3.2.2
 
 - **`studio.pageMedia`** in `kirigami.schema.json`: `true` (or a list of folder names) lets Kiri Studio keep each Markdown page's pictures and videos in folders next to its `_index.md` (`images/`, `videos/`), with a "Media of this page" panel in the editor. Off when omitted. Before this version the schema rejected the key.
