@@ -228,6 +228,7 @@ function docTopicHints() {
 		],
 		pages: [
 			{ path: 'packages/kirigami/README.md', reason: 'Page rendering, prepros wrapper model and per-page PHPDoc conventions.' },
+			{ path: 'packages/php-prepros/README.md', reason: 'Page annotations: PHPDOC headers, Markdown pages (_index.md), @@ inheritance, data files, page types.' },
 			{ path: 'docs/CONTEXT.md', reason: 'The project root, root config and page generation model.' },
 			{ path: 'docs/DECISIONS.md', reason: 'Design decisions around page types and layout wrapping.' },
 		],
@@ -327,7 +328,7 @@ export function createServer(project, { name = "kirigami", version = "0.1.0" } =
 					projectShape: {
 						root: ['kirigami.yaml', 'src/', 'src/_index.php', 'src/_layouts/', 'assets/', 'scripts/'],
 						description: 'A Kirigami project usually has a root kirigami.yaml, a src/ tree of PHP pages, optional _layouts/ includes, scripts/, and asset directories.',
-						pagePattern: 'Use PHP page files under kirigami.root, usually named _index.php / _about.php / _products.php and wrapped by prepros.before / after or page types.',
+						pagePattern: 'Use PHP page files under kirigami.root, usually named _index.php / _about.php / _products.php and wrapped by prepros.before / after or page types. A folder can instead hold an _index.md whose first lines are @tag value annotations: it is rendered as a Markdown page (no PHP). @@tag passes a value down to every page below.',
 					},
 					pageRules: [
 						'Pages live under kirigami.root and are PHP templates rendered by @kirigami/php-prepros.',

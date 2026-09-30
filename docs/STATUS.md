@@ -1,5 +1,15 @@
 # Status
 
+## MCP doc index and hints after 3.2.0 — 2026-09-30
+
+- `@kirigami/mcp` 0.1.6 went out without the usual doc step. The index (`.kirigami/mcp-doc-index.json`)
+  is a local, git-ignored cache that is not in the package, so nothing shipped is stale there; it was
+  regenerated (`buildDocIndex()`, 36 files) and finds the Markdown-pages docs. What 0.1.6 does carry is
+  the hard-coded project manifest text, which still says pages are PHP only. Fixed in source
+  (`pagePattern`, and the `pages` topic now points at php-prepros' README); reaches users with the
+  next MCP release, together with the `prepros.format` fix. Release checklist: regenerate the index
+  and review `packages/mcp/index.js` hints **before** `npm run release`.
+
 ## `prepros.format` keeps the spaces around inline elements (unreleased) — 2026-09-30
 
 - `HTML::format()` put each child of a paragraph on its own line as soon as one of them wasn't a
