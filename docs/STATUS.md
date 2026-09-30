@@ -7,8 +7,9 @@
   `META` for og:image / twitter:image and by `<intlink>`). Opt-in so sites like humainhumain are untouched. Released as
   `@kirigami/kirigami` 3.2.3 and `@kirigami/cli` 0.1.9 (cli pins core exactly). Studio side is in `../kiri-studio`
   (scope `pageImage`, unreleased). Checked with `kiri export` on template-kiridoc: `images/` is published next to the
-  page, and og:image resolves to it. **Still on core 3.2.1**: `@kirigami/mcp` and the VS Code extension: they reject
-  `pageMedia` and `pageImage` until their next releases bump the pin.
+  page, and og:image resolves to it. Follow-up the same day: `@kirigami/mcp` 0.1.8 and `@kirigami/cli` 0.1.10 (cli pins mcp exactly) now pin
+  core 3.2.3; `kirigami-vscode` 0.1.5 is bumped and pushed, but its VSIX still has to be built (workflow `VSIX`) and
+  uploaded to the Marketplace by hand.
 
 ## `studio.pageMedia`: core 3.2.2, cli 0.1.8 — 2026-09-30
 
