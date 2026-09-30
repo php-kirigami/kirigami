@@ -72,8 +72,8 @@
     "vscode:prepublish": "node esbuild.mjs --minify"
   },
   "dependencies": {
-    "@kirigami/kirigami": "3.1.1",
-    "@kirigami/mcp": "0.1.4"
+    "@kirigami/kirigami": "3.1.2",
+    "@kirigami/mcp": "0.1.5"
   },
   "devDependencies": {
     "@types/vscode": "1.90.0",

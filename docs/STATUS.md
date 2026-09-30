@@ -1,5 +1,13 @@
 # Status
 
+## Release: core 3.1.2, cli/mcp 0.1.5 — 2026-09-30
+
+- `kiri serve` / `kiri watch --serve` now answer HTTP Range requests and know
+  the audio/video MIME types, so a browser can seek inside `<audio>` /
+  `<video>` (plugin-player, plugin-clip); the schema lists the two new plugins.
+  Published to npm: kirigami 3.1.2, mcp 0.1.5, cli 0.1.5. The VS Code
+  extension's pins follow (its own release is separate).
+
 ## bestframe 0.2.0: more codecs, silent — 2026-09-30
 
 - `libbestframe` rebuilt on FFmpeg 9.0.2 (matrix bump) with MPEG-4 part 2, VP8,
