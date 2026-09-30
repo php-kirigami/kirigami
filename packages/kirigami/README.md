@@ -426,9 +426,10 @@ here are never replaced by the content of the file they name.
 |---|---|---|
 | `branch` | repo default | Branch synced from and published to. |
 | `images` | `image.source` | Image manager folder; clients can create subfolders. `false` hides it. |
+| `types` | all of `prepros.types` | Page types a client may pick for a Markdown page (an optional "Page layout" choice); a list narrows it, `false` hides it. |
 | `imageWidth` | `800` | Width in the `{% img-asset <path> <width> %}` code Kiri Studio inserts or copies for an image. |
 | `files` | – | File manager folder for documents (PDF, …), under `kirigami.root`; clients can create subfolders. |
-| `include` | `[]` | Extra editable paths or globs; `{ path, label, create }` lets clients add/delete files matching a glob. |
+| `include` | `[]` | Extra editable paths or globs; `{ path, label, create, header }` lets clients add/delete entries matching a glob (see below). |
 | `exclude` | `[]` | Paths or globs hidden from clients, even when a page references them. |
 | `labels` | `{}` | Names shown to clients, by path. |
 | `schemas` | `{}` | JSON Schemas for data files, in VS Code's `yaml.schemas` format: schema path or URL → file glob(s). |
@@ -445,6 +446,36 @@ site already set up for VS Code needs no `schemas` entry. First match wins:
 
 In both maps, schema paths are relative to `cwd()`, and a glob without `/`
 matches the file name anywhere.
+
+With `create: true`, the glob's shape says where a new entry goes (nothing is
+created unless `create` is set):
+
+| Glob | A new entry is | Example |
+|---|---|---|
+| `<folder>/*.<ext>` | one file | `src/blog/*.md` |
+| `<folder>/*/_index.md` | a folder holding a [Markdown page](../php-prepros/README.md#markdown-pages) | `src/posts/*/_index.md` |
+| `<folder>/**/_index.md` | the same, and each page can get sub-pages, at any depth | `src/docs/**/_index.md` |
+
+Deleting a page of an `_index.md` collection deletes its folder: its
+sub-pages and the files kept next to it. The top page of a tree
+(`src/docs/_index.md`) holds the whole collection, so it can only be deleted
+once it has no sub-pages left.
+
+For `_index.md` collections, `header` is the `@tag` header a new page starts
+with, after its `@title`: `today` becomes the creation date, `""` leaves the
+tag for the client to fill in. Kiri Studio shows a page's header as a form
+above the text; tags for the site's own machinery (`@type`, `@content`, tags
+with an underscore, `@@` values) stay hidden, so put section-wide ones on the
+parent page with `@@` (`@@type post` on `src/posts/_index.php`).
+
+```yaml
+studio:
+  include:
+    - path: src/posts/*/_index.md
+      label: Posts
+      create: true
+      header: { date: today, abstract: "", tags: "" }
+```
 
 ```yaml
 studio:

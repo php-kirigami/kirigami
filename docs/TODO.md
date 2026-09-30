@@ -3,9 +3,6 @@
 Small, concrete, near-term code action items; documentation debt belongs in [DOCTODO.md](DOCTODO.md). These are — not full features (those go in
 [ROADMAP.md](ROADMAP.md)) and not open questions (those go in [BUGS.md](BUGS.md)).
 
-- **Kiri Studio: Markdown pages** (`../kiri-studio/src/main/scope.js`): port the new rules (an
-  `_index.md` with an `@tag` header is a page, `@@` inheritance) and let a collection create
-  `src/posts/<slug>/_index.md` with a prefilled header; show the header as a small form.
 - **template-blog on `_index.md`**: once php-prepros ships Markdown pages, move each post to a single
   `_index.md` (`@@type post` on `posts/_index.php`), make `blog_posts()` read them, bump core.
 - **VS Code packaging on other platforms**: interactive checks passed (2026-09-23) and the win32-x64 VSIX is built and tested; VSIX builds for other targets are not. See [EXTENSION-VSCODE.md](EXTENSION-VSCODE.md) for reproducible checks.

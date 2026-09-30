@@ -1,5 +1,14 @@
 # Status
 
+## Kiri Studio: Markdown pages, folder/tree collections — 2026-09-30
+
+- `../kiri-studio` follows the Markdown-page rules and edits a page's `@tag` header as a form
+  (optional "Page layout" from `prepros.types`). Collections with `create: true` can make
+  `<folder>/<slug>/_index.md` pages (`*/_index.md`) or trees with sub-pages at any depth
+  (`**/_index.md`); deleting a page removes its folder. Core schema/README: `studio.include[].header`
+  (new pages' default tags, `today`), `studio.types`, the three creatable glob shapes. Details in
+  the Studio's `docs/PLAN.md`. Unreleased on both sides.
+
 ## Markdown pages and `@@` inherited annotations (unreleased) — 2026-09-30
 
 - php-prepros: an `_index.md` whose first lines are `@tag value` annotations is a page

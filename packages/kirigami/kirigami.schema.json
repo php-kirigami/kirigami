@@ -440,6 +440,26 @@
             "assets/images"
           ]
         },
+        "types": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "const": false
+            }
+          ],
+          "description": "Page types (names under `prepros.types`) a client may pick for a Markdown page in Kiri Studio, as an optional \"Page layout\" choice. Default: every type in `prepros.types`. `false` hides the choice.",
+          "examples": [
+            [
+              "post",
+              "article"
+            ]
+          ]
+        },
         "imageWidth": {
           "type": "integer",
           "minimum": 1,
@@ -482,7 +502,21 @@
                   "create": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Let the client add and delete files matching the glob."
+                    "description": "Let the client add and delete files matching the glob. Kiri Studio places new entries for three glob shapes: `<folder>/*.<ext>` (one file each), `<folder>/*/_index.md` (one folder each, holding a Markdown page) and `<folder>/**/_index.md` (a tree: pages may get sub-pages, at any depth)."
+                  },
+                  "header": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "description": "For `_index.md` collections: the `@tag` header a new page starts with, after its `@title` (e.g. `date: today`, `draft: \"false\"`). `today` becomes the creation date (YYYY-MM-DD); an empty string adds the tag with no value, for the client to fill in.",
+                    "examples": [
+                      {
+                        "date": "today",
+                        "abstract": "",
+                        "tags": ""
+                      }
+                    ]
                   }
                 }
               }
