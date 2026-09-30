@@ -1,5 +1,10 @@
 # Status
 
+## VS Code 0.1.4 on the Marketplace, Kiri Studio pushed — 2026-09-30
+
+- The six VSIX files of 0.1.4 were uploaded by the maintainer. Kiri Studio's Markdown-page work
+  (`8d51b2a`, `192ea45`) is pushed to `php-kirigami/kiri-studio` main; unreleased (last release 0.3.0).
+
 ## History rewritten to drop two local VSIX files — 2026-09-30
 
 - The 3.2.0 release commit had picked up two local VSIX files (~40 MB). The 8 commits from that one
