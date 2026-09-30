@@ -1,5 +1,13 @@
 # Status
 
+## VS Code 0.1.3 — 2026-09-30
+
+- Extension 0.1.3 bundles Kirigami 3.1.2 (dev-server Range requests and audio/video types for
+  the preview) and MCP 0.1.5. The `win32-x64` VSIX (19.65 MB, 1763 files) was built locally and
+  passes the real-host test (`run-host.ps1` against the unzipped VSIX, VS Code 1.139.1). The other
+  five targets come from the `VSIX` workflow; upload on the Marketplace publisher page by hand
+  (see [EXTENSION-VSCODE.md](EXTENSION-VSCODE.md)). Not on the Marketplace yet.
+
 ## MCP doc index and docs pass after the 3.1.2 / plugins release — 2026-09-30
 
 - Regenerated `.kirigami/mcp-doc-index.json` with `buildDocIndex()` (36 files, was 35). Smoke

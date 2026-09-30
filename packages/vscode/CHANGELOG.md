@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3
+
+- Bundles Kirigami 3.1.2. The preview server now answers HTTP Range requests
+  and knows the audio and video types, so a browser can seek inside an
+  `<audio>` or `<video>` in the preview.
+
 ## 0.1.2
 
 - Bundles Kirigami 3.1.1 and PHP 8.5.11-1 (with the Aura and translit
