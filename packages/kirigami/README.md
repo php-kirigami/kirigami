@@ -27,6 +27,12 @@ Use [the CLI](../cli/README.md) for terminal commands. This package is the progr
 
 ---
 
+## What's new in 3.2.4
+
+- **Fix: image URLs keep the path of `baseurl`.** The SEO `og:image` / `twitter:image` and the JSON-LD `logo` / `image` now resolve against the whole `baseurl`, so a site published at `user.github.io/repo` gets `…/repo/images/x.png` instead of `…/images/x.png` (the path was dropped). Sites on their own domain are unaffected. Ships `@kirigami/php-prepros` 3.2.2.
+
+---
+
 ## What's new in 3.2.3
 
 - **`studio.pageImage`** in `kirigami.schema.json`: `true` lets the client pick, in Kiri Studio, the image that represents a page (its `@image`: og:image / twitter:image and `<intlink>` cards) from the "Media of this page" panel. Needs `studio.pageMedia`. Off when omitted. Before this version the schema rejected the key.
