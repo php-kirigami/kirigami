@@ -27,6 +27,12 @@ Use [the CLI](../cli/README.md) for terminal commands. This package is the progr
 
 ---
 
+## What's new in 3.2.2
+
+- **`studio.pageMedia`** in `kirigami.schema.json`: `true` (or a list of folder names) lets Kiri Studio keep each Markdown page's pictures and videos in folders next to its `_index.md` (`images/`, `videos/`), with a "Media of this page" panel in the editor. Off when omitted. Before this version the schema rejected the key.
+
+---
+
 ## What's new in 3.2.0
 
 - **Markdown pages and inherited annotations** (from `@kirigami/php-prepros`): an `_index.md` starting with `@tag value` lines is a page, and `@@tag` passes a value down to every page below. See php-prepros' [Markdown pages](../php-prepros/README.md#markdown-pages) and [Inherited annotations](../php-prepros/README.md#inherited-annotations-).
