@@ -1,5 +1,14 @@
 # Status
 
+## Image URLs keep the baseurl path: php-prepros 3.2.2, core 3.2.4, mcp 0.1.9, cli 0.1.11 — 2026-09-30
+
+- Fix: `META` (og:image, twitter:image) and `LD` (logo, image) resolved image paths against the *origin* of `baseurl`,
+  dropping its path, so a site on `user.github.io/repo` got `…/images/x.png` instead of `…/repo/images/x.png`. Both
+  `absUrl()` now use the whole baseurl (test in `seo.test.js`). Released as `@kirigami/php-prepros` 3.2.2,
+  `@kirigami/kirigami` 3.2.4, `@kirigami/mcp` 0.1.9, `@kirigami/cli` 0.1.11 with one OTP for the whole
+  `npm run release` (npm accepted the same code for the four publishes). `kirigami-vscode` 0.1.6 is bumped; its VSIX
+  still has to be uploaded by hand. template-kiridoc re-rendered (its baseurl is now its own Pages site).
+
 ## `studio.pageImage`: core 3.2.3, cli 0.1.9 — 2026-09-30
 
 - New boolean `studio.pageImage` in `kirigami.schema.json` (default off): Kiri Studio adds a "Use as page image" button to
