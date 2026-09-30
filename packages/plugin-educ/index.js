@@ -31,7 +31,7 @@ const DEFAULTS = {
 export default function register(options = {}, { config } = {}) {
 	const opts = { ...DEFAULTS, ...options };
 
-	on(HOOKS.PREPROS_PHP, () => ['educ.php', 'doclink.php', 'intlink.php', 'color.php', 'bubble.php', 'quote.php'].map((f) => path.join(pluginDir, 'php', f)));
+	on(HOOKS.PREPROS_PHP, () => ['educ.php', 'doclink.php', 'intlink.php', 'color.php', 'bubble.php', 'quote.php', 'tool.php', 'codepen.php'].map((f) => path.join(pluginDir, 'php', f)));
 
 	if (!hasEsbuildTask(config)) {
 		console.warn('\x1b[33m⚠\x1b[0m [plugin-educ] no esbuild task found — the script that makes <checklist> interactive has nowhere to go. Add one.');

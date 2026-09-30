@@ -351,3 +351,27 @@
 	border-radius: 50%;
 	object-fit: cover;
 }
+
+
+// ── tool: an intlink card with its picture on the right ────────────
+.intlink--tool {
+	.intlink__body { flex: 1; }
+
+	.intlink__label { font-style: normal; }
+}
+
+// The caption sits above the title on a tool card.
+.intlink--tool .intlink__label {
+	order: -1;
+}
+
+
+// ── codepen ────────────────────────────────────────────────────────
+.codepen {
+	display: block;
+	width: 100%;
+	margin-block: 1.25rem;
+	border: 0.0625rem solid var(--border);
+	border-radius: 0.4rem;
+	background-color: var(--surface);
+}

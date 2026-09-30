@@ -165,6 +165,51 @@ Un magicien n'est jamais en retard…
 All three are optional. `photo` is a path relative to the page (`./…`, `../…`), a path from the
 site root, or a URL; it is square-cropped to 112 px as a webp in `assets/images/quote/` (commit it).
 
+## `<tool>`
+
+A card for an external tool the course recommends: a caption ("OUTIL"), a title and a description
+on the left, a picture on the right. Nothing is scraped; the text and the picture are written by hand.
+
+```html
+<tool href="https://responsive-css.spritegen.com/" title="Responsive CSS Sprites" image="tools/spritegen/thumb.jpg">
+    Combine separate key frames into one sprite sheet.
+</tool>
+```
+
+In Markdown, the quoted arguments (href, title, optional image) on the first line and the description
+below:
+
+```
+{% tool https://responsive-css.spritegen.com/ "Responsive CSS Sprites" "tools/spritegen/thumb.jpg"
+Combine separate key frames into one sprite sheet.
+%}
+```
+
+`label` (default `OUTIL`) and `class` are optional attributes. The image is a path relative to the
+page, from the site root or a URL; it is square-cropped to 200 px as a webp in `assets/images/tool/`
+(commit it). The card opens in a new tab.
+
+## `<codepen>`
+
+```html
+<codepen id="BaOaBOJ" tab="css,result" height="360">
+```
+
+```
+{% codepen BaOaBOJ anonymous 360 css,result %}
+```
+
+An iframe on the pen's embed page. `id` is the pen hash (last part of its URL), `user` its owner
+(default `anonymous`; CodePen finds a pen by its id), `height` in pixels (default 400), `tab` the tab
+shown first (default `result`). The shortcode keeps the argument order of php-prepros' own
+`{% codepen %}` (id, user, height) and adds the tab, so it replaces it.
+
+## Images in components
+
+`<quote photo>` and `<tool image>` accept `./x` and `../x` (relative to the page), `/x` (from the
+site root), a plain `x/y.jpg` (relative to the page when the file is there, else from the site root)
+or a URL.
+
 ## Responsive
 
 Every component is fluid: long words and URLs wrap instead of widening the box, the bubble badges

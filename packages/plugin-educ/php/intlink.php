@@ -107,6 +107,28 @@ function intlink_default_image(): string
 
 
 /**
+ * Turns an image path written in a page into what intlink_thumbnail() expects
+ * (a path from the site root, or a URL). `./x` and `../x` are relative to the
+ * page; `/x` is from the site root; a plain `x/y.jpg` is taken relative to the
+ * page when such a file exists there, from the site root otherwise.
+ */
+function intlink_site_path(string $spec): string
+{
+    if ($spec === '' || preg_match('#^(https?:)?//#', $spec)) return $spec;
+
+    $root = FS::pathJoin('/project', PREPROS::$config->data->root) . '/';
+    if (str_starts_with($spec, '/')) return ltrim($spec, '/');
+
+    $abs = FS::pathJoin(dirname(PREPROS::$file), $spec);
+    $rel = str_starts_with($abs, $root) ? substr($abs, strlen($root)) : $spec;
+
+    $explicit = preg_match('#^\.{1,2}/#', $spec);
+    if ($explicit || PREPROS::fstat(FS::pathJoin(PREPROS::$config->data->root, $rel))) return $rel;
+    return $spec;
+}
+
+
+/**
  * A square webp ($size px, in `assets/images/$dir/`) of the image `$spec` (a path relative to the site root,
  * or a URL), written once and reused. Returns its URL relative to the page
  * being rendered, or '' when the image cannot be read.

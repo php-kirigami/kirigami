@@ -46,13 +46,7 @@ function quote_render(string $html, array $attrs): string
     $photo  = trim($attrs['photo'] ?? '');
     $class  = trim($attrs['class'] ?? '');
 
-    // A path relative to the page becomes a path from the site root.
-    if ($photo !== '' && preg_match('#^\.{1,2}/#', $photo)) {
-        $abs  = FS::pathJoin(dirname(PREPROS::$file), $photo);
-        $root = FS::pathJoin('/project', PREPROS::$config->data->root) . '/';
-        if (str_starts_with($abs, $root)) $photo = substr($abs, strlen($root));
-    }
-    $image = $photo !== '' ? intlink_thumbnail($photo, 112, 'quote') : '';
+    $image = $photo !== '' ? intlink_thumbnail(intlink_site_path($photo), 112, 'quote') : '';
 
     $out = '<figure class="' . $esc('quote' . ($class !== '' ? ' ' . $class : '')) . '"><blockquote>' . $html . '</blockquote>';
     if ($author !== '' || $image !== '') {

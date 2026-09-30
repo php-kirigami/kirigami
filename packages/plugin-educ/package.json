@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/plugin-educ",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Authoring tags for course pages in Kirigami — starting with <checklist>, a progress-tracked checklist remembered in the reader's browser.",
   "keywords": [
     "kirigami",

@@ -1,5 +1,18 @@
 # Status
 
+## Released and pushed — 2026-09-30
+
+- `@kirigami/plugin-educ` 0.1.0 is on npm; monorepo pushed (`78ba896`). `php-kirigami/template-kiridoc` is
+  public on GitHub (`2d44018`, `306e505` with the lockfile).
+- plugin-educ 0.2.0 (source committed, **not published yet**): `<tool>` (hand-written external-tool card),
+  `<codepen>` (iframe; the shortcode replaces php-prepros' `{% codepen %}`, same argument order + tab), and
+  `intlink_site_path()` so `<quote photo>` / `<tool image>` accept page-relative paths. template-kiridoc asks
+  for `^0.2.0` and gets it from a local link until then: hold its push (the Pages workflow would fail).
+- template-kiridoc reproduces https://tim-montmorency.com/timdoc/582-215MO/css/animation-sprite-sheet/
+  (course `582-215MO`, listing `css`, the page + its two unlisted exercise pages): `---` renders as three dots,
+  `{% inline-clip %}` for the videos, `{% codepen %}`, `{% tool %}`, `{% warning %}` / `{% bravo %}`.
+  The links to the `animation` page and the Photoshop action are not reproduced (those pages do not exist here).
+
 ## template-kiridoc: media plugins and exercise course — 2026-09-30
 
 - `template-kiridoc` now also loads `@kirigami/plugin-embed` (the oEmbed `<youtube>`/`<vimeo>` cards),
