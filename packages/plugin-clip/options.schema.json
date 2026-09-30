@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/plugin-clip/options.schema.json",
+  "title": "@kirigami/plugin-clip options",
+  "description": "Options for the `@kirigami/plugin-clip` entry under `plugins:` in kirigami.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "style": {
+      "description": "Append the default `.clip` card styles to every sass task. Set false to write your own on top of the markup.",
+      "type": "boolean",
+      "default": true
+    },
+    "posterWidth": {
+      "description": "Width, in pixels, of the poster picked from the video (height follows the video's aspect ratio). Published through the image pipeline in the project's `image.format`.",
+      "type": "integer",
+      "minimum": 64,
+      "default": 960
+    },
+    "samples": {
+      "description": "How many timestamps bestframe samples across the video when picking the poster. More is slower to build (results are cached).",
+      "type": "integer",
+      "minimum": 2,
+      "default": 24
+    }
+  }
+}

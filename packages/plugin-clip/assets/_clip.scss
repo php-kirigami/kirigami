@@ -1,0 +1,125 @@
+// ═══════════════════════════════════════════════════════════════════════
+//  @kirigami/plugin-clip — default `.clip` video card styles
+//
+//  <clip src="…"> is swapped at build time for this markup (src/build.js);
+//  src/clip.js turns the click into an in-place <video>. The poster keeps
+//  its own width/height attributes, so the card has the video's real aspect
+//  ratio before anything loads. Themed off @kirigami/canva's --accent.
+//  Appended after the project's own sass entry (`sass:after`) — set
+//  `style: false` in the plugin's kirigami.yaml options to skip this and
+//  write your own. Cap the width with --clip-max-width.
+// ═══════════════════════════════════════════════════════════════════════
+
+.clip {
+	position: relative;
+	display: block;
+	width: 100%;
+	max-width: var(--clip-max-width, 40rem); // a full-bleed video reads as huge on a wide page — capped, not stretched
+	margin-inline: auto;
+	background-color: #000;
+	border-radius: 0.4rem;
+	overflow: hidden;
+	line-height: 0;
+}
+
+.clip__poster {
+	display: block;
+	width: 100%;
+	height: auto;
+	object-fit: cover;
+}
+
+// Vertical video (width < height): a default landscape box with the picture
+// centred inside it, instead of a tall card. Override the ratio with
+// --clip-portrait-ratio.
+.clip--portrait {
+	aspect-ratio: var(--clip-portrait-ratio, 16 / 9);
+
+	.clip__poster {
+		position: absolute;
+		inset: 0;
+		height: 100%;
+		object-fit: contain;
+	}
+}
+
+.clip__poster--empty {
+	aspect-ratio: 16 / 9;
+	background-color: var(--surface-2);
+}
+
+.clip__play {
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	color: var(--accent);
+
+	// The ring is drawn by the icon; the link itself only needs to be big and
+	// centred, so the whole card is one target.
+	.clip__icon {
+		width: 5rem;
+		aspect-ratio: 1 / 1;
+		filter: drop-shadow(0 0 0.75rem rgb(0 0 0 / 0.45));
+		transition: transform 0.15s;
+	}
+
+	&:hover .clip__icon,
+	&:focus-visible .clip__icon {
+		transform: scale(1.1);
+	}
+}
+
+.clip__title {
+	position: absolute;
+	inset: auto 0 0 0;
+	padding: 0.6rem 0.8rem;
+	background-image: linear-gradient(transparent, rgb(0 0 0 / 0.65));
+	color: #fff;
+	font-size: 0.85rem;
+	font-weight: 600;
+	line-height: 1.3;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	pointer-events: none;
+}
+
+.clip__duration {
+	position: absolute;
+	inset: 0.6rem 0.6rem auto auto;
+	padding: 0.15rem 0.4rem;
+	background-color: rgb(0 0 0 / 0.65);
+	border-radius: 0.2rem;
+	color: #fff;
+	font-size: 0.75rem;
+	font-variant-numeric: tabular-nums;
+	line-height: 1.3;
+	pointer-events: none;
+}
+
+// <inline-clip>: a silent decorative loop, one <video> element. Its width/height
+// attributes give the real ratio before it loads; size it with your own CSS.
+.inline-clip {
+	display: block;
+	width: 100%;
+	max-width: var(--inline-clip-max-width, none);
+	height: auto;
+	margin-inline: auto;
+}
+
+.clip__video {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	background-color: #000;
+}
+
+.clip.is-playing {
+	.clip__play,
+	.clip__title,
+	.clip__duration {
+		display: none;
+	}
+}

@@ -1,5 +1,23 @@
 # Status
 
+## plugin-clip 0.1.0 (unreleased) — 2026-09-29
+
+- New `packages/plugin-clip`: `<clip src="…">` and `{% clip %}`, the local-file
+  counterpart of plugin-embed. Same architecture as plugin-player: one
+  `prepros:html` pass (JS) runs `@kirigami/bestframe` per video, caches
+  `{ timestamp, score, duration, dimensions, metadata }` in
+  `<root>/_data/clip/<id>.json` (id = size + hash of first/last MB, so it stays
+  cheap on huge files), writes the poster to `<image.source>/clip/<id>.jpg` and
+  publishes it with `processImages` under `IMG::asset()`'s naming
+  (`…-960w.webp`). Vertical videos get a default 16:9 box. `<inline-clip>` (and
+  `{% inline-clip %}`): a silent, looping, autoplaying `<video>` with its real
+  size and the bestframe poster; paused off-screen or under reduced motion. Verified with a real
+  `kiri build` on MP4 (H.264), WebM (VP9), a vertical clip and an MKV.
+- Found in libbestframe (not fixed here): an H.264 MP4 with audio that fails
+  intermittently (~1200 "Invalid NAL unit size" errors, then null), ffmpeg
+  logging straight to the console, ~16 s per 3-minute video, no MPEG-4 part 2.
+  Listed in TODO.md.
+
 ## plugin-player 0.1.0 — 2026-09-29
 
 - New `packages/plugin-player`: `<player src="…">` / `<playlist src="….m3u">`

@@ -655,6 +655,25 @@
                 }
               }
             }
+          },
+          {
+            "if": {
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "name": {
+                  "const": "@kirigami/plugin-clip"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "options": {
+                  "$ref": "../plugin-clip/options.schema.json"
+                }
+              }
+            }
           }
         ]
       },

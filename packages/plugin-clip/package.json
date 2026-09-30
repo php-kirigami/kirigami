@@ -1,0 +1,57 @@
+{
+  "name": "@kirigami/plugin-clip",
+  "version": "0.1.0",
+  "description": "<clip> local video player for Kirigami — the poster is picked at build time by @kirigami/bestframe and published through the image pipeline; click to play an MP4/WebM served from your own site.",
+  "keywords": [
+    "kirigami",
+    "kirigami-plugin",
+    "plugin",
+    "video",
+    "player",
+    "mp4",
+    "webm",
+    "thumbnail",
+    "poster"
+  ],
+  "license": "GPL-3.0-or-later",
+  "author": "Maxime Larrivée-Roy",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "php/",
+    "src/",
+    "assets/",
+    "options.schema.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "kirigami": {
+    "type": "plugin",
+    "minVersion": "3.0.0",
+    "optionsSchema": "./options.schema.json"
+  },
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=10.2.3"
+  },
+  "dependencies": {
+    "@kirigami/bestframe": "0.1.1",
+    "@kirigami/sdk": "0.3.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/php-kirigami/kirigami.git"
+  },
+  "homepage": "https://php-kirigami.github.io",
+  "bugs": {
+    "url": "https://github.com/php-kirigami/kirigami/issues"
+  }
+}
