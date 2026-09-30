@@ -12,3 +12,6 @@ packages/plugin-embed/.generated-vars.scss
 
 # Local backups (e.g. packages/php-wasm/jspi/php.js.bak) must never be committed or published
 *.bak
+
+# Locally packaged VS Code extensions (published through the VSIX workflow)
+*.vsix
