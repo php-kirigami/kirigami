@@ -27,6 +27,13 @@ Use [the CLI](../cli/README.md) for terminal commands. This package is the progr
 
 ---
 
+## Unreleased
+
+- **Markdown pages and inherited annotations** (from `@kirigami/php-prepros`): an `_index.md` starting with `@tag value` lines is a page, and `@@tag` passes a value down to every page below. See php-prepros' [Markdown pages](../php-prepros/README.md#markdown-pages) and [Inherited annotations](../php-prepros/README.md#inherited-annotations-).
+- Watch follows them: a modified `_index.md` page re-renders itself; one gaining or losing its header becomes a page or data again (its old HTML is removed); a page with `@@` tags (now or before the edit) re-renders its whole directory; a data file passed down with `@@` re-renders every page below the page that declares it. A target already covered by a directory target is rendered once.
+
+---
+
 ## What's new in 3.0.2
 
 - Ships `@kirigami/php-prepros` 3.0.1: a registered tag written inside
@@ -171,6 +178,7 @@ Dependency bumps: [`@kirigami/php-prepros`](https://www.npmjs.com/package/@kirig
 
 - [@kirigami/kirigami](#kirigamikirigami)
 - [Overview](#overview)
+- [Unreleased](#unreleased)
 - [What's new in 3.0.2](#whats-new-in-302)
 - [What's new in 3.0.1](#whats-new-in-301)
 - [3.0.0 — breaking](#300--breaking)
@@ -237,7 +245,7 @@ prepros:
   format: true
 ```
 
-2. Write `_*.php` pages under `src/` (or wherever `root` points).
+2. Write `_*.php` pages (or `_index.md` pages with an `@tag` header) under `src/` (or wherever `root` points).
 3. Create the referenced layout files, install `@kirigami/cli`, then run `npx kiri build` and `npx kiri serve`. Use `npx kiri export` for production output.
 
 ---

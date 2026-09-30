@@ -4,7 +4,7 @@ import { joinWith, replaceRoot, log, c, printTaskError } from '../utils.js';
 import { render, sitemap, resetRuntime, mountPath } from "@kirigami/php-prepros";
 import { has as hasHook, run as runHook, runWaterfall, HOOKS } from '@kirigami/sdk';
 import { getConfig } from '../config.js';
-import { pageDataFiles } from '../libs/phpdoc.js';
+import { markdownHeader, pageDataFiles, passesDown } from '../libs/phpdoc.js';
 
 export const taskname = 'PREPROS';
 export const canwatch = true;
@@ -86,13 +86,23 @@ function pageOutputs(root) {
 			if (entry.name.startsWith('.')) continue;
 			const file = path.join(dir, entry.name);
 			if (entry.isDirectory()) visit(file);
-			else if (entry.isFile() && /^_.*\.php$/i.test(entry.name) && !path.basename(dir).startsWith('_')) {
-				pages.set(file, path.join(dir, entry.name.replace(/^_+/, '').replace(/\.php$/i, '.html')));
+			else if (entry.isFile() && isPageName(entry.name, dir) && !path.basename(dir).startsWith('_')) {
+				pages.set(file, path.join(dir, entry.name.replace(/^_+/, '').replace(/\.(php|md)$/i, '.html')));
 			}
 		}
 	}
 	if (fs.existsSync(root)) visit(root);
 	return pages;
+}
+
+// Drops targets a directory target already renders (recursively).
+export function withoutCovered(targets) {
+	const dirs = targets.filter(t => !/\.(php|md)$/i.test(t));
+	return targets.filter(t => !dirs.some(d => d !== t && (d === '.' || t.startsWith(`${d}/`))));
+}
+
+function sameKeys(a, b) {
+	return a.size === b.size && [...a.keys()].every(key => b.has(key));
 }
 
 function removeObsoletePages(root, previous, current) {
@@ -110,52 +120,86 @@ function removeObsoletePages(root, previous, current) {
 	return removed;
 }
 
-// Same rule as PREPROS::isPage(): a `_*.php` file with no `_`-prefixed
-// directory on its path (relative to kirigami.root, POSIX separators).
-function isPage(rel) {
-	const parts = rel.split('/');
-	const name = parts.pop();
-	return /^_.*\.php$/i.test(name) && !parts.some(part => part.startsWith('_'));
+// Same rule as PREPROS::isPage(): a `_*.php` file, or an `_index.md` that
+// starts with an `@tag` header in a folder with no `_index.php` (otherwise
+// the `.md` is data), with no `_`-prefixed directory on its path (relative
+// to kirigami.root, POSIX separators). `dir` is the file's folder on disk.
+function isPageName(name, dir) {
+	if (/^_.*\.php$/i.test(name)) return true;
+	if (!/^_index\.md$/i.test(name) || fs.existsSync(path.join(dir, '_index.php'))) return false;
+	try {
+		return Object.keys(markdownHeader(fs.readFileSync(path.join(dir, name), 'utf8'))).length > 0;
+	} catch { return false; }
 }
 
-// Data file → the pages whose PHPDOC header loads it (`@content _about.md`,
-// `@team ../_data/team.yaml`), all relative to kirigami.root. Read fresh on
-// each watch batch: a page edit can change what it loads.
+function isPage(rel, root = '.') {
+	const parts = rel.split('/');
+	const name = parts.pop();
+	return !parts.some(part => part.startsWith('_')) && isPageName(name, path.join(root, ...parts));
+}
+
+// Data file → the pages whose header loads it (`@content _about.md`,
+// `@team ../_data/team.yaml`), all relative to kirigami.root. A data file
+// passed down (`@@menu _menu.yaml`) maps to the declaring page's directory
+// instead, written with a trailing `/` (every page below loads it). Read
+// fresh on each watch batch: a page edit can change what it loads.
 export function dataDependents(root) {
 	const dependents = new Map();
+	const add = (dataRel, target) => {
+		if (!dependents.has(dataRel)) dependents.set(dataRel, []);
+		dependents.get(dataRel).push(target);
+	};
 	for (const file of pageOutputs(root).keys()) {
 		const pageRel = path.relative(root, file).replace(/\\/g, '/');
 		let source;
 		try { source = fs.readFileSync(file, 'utf8'); } catch { continue; }
-		for (const dataRel of pageDataFiles(pageRel, source)) {
-			if (!dependents.has(dataRel)) dependents.set(dataRel, []);
-			dependents.get(dataRel).push(pageRel);
-		}
+		const down = new Set(pageDataFiles(pageRel, source, { inherited: true }));
+		for (const dataRel of down) add(dataRel, `${path.posix.dirname(pageRel)}/`);
+		for (const dataRel of pageDataFiles(pageRel, source)) if (!down.has(dataRel)) add(dataRel, pageRel);
 	}
 	return dependents;
 }
 
+// The pages (relative to kirigami.root) that pass a value down (`@@tag`):
+// editing one re-renders its whole directory.
+export function passingPages(root) {
+	const pages = new Set();
+	for (const file of pageOutputs(root).keys()) {
+		const pageRel = path.relative(root, file).replace(/\\/g, '/');
+		try { if (passesDown(pageRel, fs.readFileSync(file, 'utf8'))) pages.add(pageRel); } catch { }
+	}
+	return pages;
+}
+
 // What a modified file re-renders: `null` for the whole site, else targets
 // relative to kirigami.root (pages, or directories rendered recursively).
-//   - a page: just that page — its directory when `prepros: { deep: true }`
+//   - a page (`_*.php`, or an `_index.md` page): just that page — its
+//     directory when `prepros: { deep: true }`
 //   - any other PHP (layouts, includes, partials, `_*/` helpers): every page
 //     may use it, so the whole site
 //   - a data file (.yaml/.yml/.md/.json): the pages that load it through
-//     their PHPDOC header (`dependents`, see dataDependents()); one no header
+//     their header (`dependents`, see dataDependents()); one no header
 //     references (read by PHP code) re-renders its directory
-export function changeTarget(rel, { deep = false, dependents = null } = {}) {
+//   - a page that passes values down (`@@tag`, now or before the edit: in
+//     `passing`): its whole directory
+// `root` is kirigami.root on disk, to tell an `_index.md` page from data.
+export function changeTarget(rel, { deep = false, dependents = null, root = '.', passing = null } = {}) {
 	const dir = path.posix.dirname(rel);
-	if (/\.php$/i.test(rel)) {
-		if (!isPage(rel)) return null;
-		return deep ? dir : rel;
+	const isPhp = /\.php$/i.test(rel);
+	if (isPhp || (/\.md$/i.test(rel) && isPage(rel, root))) {
+		if (!isPage(rel, root)) return null;
+		return deep || passing?.has(rel) ? dir : rel;
 	}
 	const pages = dependents?.get(rel);
-	if (pages?.length) return deep ? pages.map((page) => path.posix.dirname(page)) : pages;
+	if (pages?.length) return pages.map((page) => page.endsWith('/') ? page.slice(0, -1) : deep ? path.posix.dirname(page) : page);
 	return dir;
 }
 
 export function getWatcher(__root, task) {
 	let pages = pageOutputs(__root);
+	// Pages passing values down (`@@tag`), as of the last batch: a page that
+	// just dropped its last `@@` still re-renders the pages below it once.
+	let passing = passingPages(__root);
 	const root = __root.replace(process.cwd(), '').replace(/\\/g, '/').replace(/^\//g, '');
 	const deep = Boolean(task.config?.deep ?? task.deep);
 	// Every PHP file, not just pages: layouts (`_layouts/header.php`) and
@@ -169,7 +213,11 @@ export function getWatcher(__root, task) {
 		callback: async (events) => {
 			if (!events.length) return;
 			console.log(`[${task.name}] batch`, events.length, events.map(e => e.file));
-			if (events.some(e => e.type !== 'change')) {
+			// An `_index.md` gaining or losing its header turns into a page or
+			// back into data: handled like an added or deleted page.
+			const flipped = events.some(e => /(^|[\\/])_index\.md$/i.test(e.file)) &&
+				!sameKeys(pages, pageOutputs(__root));
+			if (flipped || events.some(e => e.type !== 'change')) {
 				const current = pageOutputs(__root);
 				const removed = removeObsoletePages(__root, pages, current);
 				// A fresh mount drops deleted files and refreshes page/data discovery.
@@ -177,6 +225,7 @@ export function getWatcher(__root, task) {
 				const results = await build(__root, { ...task, target: null });
 				if (results.success) pages = current;
 				else printTaskError(results);
+				passing = passingPages(__root);
 				return { ...results, files: [...(results.files || []), ...removed] };
 			}
 			const dataEvents = events.filter(e => !/\.php$/i.test(e.file));
@@ -184,9 +233,13 @@ export function getWatcher(__root, task) {
 			// refresh the PHP VFS copy of each changed data file first.
 			for (const e of dataEvents) await mountPath(e.file);
 			const dependents = dataEvents.length ? dataDependents(__root) : null;
-			const targets = [...new Set(events.flatMap(e => [changeTarget(relative(e.file), { deep, dependents })].flat()))];
+			const now = passingPages(__root);
+			const before = passing;
+			passing = now;
+			const passed = new Set([...before, ...now]);
+			const targets = [...new Set(events.flatMap(e => [changeTarget(relative(e.file), { deep, dependents, root: __root, passing: passed })].flat()))];
 			// One global change re-renders everything (plus the sitemap) once.
-			const renders = targets.includes(null) ? [null] : targets;
+			const renders = targets.includes(null) ? [null] : withoutCovered(targets);
 			const allResults = await Promise.all(renders.map(async target => {
 				const results = await build(__root, { ...task, target });
 				if(results.success) {

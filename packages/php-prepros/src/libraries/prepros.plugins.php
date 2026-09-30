@@ -51,6 +51,7 @@ PREPROS::registerHook('page_info', function($info) {
 		$file = PREPROS::$file;
 	}
 	foreach($page as $k => $v) {
+		if (!is_string($v)) continue;   // a key a hook or helper added
 		$ext = strtolower(pathinfo($v, PATHINFO_EXTENSION));
 		if(in_array($ext, ['yaml', 'yml', 'json', 'md']) ) {
 			$isUrl = STR::is_url($v);

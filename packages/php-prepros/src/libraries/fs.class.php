@@ -52,8 +52,8 @@ class FS
 	 * Lists the immediate child pages of the calling template.
 	 *
 	 * Scans the directories directly below the folder of the file that
-	 * called this function, keeps the ones that hold an `_index.php`, parses
-	 * that file's first PHPDOC block via {@see FS::phpFileInfo()} and returns
+	 * called this function, keeps the ones that hold a page file (see
+	 * {@see FS::indexFile()}), parses its header via {@see FS::phpFileInfo()} and returns
 	 * the pages ordered by `@position` ascending (a missing `@position`
 	 * counts as 999999), then by folder name.
 	 *
@@ -76,10 +76,8 @@ class FS
 
 		$children = [];
 		foreach (glob($dir . '/*', GLOB_ONLYDIR) as $subdir) {
-			$index = $subdir . '/_index.php';
-			if (!is_file($index)) continue;
+			if (!$index = self::indexFile($subdir)) continue;
 			$info = FS::phpFileInfo($index) ?: new stdClass;
-			$info = clone $info;
 			$info->file = realpath($index);
 			$position = (isset($info->position) && is_numeric($info->position)) ? (int) $info->position : 999999;
 			$children[] = ['position' => $position, 'name' => pathinfo($subdir, PATHINFO_BASENAME), 'info' => $info];
@@ -99,7 +97,7 @@ class FS
 	 *
 	 * Starting from the folder *above* the caller's own folder (the current
 	 * page is never part of its own trail), it walks the parent directories
-	 * upward, collecting the `_index.php` of each one via
+	 * upward, collecting the page file (`_index.php` or `_index.md`) of each one via
 	 * {@see FS::phpFileInfo()}. The walk stops at the source root, or at the
 	 * first ancestor `_index.php` that does not carry an active `@breadcrumb`
 	 * tag — that page is a pure separator and is left out of the result.
@@ -138,11 +136,9 @@ class FS
 			$dir = $parent;
 			if (strncmp($dir . '/', $root . '/', strlen($root) + 1) !== 0) break; // above the source root
 
-			$index = $dir . '/_index.php';
-			if (is_file($index)) {
+			if ($index = self::indexFile($dir)) {
 				$info = FS::phpFileInfo($index) ?: new stdClass;
 				if (!self::truthy($info->breadcrumb ?? null)) break;          // separator page: stop, exclude it
-				$info = clone $info;
 				$info->file = realpath($index);
 				$trail[] = $info;
 			}
@@ -168,23 +164,170 @@ class FS
 	}
 
 
+	/**
+	 * The page file of a directory: its `_index.php`, else its `_index.md`,
+	 * else null. A folder holding both is a PHP page, and the `.md` is data.
+	 */
+	public static function indexFile(string $dir): ?string
+	{
+		$dir = rtrim($dir, '\/');
+		foreach (['/_index.php', '/_index.md'] as $name) {
+			if (is_file($dir . $name)) return $dir . $name;
+		}
+		return null;
+	}
+
+
+	/**
+	 * Parses a page's header annotations and returns them as a `stdClass`
+	 * (a fresh copy on each call: callers may add keys without them leaking
+	 * into the page's own variables).
+	 *
+	 * - `.php`: the file's first PHPDOC block ({@see FS::parseDocBlock()}).
+	 * - `.md`:  the `@tag value` lines at the top of the file, up to the
+	 *           first line that is neither a tag nor an indented continuation
+	 *           ({@see FS::splitHeader()}).
+	 *
+	 * Inheritance: an `@@tag value` sets `tag` on the page and on every page
+	 * below it (see {@see FS::inheritedInfo()}). A page's own `@tag`
+	 * overrides an inherited value for that page only; its own `@@tag`
+	 * overrides it and passes the new value down.
+	 */
 	public static function phpFileInfo(string $file): object|bool
 	{
 		static $files = [];
 		if (!$file = realpath($file)) return false;
-		if (!isset($files[$file])) {
-			$tokens = token_get_all(file_get_contents($file));
-			foreach ($tokens as $tok) {
-				if (!is_array($tok)) continue;
-				if ($tok[0] == T_DOC_COMMENT) {
+		$files[$file] ??= (object) array_merge(self::inheritedInfo($file), self::rawInfo($file)[0]);
+		return clone $files[$file];
+	}
+
+
+	/**
+	 * A file's own annotations, as `[all tags, tags passed down (@@)]`.
+	 *
+	 * @return array{0: array<string,string>, 1: array<string,string>}
+	 */
+	private static function rawInfo(string $file): array
+	{
+		static $files = [];
+		if (isset($files[$file])) return $files[$file];
+
+		$inherit = [];
+		if (strtolower(pathinfo($file, PATHINFO_EXTENSION)) === 'md') {
+			[$info, , $inherit] = self::splitHeader(file_get_contents($file));
+		} else {
+			$block = null;
+			foreach (token_get_all(file_get_contents($file)) as $tok) {
+				if (is_array($tok) && $tok[0] == T_DOC_COMMENT) {
 					$block = $tok[1];
 					break;
 				}
 			}
-			if (empty($block)) return new stdClass;
-			$files[$file] = (object) self::parseDocBlock($block);
+			$info = $block ? self::parseDocBlock($block, $inherit) : [];
 		}
-		return $files[$file];
+
+		return $files[$file] = [$info, array_intersect_key($info, array_flip($inherit))];
+	}
+
+
+	/**
+	 * The `@@` values a page inherits: those of the page file of every
+	 * folder above it within `kirigami.root`, top-most first, a nearer
+	 * ancestor winning. A non-index page (`_post.php`) also inherits from
+	 * its own folder's `_index`. A relative data-file value
+	 * (`@@menu _menu.yaml`) is rewritten relative to the inheriting page, so
+	 * it still points at the file next to the page that declared it.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function inheritedInfo(string $file): array
+	{
+		if (!isset(PREPROS::$config->root) || !$root = realpath(PREPROS::$config->root)) return [];
+		$root = rtrim(str_replace('\\', '/', $root), '/');
+		$self = str_replace('\\', '/', $file);
+		$dir  = dirname($self);
+		$in   = fn(string $d) => $d === $root || str_starts_with($d, $root . '/');
+		if (!$in($dir)) return [];
+
+		$dirs = [];
+		$isIndex = strtolower(pathinfo($self, PATHINFO_FILENAME)) === '_index';
+		for ($d = $isIndex ? dirname($dir) : $dir; $in($d); $d = dirname($d)) {
+			array_unshift($dirs, $d);
+			if ($d === $root) break;
+		}
+
+		$vars = [];
+		foreach ($dirs as $d) {
+			$index = self::indexFile($d);
+			if (!$index || !$index = realpath($index)) continue;
+			foreach (self::rawInfo($index)[1] as $k => $v) {
+				$ext = strtolower(pathinfo($v, PATHINFO_EXTENSION));
+				if (in_array($ext, ['yaml', 'yml', 'json', 'md'], true) && !STR::is_url($v) && is_file($d . '/' . $v)) {
+					$v = self::relativeTo($dir, realpath($d . '/' . $v));
+				}
+				$vars[$k] = $v;
+			}
+		}
+		return $vars;
+	}
+
+
+	/** Path of `$file` relative to the directory `$from` (`../x/y.yaml`). */
+	private static function relativeTo(string $from, string $file): string
+	{
+		$from = explode('/', trim(str_replace('\\', '/', $from), '/'));
+		$to   = explode('/', trim(str_replace('\\', '/', $file), '/'));
+		while ($from && $to && $from[0] === $to[0]) {
+			array_shift($from);
+			array_shift($to);
+		}
+		return str_repeat('../', count($from)) . implode('/', $to);
+	}
+
+
+	/**
+	 * Splits a Markdown page into its header annotations and its body.
+	 *
+	 * The header is the `@tag value` lines at the top of the file (leading
+	 * blank lines allowed), with the same rules as a PHPDOC block: a value
+	 * wraps onto following indented lines. It ends at the first blank line
+	 * (consumed) or flush-left line that isn't a tag, where the body starts.
+	 * An `@@tag` is a tag passed down to child pages too. A file with no
+	 * header is all body.
+	 *
+	 * @return array{0: array<string,string>, 1: string, 2: string[]}
+	 *         [annotations, body, names of the `@@` tags]
+	 */
+	public static function splitHeader(string $text): array
+	{
+		$lines   = preg_split('/\r\n|\r|\n/', preg_replace('/^\xEF\xBB\xBF/', '', $text));
+		$info    = [];
+		$inherit = [];
+		$current = null;
+		$count   = count($lines);
+		$i       = 0;
+
+		while ($i < $count && trim($lines[$i]) === '') $i++;
+		if ($i === $count || $lines[$i][0] !== '@') return [[], $text, []];
+
+		for (; $i < $count; $i++) {
+			$line = $lines[$i];
+			if (preg_match('/^@(@?)([A-Za-z0-9_]+)[ \t]*(.*)$/', $line, $m)) {
+				$current = $m[2];
+				$info[$current] = trim($m[3]);
+				$inherit = array_diff($inherit, [$current]);
+				if ($m[1] !== '') $inherit[] = $current;
+			} elseif (str_starts_with($line, '@')) {
+				$current = null;
+			} elseif ($current !== null && trim($line) !== '' && preg_match('/^[ \t]/', $line)) {
+				$info[$current] = trim($info[$current] . ' ' . trim($line));
+			} else {
+				if (trim($line) === '') $i++;                      // the separating blank line
+				break;
+			}
+		}
+
+		return [$info, implode("\n", array_slice($lines, $i)), array_values($inherit)];
 	}
 
 
@@ -198,10 +341,14 @@ class FS
 	 * up to the next `@tag`, a blank line, a flush-left prose line, or the end
 	 * of the block; continuation lines are joined with a single space.
 	 *
-	 * @param  string $block Raw `/** … *&#47;` doc-comment text.
+	 * `@@tag` is a tag like any other, whose name is also added to `$inherit`
+	 * (values passed down to child pages).
+	 *
+	 * @param  string   $block   Raw `/** … *&#47;` doc-comment text.
+	 * @param  string[] $inherit Receives the names of the `@@` tags.
 	 * @return array<string,string>
 	 */
-	private static function parseDocBlock(string $block): array
+	private static function parseDocBlock(string $block, array &$inherit = []): array
 	{
 		$info    = [];
 		$current = null;
@@ -212,9 +359,11 @@ class FS
 			$line = preg_replace('#\s*\*/\s*$#', '', $line);
 			$line = preg_replace('#^[ \t]*\*[ \t]?#', '', $line, 1);
 
-			if (preg_match('/^@([A-Za-z0-9_]+)[ \t]*(.*)$/', $line, $m)) {
-				$current = trim($m[1]);
-				$info[$current] = trim($m[2]);
+			if (preg_match('/^@(@?)([A-Za-z0-9_]+)[ \t]*(.*)$/', $line, $m)) {
+				$current = $m[2];
+				$info[$current] = trim($m[3]);
+				$inherit = array_values(array_diff($inherit, [$current]));
+				if ($m[1] !== '') $inherit[] = $current;
 			} elseif (trim($line) === '') {
 				$current = null;                                   // blank line ends a value
 			} elseif ($current !== null && preg_match('/^[ \t]/', $line)) {

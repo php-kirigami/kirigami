@@ -13,7 +13,7 @@ try {
     elseif (!$target = realpath($argv[1])) STD::error("Invalid target.");
     else if (is_dir($target)) {
         $prj = new PREPROS($config);
-        foreach (FS::dig($target . '/*.php', true) as $file) {
+        foreach ([...FS::dig($target . '/*.php'), ...FS::dig($target . '/_index.md')] as $file) {
             if (!PREPROS::isPage($file)) continue;
             PREPROS::render($file);
         }

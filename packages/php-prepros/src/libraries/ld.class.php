@@ -709,8 +709,8 @@ final class LD
         for ($guard = 0; $guard < 50; $guard++) {
             if (strncmp($dir . '/', $root . '/', strlen($root) + 1) !== 0) break;
 
-            $index = $dir . '/_index.php';
-            if (is_file($index) && (str_replace('\\', '/', @realpath($index) ?: $index)) !== $selfNorm) {
+            $index = FS::indexFile($dir);
+            if ($index && (str_replace('\\', '/', @realpath($index) ?: $index)) !== $selfNorm) {
                 $info = FS::phpFileInfo($index) ?: new stdClass;
                 $fallback = $dir === $root ? self::config()->name : self::humanize(basename($dir));
                 $trail[] = [

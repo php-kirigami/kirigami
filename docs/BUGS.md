@@ -12,3 +12,10 @@ to [DECISIONS.md](DECISIONS.md). Audit evidence stays in the dated
   and the win32-x64 VSIX pass the real VS Code 1.138.0 smoke test, and the
   interactive checks passed (2026-09-23). Older editors and VSIX builds for
   other platforms are unverified; see [the extension guide](EXTENSION-VSCODE.md).
+
+- **`prepros.format: true` adds visible spaces around inline elements:** a long
+  paragraph is split one inline node per line, so `**bold**, next` becomes
+  `<strong>bold</strong>` / `,` on separate lines and renders as "bold ,".
+  Seen in `template-blog` (`posts/writing-in-markdown/`, also in `dist/`). The
+  formatter should keep text that touches an inline element on the same line.
+

@@ -34,6 +34,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
 - [Overview](#overview)
+- [Unreleased](#unreleased)
 - [What's new in 3.0.1](#whats-new-in-301)
 - [What's new in 3.0.0](#whats-new-in-300)
 - [What's new in 2.0.0](#whats-new-in-200)
@@ -103,6 +104,15 @@ Part of the **Kirigami** project ecosystem.
 - [Extending the `<markdown>` tag](#extending-the-markdown-tag)
 - [Requirements](#requirements)
 - [License](#license)
+
+---
+
+## Unreleased
+
+- **Markdown pages.** An `_index.md` whose first lines are `@tag value` annotations is a page, like an `_index.php`: its body is rendered as Markdown and wrapped by the layouts. Without that header, or next to an `_index.php`, it stays a data file and is left alone. See [Markdown pages](#markdown-pages).
+- **Inherited annotations.** `@@tag value` sets `tag` on the page and on every page below it; a child's `@tag` overrides it for that page only, a child's `@@tag` overrides it and passes the new value down. Works in PHPDOC blocks and Markdown headers. See [Inherited annotations (`@@`)](#inherited-annotations-).
+- `FS::phpFileInfo()` reads Markdown headers and inherited values, and returns a fresh copy on each call: adding a key to the result no longer leaks into that page's own variables. `FS::getChildren()`, `FS::getBreadcrumb()`, the sitemap and the JSON-LD breadcrumb see `_index.md` pages.
+- The `page_info` hook skips values that aren't strings instead of failing on them.
 
 ---
 
@@ -653,7 +663,7 @@ Ordered list of build tasks, run in array order. **Consumed by the `kiri` CLI**,
 
 ## Writing pages
 
-Source pages live in the directory pointed to by `kirigami.root`. The naming convention is straightforward: any file whose name starts with `_` and ends in `.php` is treated as a page source. The leading underscore is stripped in the output filename.
+Source pages live in the directory pointed to by `kirigami.root`. The naming convention is straightforward: any file whose name starts with `_` and ends in `.php` is treated as a page source. The leading underscore is stripped in the output filename. An `_index.md` with an annotation header is a page too (see [Markdown pages](#markdown-pages)).
 
 ```
 src/
@@ -662,6 +672,8 @@ src/
 ├── _index.php          →  src/index.html
 ├── about/
 │   └── _index.php      →  src/about/index.html
+├── notes/
+│   └── _index.md       →  src/notes/index.html
 └── blog/
     ├── _index.php       →  src/blog/index.html
     └── _articles.yaml   (data file, not compiled)
@@ -702,6 +714,57 @@ A value can wrap onto the following **indented** continuation lines:
  *              on a single line and continues here.
  */
 ```
+
+### Markdown pages
+
+A page can be pure Markdown: an `_index.md` whose first lines are
+annotations, written like PHPDOC tags without the comment around them.
+
+```markdown
+@title    Hello, world
+@type     post
+@date     2026-09-01
+@abstract The first post.
+
+Some **Markdown** text: the page body.
+```
+
+- The header is the `@tag value` lines at the top of the file (leading blank
+  lines allowed), with the same rules as a PHPDOC block: a value wraps onto
+  indented continuation lines. It ends at the first blank line, or the first
+  flush-left line that isn't a tag, where the body starts.
+- The body goes through `MD::toHtml()` and becomes `$content`, so `@type`,
+  `@indent` and the layouts work as for a PHP page. PHP in the file is never
+  run. `@content other.md` in the header replaces the body.
+- An `_index.md` **without** a header is not a page: it is left alone, as a
+  data file. So is one next to an `_index.php`, which is the page of that
+  folder (it can load the `.md` through an annotation).
+- Only `_index.md` is a page; other `_*.md` files are data files as before.
+
+### Inherited annotations (`@@`)
+
+A tag written with two `@` applies to the page **and every page below it**
+(the pages of its subfolders, and the other pages of its own folder when it is
+an `_index`):
+
+```php
+/**
+ * @title Blog
+ * @@type post            ← every page under blog/ is a post
+ * @@menu _menu.yaml      ← loaded from blog/, wherever the page is
+ */
+```
+
+- A child's `@tag` overrides the inherited value **for that page only**; its
+  own children still get the ancestor's value.
+- A child's `@@tag` overrides it **and passes the new value down**.
+- The nearest ancestor wins. Values come from the page file of each folder
+  above (`_index.php`, else `_index.md`), up to `kirigami.root`.
+- A relative data-file value (`.yaml`/`.yml`/`.json`/`.md`) is resolved
+  against the folder of the page that declared it.
+- In PHPDOC blocks and Markdown headers alike. `FS::getChildren()` and
+  `FS::getBreadcrumb()` entries include inherited values too, so
+  `@@breadcrumb true` turns breadcrumbs on for a whole section.
 
 ### Auto-loading data files
 
@@ -1566,18 +1629,20 @@ Filesystem utilities.
 ```php
 FS::dig(string $glob): iterable          // recursive glob, yields file paths
 FS::getRelativePath(string $from, string $to): string
-FS::phpFileInfo(string $file): object|false  // parse PHPDOC annotations
-FS::getChildren(string $backtrace = ''): object[]  // child _index.php pages, ordered by @position
-FS::getBreadcrumb(string $backtrace = ''): object[]  // ancestor _index.php pages, top-most first (opt-in via @breadcrumb)
+FS::phpFileInfo(string $file): object|false  // page annotations (PHPDOC or Markdown header, + inherited @@)
+FS::splitHeader(string $text): array     // Markdown page → [annotations, body, @@ names]
+FS::indexFile(string $dir): ?string      // the folder's _index.php, else _index.md, else null
+FS::getChildren(string $backtrace = ''): object[]  // child _index pages, ordered by @position
+FS::getBreadcrumb(string $backtrace = ''): object[]  // ancestor _index pages, top-most first (opt-in via @breadcrumb)
 FS::rmdir(string $dir, bool $removeSelf = true): bool
 FS::pathJoin(string ...$parts): string   // URL-aware path join with .. resolution
 ```
 
 `FS::dig()` is the workhorse of directory-wide builds — it recursively walks a glob pattern and yields every matching file path.
 
-`FS::phpFileInfo()` parses the first PHPDOC block of a PHP file and returns its `@tag value` pairs as a `stdClass`. This is used internally to resolve page metadata and data-file annotations.
+`FS::phpFileInfo()` parses the first PHPDOC block of a PHP file (or the header of a [Markdown page](#markdown-pages)), merges in the values it [inherits](#inherited-annotations-) from the pages above it, and returns the `@tag value` pairs as a `stdClass`. Each call returns a fresh copy, so adding a key to the result is safe. This is used internally to resolve page metadata and data-file annotations.
 
-`FS::getChildren()` (procedural: `fs_get_children()`) — usable only during a render — scans the folders directly below the calling template, keeps the ones that contain an `_index.php`, and returns one `stdClass` per child: the parsed PHPDOC of that `_index.php` plus a `->file` key with its absolute path. Entries are ordered by `@position` ascending (a page with no `@position` sorts as `999999`), then by folder name (natural, case-insensitive). Handy for building a section index or a navigation menu:
+`FS::getChildren()` (procedural: `fs_get_children()`) — usable only during a render — scans the folders directly below the calling template, keeps the ones that contain an `_index.php` or an `_index.md`, and returns one `stdClass` per child: the parsed PHPDOC of that `_index.php` plus a `->file` key with its absolute path. Entries are ordered by `@position` ascending (a page with no `@position` sorts as `999999`), then by folder name (natural, case-insensitive). Handy for building a section index or a navigation menu:
 
 ```php
 <?php foreach (fs_get_children() as $page): ?>

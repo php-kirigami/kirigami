@@ -30,8 +30,10 @@ final class PREPROS
     }
 
 
-    // Only page files beneath the configured source root are publishable.
-    // Check every relative directory, but not the configured root's own name.
+    // Only page files beneath the configured source root are publishable: a
+    // `_*.php`, or an `_index.md` that starts with an `@tag` header, in a
+    // folder that has no `_index.php` (otherwise the `.md` is left alone as
+    // data). Check every relative directory, but not the configured root's own name.
     public static function isPage(string $file): bool
     {
         $file = realpath($file);
@@ -41,7 +43,9 @@ final class PREPROS
         if (!str_starts_with($file, $root)) return false;
         $parts = explode('/', substr($file, strlen($root)));
         $name = array_pop($parts);
-        if (!preg_match('/^_.*\.php$/i', $name)) return false;
+        $isMd = strcasecmp($name, '_index.md') === 0 && !is_file(dirname($file) . '/_index.php')
+            && FS::splitHeader(file_get_contents($file))[0] !== [];
+        if (!$isMd && !preg_match('/^_.*\.php$/i', $name)) return false;
         foreach ($parts as $part) {
             if (str_starts_with($part, '_')) return false;
         }
@@ -66,6 +70,13 @@ final class PREPROS
         $relroot = FS::getRelativePath($dir, self::$root);
         $page = self::processHook('page_info', [$file, FS::phpFileInfo($file)]);
 
+        // A Markdown page is never executed: its body (below the header) is
+        // the page content, unless the header points `@content` elsewhere.
+        $isMd = strtolower(pathinfo($file, PATHINFO_EXTENSION)) === 'md';
+        if ($isMd && !isset($page->content)) {
+            $page->content = MD::toHtml(FS::splitHeader(file_get_contents($file))[1]);
+        }
+
         extract((array)self::$config->data);
         extract((array)$page);
 
@@ -76,7 +87,8 @@ final class PREPROS
         if (self::$config->before) include(realpath(self::$root . self::$config->before));
         $header = self::processHook('post_before', ob_get_clean());
 
-        if(empty($content)) {
+        if ($isMd) $body = (string) $content;
+        elseif(empty($content)) {
             ob_start();
             include($file);
             $body = ob_get_clean();
@@ -130,10 +142,11 @@ final class PREPROS
     {
         $paths = [];
         $root = realpath(self::$root);
-        foreach (FS::dig($root . '/_index.php') as $file) {
+        foreach ([...FS::dig($root . '/_index.php'), ...FS::dig($root . '/_index.md')] as $file) {
             if (!self::isPage($file)) continue;
             $paths[] = str_replace('\\', '/', ltrim(str_replace($root, '', pathinfo(realpath($file), PATHINFO_DIRNAME)), DIRECTORY_SEPARATOR));
         }
+        sort($paths);
         if (empty($paths)) $paths[] = '';
         $dom = new DOMDocument('1.0', 'UTF-8');
         $dom->formatOutput = true;

@@ -1,5 +1,24 @@
 # Decisions
 
+## Markdown pages use `@tag` headers; `@@` passes values down — 2026-09-30
+
+Maintainer's call. An `_index.md` page carries its metadata as the `@tag value`
+lines atop the file, the PHPDOC syntax without the comment, not YAML front
+matter: one syntax for every page, one parser rule set (`FS::splitHeader()`
+mirrors `FS::parseDocBlock()`). Only `_index.md` is a page, and only with a
+header: `_about.md`-style data files and header-less Markdown are left alone,
+and an `_index.php` in the same folder wins (the `.md` is its data). Markdown
+pages never run PHP, which matters for Kiri Studio, where clients edit them.
+
+`@@tag` applies to the page and every page below it (the roadmap's "PHPDOC
+inheritance"); a child's `@tag` overrides for itself only, its `@@tag`
+overrides and passes down. Inheritance lives in `FS::phpFileInfo()` so every
+reader (render, `getChildren()`, breadcrumbs, JSON-LD) sees the same values.
+A relative data-file value is rebased onto the inheriting page, so it keeps
+pointing next to the page that declared it. The watcher re-renders the
+directory of a page with `@@` tags, before or after the edit, since removing
+one changes its descendants too.
+
 ## Registered tags skip Markdown code, found by pattern — 2026-09-24
 
 Tags run on the assembled page before Markdown is converted, so a tag shown

@@ -1,5 +1,34 @@
 # Status
 
+## Markdown pages and `@@` inherited annotations (unreleased) — 2026-09-30
+
+- php-prepros: an `_index.md` whose first lines are `@tag value` annotations is a page
+  (`FS::splitHeader()`: header + Markdown body, `$content`, never executed); without a header, or
+  next to an `_index.php`, it stays data. `FS::indexFile()`, used by `getChildren()`,
+  `getBreadcrumb()`, the sitemap and the JSON-LD breadcrumb.
+- `@@tag` passes a value down to every page below (`FS::inheritedInfo()`); a child's `@tag`
+  overrides it locally, `@@tag` overrides and passes down; relative data files resolve against the
+  declaring folder. Closes the ROADMAP "PHPDOC inheritance" item.
+- `FS::phpFileInfo()` returns a fresh copy (the template-blog leak), the `page_info` hook skips
+  non-string values.
+- Core watcher (`bin/tasks/prepros.js`, `bin/libs/phpdoc.js`): `_index.md` pages re-render
+  themselves; gaining/losing the header is handled as add/remove; pages with `@@` (before or after
+  the edit) re-render their directory; `@@` data files map to the declaring directory; targets
+  covered by a directory target are dropped. Tests: `markdown-page`, `phpdoc-inheritance`,
+  `phpdoc`, `prepros-watch-targets` (135/135 pass). Not released.
+
+## template-blog — 2026-09-30
+
+- New `../template-blog/` built from `template-default`: posts are `src/posts/<slug>/_index.php`
+  (PHPDOC front matter: `@date`, `@tags`, `@draft`, `@type post`) + `_post.md` body; home lists
+  the 5 latest, `posts/` archives by year; `post` page type; `plugin-highlight` enabled;
+  `BlogPosting` JSON-LD + `og:type article`. Builds and exports clean with core 3.1.2. Pushed to
+  `php-kirigami/template-blog` (public, Pages via Actions:
+  https://php-kirigami.github.io/template-blog/), so `kiri create blog` lists it.
+- Gotcha found: `FS::phpFileInfo()` returns a shared cached object; mutating it leaks keys into
+  that page's variables (an array there crashed the `page_info` hook). The template clones it
+  (fixed in php-prepros since, see above).
+
 ## plugin-highlight line numbers — 2026-09-30
 
 - New `lineNumbers` option (default `false`): each line is wrapped in `<span class="hljs-line">`

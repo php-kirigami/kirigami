@@ -15,8 +15,6 @@ than reproduce its workflows.
 - **Composer support** — mount a project's `vendor/` tree and load
   `vendor/autoload.php`, with explicit compatibility limits for the WASM
   environment.
-- **PHPDOC inheritance** — let `FS::phpFileInfo()` inherit page metadata from
-  ancestor `_index.php` files so section defaults do not need repetition.
 - **esbuild package resolution** — provide an importer equivalent to the Sass
   importer if hooks begin supplying package specifiers instead of the current
   absolute entry paths.
