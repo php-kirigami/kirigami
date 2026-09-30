@@ -1,5 +1,19 @@
 # Status
 
+## Templates and site for core 3.1.2 and the new plugins — 2026-09-30
+
+- `template-default`: floors kirigami ^3.1.2, cli ^0.1.5; rebuilt (commit
+  `b704ed5`, not pushed).
+- `template-demo`: same floors, plus `plugin-player` and `plugin-clip` with two
+  new feature pages, Audio and Video (media generated with ffmpeg, no
+  third-party content; caches in `src/_data/{player,clip}`); built against the
+  published packages, and the dev-server seek checked end to end (commit
+  `40d463c`, not pushed).
+- Site (`php-kirigami.github.io`, branch `docs/plugins-player-clip`, stacked on
+  the open PR #2): live demos on Plugins, the four new packages on Ecosystem
+  (versions read live from npm), a September 30 changelog entry, "three
+  official plugins" wording updated (commit `5312096`, not pushed).
+
 ## Release: core 3.1.2, cli/mcp 0.1.5 — 2026-09-30
 
 - `kiri serve` / `kiri watch --serve` now answer HTTP Range requests and know
