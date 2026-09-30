@@ -1,5 +1,14 @@
 # Status
 
+## Templates and site on core 3.2.1 — 2026-09-30
+
+- `template-default`, `template-demo`, `template-blog` moved to core `^3.2.1` / cli `^0.1.7`, rebuilt,
+  pushed, deployed (Actions green). `template-blog` now keeps each post as one Markdown page
+  (`src/posts/<slug>/_index.md`, `@tag` header; `blog_posts()` reads `_index.md` or `_index.php`) and
+  has a `studio:` block (posts `create: true`, header defaults) so Kiri Studio can add and delete posts.
+- Org site: PR #4 (`chore/core-3.2.1`, ecosystem versions), not merged. VS Code extension: deps bumped,
+  not packaged.
+
 ## Release: php-prepros and core 3.2.1, cli and mcp 0.1.7 — 2026-09-30
 
 - Published: the `prepros.format` inline-spacing fix and the MCP manifest/pages hint for Markdown
