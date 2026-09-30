@@ -1,5 +1,20 @@
 # Status
 
+## plugin-player 0.1.0 (unreleased) — 2026-09-29
+
+- New `packages/plugin-player`: `<player src="…">` / `<playlist src="….m3u">`
+  and the `{% player %}` / `{% playlist %}` Markdown shortcuts. One
+  `prepros:html` pass (JS, since PHP-in-WASM can't reach audiowaveform-wasm)
+  decodes each file with `getAudioPackage`, caches `{ meta, svg }` in
+  `<root>/_data/player/<content-hash>.json` (committable, keyed by content so a
+  fresh CI checkout hits it), and swaps the tag for the markup. The embedded
+  cover is written to `<image.source>/player/` and published through
+  `processImages` with `IMG::asset()`'s naming (`…-240x240-cover.webp`).
+  Client script: lazy `<audio>`, seek on the waveform, one player at a time,
+  auto-advance in a playlist. Verified with a real `kiri build` (MP3 with cover,
+  Markdown shortcuts, m3u). Not yet published; the schema, root README and
+  CONTRIBUTING list it.
+
 ## audiowaveform-wasm: SVG, resize, package helpers (1.2.0) — 2026-09-29
 
 - `@kirigami/audiowaveform-wasm` gains `resamplePeaks`, `peaksToSvg` and

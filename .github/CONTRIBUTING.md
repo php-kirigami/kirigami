@@ -81,6 +81,7 @@ packages/
 ├── bestframe/         # video thumbnail selection
 ├── plugin-extlink/    # external-link preview cards
 ├── plugin-embed/      # browser video embeds
+├── plugin-player/     # audio players with build-time waveforms
 ├── php-prepros/       # PHP → HTML compiler + PHP class library
 ├── php-wasm/          # PHP 8.5 WebAssembly build (GPL-2.0-or-later — see below)
 ├── struct-walker/     # YAML/JSON walker (file refs, data URIs)

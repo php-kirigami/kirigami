@@ -636,6 +636,25 @@
                 }
               }
             }
+          },
+          {
+            "if": {
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "name": {
+                  "const": "@kirigami/plugin-player"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "options": {
+                  "$ref": "../plugin-player/options.schema.json"
+                }
+              }
+            }
           }
         ]
       },

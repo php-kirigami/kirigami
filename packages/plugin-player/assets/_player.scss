@@ -1,0 +1,186 @@
+// ═══════════════════════════════════════════════════════════════════════
+//  @kirigami/plugin-player — default `.player` / `.playlist` styles
+//
+//  The markup is baked at build time (src/build.js); src/player.js only
+//  toggles `.is-playing` and updates `--progress` (0-1). The waveform is one
+//  <path> drawn twice — a muted base and, on top, a copy in the accent colour
+//  revealed up to --progress by clip-path. Themed off @kirigami/canva's
+//  --accent / --surface-2. Appended after the project's own sass entry
+//  (`sass:after`) — set `style: false` in the plugin's kirigami.yaml options
+//  to skip this and write your own.
+// ═══════════════════════════════════════════════════════════════════════
+
+.player {
+	--progress: 0;
+
+	display: flex;
+	align-items: stretch;
+	gap: 1rem;
+	width: 100%;
+	max-width: 40rem;
+	margin-inline: auto;
+	padding: 0.75rem;
+	background-color: var(--surface-2);
+	border-radius: 0.4rem;
+}
+
+.player__cover {
+	flex: none;
+	align-self: flex-start;
+	width: clamp(4rem, 22vw, 6.5rem); // shrinks with the screen
+	aspect-ratio: 1 / 1;
+	object-fit: cover;
+	border-radius: 0.25rem;
+}
+
+.player__cover--empty {
+	display: grid;
+	place-items: center;
+	background-color: color-mix(in srgb, var(--accent) 18%, transparent);
+	color: var(--accent);
+
+	&::before {
+		content: "\266A"; // ♪ — no cover art in the file, keep the layout
+		font-size: 2.5rem;
+		line-height: 1;
+	}
+}
+
+.player__main {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 0.4rem;
+	min-width: 0;
+}
+
+.player__head {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.player__toggle {
+	flex: none;
+	width: 2.75rem;
+	aspect-ratio: 1 / 1;
+	padding: 0.5rem;
+	border: 0;
+	border-radius: 50%;
+	background-color: var(--accent);
+	color: var(--surface-2);
+	cursor: pointer;
+	transition: transform 0.15s;
+
+	&:hover,
+	&:focus-visible {
+		transform: scale(1.08);
+	}
+}
+
+.player__icon {
+	display: block;
+	width: 100%;
+	height: 100%;
+	fill: currentColor;
+}
+
+.player__icon-pause { display: none; }
+
+.player.is-playing {
+	.player__icon-play { display: none; }
+	.player__icon-pause { display: inline; }
+}
+
+.player__info {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	line-height: 1.25;
+}
+
+.player__artist,
+.player__format {
+	font-size: 0.8em;
+	opacity: 0.7;
+}
+
+.player__format {
+	letter-spacing: 0.08em;
+}
+
+.player__title {
+	font-weight: 600;
+}
+
+.player__artist,
+.player__format,
+.player__title {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.player__wave {
+	position: relative;
+	height: 3.5rem;
+	color: currentColor;
+	cursor: pointer;
+	touch-action: pan-y; // a vertical swipe still scrolls the page; a horizontal drag seeks
+	user-select: none;
+
+	&:focus-visible {
+		outline: 0.15rem solid var(--accent);
+		outline-offset: 0.15rem;
+	}
+}
+
+.player__svg {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	fill: currentColor;
+	stroke: currentColor;
+	stroke-width: 0.1rem;
+	opacity: 0.35;
+
+	path { vector-effect: non-scaling-stroke; }
+}
+
+.player__svg--progress {
+	color: var(--accent);
+	opacity: 1;
+	clip-path: inset(0 calc((1 - var(--progress)) * 100%) 0 0);
+}
+
+.player__times {
+	display: flex;
+	justify-content: space-between;
+	font-size: 0.75em;
+	font-variant-numeric: tabular-nums;
+	opacity: 0.7;
+}
+
+// Very narrow screens: the cover moves above the controls instead of eating
+// a third of the row.
+@media (max-width: 24rem) {
+	.player {
+		flex-direction: column;
+	}
+
+	.player__cover {
+		align-self: stretch;
+		width: 100%;
+		aspect-ratio: 2 / 1;
+	}
+}
+
+.playlist__tracks {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cdn.jsdelivr.net/gh/php-kirigami/kirigami@main/packages/plugin-player/options.schema.json",
+  "title": "@kirigami/plugin-player options",
+  "description": "Options for the `@kirigami/plugin-player` entry under `plugins:` in kirigami.yaml.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "style": {
+      "description": "Append the default `.player` / `.playlist` styles to every sass task. Set false to write your own on top of the markup.",
+      "type": "boolean",
+      "default": true
+    },
+    "samples": {
+      "description": "Number of points in the baked waveform (also the SVG viewBox width).",
+      "type": "integer",
+      "minimum": 10,
+      "default": 1000
+    },
+    "cover": {
+      "description": "Extract the embedded MP3 cover art and publish it through the image pipeline (like `<img asset>`), under `<image.source>/player/`.",
+      "type": "boolean",
+      "default": true
+    },
+    "coverSize": {
+      "description": "Width and height, in pixels, of the generated square cover (cropped to fill).",
+      "type": "integer",
+      "minimum": 16,
+      "default": 240
+    }
+  }
+}

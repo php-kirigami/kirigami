@@ -1,0 +1,56 @@
+{
+  "name": "@kirigami/plugin-player",
+  "version": "0.1.0",
+  "description": "<player> / <playlist> audio players for Kirigami — SoundCloud-style waveform baked at build time with audiowaveform-wasm, cached in src/_data/player.",
+  "keywords": [
+    "kirigami",
+    "kirigami-plugin",
+    "plugin",
+    "audio",
+    "player",
+    "playlist",
+    "waveform",
+    "mp3"
+  ],
+  "license": "GPL-3.0-or-later",
+  "author": "Maxime Larrivée-Roy",
+  "type": "module",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "php/",
+    "src/",
+    "assets/",
+    "options.schema.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "kirigami": {
+    "type": "plugin",
+    "minVersion": "3.0.0",
+    "optionsSchema": "./options.schema.json"
+  },
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=10.2.3"
+  },
+  "dependencies": {
+    "@kirigami/audiowaveform-wasm": "1.2.0",
+    "@kirigami/sdk": "0.3.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/php-kirigami/kirigami.git"
+  },
+  "homepage": "https://php-kirigami.github.io",
+  "bugs": {
+    "url": "https://github.com/php-kirigami/kirigami/issues"
+  }
+}

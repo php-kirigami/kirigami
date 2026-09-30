@@ -78,6 +78,7 @@ This repository is an npm workspaces monorepo, organized as follows:
 | [`packages/plugin-highlight`](./packages/plugin-highlight) | Official plugin: build-time syntax highlighting (highlight.js), 0 runtime JS. |
 | [`packages/plugin-extlink`](./packages/plugin-extlink) | Official plugin: external link preview cards, `SCRAPER`-backed, cached to disk. |
 | [`packages/plugin-embed`](./packages/plugin-embed) | Official plugin: YouTube/Vimeo oEmbed video cards, resolved client-side. |
+| [`packages/plugin-player`](./packages/plugin-player) | Official plugin: `<player>` / `<playlist>` audio players with a waveform baked at build time. |
 
 ---
 
