@@ -141,3 +141,50 @@ test('public-looking file symlinks cannot expose PHP, including the custom 404',
 	assert.equal(response.status, 404);
 	assert.doesNotMatch(response.body, /PHP SECRET/);
 });
+
+test('media files get an audio type and honour Range requests, so <audio> can seek', async t => {
+	const { root, server } = await fixtureServer(t);
+	fs.writeFileSync(path.join(root, 'song.mp3'), Buffer.from('0123456789'));
+	const get = (range) => new Promise((resolve, reject) => {
+		const headers = range ? { Range: range } : {};
+		http.get({ hostname: server.address, port: server.port, path: '/song.mp3', headers }, res => {
+			const chunks = [];
+			res.on('data', chunk => chunks.push(chunk));
+			res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks).toString() }));
+			res.on('error', reject);
+		}).on('error', reject);
+	});
+
+	const full = await get();
+	assert.equal(full.status, 200);
+	assert.equal(full.headers['content-type'], 'audio/mpeg');
+	assert.equal(full.headers['accept-ranges'], 'bytes');
+	assert.equal(full.body, '0123456789');
+
+	const middle = await get('bytes=2-5');
+	assert.equal(middle.status, 206);
+	assert.equal(middle.headers['content-range'], 'bytes 2-5/10');
+	assert.equal(middle.headers['content-length'], '4');
+	assert.equal(middle.body, '2345');
+
+	assert.equal((await get('bytes=7-')).body, '789');
+	assert.equal((await get('bytes=-3')).body, '789');
+	assert.equal((await get('bytes=8-99')).headers['content-range'], 'bytes 8-9/10');
+
+	const past = await get('bytes=10-');
+	assert.equal(past.status, 416);
+	assert.equal(past.headers['content-range'], 'bytes */10');
+
+	for (const ignored of ['bytes=0-1,4-5', 'items=1-2', 'bytes=-']) {
+		const res = await get(ignored);
+		assert.equal(res.status, 200, ignored);
+		assert.equal(res.body, '0123456789');
+	}
+});
+
+async function fixtureServer(t) {
+	const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'kirigami-server-')));
+	const server = await createDevServer({ root, port: 0 });
+	t.after(async () => { await server.close(); fs.rmSync(root, { recursive: true, force: true }); });
+	return { root, server };
+}

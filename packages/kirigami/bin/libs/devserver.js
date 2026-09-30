@@ -33,7 +33,38 @@ const MIME = {
 	".woff": "font/woff",
 	".woff2":"font/woff2",
 	".map":  "application/json; charset=utf-8",
+	".mp3":  "audio/mpeg",
+	".m4a":  "audio/mp4",
+	".aac":  "audio/aac",
+	".ogg":  "audio/ogg",
+	".oga":  "audio/ogg",
+	".opus": "audio/ogg",
+	".wav":  "audio/wav",
+	".flac": "audio/flac",
+	".mp4":  "video/mp4",
+	".webm": "video/webm",
 };
+
+// Parses a single-range `Range: bytes=…` header against a file of `size`
+// bytes. Returns undefined when there is nothing to honour (no header, an
+// unsupported unit, several ranges, a malformed value — the caller then sends
+// the whole file), null when the range is unsatisfiable (416), or
+// { start, end } (inclusive). Browsers need this to seek inside <audio> /
+// <video>: without it a media element can't jump past what it has buffered.
+function parseRange(header, size) {
+	const match = /^bytes=(\d*)-(\d*)$/.exec(header || "");
+	if (!match || (match[1] === "" && match[2] === "")) return undefined;
+	let start;
+	let end;
+	if (match[1] === "") {
+		start = Math.max(0, size - Number(match[2]));
+		end = size - 1;
+	} else {
+		start = Number(match[1]);
+		end = match[2] === "" ? size - 1 : Math.min(Number(match[2]), size - 1);
+	}
+	return start >= size || start > end ? null : { start, end };
+}
 
 const RELOAD_PATH = "/__kiri_reload__";
 
@@ -154,6 +185,9 @@ export async function createDevServer({ root, port = 4321, host = "127.0.0.1" })
 		const fail = () => {
 			if (res.destroyed) return;
 			if (res.headersSent) { res.destroy(); return; }
+			// Drop the media headers set ahead of the stream: they describe a
+			// body that will never be sent.
+			for (const name of ["Content-Length", "Content-Range", "Accept-Ranges"]) res.removeHeader(name);
 			res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
 			res.end("Unable to read requested file.");
 		};
@@ -179,11 +213,24 @@ export async function createDevServer({ root, port = 4321, host = "127.0.0.1" })
 				res.writeHead(200, { "Content-Type": type });
 				res.end(html);
 			} else {
-				const stream = fs.createReadStream(file);
+				const size = fs.statSync(file).size;
+				const range = parseRange(req.headers.range, size);
+				if (range === null) {
+					res.writeHead(416, { "Content-Range": `bytes */${size}` });
+					res.end();
+					return;
+				}
+				const stream = fs.createReadStream(file, range);
 				stream.on("error", fail);
 				res.on("close", () => stream.destroy());
 				// Keep headers replaceable until the stream actually sends data.
 				res.setHeader("Content-Type", type);
+				res.setHeader("Accept-Ranges", "bytes");
+				if (range) {
+					res.statusCode = 206;
+					res.setHeader("Content-Range", `bytes ${range.start}-${range.end}/${size}`);
+					res.setHeader("Content-Length", range.end - range.start + 1);
+				}
 				stream.pipe(res);
 			}
 		} catch { fail(); }
