@@ -483,6 +483,11 @@
             ]
           ]
         },
+        "pageImage": {
+          "type": "boolean",
+          "default": false,
+          "description": "Lets the client pick, in Kiri Studio, the image that represents a page (its `@image`: the `og:image` / `twitter:image` of the page and the picture of its `<intlink>` cards). Each image in the \"Media of this page\" panel gets a \"Use as page image\" button. Needs `pageMedia`. Off when omitted: pages keep whatever `@image` they have, and Studio never writes one."
+        },
         "imageWidth": {
           "type": "integer",
           "minimum": 1,
