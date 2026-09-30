@@ -1,6 +1,6 @@
 # Status
 
-## bestframe 0.2.0: more codecs, silent (unreleased) — 2026-09-30
+## bestframe 0.2.0: more codecs, silent — 2026-09-30
 
 - `libbestframe` rebuilt on FFmpeg 9.0.2 (matrix bump) with MPEG-4 part 2, VP8,
   Theora, MPEG-2 and MPEG-1 decoders and AVI, Ogg, MPEG program/transport
@@ -10,9 +10,9 @@
   longer prints to the Node console. Wasm 7.4 -> 8.3 MB. Checked on 11 files
   (ffmpeg-made clips for each pair, plus real H.264 and MPEG-4 MKVs — the old
   MKV that returned `null` now works). New `packages/bestframe/test/codecs.test.js`.
-  `@kirigami/bestframe` 0.2.0 prepared; plugin-clip pins it. Not yet published.
+  `@kirigami/bestframe` 0.2.0 and `@kirigami/plugin-clip` 0.1.0 published to npm (the dev-server Range fix in core still waits for the next core release).
 
-## plugin-clip 0.1.0 (unreleased) — 2026-09-29
+## plugin-clip 0.1.0 — 2026-09-29
 
 - New `packages/plugin-clip`: `<clip src="…">` and `{% clip %}`, the local-file
   counterpart of plugin-embed. Same architecture as plugin-player: one
