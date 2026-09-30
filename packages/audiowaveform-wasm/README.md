@@ -42,6 +42,7 @@ Part of the **Kirigami** project ecosystem.
 - [Installation](#installation)
 - [Usage](#usage)
 - [API and runtime files](#api-and-runtime-files)
+- [Unreleased](#unreleased)
 - [Format support](#format-support)
   - [MP3 encoding modes tested](#mp3-encoding-modes-tested)
 - [ID3 tag support](#id3-tag-support)
@@ -131,6 +132,22 @@ does not move decoding off the calling thread: extraction is CPU-bound.
 The local 2026-09-21 audit exercised stereo PCM WAV extraction, invalid audio,
 and absent ID3 metadata/cover art. The format matrix below records earlier
 verification and was not rerun in full during this audit.
+
+---
+
+## Unreleased
+
+- `resamplePeaks(peaks, samples = 1000)`: resize peaks to exactly `samples` min/max pairs, whatever the extraction `samplesPerPixel`.
+- `peaksToSvg(peaks, options)`: SVG in the style of midi-audio-player, one unfilled `<path>` in a stretchable viewBox, styled from CSS. Options: `width` (1000), `height` (`width / 5`), `samples`, `className` (`audiowaveform`), `mirror`, `normalize`.
+- `getAudioPackage(bytes, options)`: `{ meta, svg }` in one call. `meta` holds `format`, `size`, `duration`, `sampleRate`, average `bitrate` (kbps), `id3` and `cover` (MP3 only; `cover` is `{ mimeType, pictureType, data }` with `data` a `Uint8Array`, or `null` when there is no embedded art). Pass `includePeaks: true` to also get the resampled peaks. Resolves to `null` if the audio can't be decoded.
+
+```js
+import { getAudioPackage } from '@kirigami/audiowaveform-wasm';
+
+const { meta, svg } = await getAudioPackage(fs.readFileSync('song.mp3'), { width: 1000 });
+```
+
+These are plain JavaScript on top of the peaks; `duration` is accurate to about one `samplesPerPixel` of audio.
 
 ---
 

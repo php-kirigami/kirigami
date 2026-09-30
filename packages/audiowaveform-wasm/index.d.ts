@@ -113,3 +113,70 @@ export declare function getId3Tags(mp3Bytes: Uint8Array): Promise<Id3Tags | null
  * there's no embedded cover art.
  */
 export declare function getId3CoverArt(mp3Bytes: Uint8Array): Promise<Id3CoverArt | null>;
+
+/** Options for {@link peaksToSvg}. */
+export interface SvgOptions {
+  /** viewBox width. Default: `1000`. */
+  width?: number;
+  /** viewBox height. Default: `width / 5`. */
+  height?: number;
+  /** Number of points drawn; peaks are resampled to it. Default: `width`. */
+  samples?: number;
+  /** Class on the `<svg>` element. Default: `'audiowaveform'`. */
+  className?: string;
+  /** Symmetric min/max outline instead of a bottom-anchored envelope. Default: `false`. */
+  mirror?: boolean;
+  /** Scale to the loudest peak instead of full scale. Default: `true`. */
+  normalize?: boolean;
+}
+
+/**
+ * Resamples peaks to exactly `samples` min/max pairs (e.g. 1000), whatever
+ * the source `samples_per_pixel`. The result's `samples_per_pixel` may be
+ * fractional. Throws on a non-positive-integer `samples`.
+ */
+export declare function resamplePeaks(peaks: WaveformPeaks, samples?: number): WaveformPeaks;
+
+/**
+ * Renders peaks as an SVG string: one unfilled `<path>` in a stretchable
+ * viewBox (`preserveAspectRatio="none"`), to be styled from CSS.
+ */
+export declare function peaksToSvg(peaks: WaveformPeaks, options?: SvgOptions): string;
+
+export interface AudioPackageOptions extends SvgOptions {
+  /** Resolution of the underlying extraction. Default: `512`. */
+  samplesPerPixel?: number;
+  /** Also return the resampled peaks. Default: `false`. */
+  includePeaks?: boolean;
+}
+
+export interface AudioMeta {
+  format: 'mp3' | 'wav' | 'aiff' | 'flac' | 'ogg' | 'opus' | 'm4a' | 'webm';
+  /** File size in bytes. */
+  size: number;
+  /** Seconds; accurate to about one `samplesPerPixel` of audio. */
+  duration: number;
+  sampleRate: number;
+  /** Average kbps, computed from size and duration. */
+  bitrate: number;
+  /** MP3 only, otherwise `null`. */
+  id3: Id3Tags | null;
+  /** Embedded cover art (MP3 only), or `null` if there is none. */
+  cover: { mimeType: string | null; pictureType: number; data: Uint8Array } | null;
+}
+
+export interface AudioPackage {
+  meta: AudioMeta;
+  svg: string;
+  peaks?: WaveformPeaks;
+}
+
+/**
+ * One call for a player UI: metadata (format, size, duration, sample rate,
+ * bitrate, ID3, cover info) plus the waveform SVG. Resolves to `null` if the
+ * audio can't be decoded.
+ */
+export declare function getAudioPackage(
+  bytes: Uint8Array,
+  options?: AudioPackageOptions
+): Promise<AudioPackage | null>;
