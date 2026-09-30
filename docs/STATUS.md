@@ -1,5 +1,17 @@
 # Status
 
+## MCP doc index and docs pass after the 3.1.2 / plugins release — 2026-09-30
+
+- Regenerated `.kirigami/mcp-doc-index.json` with `buildDocIndex()` (36 files, was 35). Smoke
+  searches find the new packages: `plugin-player waveform`, `plugin-clip bestframe poster`,
+  `inline-clip loop`, `audiowaveform peaksToSvg`, `bestframe codecs mpeg`.
+  The index is a local cache (`/.kirigami/` is git-ignored, refreshed by mtime) and is not
+  part of any published package, so nothing had to wait for it before publishing.
+- Checked the published READMEs for stale plugin enumerations: the only "three official
+  plugins" left are historical "What's new" entries, kept as history. `@kirigami/cli` resolves
+  bare names by convention, and `kiri install player clip` was run against the registry:
+  both resolve and print a `plugins:` block built from each plugin's options schema.
+
 ## Fix release: plugin-player and plugin-clip 0.1.1 — 2026-09-30
 
 - `kiri export` failed in CI (template-demo, fresh checkout): both plugins wrote the
