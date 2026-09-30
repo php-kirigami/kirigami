@@ -34,6 +34,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
 - [Overview](#overview)
+- [Unreleased](#unreleased)
 - [What's new in 3.2.0](#whats-new-in-320)
 - [What's new in 3.0.1](#whats-new-in-301)
 - [What's new in 3.0.0](#whats-new-in-300)
@@ -104,6 +105,12 @@ Part of the **Kirigami** project ecosystem.
 - [Extending the `<markdown>` tag](#extending-the-markdown-tag)
 - [Requirements](#requirements)
 - [License](#license)
+
+---
+
+## Unreleased
+
+- **`prepros.format`** no longer puts a space before punctuation that follows an inline element (`<strong>bold</strong>,` was split onto its own line and rendered "bold ,"). `<del>`, `<ins>`, `<data>`, `<bdi>`, ruby, `<strike>`, `<font>` and custom elements count as inline, and text plus the inline elements around it stay on one line inside a container that also holds blocks.
 
 ---
 

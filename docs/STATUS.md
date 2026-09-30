@@ -1,5 +1,15 @@
 # Status
 
+## `prepros.format` keeps the spaces around inline elements (unreleased) — 2026-09-30
+
+- `HTML::format()` put each child of a paragraph on its own line as soon as one of them wasn't a
+  known inline element (`<del>`, `<ins>`, a custom element…), so `**bold**, next` rendered as
+  "bold , next". Now `del`, `ins`, `data`, `bdi`, `ruby`/`rt`/`rp`, `strike`, `font`, `wbr` and
+  custom elements (hyphenated names) count as inline, and in a container mixing text and blocks,
+  text and inline elements that follow each other stay on one line. A row of `<a><img></a>` with
+  no text still gets one per line. Test: `packages/kirigami/test/html-format.test.js`. Removed
+  from BUGS. Not released (3.2.0 shipped before it).
+
 ## Release: php-prepros and core 3.2.0, cli and mcp 0.1.6 — 2026-09-30
 
 - Ships Markdown pages (`_index.md` with an `@tag` header), `@@` inherited annotations, the

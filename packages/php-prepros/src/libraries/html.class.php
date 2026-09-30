@@ -25,6 +25,7 @@ class HTML
         'code', 'dfn', 'em', 'i', 'img', 'input', 'kbd', 'label', 'map',
         'mark', 'object', 'output', 'q', 's', 'samp', 'select', 'small',
         'span', 'strong', 'sub', 'sup', 'textarea', 'time', 'tt', 'u', 'var',
+        'bdi', 'data', 'del', 'font', 'ins', 'rp', 'rt', 'ruby', 'strike', 'wbr',
     ];
 
     // The HTML namespace URI Lexbor assigns to plain HTML elements (foreign
@@ -188,11 +189,49 @@ class HTML
         }
 
         $inner = '';
-        foreach ($children as $child) {
-            $inner .= static::renderNode($child, $depth + 1);
+        foreach (static::groupInlineRuns($children) as $group) {
+            if (is_array($group)) {
+                // Text and inline elements that follow each other: one line, so
+                // the spaces between them survive ("<b>bold</b>, next").
+                $inner .= str_repeat(' ', ($depth + 1) * self::INDENT) . trim(static::renderInlineNodes($group)) . "\n";
+                continue;
+            }
+            $inner .= static::renderNode($group, $depth + 1);
         }
 
         return "{$pad}<{$tag}{$attrs}>\n{$inner}{$pad}</{$tag}>\n";
+    }
+
+    // Splits a block's children into single nodes and runs (arrays) of
+    // consecutive text/inline nodes that contain real text. A run without text
+    // (a row of <a><img></a>, say) stays as separate nodes, one per line.
+    private static function groupInlineRuns(array $children): array
+    {
+        $groups = [];
+        $run    = [];
+        $flush  = static function () use (&$groups, &$run) {
+            $hasText = false;
+            foreach ($run as $node) {
+                if ($node->nodeType === XML_TEXT_NODE && trim($node->nodeValue) !== '') $hasText = true;
+            }
+            if ($hasText) $groups[] = $run;
+            else foreach ($run as $node) $groups[] = $node;
+            $run = [];
+        };
+        foreach ($children as $child) {
+            $isInline = $child->nodeType === XML_TEXT_NODE
+                || ($child->nodeType === XML_ELEMENT_NODE
+                    && static::isInline($child)
+                    && static::hasOnlyInlineChildren($child));
+            if ($isInline) {
+                $run[] = $child;
+            } else {
+                $flush();
+                $groups[] = $child;
+            }
+        }
+        $flush();
+        return $groups;
     }
 
     // Serializes a node's inline content on a single line, collapsing any run
@@ -200,8 +239,13 @@ class HTML
     // to HTML's whitespace-collapsing behavior).
     private static function renderInline(Dom\Node $node): string
     {
+        return static::renderInlineNodes($node->childNodes);
+    }
+
+    private static function renderInlineNodes(iterable $nodes): string
+    {
         $out = '';
-        foreach ($node->childNodes as $child) {
+        foreach ($nodes as $child) {
             if ($child->nodeType === XML_TEXT_NODE) {
                 $text = preg_replace('/\s+/', ' ', $child->nodeValue);
                 $out .= htmlspecialchars($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -244,6 +288,14 @@ class HTML
         return $elementCount <= 1;
     }
 
+    // A known inline element, or a custom element (its name always has a
+    // hyphen), which browsers lay out inline unless a stylesheet says otherwise.
+    private static function isInline(Dom\Node $node): bool
+    {
+        $name = strtolower($node->nodeName);
+        return in_array($name, self::INLINE, true) || str_contains($name, '-');
+    }
+
     // Checks that every direct descendant is inline (text, inline void, inline elements)
     // The inline elements themselves must not contain block elements
     private static function hasOnlyInlineChildren(Dom\Node $node): bool
@@ -255,7 +307,7 @@ class HTML
             if ($child->nodeType !== XML_ELEMENT_NODE) {
                 return false;
             }
-            if (!in_array(strtolower($child->nodeName), self::INLINE, true)) {
+            if (!static::isInline($child)) {
                 return false;
             }
             // Recursive: the inline element must not contain block elements
