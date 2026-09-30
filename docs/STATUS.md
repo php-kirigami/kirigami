@@ -1,16 +1,15 @@
 # Status
 
-## audiowaveform-wasm: SVG, resize, package helpers (unreleased) — 2026-09-29
+## audiowaveform-wasm: SVG, resize, package helpers (1.2.0) — 2026-09-29
 
 - `@kirigami/audiowaveform-wasm` gains `resamplePeaks`, `peaksToSvg` and
   `getAudioPackage` (`{ meta, svg }`), in pure JS in `waveform.js`, with
-  `test/waveform.test.js`. No wasm rebuild. Measured on a 6.5 min FLAC:
+  `test/waveform.test.js`, no wasm change needed. Measured on a 6.5 min FLAC:
   decode ~1.2 s, resize 3-8 ms, SVG 2-3 ms, so moving them to C++ would gain
   nothing. `getAudioPackage` returns the cover bytes (`Uint8Array`) when the MP3 has
   one. Rebuilt the wasm with nestegg bumped to `767aab2` (matrix.json in
   `audiowaveform-wasm-compiler`; PCM-in-Matroska fix, no effect on Vorbis/Opus);
-  re-tested WebM Opus/Vorbis, Ogg Opus, M4A and MP3 on the new build. Not yet
-  version-bumped or published.
+  re-tested WebM Opus/Vorbis, Ogg Opus, M4A and MP3 on the new build. Version bumped to 1.2.0.
 
 ## Site docs for the 3.1.1 release — 2026-09-29
 

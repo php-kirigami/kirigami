@@ -42,7 +42,7 @@ Part of the **Kirigami** project ecosystem.
 - [Installation](#installation)
 - [Usage](#usage)
 - [API and runtime files](#api-and-runtime-files)
-- [Unreleased](#unreleased)
+- [What's new in 1.2.0](#whats-new-in-120)
 - [Format support](#format-support)
   - [MP3 encoding modes tested](#mp3-encoding-modes-tested)
 - [ID3 tag support](#id3-tag-support)
@@ -135,7 +135,7 @@ verification and was not rerun in full during this audit.
 
 ---
 
-## Unreleased
+## What's new in 1.2.0
 
 - `resamplePeaks(peaks, samples = 1000)`: resize peaks to exactly `samples` min/max pairs, whatever the extraction `samplesPerPixel`.
 - `peaksToSvg(peaks, options)`: SVG in the style of midi-audio-player, one unfilled `<path>` in a stretchable viewBox, styled from CSS. Options: `width` (1000), `height` (`width / 5`), `samples`, `className` (`audiowaveform`), `mirror`, `normalize`.

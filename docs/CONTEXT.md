@@ -57,7 +57,7 @@ with this one: `template-CLAUDE.md` is the doc for end-user Kirigami
 | `@kirigami/plugin-highlight` | 0.1.7 | Build-time `highlight.js` syntax highlighting; the optional copy button adds client-side JavaScript. |
 | `@kirigami/plugin-extlink` | 0.1.3 | `<extlink>` authoring tag — `SCRAPER`-backed external link preview card, disk-cached. |
 | `@kirigami/plugin-embed` | 0.1.5 | `<youtube>`/`<vimeo>` oEmbed video cards, entirely client-side. |
-| `@kirigami/audiowaveform-wasm` | 1.1.0 | Waveform peak extraction + ID3 tag/cover-art reading, BBC's `audiowaveform` compiled to WASM. |
+| `@kirigami/audiowaveform-wasm` | 1.2.0 | Waveform peak extraction + ID3 tag/cover-art reading, BBC's `audiowaveform` compiled to WASM. |
 | `@kirigami/bestframe` | 0.1.0 | Automatic video thumbnail/still-frame selection via a tiny embedded aesthetic-AI model, compiled to WASM. |
 
 Extension version annotations above are retained from the earlier build inventory; inspect `kiri phpinfo -m` for the actual local binary. The current runtime includes native YAML/Markdown and BZip2; see [the 8.5.11 release notes](../packages/php-wasm/README.md#whats-new-in-8511).
