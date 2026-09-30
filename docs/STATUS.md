@@ -1,6 +1,6 @@
 # Status
 
-## plugin-player 0.1.0 (unreleased) — 2026-09-29
+## plugin-player 0.1.0 — 2026-09-29
 
 - New `packages/plugin-player`: `<player src="…">` / `<playlist src="….m3u">`
   and the `{% player %}` / `{% playlist %}` Markdown shortcuts. One
@@ -12,7 +12,7 @@
   `processImages` with `IMG::asset()`'s naming (`…-240x240-cover.webp`).
   Client script: lazy `<audio>`, seek on the waveform, one player at a time,
   auto-advance in a playlist. Verified with a real `kiri build` (MP3 with cover,
-  Markdown shortcuts, m3u). Not yet published; the schema, root README and
+  Markdown shortcuts, m3u). Published to npm as 0.1.0 (only the plugin; the dev-server Range fix in core still waits for the next core release). The schema, root README and
   CONTRIBUTING list it.
 
 ## audiowaveform-wasm: SVG, resize, package helpers (1.2.0) — 2026-09-29
