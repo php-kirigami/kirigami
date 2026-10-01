@@ -1,5 +1,13 @@
 # Status
 
+## Page downloads in Kiri Studio — 2026-09-30 (no core change)
+
+- Kiri Studio shows a "Files of this page" panel (downloads such as a corrigé `.zip`, kept in a `files/` folder next to
+  the page, inserted as `{% doclink ./files/x.zip x %}`) when `files` is in the `studio.pageMedia` list:
+  `pageMedia: [images, videos, files]`. No schema key, so it works with the released core. The "Media of this page"
+  panel ignores `files`. template-kiridoc enables it and its exercise pages link `./files/<name>.zip` /
+  `./files/corrige-<name>.zip`; the zips are not in that repo and must be moved into each page's `files/` by hand.
+
 ## Image URLs keep the baseurl path: php-prepros 3.2.2, core 3.2.4, mcp 0.1.9, cli 0.1.11 — 2026-09-30
 
 - Fix: `META` (og:image, twitter:image) and `LD` (logo, image) resolved image paths against the *origin* of `baseurl`,
