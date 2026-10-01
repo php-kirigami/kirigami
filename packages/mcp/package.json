@@ -1,6 +1,6 @@
 {
   "name": "@kirigami/mcp",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "MCP server exposing a Kirigami project (build/export/validate/run) as tools for an AI agent.",
   "keywords": [
     "kirigami",
@@ -36,7 +36,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@kirigami/kirigami": "3.2.5",
+    "@kirigami/kirigami": "3.2.6",
     "ajv": "^8.20.0"
   },
   "repository": {
