@@ -1,5 +1,15 @@
 # Status
 
+## Kiri Studio: code blocks, single instance — 2026-10-01 (no core change, unreleased)
+
+- Fenced code blocks in the Markdown editor now get a full-width background per line (a CodeMirror line decoration,
+  fence lines included) tinted from the accent colour, with a thin accent left border. The text is light monospace
+  (Cascadia Mono / Consolas, weight 300). The selection is drawn above the text as a translucent wash so it stays visible
+  over those opaque lines.
+- Kiri Studio refuses to run twice (`requestSingleInstanceLock`): a second launch shows a dialog (fr/en) and quits, the
+  first window is raised. Two instances fought over the Electron cache and the site `preview` folder (EPERM). Smoke tests
+  (`KIRI_STUDIO_SCREENSHOT`) are exempt.
+
 ## Page downloads in Kiri Studio — 2026-09-30 (no core change)
 
 - Kiri Studio shows a "Files of this page" panel (downloads such as a corrigé `.zip`, kept in a `files/` folder next to
