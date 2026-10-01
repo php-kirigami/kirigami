@@ -1,6 +1,10 @@
 # Status
 
-## Fix: every font was declared twice in the stylesheet (unreleased) — 2026-10-01
+## Released: core 3.2.6, mcp 0.1.11, cli 0.1.13; VSIX 0.1.8 built — 2026-10-01
+
+- Published with one `npm run release` (the OTP expired on the last package, `cli`, which was published alone with `--only cli`). The six `kirigami-vscode` 0.1.8 VSIX files (win32/linux/darwin, x64 and arm64) come from the `VSIX` workflow run on `main` and were checked to bundle core 3.2.6, mcp 0.1.11 and the font fix; they are in `~/Downloads/kirigami-vsix-0.1.8/` for the maintainer to upload on the Marketplace publisher page. Kiri Studio needs no release for this: it installs each site's own dependencies. Next: floor the templates on core `^3.2.6` / cli `^0.1.13` and rebuild them, then the org site.
+
+## Fix: every font was declared twice in the stylesheet — 2026-10-01
 
 - `font-has-ital-axis()` (`packages/kirigami/bin/tasks/sass.js`) built its result with `new sass.SassBoolean()`, which Dart Sass forbids; the `catch` then returned an empty `SassString`, and an empty string is **truthy** in Sass. canva's `conf` therefore always took its "binary `ital` axis" branch and emitted a normal and an italic `@font-face` for every font, each embedding the whole file in base64. The function now returns `sass.sassTrue` / `sass.sassFalse`. Measured on the org site (Roboto Flex, Quicksand, JetBrains Mono, none of which has an `ital` axis): 6 faces and 471 KB of CSS became 3 faces and 270 KB. Affects every site that embeds fonts through `$fonts`. No test yet (the function lives inside the task closure). Needs a core release (3.2.6) and the cli/mcp/vscode pins that follow it; until then a build from npm still emits the doubled faces.
 
