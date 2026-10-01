@@ -202,12 +202,9 @@ export default async function build(__root, task, exportPath = null) {
 				'font-has-ital-axis($path)': (args) => {
 					const abs = resolveFontPath(args[0].assertString('path').text);
 					const info = getFont(abs);
-					try {
-						return new sass.SassBoolean(!!info.hasItalAxis);
-					} catch (e) {
-						// Fallback: return a truthy string if boolean class unavailable
-						return new sass.SassString(info.hasItalAxis ? 'true' : '');
-					}
+					// SassBoolean can't be built with `new`; an empty SassString would be
+					// truthy in Sass, which made every font look like it had an `ital` axis.
+					return info.hasItalAxis ? sass.sassTrue : sass.sassFalse;
 				},
 
 				// Returns the ital axis min/max as a string "min max" for diagnostics

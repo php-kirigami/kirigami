@@ -1,5 +1,9 @@
 # Status
 
+## Fix: every font was declared twice in the stylesheet (unreleased) — 2026-10-01
+
+- `font-has-ital-axis()` (`packages/kirigami/bin/tasks/sass.js`) built its result with `new sass.SassBoolean()`, which Dart Sass forbids; the `catch` then returned an empty `SassString`, and an empty string is **truthy** in Sass. canva's `conf` therefore always took its "binary `ital` axis" branch and emitted a normal and an italic `@font-face` for every font, each embedding the whole file in base64. The function now returns `sass.sassTrue` / `sass.sassFalse`. Measured on the org site (Roboto Flex, Quicksand, JetBrains Mono, none of which has an `ital` axis): 6 faces and 471 KB of CSS became 3 faces and 270 KB. Affects every site that embeds fonts through `$fonts`. No test yet (the function lives inside the task closure). Needs a core release (3.2.6) and the cli/mcp/vscode pins that follow it; until then a build from npm still emits the doubled faces.
+
 ## php-wasm 8.5.11-2 (adds jsonpath) — 2026-10-01 (prepared, not yet published)
 
 - The rebuilt binary statically includes the `jsonpath` extension (3.1.0, supermetrics pecl-jsonpath, JSONPath queries). `@kirigami/php-wasm` is bumped to `8.5.11-2`; its exact-pin dependents follow: `@kirigami/php-prepros` 3.2.3, `@kirigami/kirigami` 3.2.5, `@kirigami/mcp` 0.1.10, `@kirigami/cli` 0.1.12 and `kirigami-vscode` 0.1.7 (VSIX to build and upload by hand). Lockfile refreshed. Next: push `main`, then `npm run release`.
