@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.7
+
+- Bundles Kirigami 3.2.5 and MCP 0.1.10, on PHP-WASM 8.5.11-2 (adds the `jsonpath` extension).
+
 ## 0.1.4
 
 - Bundles Kirigami 3.2.1 and MCP 0.1.7. A folder's `_index.md` whose first

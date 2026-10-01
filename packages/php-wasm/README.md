@@ -315,6 +315,7 @@ Baked directly into the compiled `php.wasm` binary — always loaded, no separat
 | `bz2` | BZip2 compression — also gives `Phar` its `.tar.bz2` archive support |
 | `opcache` | Bytecode caching (JIT disabled) |
 | `yaml` | YAML 1.1 parsing (LibYAML) — see the YAML 1.1 scalar-coercion note above |
+| `jsonpath` | JSONPath queries over decoded JSON (3.1.0, from [supermetrics-public/pecl-jsonpath](https://github.com/supermetrics-public/pecl-jsonpath)) |
 | `apcu` / `igbinary` | In-memory user cache + compact binary serialization (`igbinary` is also `apcu`'s default serializer) |
 
 Query `getLoadedExtensions()` at runtime for the exact installed inventory rather than assuming an extension from another PHP build is available.

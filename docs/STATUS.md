@@ -1,5 +1,9 @@
 # Status
 
+## php-wasm 8.5.11-2 (adds jsonpath) — 2026-10-01 (prepared, not yet published)
+
+- The rebuilt binary statically includes the `jsonpath` extension (3.1.0, supermetrics pecl-jsonpath, JSONPath queries). `@kirigami/php-wasm` is bumped to `8.5.11-2`; its exact-pin dependents follow: `@kirigami/php-prepros` 3.2.3, `@kirigami/kirigami` 3.2.5, `@kirigami/mcp` 0.1.10, `@kirigami/cli` 0.1.12 and `kirigami-vscode` 0.1.7 (VSIX to build and upload by hand). Lockfile refreshed. Next: push `main`, then `npm run release`.
+
 ## Kiri Studio: code blocks, single instance — 2026-10-01 (no core change, unreleased)
 
 - Fenced code blocks in the Markdown editor now get a full-width background per line (a CodeMirror line decoration,
