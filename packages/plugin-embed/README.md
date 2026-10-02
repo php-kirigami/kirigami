@@ -36,6 +36,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/plugin-embed](#kirigamiplugin-embed)
 - [Overview](#overview)
+- [What's new in 0.2.2](#whats-new-in-022)
 - [What's new in 0.1.5](#whats-new-in-015)
 - [What's new in 0.1.4](#whats-new-in-014)
 - [What's new in 0.1.3](#whats-new-in-013)
@@ -49,6 +50,13 @@ Part of the **Kirigami** project ecosystem.
 - [Styling](#styling)
 - [Requirements](#requirements)
 - [License](#license)
+
+---
+
+## What's new in 0.2.2
+
+- The YouTube player URL carries `feature=oembed`, like the iframe YouTube's own
+  oEmbed endpoint returns.
 
 ---
 

@@ -1,5 +1,6 @@
 // ---------------------------------------------------------------------------
-// @kirigami/plugin-educ — client-side behaviour for <checklist>.
+// @kirigami/plugin-educ — client-side behaviour for <checklist>, <color>
+// and <medialink>.
 //
 // Bundled into the first esbuild task (`esbuild:after`). The markup is built
 // at build time (php/educ.php); this script restores and persists the checked
@@ -62,7 +63,8 @@ else start();
 
 
 // ── <color>: click copies the color code ────────────────────────────────
-const COPIED = (document.documentElement.lang || '').toLowerCase().startsWith('fr') ? 'Copié!' : 'Copied!';
+const FR = (document.documentElement.lang || '').toLowerCase().startsWith('fr');
+const COPIED = FR ? 'Copié!' : 'Copied!';
 
 document.addEventListener('click', async (e) => {
 	const badge = e.target.closest?.('.color[data-color]');
@@ -78,3 +80,61 @@ document.addEventListener('click', async (e) => {
 		delete badge.dataset.copying;
 	}, 2000);
 });
+
+
+// ── <medialink>: absolute URL, copy link, download through a blob ───────
+const MEDIA_LABELS = FR
+	? { download: 'Télécharger', copy: 'Copier le lien', copied: 'Lien copié ✓' }
+	: { download: 'Download', copy: 'Copy link', copied: 'Link copied ✓' };
+
+function initMedialink(root) {
+	const link = root.querySelector('.medialink__download');
+	const copy = root.querySelector('.medialink__copy');
+	const field = root.querySelector('.medialink__url');
+	if (!link || !copy) return;
+	const href = new URL(link.getAttribute('href'), document.baseURI).href;
+
+	for (const [el, label] of [[link, MEDIA_LABELS.download], [copy, MEDIA_LABELS.copy]]) {
+		el.title = label;
+		el.setAttribute('aria-label', label);
+	}
+	copy.dataset.copied = MEDIA_LABELS.copied;
+	if (field) {
+		field.value = href;
+		field.addEventListener('focus', () => field.select());
+	}
+
+	copy.addEventListener('click', async () => {
+		try { await navigator.clipboard.writeText(href); } catch { return; } // insecure context / denied
+		flash(copy);
+	});
+
+	// A blob URL is same-origin, so `download` is honoured even for a file the
+	// browser would display (svg, images, audio) or one served from another host.
+	link.addEventListener('click', async (e) => {
+		e.preventDefault();
+		try {
+			const res = await fetch(href);
+			if (!res.ok) throw new Error(res.status);
+			const blobUrl = URL.createObjectURL(await res.blob());
+			const a = Object.assign(document.createElement('a'), { href: blobUrl, download: link.getAttribute('download') || '' });
+			document.body.append(a);
+			a.click();
+			a.remove();
+			setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+			flash(link);
+		} catch {
+			window.open(href, '_blank', 'noopener'); // no CORS on a foreign host: open it instead
+		}
+	});
+}
+
+function flash(el) {
+	el.classList.add('is-done');
+	clearTimeout(el._flash);
+	el._flash = setTimeout(() => el.classList.remove('is-done'), 1500);
+}
+
+const startMedialinks = () => document.querySelectorAll('.medialink').forEach(initMedialink);
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startMedialinks);
+else startMedialinks();

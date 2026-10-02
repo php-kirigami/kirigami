@@ -24,7 +24,7 @@ const PROVIDERS = {
 	youtube: {
 		idPattern: /^[\w-]{10,12}$/,
 		oembed: (id) => `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${id}`)}&format=json`,
-		embed:  (id) => `https://www.youtube-nocookie.com/embed/${id}?autoplay=1`,
+		embed:  (id) => `https://www.youtube-nocookie.com/embed/${id}?feature=oembed&autoplay=1`,
 	},
 	vimeo: {
 		idPattern: /^\d+$/,

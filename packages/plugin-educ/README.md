@@ -204,6 +204,32 @@ An iframe on the pen's embed page. `id` is the pen hash (last part of its URL), 
 shown first (default `result`). The shortcode keeps the argument order of php-prepros' own
 `{% codepen %}` (id, user, height) and adds the tab, so it replaces it.
 
+## `<medialink>`
+
+A media file to download: a type glyph and a title, a download button and a copy-link button,
+then the file's full URL in a read-only field.
+
+```html
+<medialink src="images/noise.svg">Bruit</medialink>
+<medialink src="images/slice.webp" addr="false">Tranche de 15deg</medialink>
+```
+
+In Markdown, the src then the title; a trailing `false` hides the URL field:
+
+```
+{% medialink images/noise.svg Bruit %}
+{% medialink images/slice.webp "Tranche de 15deg" false %}
+```
+
+`src` is written as it is linked from the published page (relative to the page, from the root, or
+a URL). The title defaults to the file name; `class` is added to the block. The glyph follows the
+extension: image, svg, audio, video, zip, pdf, or a generic file.
+
+The download button fetches the file into a blob, so the browser saves it instead of opening it
+(svg, images and mp3 included); a file on another host without CORS is opened in a new tab instead.
+Without JavaScript the button is a plain `download` link. The URL field and the copied link are made
+absolute against the page; the button labels are French when `<html lang>` starts with `fr`.
+
 ## Images in components
 
 `<quote photo>` and `<tool image>` accept `./x` and `../x` (relative to the page), `/x` (from the

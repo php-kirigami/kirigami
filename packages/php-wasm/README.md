@@ -38,6 +38,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/php-wasm](#kirigamiphp-wasm)
 - [Overview](#overview)
+- [What's new in 8.5.11-3](#whats-new-in-8511-3)
 - [What's new in 8.5.11](#whats-new-in-8511)
 - [Build origin](#build-origin)
 - [Compatibility & Runtime Helpers](#compatibility--runtime-helpers)
@@ -59,6 +60,17 @@ Part of the **Kirigami** project ecosystem.
 - [Runtime extension inspection](#runtime-extension-inspection)
   - [Automatic extension discovery](#automatic-extension-discovery)
 - [License](#license)
+
+---
+
+## What's new in 8.5.11-3
+
+Two native extensions join the binary:
+
+| Extension | Capability |
+|---|---|
+| `fastcsv` | Streaming CSV reading and writing: `FastCSVReader` (headers, `nextRecord()`, `seek()`, record count), `FastCSVWriter` (`writeRecord()`, `writeRecordMap()`) and `FastCSVConfig` (delimiter, enclosure, escape, encoding, BOM, strict mode, empty-line skipping, field trimming). |
+| `aspect` | The `Memoize` class, for caching the results of a function. |
 
 ---
 

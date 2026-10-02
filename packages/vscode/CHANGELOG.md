@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.9
+
+- Bundles Kirigami 3.2.7 and MCP 0.1.12, on PHP-WASM 8.5.11-3 (adds the
+  `fastcsv` and `aspect` extensions).
+
 ## 0.1.7
 
 - Bundles Kirigami 3.2.5 and MCP 0.1.10, on PHP-WASM 8.5.11-2 (adds the `jsonpath` extension).

@@ -1,5 +1,10 @@
 # Status
 
+## `<medialink>` (plugin-educ 0.3.0); php-wasm 8.5.11-3 (fastcsv, aspect) and its cascade — 2026-10-02
+
+- plugin-educ `<medialink src>` / `{% medialink src Title %}` (port of the old Vue `mediafile`): type glyph, title, a download button that fetches the file into a blob so the browser saves it (falls back to opening it in a new tab when the host has no CORS; a plain `download` link without JS), a copy-link button, and the absolute URL in a read-only field (`addr="false"` or a trailing `false` in the shortcode hides it). Labels are French when `<html lang>` starts with `fr`. Checked in template-kiridoc (new exercise `godspeed-you-black-emperor-lift-yr`) by a build and a headless screenshot; the download/copy clicks were not exercised in a browser.
+- php-wasm `8.5.11-3`: the rebuilt binary adds the `fastcsv` (`FastCSVReader` / `FastCSVWriter` / `FastCSVConfig`) and `aspect` (`Memoize`) extensions. Pins follow: php-prepros 3.2.4, core 3.2.7 (also `sass` 1.105.1, `ignore` 7.0.12), mcp 0.1.12, cli 0.1.14, `kirigami-vscode` 0.1.9. plugin-embed 0.2.2 adds `feature=oembed` to the YouTube player URL. `npm test`: 137/137.
+
 ## ROADMAP.md brought up to date — 2026-10-01
 
 - Removed what has shipped: `plugin-player`, `plugin-clip`, Markdown pages (`_index.md`). The "Desktop UI" item became "Kiri Studio, next" (signed installers, several images folders, wider real-world checks), and two items were added: a PHP wrapper for the new `jsonpath` extension, and MCP guidance for the `studio:` block. The org site's Roadmap page carries the same list. templates (`default`, `demo`, `blog`, `kiridoc`) and the org site were floored on core `^3.2.6` / cli `^0.1.13`, rebuilt and deployed the same day.

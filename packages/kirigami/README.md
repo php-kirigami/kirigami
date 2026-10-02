@@ -27,6 +27,11 @@ Use [the CLI](../cli/README.md) for terminal commands. This package is the progr
 
 ---
 
+## What's new in 3.2.7
+
+- Ships `@kirigami/php-prepros` 3.2.4 on `@kirigami/php-wasm` 8.5.11-3, whose binary adds the `fastcsv` (streaming CSV reader/writer) and `aspect` (`Memoize`) extensions. Dependency bumps: `sass` 1.105.1, `ignore` 7.0.12.
+
+---
 ## What's new in 3.2.6
 
 - **Fix: every embedded font was declared twice.** `font-has-ital-axis()`, the Sass helper `@kirigami/canva`'s `conf` calls to decide whether a font needs separate normal and italic faces, always answered yes: it built its result with `new sass.SassBoolean()`, which Dart Sass forbids, and its fallback returned an empty string, which is truthy in Sass. Every font in `$fonts` therefore got a normal and an italic `@font-face`, each embedding the whole file in base64. The helper now returns a real boolean. On the org site (Roboto Flex, Quicksand, JetBrains Mono, none of which has an `ital` axis), the stylesheet goes from 471 KB with 6 faces to 270 KB with 3. A font that really has an `ital` axis still gets its two faces. `3.2.5` only moved the `@kirigami/php-wasm` pin.
