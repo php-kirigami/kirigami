@@ -32,31 +32,20 @@ than reproduce its workflows.
 - **Native JSON Schema validation** — assess `jsonk` against Kirigami and plugin
   schemas, then replace `SCHEMA`'s pure-PHP validator only if compatibility is
   demonstrated. Its JSON encode/decode replacement is already active.
+- **JSONPath in the PHP classes** — the runtime ships the `jsonpath` extension
+  (php-wasm 8.5.11-2); a small PHP-prepros wrapper would make it as easy to
+  reach from a page as `YAML::` and `MD::`.
 
-## Upcoming plugins
+## Plugins
 
-- **`plugin-player` (audio player)** — a player card with a waveform under
-  the seek bar; peaks are extracted at build time by the WebAssembly build of
-  BBC's `audiowaveform` (`../audiowaveform-wasm-compiler`).
-- **`plugin-clip` (video player)** — a video card whose cover image is picked
-  at build time by `@kirigami/bestframe` (WebAssembly, built by
-  `../libbestframe`).
 - **`plugin-gdrive` (Google Docs/Sheets)** — build a site from Google Drive:
   Docs become Markdown pages, Sheets become `_data/` files, so editors never
   touch the repo. Cache fetched documents on disk like plugin-extlink so rebuilds and CI
   only download what changed. Open: access model (published-to-web links vs.
   a service-account token from the environment), page/section mapping, and
   image handling. Replaces the earlier Docs→Markdown / Excel→JSON importer
-  scripts idea.
-- **Markdown pages (`_index.md`)** — a plugin task type that compiles
-  `_index.md` files directly into pages, next to (not instead of) PHP's
-  `_index.php`: front matter for the PHPDOC metadata (`title`, `type`,
-  `description`, …), the body rendered through the same Markdown pipeline, and
-  the page wrapped in the site's layout/page type like a PHP page. Whole pages
-  become plain Markdown files a client can create and edit, which fits Kiri
-  Studio ([plan](https://github.com/php-kirigami/kiri-studio/blob/main/docs/PLAN.md)) and plugin-gdrive. Open: how front
-  matter maps to PHPDOC annotations, and whether it's a new task type or a
-  prepros extension point.
+  scripts idea. Markdown pages (`_index.md`, shipped in 3.2) are what its Docs
+  would become.
 
 ## Generated site features
 
@@ -100,9 +89,14 @@ than reproduce its workflows.
 - **Deploy command and provider plugins** — deploy an exported `dist/` through
   FTP, Git branches, or other providers without replacing kiribuild's GitHub
   Pages workflow.
-- **Desktop UI** — provide an Electron interface for users outside an editor,
-  backed by the same `Project` API as the existing surfaces. Planned in
-  [php-kirigami/kiri-studio](https://github.com/php-kirigami/kiri-studio) ([plan](https://github.com/php-kirigami/kiri-studio/blob/main/docs/PLAN.md)).
+- **Kiri Studio, next** — the Electron app for site owners
+  ([php-kirigami/kiri-studio](https://github.com/php-kirigami/kiri-studio), released) still needs signed
+  installers (which would also turn on macOS auto-updates), more than one
+  images folder per site, and a wider check against real clients' sites. See its
+  [plan](https://github.com/php-kirigami/kiri-studio/blob/main/docs/PLAN.md).
+- **MCP that knows about Studio** — `kirigami_validate` accepts a `studio:` block
+  but nothing explains it: add a `studio` topic to `kirigami_doc_hints` and an
+  example to `kirigami_site_blueprint`.
 - **SchemaStore registration** — submit `kirigami.schema.json` so YAML tooling
   can discover it without a per-file schema comment.
 

@@ -1,5 +1,9 @@
 # Status
 
+## ROADMAP.md brought up to date — 2026-10-01
+
+- Removed what has shipped: `plugin-player`, `plugin-clip`, Markdown pages (`_index.md`). The "Desktop UI" item became "Kiri Studio, next" (signed installers, several images folders, wider real-world checks), and two items were added: a PHP wrapper for the new `jsonpath` extension, and MCP guidance for the `studio:` block. The org site's Roadmap page carries the same list. templates (`default`, `demo`, `blog`, `kiridoc`) and the org site were floored on core `^3.2.6` / cli `^0.1.13`, rebuilt and deployed the same day.
+
 ## Released: core 3.2.6, mcp 0.1.11, cli 0.1.13; VSIX 0.1.8 built — 2026-10-01
 
 - Published with one `npm run release` (the OTP expired on the last package, `cli`, which was published alone with `--only cli`). The six `kirigami-vscode` 0.1.8 VSIX files (win32/linux/darwin, x64 and arm64) come from the `VSIX` workflow run on `main` and were checked to bundle core 3.2.6, mcp 0.1.11 and the font fix; they are in `~/Downloads/kirigami-vsix-0.1.8/` for the maintainer to upload on the Marketplace publisher page. Kiri Studio needs no release for this: it installs each site's own dependencies. Next: floor the templates on core `^3.2.6` / cli `^0.1.13` and rebuild them, then the org site.
