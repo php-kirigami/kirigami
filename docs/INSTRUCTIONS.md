@@ -54,6 +54,14 @@ a fresh `npm view <pkg>@<new-ver>` still showing the old version right
 after `npm run release` is almost always propagation, not a failed publish
 (check the publish log's `✓ published`).
 
+When a release includes `@kirigami/php-wasm`, a single OTP often fails with
+`EOTP`: its ~28 MB upload is slow enough that the code is no longer accepted
+by the time npm checks it. Pack first, publish second: `npm pack
+--pack-destination ../../packs` in each package to release, then, with a fresh
+code, `npm publish packs/<tgz> --access public --tag latest --otp <code>` for
+each tarball in dependency order in one loop, then
+`node scripts/publish.js --purge-only --yes`.
+
 ### Push / release order (always)
 
 Whenever a change spans several repos, ship them in this order:
