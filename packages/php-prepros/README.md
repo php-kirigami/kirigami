@@ -662,6 +662,7 @@ Named PHP scripts. **Consumed by the `kiri` CLI**, which runs each `scripts/<nam
 | `name` | ✅ | Must match an existing `scripts/<name>.php` file. Run with `kiri run <name> [args...]`; extra CLI arguments are forwarded as `$argv` entries. |
 | `mount` | — | Glob patterns (relative to the project root) of extra local files to mount into the sandbox before the script runs. |
 | `trigger` | — | Fire the script automatically: `before-build` (start of `build` and `export`), `before-export` (very start of `export`), or `after-export` (once `export` has finished). |
+| `watch` | — | Glob patterns (relative to the project root): `kiri watch` / `kiri serve` re-run the script when a matching file changes, then render every page again if the run wrote files. |
 
 ### `tasks` block
 

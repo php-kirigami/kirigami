@@ -1,5 +1,11 @@
 # Status
 
+## Live script outputs in previews: `scripts[].watch`, `studio.secrets`, `studio.publish` — 2026-10-02 (unreleased)
+
+- Asked for by the mouvei.quebec migration: a committee added in Kiri Studio should show on the map (geocoded) and with its logo (Instagram profile picture) in the preview, before publishing.
+- Core: `scripts[].watch` globs give a script its own watch rule (`buildWatchRules`, type `script`, first); a matching change re-runs it through `runscript()`, and when the run wrote files every page is rendered again (outputs may live outside `kirigami.root`, and the data file's own re-render usually happened before the script finished). `runscript.js` is imported lazily there: `config.js` pins the project directory on first evaluation, which broke `watch-errors.test.js` when imported eagerly. New case in `test/watch-rules.test.js`; checked live with `Project.watch()` on a scratch project (edit the watched file → script re-runs → page shows the new value). `npm test` 139/139.
+- Schema: `studio.secrets` (`{ file, keys }`) and `studio.publish` (globs), consumed by Kiri Studio 0.5.5 (`../kiri-studio`): keys typed in "Website keys", encrypted with `safeStorage`, written into the preview copy; at publish, generated files matching `publish` are taken from a running, finished preview into the drafts. Studio `npm test` 87/87, smoke 18/18 (the keys dialog itself has no smoke screen yet).
+
 ## Galleries made of `{% img-asset %}` codes: php-wasm 8.5.11-4 (mdhtml 0.1.6), encoded `IMG::asset()` URLs (php-prepros 3.2.5), quoted Studio codes — 2026-10-02
 
 - Driven by the mouvei.quebec migration audit (`../../meiquebec.github.io/docs/`): its galleries are to be written in Kiri Studio as a block of the `{% img-asset %}` codes Studio inserts, `{% galerie\n{% img-asset … %}\n%}`, each image going through `IMG::asset()` for the large image and the thumbnail. Three things stood in the way, all fixed in the working trees, none committed or released:

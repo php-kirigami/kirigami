@@ -25,6 +25,32 @@ export async function buildWatchRules(config) {
 	}
 
 	const watchers = [];
+
+	// A `scripts:` entry with `watch` globs re-runs when a matching file changes.
+	// When the run writes files (a cache, an image), every page is rendered
+	// again: pages may depend on those outputs without watching them (an image
+	// outside kirigami.root, say), and the page's own data change has usually
+	// re-rendered it already, before the script finished.
+	for (const script of config.scripts || []) {
+		if (!script.watch?.length) continue;
+		watchers.push({
+			name: `script:${script.name}`,
+			type: "script",
+			patterns: script.watch,
+			callback: async () => {
+				// Imported on first use: runscript.js loads config.js, which pins
+				// the project directory when it is first evaluated.
+				const { runscript } = await import("./runscript.js");
+				const result = await runscript(script.name);
+				if (result.debug) process.stdout.write(String(result.debug));
+				if (!result.success || !result.files.length || !config.prepros) return result;
+				const prepros = await resolveTaskType("prepros");
+				const render = await prepros.default(config.root, { name: "render-all", type: "prepros", force: true, config: config.prepros });
+				return { ...render, files: [...result.files, ...(render.files || [])] };
+			},
+		});
+	}
+
 	for (const task of tasks) {
 		const taskModule = await resolveTaskType(task.type);
 		if (!taskModule) throw new Error(`Unknown task type: "${task.type}".`);

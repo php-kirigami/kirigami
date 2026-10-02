@@ -27,20 +27,33 @@ export async function loadConfig(configPath = __configpath, { deferTaskTypes = f
 	if (!fs.existsSync(configPath)) throw `Config file not found: ${configPath}`;
 	const _config = await walkFile(configPath);
 	if(!_config) throw `Invalid config file: ${configPath}`;
-	keepStudioPathsRaw(_config, configPath);
+	keepPathsRaw(_config, configPath);
 	validateAgainstSchema(_config, configPath);
 	await validateConfig(_config, configPath, { deferTaskTypes });
 	return _config;
 }
 
 
-// `studio:` lists file paths for Kiri Studio (what a client may edit), never
-// references to inline — but walkFile() replaces any string naming an existing
+// `studio:` lists file paths for Kiri Studio (what a client may edit), and a
+// script's `mount` / `watch` list files for it to read or follow — never
+// references to inline. But walkFile() replaces any string naming an existing
 // .yaml/.json file with that file's content (`_data/team.yaml` would become the
-// team data). Take the block from a plain parse instead.
-function keepStudioPathsRaw(_config, configPath) {
-	if (!_config || typeof _config !== 'object' || !('studio' in _config)) return;
-	_config.studio = yaml.load(fs.readFileSync(configPath, 'utf8')).studio;
+// team data, `mount: [secrets.local.yaml]` the secrets). Take those from a
+// plain parse instead.
+function keepPathsRaw(_config, configPath) {
+	if (!_config || typeof _config !== 'object') return;
+	const hasScripts = Array.isArray(_config.scripts) && _config.scripts.length > 0;
+	if (!('studio' in _config) && !hasScripts) return;
+	const raw = yaml.load(fs.readFileSync(configPath, 'utf8')) ?? {};
+	if ('studio' in _config) _config.studio = raw.studio;
+	if (hasScripts && Array.isArray(raw.scripts)) {
+		_config.scripts.forEach((script, i) => {
+			if (!script || typeof script !== 'object' || !raw.scripts[i]) return;
+			for (const key of ['mount', 'watch']) {
+				if (key in raw.scripts[i]) script[key] = raw.scripts[i][key];
+			}
+		});
+	}
 }
 
 

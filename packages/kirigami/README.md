@@ -27,6 +27,13 @@ Use [the CLI](../cli/README.md) for terminal commands. This package is the progr
 
 ---
 
+## Unreleased
+
+- **`scripts[].watch`**: glob patterns that re-run a script during `watch` / `serve` when a matching file changes; if the run writes files, every page is rendered again. A `before-build` script that turns a data file into a cache (geocoding, fetched images) now follows edits live, in `kiri serve` and in Kiri Studio's preview.
+- **`studio.secrets`** and **`studio.publish`** in `kirigami.schema.json` (Kiri Studio 0.5.5): keys the preview's scripts need, typed in Studio and kept on the client's computer; files those scripts generate, published with the client's changes. Before this version the schema rejected both keys.
+
+---
+
 ## What's new in 3.2.8
 
 - Ships `@kirigami/php-prepros` 3.2.5 on `@kirigami/php-wasm` 8.5.11-4: a Markdown block plugin's body may contain other `{% … %}` tags (`mdhtml` 0.1.6), and `IMG::asset()` / `<img asset>` / `{% img-asset %}` return a URL-encoded path, so a source named `photo (1).jpeg` gives a valid `src`.
@@ -468,6 +475,8 @@ here are never replaced by the content of the file they name.
 | `exclude` | `[]` | Paths or globs hidden from clients, even when a page references them. |
 | `labels` | `{}` | Names shown to clients, by path. |
 | `schemas` | `{}` | JSON Schemas for data files, in VS Code's `yaml.schemas` format: schema path or URL → file glob(s). |
+| `secrets` | – | `{ file, keys: { name: label } }`: keys the preview's build scripts need (a geocoding key…). Typed once in Kiri Studio ("Website keys"), kept encrypted on that computer, written into the preview copy as the YAML `file` (default `secrets.local.yaml`). Never published. |
+| `publish` | `[]` | Paths or globs of files the preview's scripts generate (caches, fetched images) that a Studio publish sends along with the client's changes. Taken only from a running, finished preview; unchanged files are skipped. |
 
 Clients edit YAML/JSON files as text, checked against a JSON Schema as they
 type (errors underlined in plain language, key completion, descriptions on
@@ -556,6 +565,7 @@ files compiled respectively before and after the entry (paths relative to
 | `name` | ✅ | Must match `scripts/<name>.php`. Run with `kiri run <name> [args...]`. |
 | `mount` | – | Glob patterns (relative to the project root) of extra files mounted into the sandbox before the script runs. |
 | `trigger` | – | Fire automatically: `before-build` (start of `build` and `export`), `before-export` (very start of `export`), `after-export` (once `export` finished). |
+| `watch` | – | Glob patterns (relative to the project root) that re-run the script during `watch` / `serve` when a matching file changes. If the run writes files, every page is rendered again. Pair it with `before-build` for a script that turns a data file into a cache, so a live preview (Kiri Studio's included) follows edits to that file. |
 
 An active plugin can also register a runnable script via the `scripts:register`
 hook from `@kirigami/sdk`, without a `scripts:` entry: a `name` runnable the

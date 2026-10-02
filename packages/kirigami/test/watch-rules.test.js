@@ -25,6 +25,25 @@ test('repeated rule construction preserves frozen configured tasks and rule orde
 	}
 });
 
+test('a script with watch globs gets its own rule, first; scripts without watch get none', async t => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kiri-rules-'));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const config = {
+		root,
+		prepros: {},
+		tasks: [],
+		scripts: [
+			{ name: 'prepare', trigger: 'before-build', watch: ['src/_data/items.yaml'] },
+			{ name: 'manual' },
+			{ name: 'empty', watch: [] },
+		],
+	};
+	const rules = await buildWatchRules(config);
+	assert.deepEqual(rules.map(rule => [rule.name, rule.type]), [['script:prepare', 'script'], ['prepros', 'prepros']]);
+	assert.deepEqual(rules[0].patterns, ['src/_data/items.yaml']);
+	assert.equal(typeof rules[0].callback, 'function');
+});
+
 test('implicit prepros is conditional and never persists into later rule construction', async t => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kiri-rules-'));
 	t.after(() => fs.rmSync(root, { recursive: true, force: true }));

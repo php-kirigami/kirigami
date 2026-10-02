@@ -82,6 +82,40 @@ ${seo}
 	assert.equal(config.seo.jsonld, false);
 });
 
+test('loadConfig keeps script mount/watch paths and studio secrets/publish as written', async (t) => {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kiri-config-'));
+	fs.mkdirSync(path.join(dir, 'src', '_data'), { recursive: true });
+	t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+	// Existing .yaml files: walkFile() would inline them.
+	fs.writeFileSync(path.join(dir, 'secrets.local.yaml'), 'key: SECRET\n');
+	fs.writeFileSync(path.join(dir, 'src', '_data', 'items.yaml'), '- a\n');
+	fs.writeFileSync(path.join(dir, 'kirigami.yaml'), `
+kirigami:
+  project: Demo
+  baseurl: https://example.com
+  root: src
+  items: src/_data/items.yaml
+scripts:
+  - name: prepare
+    trigger: before-build
+    mount: [secrets.local.yaml]
+    watch: [src/_data/items.yaml]
+  - name: plain
+studio:
+  secrets:
+    keys: { key: The key }
+  publish: [src/_data/items.yaml, assets/images/cache/*.jpg]
+`);
+	const config = await loadConfig(path.join(dir, 'kirigami.yaml'));
+	assert.deepEqual(config.scripts[0].mount, ['secrets.local.yaml']);
+	assert.deepEqual(config.scripts[0].watch, ['src/_data/items.yaml']);
+	assert.equal(config.scripts[1].mount, undefined);
+	assert.deepEqual(config.studio.secrets, { keys: { key: 'The key' } });
+	assert.deepEqual(config.studio.publish, ['src/_data/items.yaml', 'assets/images/cache/*.jpg']);
+	// Elsewhere, a path naming a data file is still inlined, as before.
+	assert.deepEqual(config.kirigami.items, ['a']);
+});
+
 test('loadConfig validates the studio block for Kiri Studio', async (t) => {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kiri-config-'));
 	fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
