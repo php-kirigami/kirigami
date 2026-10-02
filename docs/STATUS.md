@@ -1,6 +1,6 @@
 # Status
 
-## Live script outputs in previews: `scripts[].watch`, `studio.secrets`, `studio.publish` — core 3.2.9, mcp 0.1.14, cli 0.1.16, vscode 0.1.11 — 2026-10-02
+## Live script outputs in previews: `scripts[].watch`, `studio.secrets`, `studio.publish` — core 3.2.9, mcp 0.1.14, cli 0.1.16, vscode 0.1.11 — 2026-10-02; published, VSIX 0.1.10 and 0.1.11 on the Marketplace, Kiri Studio 0.5.5 released
 
 - Asked for by the mouvei.quebec migration: a committee added in Kiri Studio should show on the map (geocoded) and with its logo (Instagram profile picture) in the preview, before publishing.
 - Core: `scripts[].watch` globs give a script its own watch rule (`buildWatchRules`, type `script`, first); a matching change re-runs it through `runscript()`, and when the run wrote files every page is rendered again (outputs may live outside `kirigami.root`, and the data file's own re-render usually happened before the script finished). `runscript.js` is imported lazily there: `config.js` pins the project directory on first evaluation, which broke `watch-errors.test.js` when imported eagerly. New case in `test/watch-rules.test.js`; checked live with `Project.watch()` on a scratch project (edit the watched file → script re-runs → page shows the new value). `npm test` 139/139.
