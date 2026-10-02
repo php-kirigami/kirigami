@@ -20,6 +20,8 @@ export async function buildWatchRules(config) {
 			name: "prepros",
 			type: "prepros",
 			config: config.prepros,
+			// Its watch rule also follows image.source (see tasks/prepros.js).
+			image: config.image,
 		};
 		tasks.unshift(task);
 	}

@@ -205,6 +205,13 @@ export function getWatcher(__root, task) {
 	// Every PHP file, not just pages: layouts (`_layouts/header.php`) and
 	// includes (`_lib/functions.php`) don't start with "_" themselves.
 	const patterns = [joinWith(root, '**/*.php'), joinWith(root, '**/*.yaml'), joinWith(root, '**/*.yml'), joinWith(root, '**/*.md'), joinWith(root, '**/*.json')]
+	// Source images (`image.source`, relative to the project): any page may
+	// use one through IMG::asset() / <img asset> / {% img-asset %}, or list a
+	// folder of them (a gallery), so adding, replacing or removing one renders
+	// every page again. Outputs go to `image.dest`, under the root: no loop.
+	const imageRoot = String(task.image?.source ?? 'assets/images').replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/+$/, '');
+	if (imageRoot) patterns.push(`${imageRoot}/**/*`);
+	const isImage = (file) => imageRoot && file.replace(/\\/g, '/').startsWith(`${imageRoot}/`);
 	// A watched file's path relative to kirigami.root.
 	const relative = (file) => path.posix.relative(root || '.', file.replace(/\\/g, '/'));
 	return {
@@ -213,6 +220,12 @@ export function getWatcher(__root, task) {
 		callback: async (events) => {
 			if (!events.length) return;
 			console.log(`[${task.name}] batch`, events.length, events.map(e => e.file));
+			if (events.some(e => isImage(e.file))) {
+				const results = await build(__root, { ...task, target: null });
+				if (results.success) results.files.forEach(f => log.step(f));
+				else printTaskError(results);
+				return results;
+			}
 			// An `_index.md` gaining or losing its header turns into a page or
 			// back into data: handled like an added or deleted page.
 			const flipped = events.some(e => /(^|[\\/])_index\.md$/i.test(e.file)) &&

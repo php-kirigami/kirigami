@@ -44,6 +44,16 @@ test('a script with watch globs gets its own rule, first; scripts without watch 
 	assert.equal(typeof rules[0].callback, 'function');
 });
 
+test('the prepros rule also follows image.source, default assets/images', async t => {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kiri-rules-'));
+	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+	const [byDefault] = await buildWatchRules({ root, prepros: {}, tasks: [] });
+	assert.ok(byDefault.patterns.includes('assets/images/**/*'));
+	const [custom] = await buildWatchRules({ root, prepros: {}, tasks: [], image: { source: './media/photos/' } });
+	assert.ok(custom.patterns.includes('media/photos/**/*'));
+	assert.ok(!custom.patterns.includes('assets/images/**/*'));
+});
+
 test('implicit prepros is conditional and never persists into later rule construction', async t => {
 	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kiri-rules-'));
 	t.after(() => fs.rmSync(root, { recursive: true, force: true }));
