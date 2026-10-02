@@ -34,6 +34,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/php-prepros](#kirigamiphp-prepros)
 - [Overview](#overview)
+- [What's new in 3.2.5](#whats-new-in-325)
 - [What's new in 3.2.1](#whats-new-in-321)
 - [What's new in 3.2.0](#whats-new-in-320)
 - [What's new in 3.0.1](#whats-new-in-301)
@@ -105,6 +106,13 @@ Part of the **Kirigami** project ecosystem.
 - [Extending the `<markdown>` tag](#extending-the-markdown-tag)
 - [Requirements](#requirements)
 - [License](#license)
+
+---
+
+## What's new in 3.2.5
+
+- **`IMG::asset()` returns a URL-encoded path**, segment by segment, and so do the `<img asset>` tag and `{% img-asset %}`: a source named like a phone photo (`photo (1).jpeg`) now gives `src="…/photo%20%281%29-800w.webp"` instead of a `src` with spaces. Generated file names on disk are unchanged.
+- On `@kirigami/php-wasm` 8.5.11-4: a Markdown block plugin's body may contain other `{% … %}` tags (`mdhtml` 0.1.6); the body reaches the plugin raw. A block can, for example, list `{% img-asset %}` codes for a gallery plugin to read.
 
 ---
 

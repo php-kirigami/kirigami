@@ -38,6 +38,7 @@ Part of the **Kirigami** project ecosystem.
 
 - [@kirigami/php-wasm](#kirigamiphp-wasm)
 - [Overview](#overview)
+- [What's new in 8.5.11-4](#whats-new-in-8511-4)
 - [What's new in 8.5.11-3](#whats-new-in-8511-3)
 - [What's new in 8.5.11](#whats-new-in-8511)
 - [Build origin](#build-origin)
@@ -60,6 +61,12 @@ Part of the **Kirigami** project ecosystem.
 - [Runtime extension inspection](#runtime-extension-inspection)
   - [Automatic extension discovery](#automatic-extension-discovery)
 - [License](#license)
+
+---
+
+## What's new in 8.5.11-4
+
+- `mdhtml` 0.1.6: a block plugin's body may contain other `{% … %}` tags. The block ends at the `%}` that balances its own `{%` (before, at the first `%}`), and the body still reaches the plugin raw — so a block can list `{% img-asset %}` codes, for example. An unclosed stray `{%` in a body falls back to the first `%}`, as before.
 
 ---
 

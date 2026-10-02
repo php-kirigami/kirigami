@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.10
+
+- Bundles Kirigami 3.2.8 and MCP 0.1.13, on PHP-WASM 8.5.11-4 (Markdown
+  block plugins can contain other `{% … %}` tags; `IMG::asset()` URLs are
+  encoded).
+
 ## 0.1.9
 
 - Bundles Kirigami 3.2.7 and MCP 0.1.12, on PHP-WASM 8.5.11-3 (adds the

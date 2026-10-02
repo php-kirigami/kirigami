@@ -27,6 +27,12 @@ Use [the CLI](../cli/README.md) for terminal commands. This package is the progr
 
 ---
 
+## What's new in 3.2.8
+
+- Ships `@kirigami/php-prepros` 3.2.5 on `@kirigami/php-wasm` 8.5.11-4: a Markdown block plugin's body may contain other `{% … %}` tags (`mdhtml` 0.1.6), and `IMG::asset()` / `<img asset>` / `{% img-asset %}` return a URL-encoded path, so a source named `photo (1).jpeg` gives a valid `src`.
+
+---
+
 ## What's new in 3.2.7
 
 - Ships `@kirigami/php-prepros` 3.2.4 on `@kirigami/php-wasm` 8.5.11-3, whose binary adds the `fastcsv` (streaming CSV reader/writer) and `aspect` (`Memoize`) extensions. Dependency bumps: `sass` 1.105.1, `ignore` 7.0.12.

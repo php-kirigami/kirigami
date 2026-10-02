@@ -511,7 +511,12 @@ class IMG
 		}
 
 		if(!$backtrace) $backtrace = PREPROS::backtraceFile();
-		return FS::getRelativePath($backtrace, FS::pathJoin('/project', $destfile));
+		// The result is a URL: percent-encode each segment, so a source named
+		// like a phone photo ("photo (1).jpeg") still yields a valid src/href.
+		// File names on disk are unchanged (sass.js and the media plugins
+		// mirror this naming).
+		$url = FS::getRelativePath($backtrace, FS::pathJoin('/project', $destfile));
+		return implode('/', array_map('rawurlencode', explode('/', $url)));
 	}
 
 
