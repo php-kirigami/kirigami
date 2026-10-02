@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.11
+
+- Bundles Kirigami 3.2.9 and MCP 0.1.14: `scripts[].watch` re-runs a script
+  in the dev server when a matching file changes.
+
 ## 0.1.10
 
 - Bundles Kirigami 3.2.8 and MCP 0.1.13, on PHP-WASM 8.5.11-4 (Markdown
