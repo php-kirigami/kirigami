@@ -27,6 +27,12 @@ Use [the CLI](../cli/README.md) for terminal commands. This package is the progr
 
 ---
 
+## What's new in 3.2.10
+
+- **`watch` / `serve` follow `image.source`**: adding, replacing or removing a source image (default `assets/images/`) renders every page again. A page may use an image through `IMG::asset()` / `<img asset>` / `{% img-asset %}`, or list a folder of them (a gallery plugin), so a photo dropped in a folder now shows in the dev server and in Kiri Studio's preview without restarting it.
+
+---
+
 ## What's new in 3.2.9
 
 - **`scripts[].watch`**: glob patterns that re-run a script during `watch` / `serve` when a matching file changes; if the run writes files, every page is rendered again. A `before-build` script that turns a data file into a cache (geocoding, fetched images) now follows edits live, in `kiri serve` and in Kiri Studio's preview.

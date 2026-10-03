@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.12
+
+- Bundles Kirigami 3.2.10 and MCP 0.1.15: the dev server follows source
+  images, so a photo added to a gallery folder shows without a restart.
+
 ## 0.1.11
 
 - Bundles Kirigami 3.2.9 and MCP 0.1.14: `scripts[].watch` re-runs a script
