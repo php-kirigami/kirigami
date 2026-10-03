@@ -20,6 +20,23 @@ than reproduce its workflows.
   absolute entry paths.
 - **Local CI environment file** — support a gitignored variable file using the
   same names as GitHub Actions for reproducible local runs.
+- **Script environment** — `scripts[].env: [NAME]`, an allow-list of process
+  variables handed to a script's `getenv()` (it sees none today, so a CI secret
+  has to be written to a mounted file), and `scripts[].network` so one script
+  can reach the network without `prepros.network` opening it for every page.
+  Found migrating mouvei.quebec (geocoding script).
+- **Directory listing from PHP** — `PREPROS::glob($pattern)` evaluated on the
+  Node side (like `fstat`), returning paths and `modifiedAt` without copying the
+  files into the sandbox; `PREPROS::mount()` on an image folder copies it whole
+  at each render.
+- **Gallery plugin** — a `@kirigami/plugin-gallery` for `{% gallery <folder> %}`
+  (thumbnails and large images through `IMG::asset`, modal, carousel), from the
+  mouvei.quebec site's own `{% galerie %}`, which would be its first user.
+- **`IMG::asset()` quality** — an `image.quality` setting (or per call);
+  WebP is fixed at 82.
+- **Accented heading anchors** — `php-mdhtml`'s `php_mdhtml_slugify()` is
+  ASCII-only, so `## Rêver le pays` gets `#rver-le-pays` (the previous renderer
+  kept `#rêver-le-pays`). Transliterate or keep UTF-8.
 
 ## Content and data
 
